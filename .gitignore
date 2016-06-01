@@ -1,0 +1,5 @@
+.Rproj.user
+.Rhistory
+.RData
+tests/testthat/contexts
+tests/testthat/*.log
