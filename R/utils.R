@@ -18,6 +18,11 @@ vlapply <- function(X, FUN, ...) {
   vapply(X, FUN, logical(1), ...)
 }
 
+## TODO: After requiring 3.3.0, this can be dropped.
+strrep <- function(str, n) {
+  paste(rep(str, n), collapse="")
+}
+
 blank <- function(n) {
   strrep(" ", n)
 }
