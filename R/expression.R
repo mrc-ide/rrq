@@ -67,7 +67,30 @@ prepare_expression <- function(expr, envir, db) {
 
 restore_expression <- function(dat, envir, db) {
   if (!is.null(dat$objects)) {
-    db$export(e, dat$objects, "objects")
+    db$export(envir, dat$objects, "objects")
   }
   dat$expr
+}
+
+## TODO: from context:
+find_symbols <- function(expr, hide_errors=TRUE) {
+  symbols <- character(0)
+
+  f <- function(e) {
+    if (!is.recursive(e)) {
+      if (!is.symbol(e)) { # A literal of some type
+        return()
+      }
+      symbols <<- c(symbols, deparse(e))
+    } else {
+      for (a in as.list(e[-1])) {
+        if (!missing(a)) {
+          f(a)
+        }
+      }
+    }
+  }
+
+  f(expr)
+  unique(symbols)
 }

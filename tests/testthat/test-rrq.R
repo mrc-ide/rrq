@@ -19,12 +19,13 @@ test_that("sanity checking", {
 })
 
 test_that("basic use", {
+  Sys.setenv(R_TESTS="")
   root <- tempfile()
   context <- context::context_save(root, sources="myfuns.R")
   obj <- rrq_controller(context, redux::hiredis())
 
   ## This needs to send output to a file and not to stdout!
-  wid <- worker_spawn(obj$context, obj$con, logfile)
+  wid <- worker_spawn(obj$context, obj$con)
   on.exit(test_queue_clean(obj$context$id))
 
   t <- obj$enqueue(slowdouble(0.1))
@@ -34,6 +35,7 @@ test_that("basic use", {
 })
 
 test_that("bulk", {
+  Sys.setenv(R_TESTS="")
   root <- tempfile()
   context <- context::context_save(root, sources="myfuns.R")
   env <- context::context_load(context, FALSE)
@@ -58,6 +60,7 @@ test_that("bulk", {
 })
 
 test_that("worker name", {
+  Sys.setenv(R_TESTS="")
   root <- tempfile()
   context <- context::context_save(root, sources="myfuns.R")
   obj <- rrq_controller(context, redux::hiredis())
@@ -66,6 +69,6 @@ test_that("worker name", {
   wid <- worker_spawn(obj$context, obj$con,
                       logdir="logs", worker_name_base=name)
   on.exit(test_queue_clean(obj$context$id))
-  expect_equal(wid, paste(name, "_1"))
+  expect_equal(wid, paste0(name, "_1"))
   expect_true(file.exists(file.path("logs", paste0(name, "_1.log"))))
 })

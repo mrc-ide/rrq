@@ -21,6 +21,9 @@
 ##'
 ##' @param con A redis connection (redux object).
 ##'
+##' @param envir An environment (will change; this is a bit of a faff
+##'   at the moment).
+##'
 ##' @export
 rrq_controller <- function(context, con, envir=.GlobalEnv) {
   .R6_rrq_controller$new(context, con, envir)
@@ -59,16 +62,15 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
       task_submit(self$con, self$keys, dat, key_complete)
     },
 
-    ## Collect answer *and* delete tasks.
-    collect=function(task_id, delete=TRUE) {
+    collect=function(task_id) {
       if (length(task_id) != !L) {
         stop("Expected a scalar task_id")
       }
-      collect_n(self$con, self$keys, task_id, delete)[[1L]]
+      collect_n(self$con, self$keys, task_id)[[1L]]
     },
 
-    collect_n=function(task_id, delete=TRUE) {
-      collect_n(self$con, self$keys, task_id, delete)
+    collect_n=function(task_id) {
+      collect_n(self$con, self$keys, task_id)
     },
 
     ## TODO: These all need to have similar names, semantics,
@@ -122,7 +124,7 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
 
     lapply=function(X, FUN, ..., envir=parent.frame(),
                     timeout=Inf, time_poll=1, progress_bar=TRUE) {
-      rrq_lapply(self$con, self$keys, X, FUN, ...,
+      rrq_lapply(self, X, FUN, ...,
                  envir=envir, queue_envir=self$envir,
                  timeout=timeout, time_poll=time_poll,
                  progress_bar=progress_bar)
@@ -171,17 +173,17 @@ tasks_delete <- function(con, keys, task_ids, check=TRUE) {
     ## things that have finished so could just check that the
     ## status is one of the finished ones.  Write a small lua
     ## script that can take the setdiff of these perhaps...
-    st <- from_redis_hash(con, keys$tasks_status, task_id,
+    st <- from_redis_hash(con, keys$tasks_status, task_ids,
                           missing=TASK_MISSING)
     if (any(st == "RUNNING")) {
       stop("Can't delete running tasks")
     }
   }
-  con$HDEL(keys$tasks_expr,     task_id)
-  con$HDEL(keys$tasks_status,   task_id)
-  con$HDEL(keys$tasks_result,   task_id)
-  con$HDEL(keys$tasks_complete, task_id)
-  con$HDEL(keys$tasks_worker,   task_id)
+  con$HDEL(keys$tasks_expr,     task_ids)
+  con$HDEL(keys$tasks_status,   task_ids)
+  con$HDEL(keys$tasks_result,   task_ids)
+  con$HDEL(keys$tasks_complete, task_ids)
+  con$HDEL(keys$tasks_worker,   task_ids)
 }
 
 task_submit_n <- function(con, keys, dat, key_complete) {
@@ -219,8 +221,10 @@ task_results <- function(con, keys, task_ids) {
 ## once (including copying locals around), then go through and queue
 ## the prepared expressions.  This is a good approach to use in queuer
 ## too.  The workers will do a reasonable job of not reloading locals.
-rrq_lapply <- function(con, keys, X, FUN, ..., envir, queue_envir,
+rrq_lapply <- function(obj, X, FUN, ..., envir, queue_envir,
                        timeout=Inf, time_poll=NULL, progress_bar=TRUE) {
+  con <- obj$con
+  keys <- obj$keys
   XX <- as.list(X)
   n <- length(XX)
   DOTS <- lapply(lazyeval::lazy_dots(...), "[[", "expr")
@@ -228,7 +232,7 @@ rrq_lapply <- function(con, keys, X, FUN, ..., envir, queue_envir,
 
   fun <- queuer::find_fun_queue(FUN, envir, queue_envir)
   template <- as.call(c(list(fun), list(NULL), DOTS))
-  dat <- prepare_expression(template, self$envir, self$db)
+  dat <- prepare_expression(template, obj$envir, obj$db)
   f <- function(x) {
     dat$expr[[2L]] <- x
     object_to_bin(dat)
@@ -332,14 +336,11 @@ collect_wait_n_poll <- function(con, keys, task_ids, timeout, time_poll,
   res
 }
 
-collect_n <- function(con, keys, task_id, delete) {
+collect_n <- function(con, keys, task_id) {
   status <- tasks_status(con, keys, task_id)
   ok <- status == TASK_COMPLETE | status == TASK_ERROR
   if (all(ok)) {
     res <- task_results(con, keys, task_id)
-    if (delete) {
-      self$task_delete(task_id, FALSE)
-    }
   } else {
     stop(sprintf("tasks %s is unfetchable: %s",
                  paste(task_id[ok], collapse=", "),

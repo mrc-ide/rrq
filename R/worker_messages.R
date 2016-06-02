@@ -24,7 +24,7 @@ run_message_STOP <- function(worker, message_id, args) {
 run_message_INFO <- function(worker) {
   info <- worker$print_info()
   worker$con$HSET(worker$keys$workers_info, worker$name,
-                  object_to_string(info))
+                  object_to_bin(info))
   info
 }
 

@@ -88,3 +88,7 @@ dir_create <- function(paths) {
     dir.create(p, FALSE, TRUE)
   }
 }
+
+is_directory <- function(path) {
+  file.exists(path) && file.info(path, extra_cols=FALSE)[["isdir"]]
+}

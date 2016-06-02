@@ -30,7 +30,7 @@ scan_expire <- function(con, pattern, seconds) {
   n <- 0L
   expire <- function(keys) {
     if (length(keys) > 0L) {
-      n <<- n + sum(viapply(keys, con$EXPIRE, delete) > 0)
+      n <<- n + sum(viapply(keys, con$EXPIRE, seconds) > 0)
     }
   }
   redux::scan_apply(con, expire, pattern)

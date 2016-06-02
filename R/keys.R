@@ -50,19 +50,3 @@ rrq_key_task_complete <- function(queue) {
 rrq_key_worker_alive <- function(queue) {
   sprintf("rrq:%s:workers:alive:%s", queue, ids::random_id())
 }
-
-parse_worker_log <- function(log) {
-  re <- "^([0-9]+) ([^ ]+) ?(.*)$"
-  ok <- grepl(re, log)
-  if (!all(ok)) {
-    stop("Corrupt log")
-  }
-  time <- as.integer(sub(re, "\\1", log))
-  command <- sub(re, "\\2", log)
-  message <- lstrip(sub(re, "\\3", log))
-  data.frame(time, command, message, stringsAsFactors=FALSE)
-}
-
-task_object_prefix <- function(task_id) {
-  sprintf(".%s:", task_id)
-}

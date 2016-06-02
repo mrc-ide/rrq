@@ -4,3 +4,7 @@
 ^README.Rmd$
 ^.travis.yml$
 ^appveyor.yml$
+^notes\.md$
+^rrq_.*\.tar\.gz$
+^ignore$
+^tests/testthat/contexts$
