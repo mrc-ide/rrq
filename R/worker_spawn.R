@@ -11,10 +11,8 @@
 ##'
 ##' @title Spawn a worker
 ##' @inheritParams rrq_controller
-##' @param logfile Name of a log file to write to (consider
-##'   \code{tempfile()}).  If \code{n} > 1, then \code{n} log files
-##'   must be provided.
 ##' @param n Number of workers to spawn
+##' @param logdir Path of a log directory to write to.
 ##' @param timeout Time to wait for the worker to appear
 ##' @param time_poll Period to poll for the worker (must be in
 ##'   seconds)
@@ -27,15 +25,29 @@
 ##'   working directory (not the worker working directory); use
 ##'   \code{\link{normalizePath}} to convert into an absolute path
 ##'   name to prevent this.
+##'
+##' @param worker_name_base Optional base to construct the worker
+##'   names from.  If omitted a random name will be used.
+##'
 ##' @export
-worker_spawn <- function(context, con, logfile, n=1, timeout=20, time_poll=1,
-                         path=".") {
+worker_spawn <- function(context, con, n=1, logdir=".", timeout=20, time_poll=1,
+                         path=".", worker_name_base=NULL) {
   rrq_worker <- system.file("rrq_worker", package="rrq")
   env <- paste0("RLIBS=", paste(.libPaths(), collapse=":"),
                 'R_TESTS=""')
 
+  worker_names <- sprintf(
+    "%s_%d", worker_name_base %||% ids::adjective_animal(), seq_len(n))
+
+  if (!file.exists(logdir)) {
+    dir.create(logdir, FALSE, TRUE)
+  } else if (!file.info(logdir)$isdir) {
+    stop("logdir exists but is not a directory")
+  }
+  logdir <- normalizePath(logdir, mustWork=TRUE)
+  logfile <- file.path(logdir, paste0(worker_names, ".log"))
+
   assert_integer_like(time_poll)
-  assert_length(logfile, n)
 
   key_alive <- rrq_key_worker_alive(context$id)
 
@@ -45,13 +57,11 @@ worker_spawn <- function(context, con, logfile, n=1, timeout=20, time_poll=1,
             "--redis-port", con$config()$port,
             "--key-alive", key_alive)
 
-  dir_create(dirname(logfile))
-  logfile <- file.path(normalizePath(dirname(logfile)), basename(logfile))
-
   code <- integer(n)
   with_wd(path, {
     for (i in seq_len(n)) {
-      code[[i]] <- system2(rrq_worker, args,
+      code[[i]] <- system2(rrq_worker,
+                           c(args, "--worker-name", worker_names[[i]]),
                            env=env, wait=FALSE,
                            stdout=logfile[[i]], stderr=logfile[[i]])
     }

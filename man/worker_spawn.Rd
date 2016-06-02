@@ -4,19 +4,17 @@
 \alias{worker_spawn}
 \title{Spawn a worker}
 \usage{
-worker_spawn(context, con, logfile, n = 1, timeout = 20, time_poll = 1,
-  path = ".")
+worker_spawn(context, con, n = 1, logdir = ".", timeout = 20,
+  time_poll = 1, path = ".", worker_name_base = NULL)
 }
 \arguments{
 \item{context}{A context handle object.  The context needs to be loaded.}
 
 \item{con}{A redis connection (redux object).}
 
-\item{logfile}{Name of a log file to write to (consider
-\code{tempfile()}).  If \code{n} > 1, then \code{n} log files
-must be provided.}
-
 \item{n}{Number of workers to spawn}
+
+\item{logdir}{Path of a log directory to write to.}
 
 \item{timeout}{Time to wait for the worker to appear}
 
@@ -32,6 +30,9 @@ workers will start in the same working directory.  The
 working directory (not the worker working directory); use
 \code{\link{normalizePath}} to convert into an absolute path
 name to prevent this.}
+
+\item{worker_name_base}{Optional base to construct the worker
+names from.  If omitted a random name will be used.}
 }
 \description{
 Spawn a worker in the background

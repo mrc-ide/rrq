@@ -3,3 +3,5 @@
 .RData
 tests/testthat/contexts
 tests/testthat/*.log
+tests/testthat/logs
+rrq_*.tar.gz

@@ -7,6 +7,7 @@ rrq_worker_main <- function(args=commandArgs(TRUE)) {
   --redis-host=IP      Redis host [default: 127.0.0.1]
   --redis-port=PORT    Redis port [default: 6379]
   --key-alive=KEY      Key to write to after worker comes alive
+  --worker-name=NAME   Optional name to use for the worker
 ' -> doc
 
   args <- docopt::docopt(doc, args)
@@ -27,5 +28,5 @@ rrq_worker_main <- function(args=commandArgs(TRUE)) {
   }
   context <- context::context_handle(context_root, context_id)
   con <- redux::hiredis(host=args[["redis-host"]], port=args[["redis-port"]])
-  rrq_worker(context, con, args[["key-alive"]])
+  rrq_worker(context, con, args[["key-alive"]], args[["worker-name"]])
 }

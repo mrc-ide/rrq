@@ -4,7 +4,7 @@
 \alias{rrq_worker}
 \title{rrq queue worker}
 \usage{
-rrq_worker(context, con, key_alive = NULL)
+rrq_worker(context, con, key_alive = NULL, worker_name = NULL)
 }
 \arguments{
 \item{context}{A context handle object.  The context needs to be loaded.}
@@ -13,6 +13,9 @@ rrq_worker(context, con, key_alive = NULL)
 
 \item{key_alive}{Optional key that will be written once the
 worker is alive.}
+
+\item{worker_name}{Optional worker name.  If omitted, a random
+name will be created.}
 }
 \description{
 A rrq queue worker.  These are not for interacting with but will

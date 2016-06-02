@@ -15,9 +15,12 @@ WORKER_POLL_PERIOD <- 30 # seconds, make it short for debugging!
 ##' @param key_alive Optional key that will be written once the
 ##'   worker is alive.
 ##'
+##' @param worker_name Optional worker name.  If omitted, a random
+##'   name will be created.
+##'
 ##' @export
-rrq_worker <- function(context, con, key_alive=NULL) {
-  .R6_rrq_worker$new(context, con, key_alive)
+rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL) {
+  .R6_rrq_worker$new(context, con, key_alive, worker_name)
   invisible()
 }
 
@@ -32,13 +35,13 @@ rrq_worker <- function(context, con, key_alive=NULL) {
     db=NULL,
     paused=FALSE,
 
-    initialize=function(context, con, key_alive) {
+    initialize=function(context, con, key_alive, worker_name) {
       self$context <- context
       self$con <- con
 
       self$db <- context::context_db(context)
 
-      self$name <- sprintf("%s::%d", hostname(), process_id())
+      self$name <- worker_name %||% ids::random_id()
       self$keys <- rrq_keys(context$id, self$name)
 
       self$load_context()

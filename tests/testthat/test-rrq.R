@@ -24,7 +24,6 @@ test_that("basic use", {
   obj <- rrq_controller(context, redux::hiredis())
 
   ## This needs to send output to a file and not to stdout!
-  logfile <- "worker.log"
   wid <- worker_spawn(obj$context, obj$con, logfile)
   on.exit(test_queue_clean(obj$context$id))
 
@@ -43,10 +42,10 @@ test_that("bulk", {
   n_workers <- 5
   x <- runif(n_workers * 2)
 
-  ## ## This needs to send output to a file and not to stdout!
-  logfile <- sprintf("worker_%d.log", seq_len(n_workers))
-  wid <- worker_spawn(obj$context, obj$con, logfile, n=n_workers)
+  wid <- worker_spawn(obj$context, obj$con, n_workers, "logs")
   on.exit(test_queue_clean(obj$context$id))
+  expect_true(all(file.exists(file.path("logs", paste0(wid, ".log")))))
+
   res <- obj$lapply(x, quote(slowdouble), progress_bar=FALSE)
 
   expect_equal(res, as.list(x * 2))
@@ -56,4 +55,17 @@ test_that("bulk", {
 
   expect_equal(redux::scan_find(obj$con, sprintf("rrq:%s*", context$id)),
                character(0))
+})
+
+test_that("worker name", {
+  root <- tempfile()
+  context <- context::context_save(root, sources="myfuns.R")
+  obj <- rrq_controller(context, redux::hiredis())
+
+  name <- ids::random_id()
+  wid <- worker_spawn(obj$context, obj$con,
+                      logdir="logs", worker_name_base=name)
+  on.exit(test_queue_clean(obj$context$id))
+  expect_equal(wid, paste(name, "_1"))
+  expect_true(file.exists(file.path("logs", paste0(name, "_1.log"))))
 })

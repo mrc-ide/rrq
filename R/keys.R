@@ -51,15 +51,6 @@ rrq_key_worker_alive <- function(queue) {
   sprintf("rrq:%s:workers:alive:%s", queue, ids::random_id())
 }
 
-parse_worker_name <- function(str) {
-  res <- strsplit(str, "::", fixed=TRUE)
-  if (any(viapply(res, length) != 2)) {
-    stop("parse error")
-  }
-  list(host=vcapply(res, "[[", 1),
-       pid=vcapply(res, "[[", 2))
-}
-
 parse_worker_log <- function(log) {
   re <- "^([0-9]+) ([^ ]+) ?(.*)$"
   ok <- grepl(re, log)
