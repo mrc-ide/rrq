@@ -19,8 +19,8 @@ vlapply <- function(X, FUN, ...) {
 }
 
 ## TODO: After requiring 3.3.0, this can be dropped.
-strrep <- function(str, n) {
-  paste(rep(str, n), collapse="")
+strrep <- function(x, times) {
+  paste(rep(x, times), collapse="")
 }
 
 blank <- function(n) {
