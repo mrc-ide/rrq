@@ -46,6 +46,16 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
       self$db <- context::context_db(context)
     },
 
+    destroy=function(delete=TRUE, type="message") {
+      rrq_clean(self$con, self$context$id, delete, type)
+      ## render the controller useless:
+      self$context <- NULL
+      self$con <- NULL
+      self$keys <- NULL
+      self$envir <- NULL
+      self$db <- NULL
+    },
+
     ## This is like a very stripped down version of queuer's
     ## interface.  I'll deal with locals a bit differently, but
     ## basically not fire them through context in order to save some

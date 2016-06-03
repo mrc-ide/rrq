@@ -23,10 +23,10 @@ test_that("basic use", {
   root <- tempfile()
   context <- context::context_save(root, sources="myfuns.R")
   obj <- rrq_controller(context, redux::hiredis())
+  on.exit(obj$destroy())
 
   ## This needs to send output to a file and not to stdout!
   wid <- worker_spawn(obj$context, obj$con)
-  on.exit(test_queue_clean(obj$context$id))
 
   t <- obj$enqueue(slowdouble(0.1))
   expect_is(t, "character")
@@ -40,22 +40,23 @@ test_that("bulk", {
   context <- context::context_save(root, sources="myfuns.R")
   env <- context::context_load(context, FALSE)
   obj <- rrq_controller(context, redux::hiredis(), env)
+  on.exit(obj$destroy())
 
   n_workers <- 5
   x <- runif(n_workers * 2)
 
   wid <- worker_spawn(obj$context, obj$con, n_workers, "logs")
-  on.exit(test_queue_clean(obj$context$id))
   expect_true(all(file.exists(file.path("logs", paste0(wid, ".log")))))
 
   res <- obj$lapply(x, quote(slowdouble), progress_bar=FALSE)
 
   expect_equal(res, as.list(x * 2))
 
-  test_queue_clean(obj$context$id)
+  con <- obj$con # save a copy
+  obj$destroy()
   on.exit()
 
-  expect_equal(redux::scan_find(obj$con, sprintf("rrq:%s*", context$id)),
+  expect_equal(redux::scan_find(con, sprintf("rrq:%s*", context$id)),
                character(0))
 })
 
