@@ -159,6 +159,9 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
     },
     workers_list=function() {
       workers_list(self$con, self$keys)
+    },
+    workers_info=function(worker_ids=NULL) {
+      workers_info(self$con, self$keys, worker_ids)
     }
 
     ## But the most common thing is going to be to run a bunch of jobs
