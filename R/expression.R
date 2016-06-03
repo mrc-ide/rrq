@@ -5,7 +5,7 @@
 ##
 ## So we'll register "groups" and schedule prefix deletion once the
 ## group is done.  But for now, don't do any of that.
-prepare_expression <- function(expr, envir, db) {
+prepare_expression <- function(expr, envir, db, hash=NULL) {
   fun <- expr[[1]]
   args <- expr[-1]
 
@@ -33,6 +33,9 @@ prepare_expression <- function(expr, envir, db) {
 
   ret <- list(expr=expr)
 
+  if (!is.null(hash)) {
+    ret$hash <- hash
+  }
   if (length(symbols) > 0L) {
     local <- exists(symbols, envir, inherits=FALSE)
     if (any(!local)) {
@@ -66,6 +69,13 @@ prepare_expression <- function(expr, envir, db) {
 }
 
 restore_expression <- function(dat, envir, db) {
+  if (!is.null(dat$hash)) {
+    fun_value <- db$get(dat$hash, "rrq_functions")
+    ## TODO: remote possibility of collision here.  Could also rewrite
+    ## the expression to substitute in the function as:
+    ##   dat$expr[[1]] <- fun_value
+    assign(dat$hash, fun_value, envir)
+  }
   if (!is.null(dat$objects)) {
     db$export(envir, dat$objects, "objects")
   }

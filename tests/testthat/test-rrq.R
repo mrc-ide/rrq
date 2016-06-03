@@ -65,11 +65,42 @@ test_that("worker name", {
   root <- tempfile()
   context <- context::context_save(root, sources="myfuns.R")
   obj <- rrq_controller(context, redux::hiredis())
+  on.exit(obj$destroy())
 
   name <- ids::random_id()
   wid <- worker_spawn(obj$context, obj$con,
                       logdir="logs", worker_name_base=name)
-  on.exit(test_queue_clean(obj$context$id))
   expect_equal(wid, paste0(name, "_1"))
   expect_true(file.exists(file.path("logs", paste0(name, "_1.log"))))
+})
+
+## TODO: in rrqueue, we can register the cluster, and pick up the
+## context automatically from environment variables.  Then provide a
+## rrq_controller() function that takes no args as a place to start
+## from.  That will work pretty well I think.
+test_that("exotic functions", {
+  Sys.setenv(R_TESTS="")
+  root <- tempfile()
+  context <- context::context_save(root, sources="myfuns.R")
+  obj <- rrq_controller(context, redux::hiredis())
+  on.exit(obj$destroy())
+
+  wid <- worker_spawn(context, obj$con, logdir="logs")
+
+  x <- 1:3
+  res <- obj$lapply(x, quote(f1), progress_bar=FALSE)
+  expect_equal(res, lapply(x, f1))
+
+  res <- local({
+    f_local <- function(x) {
+      x + 2
+    }
+    obj$lapply(x, quote(f_local), progress_bar=FALSE)
+  })
+  expect_equal(res, as.list(x + 2))
+
+  res <- local({
+    obj$lapply(x, function(x) x + 3, progress_bar=FALSE)
+  })
+  expect_equal(res, as.list(x + 3))
 })

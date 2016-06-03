@@ -131,7 +131,6 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
       as.character(self$con$LRANGE(self$keys$tasks_queue, 0, -1))
     },
 
-
     lapply=function(X, FUN, ..., envir=parent.frame(),
                     timeout=Inf, time_poll=1, progress_bar=TRUE) {
       rrq_lapply(self, X, FUN, ...,
@@ -235,14 +234,25 @@ rrq_lapply <- function(obj, X, FUN, ..., envir, queue_envir,
                        timeout=Inf, time_poll=NULL, progress_bar=TRUE) {
   con <- obj$con
   keys <- obj$keys
+  db <- obj$db
   XX <- as.list(X)
   n <- length(XX)
   DOTS <- lapply(lazyeval::lazy_dots(...), "[[", "expr")
-  key_complete <- ids::random_id()
+  key_complete <- rrq_key_task_complete(keys$queue_name)
 
-  fun <- queuer::find_fun_queue(FUN, envir, queue_envir)
+  fun_dat <- queuer::match_fun_queue(FUN, envir, queue_envir)
+
+  if (is.null(fun_dat$name_symbol)) {
+    hash <- db$set_by_value(fun_dat$value, "rrq_functions")
+    on.exit(db$del(hash, "rrq_functions"))
+    fun <- as.name(hash)
+  } else {
+    fun <- fun_dat$name_symbol
+    hash <- NULL
+  }
+
   template <- as.call(c(list(fun), list(NULL), DOTS))
-  dat <- prepare_expression(template, obj$envir, obj$db)
+  dat <- prepare_expression(template, obj$envir, db, hash)
   f <- function(x) {
     dat$expr[[2L]] <- x
     object_to_bin(dat)
@@ -255,6 +265,9 @@ rrq_lapply <- function(obj, X, FUN, ..., envir, queue_envir,
   ret <- collect_wait_n(con, keys, task_ids, key_complete,
                         timeout=timeout, time_poll=time_poll,
                         progress_bar=progress_bar)
+
+  tasks_delete(con, keys, task_ids, FALSE)
+
   setNames(ret, names(X))
 }
 
@@ -266,35 +279,37 @@ rrq_lapply <- function(obj, X, FUN, ..., envir, queue_envir,
 collect_wait_n <- function(con, keys, task_ids, key_complete,
                            timeout=Inf, time_poll=NULL, progress_bar=TRUE) {
   time_poll <- time_poll %||% 1
+  assert_integer_like(time_poll)
+
   status <- from_redis_hash(con, keys$tasks_status, task_ids)
   done <- status == TASK_COMPLETE | status == TASK_ERROR
   res <- setNames(vector("list", length(task_ids)), task_ids)
   if (any(done)) {
     res[done] <- task_results(con, keys, task_ids[done])
   }
-
-  times_up <- time_checker(timeout)
-  p <- progress(length(task_ids), show=progress_bar)
-  assert_integer_like(time_poll)
-
-  ## Or poll:
-  while (!all(done)) {
-    if (times_up()) {
-      if (progress_bar) {
-        message()
+  if (all(done)) {
+    con$DEL(key_complete)
+  } else {
+    times_up <- time_checker(timeout)
+    p <- progress(length(task_ids), show=progress_bar)
+    while (!all(done)) {
+      if (times_up()) {
+        if (progress_bar) {
+          message()
+        }
+        stop(sprintf("Exceeded maximum time (%d / %d tasks pending)",
+                     sum(!done), length(task_ids)))
       }
-      stop(sprintf("Exceeded maximum time (%d / %d tasks pending)",
-                   sum(!done), length(task_ids)))
-    }
-    tmp <- con$BLPOP(key_complete, time_poll)
-    if (is.null(tmp)) {
-      p(0)
-    } else {
-      p(1)
-      id <- tmp[[2L]]
-      if (!done[[id]]) {
-        res[id] <- task_results(con, keys, id)
-        done[[id]] <- TRUE
+      tmp <- con$BLPOP(key_complete, time_poll)
+      if (is.null(tmp)) {
+        p(0)
+      } else {
+        p(1)
+        id <- tmp[[2L]]
+        if (!done[[id]]) {
+          res[id] <- task_results(con, keys, id)
+          done[[id]] <- TRUE
+        }
       }
     }
   }
