@@ -373,3 +373,21 @@ collect_n <- function(con, keys, task_id) {
   }
   res
 }
+
+##' Try and get an \code{rrq_controller} object
+##' @title Try and get an rrq controller
+##' @param x An object
+##' @param ... Arguments passed through to methods
+##' @export
+get_rrq_controller <- function(x, ...) {
+  UseMethod("get_rrq_controller")
+}
+
+##' @export
+get_rrq_controller.NULL <- function(x, ...) {
+  con <- redux::hiredis(host=Sys_getenv("REDIS_HOST"))
+  ctx <- context::context_handle(Sys_getenv("CONTEXT_ROOT"),
+                                 Sys_getenv("CONTEXT_ID"))
+  envir <- .GlobalEnv
+  rrq_controller(ctx, con, envir)
+}
