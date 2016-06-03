@@ -2,6 +2,7 @@
 
 S3method(print,worker_info)
 export(rrq_controller)
+export(rrq_key_worker_alive)
 export(rrq_worker)
 export(workers_spawn)
 export(workers_wait)
