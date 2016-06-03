@@ -30,8 +30,9 @@
 ##'   names from.  If omitted a random name will be used.
 ##'
 ##' @export
-worker_spawn <- function(context, con, n=1, logdir=".", timeout=20, time_poll=1,
-                         path=".", worker_name_base=NULL) {
+workers_spawn <- function(context, con, n=1, logdir=".",
+                          timeout=20, time_poll=1,
+                          path=".", worker_name_base=NULL) {
   rrq_worker <- system.file("rrq_worker", package="rrq")
   env <- paste0("RLIBS=", paste(.libPaths(), collapse=":"),
                 'R_TESTS=""')
@@ -70,6 +71,12 @@ worker_spawn <- function(context, con, n=1, logdir=".", timeout=20, time_poll=1,
     warning("Error launching script: worker *probably* does not exist")
   }
 
+  workers_wait(con, n, key_alive, timeout, time_poll)
+}
+
+##' @export
+##' @rdname workers_spawn
+workers_wait <- function(con, n, key_alive, timeout, time_poll) {
   ret <- rep.int(NA_character_, n)
   t0 <- Sys.time()
   timeout <- as.difftime(timeout, units="secs")

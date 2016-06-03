@@ -80,7 +80,7 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL) {
       self$log("ALIVE")
 
       ## This announces that we're up; things may monitor this
-      ## queue, and worker_spawn does a BLPOP to
+      ## queue, and workers_spawn does a BLPOP to
       if (!is.null(key_alive)) {
         self$con$RPUSH(key_alive, self$name)
       }

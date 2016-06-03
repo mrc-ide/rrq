@@ -26,7 +26,7 @@ test_that("basic use", {
   on.exit(obj$destroy())
 
   ## This needs to send output to a file and not to stdout!
-  wid <- worker_spawn(obj$context, obj$con)
+  wid <- workers_spawn(obj$context, obj$con)
 
   t <- obj$enqueue(slowdouble(0.1))
   expect_is(t, "character")
@@ -45,7 +45,7 @@ test_that("bulk", {
   n_workers <- 5
   x <- runif(n_workers * 2)
 
-  wid <- worker_spawn(obj$context, obj$con, n_workers, "logs")
+  wid <- workers_spawn(obj$context, obj$con, n_workers, "logs")
   expect_true(all(file.exists(file.path("logs", paste0(wid, ".log")))))
 
   res <- obj$lapply(x, quote(slowdouble), progress_bar=FALSE)
@@ -68,7 +68,7 @@ test_that("worker name", {
   on.exit(obj$destroy())
 
   name <- ids::random_id()
-  wid <- worker_spawn(obj$context, obj$con,
+  wid <- workers_spawn(obj$context, obj$con,
                       logdir="logs", worker_name_base=name)
   expect_equal(wid, paste0(name, "_1"))
   expect_true(file.exists(file.path("logs", paste0(name, "_1.log"))))
@@ -85,7 +85,7 @@ test_that("exotic functions", {
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
-  wid <- worker_spawn(context, obj$con, logdir="logs")
+  wid <- workers_spawn(context, obj$con, logdir="logs")
 
   x <- 1:3
   res <- obj$lapply(x, quote(f1), progress_bar=FALSE)
