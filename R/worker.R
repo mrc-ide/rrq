@@ -5,7 +5,7 @@ WORKER_EXITED <- "EXITED"
 WORKER_LOST <- "LOST"
 WORKER_PAUSED <- "PAUSED"
 
-WORKER_POLL_PERIOD <- 30 # seconds, make it short for debugging!
+WORKER_POLL_PERIOD <- 60 # seconds, make it short for debugging!
 
 ##' A rrq queue worker.  These are not for interacting with but will
 ##' sit and poll a queue for jobs.
