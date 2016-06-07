@@ -92,6 +92,10 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
     tasks_status=function(task_ids=NULL) {
       tasks_status(self$con, self$keys, task_ids)
     },
+    task_status=function(task_id) {
+      assert_scalar(task_id)
+      self$tasks_status(task_id)[[1L]]
+    },
 
     ## One result, as the object
     task_result=function(task_id) {
