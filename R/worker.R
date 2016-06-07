@@ -125,7 +125,7 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
       time_poll <- self$time_poll
 
       catch_worker_stop <- function(e) {
-        self$shutdown("OK")
+        self$shutdown(sprintf("OK (%s)", e$message))
         continue <<- FALSE
       }
       catch_worker_error <- function(e) {
