@@ -36,12 +36,11 @@ run_message_REFRESH <- function(worker) {
   "OK"
 }
 
-run_message_PAUSE <- function(worker, args) {
+run_message_PAUSE <- function(worker) {
   if (worker$paused) {
     "NOOP"
   } else {
     worker$paused <- TRUE
-    worker$set_key_queue(clear=TRUE)
     worker$con$HSET(worker$keys$workers_status, worker$name, WORKER_PAUSED)
     "OK"
   }
@@ -50,7 +49,6 @@ run_message_PAUSE <- function(worker, args) {
 run_message_RESUME <- function(worker, args) {
   if (worker$paused) {
     worker$paused <- FALSE
-    worker$set_key_queue()
     worker$con$HSET(worker$keys$workers_status, worker$name, WORKER_IDLE)
     "OK"
   } else {

@@ -166,6 +166,8 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
       ids <- as.character(self$con$HKEYS(response_keys))
       ids[order(as.numeric(ids))]
     },
+
+    ## Query workers:
     workers_list=function() {
       workers_list(self$con, self$keys)
     },
@@ -174,6 +176,12 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
     },
     workers_info=function(worker_ids=NULL) {
       workers_info(self$con, self$keys, worker_ids)
+    },
+    workers_status=function(worker_ids=NULL) {
+      workers_status(self$con, self$keys, worker_ids)
+    },
+    workers_log_tail=function(worker_ids=NULL, n=1) {
+      workers_log_tail(self$con, self$keys, worker_ids, n)
     }
 
     ## But the most common thing is going to be to run a bunch of jobs

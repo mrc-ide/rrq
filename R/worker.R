@@ -138,7 +138,8 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
 
       while (continue) {
         tryCatch({
-          task <- con$BLPOP(listen, time_poll)
+          task <- con$BLPOP(if (self$paused) listen_message else listen,
+                            time_poll)
           if (!is.null(task)) {
             if (task[[1L]] == listen_message) {
               self$run_message(task[[2L]])
@@ -235,8 +236,8 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
                     EVAL=run_message_EVAL(args),
                     STOP=run_message_STOP(self, message_id, args), # noreturn
                     INFO=run_message_INFO(self),
-                    PAUSE=run_message_PAUSE(self, args),
-                    RESUME=run_message_RESUME(self, args),
+                    PAUSE=run_message_PAUSE(self),
+                    RESUME=run_message_RESUME(self),
                     REFRESH=run_message_REFRESH(self),
                     TIMEOUT_SET=run_message_TIMEOUT_SET(self, args),
                     TIMEOUT_GET=run_message_TIMEOUT_GET(self),
@@ -372,4 +373,42 @@ workers_list_exited <- function(con, keys) {
 
 workers_status <- function(con, keys, worker_ids=NULL) {
   from_redis_hash(con, keys$workers_status, worker_ids)
+}
+
+worker_log_tail <- function(con, keys, worker_id, n=1) {
+  ## More intuitive `n` behaviour for "print all entries"; n of Inf
+  if (identical(n, Inf)) {
+    n <- 0
+  }
+  log_key <- rrq_key_worker_log(keys$queue_name, worker_id)
+  parse_worker_log(as.character(con$LRANGE(log_key, -n, -1)))
+}
+
+workers_log_tail <- function(con, keys, worker_ids=NULL, n=1) {
+  if (is.null(worker_ids)) {
+    worker_ids <- workers_list(con, keys)
+  }
+  tmp <- lapply(worker_ids, function(i) worker_log_tail(con, keys, i, n))
+  if (length(tmp) > 0L) {
+    n <- viapply(tmp, nrow)
+    cbind(worker_id=rep(worker_ids, n), do.call("rbind", tmp, quote=TRUE))
+  } else {
+    ## NOTE: Need to keep this in sync with parse_worker_log; get some
+    ## tests in here to make sure...
+    data.frame(worker_id=worker_ids, time=character(0),
+               command=character(0), message=character(0),
+               stringsAsFactors=FALSE)
+  }
+}
+
+parse_worker_log <- function(log) {
+  re <- "^([0-9]+) ([^ ]+) ?(.*)$"
+  ok <- grepl(re, log)
+  if (!all(ok)) {
+    stop("Corrupt log")
+  }
+  time <- as.integer(sub(re, "\\1", log))
+  command <- sub(re, "\\2", log)
+  message <- lstrip(sub(re, "\\3", log))
+  data.frame(time, command, message, stringsAsFactors=FALSE)
 }

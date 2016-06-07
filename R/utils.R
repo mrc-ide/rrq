@@ -105,3 +105,10 @@ Sys_getenv <- function(x) {
   }
   ret
 }
+
+lstrip <- function(x) {
+  sub("^\\s+", "", x, perl=TRUE)
+}
+rstrip <- function(x) {
+  sub("\\s+$", "", x, perl=TRUE)
+}
