@@ -68,7 +68,7 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
     },
 
     enqueue_=function(expr, envir=parent.frame(), key_complete=NULL) {
-      dat <- prepare_expression(expr, self$envir, self$db)
+      dat <- prepare_expression(expr, envir, self$db)
       task_submit(self$con, self$keys, dat, key_complete)
     },
 
@@ -137,8 +137,7 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
 
     lapply=function(X, FUN, ..., envir=parent.frame(),
                     timeout=Inf, time_poll=1, progress_bar=TRUE) {
-      rrq_lapply(self, X, FUN, ...,
-                 envir=envir, queue_envir=self$envir,
+      rrq_lapply(self, X, FUN, ..., envir=envir,
                  timeout=timeout, time_poll=time_poll,
                  progress_bar=progress_bar)
     },
@@ -243,55 +242,6 @@ task_results <- function(con, keys, task_ids) {
     stop("Missing some results")
   }
   lapply(res, bin_to_object)
-}
-
-## NOTE: this is largely duplicated from the queuer::qlapply but
-## tweaked a bit.  I'll be rolling these together perhaps at some
-## point.
-##
-## The difference is that we go through and prepare the *template*
-## once (including copying locals around), then go through and queue
-## the prepared expressions.  This is a good approach to use in queuer
-## too.  The workers will do a reasonable job of not reloading locals.
-rrq_lapply <- function(obj, X, FUN, ..., envir, queue_envir,
-                       timeout=Inf, time_poll=NULL, progress_bar=TRUE) {
-  con <- obj$con
-  keys <- obj$keys
-  db <- obj$db
-  XX <- as.list(X)
-  n <- length(XX)
-  DOTS <- lapply(lazyeval::lazy_dots(...), "[[", "expr")
-  key_complete <- rrq_key_task_complete(keys$queue_name)
-
-  fun_dat <- queuer::match_fun_queue(FUN, envir, queue_envir)
-
-  if (is.null(fun_dat$name_symbol)) {
-    hash <- db$set_by_value(fun_dat$value, "rrq_functions")
-    on.exit(db$del(hash, "rrq_functions"))
-    fun <- as.name(hash)
-  } else {
-    fun <- fun_dat$name_symbol
-    hash <- NULL
-  }
-
-  template <- as.call(c(list(fun), list(NULL), DOTS))
-  dat <- prepare_expression(template, obj$envir, db, hash)
-  f <- function(x) {
-    dat$expr[[2L]] <- x
-    object_to_bin(dat)
-  }
-  task_ids <- task_submit_n(con, keys, lapply(XX, f), key_complete)
-
-  ## TODO: Given that this will throw and the ids will be lost
-  ## forever, it probably makes sense to try and flush the queue at
-  ## this point, or implement various error handling approaches.
-  ret <- collect_wait_n(con, keys, task_ids, key_complete,
-                        timeout=timeout, time_poll=time_poll,
-                        progress_bar=progress_bar)
-
-  tasks_delete(con, keys, task_ids, FALSE)
-
-  setNames(ret, names(X))
 }
 
 ## There are a whole bunch of collection functions here.

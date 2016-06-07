@@ -16,3 +16,9 @@ temp_context <- function(sources=NULL, ...) {
   }
   context::context_save(root, sources=sources, ...)
 }
+
+worker_command <- function(obj) {
+  bquote(rrq_worker(context::context_handle(.(root), .(id)),
+                    redux::hiredis()),
+         obj$context)
+}
