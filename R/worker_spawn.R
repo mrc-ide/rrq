@@ -32,7 +32,8 @@
 ##' @export
 workers_spawn <- function(context, con, n=1, logdir=".",
                           timeout=600, time_poll=1,
-                          path=".", worker_name_base=NULL) {
+                          path=".", worker_name_base=NULL,
+                          worker_time_poll=NULL) {
   rrq_worker <- system.file("rrq_worker", package="rrq")
   env <- paste0("RLIBS=", paste(.libPaths(), collapse=":"),
                 'R_TESTS=""')
@@ -56,7 +57,8 @@ workers_spawn <- function(context, con, n=1, logdir=".",
             "--context-id", context$id,
             "--redis-host", con$config()$host,
             "--redis-port", con$config()$port,
-            "--key-alive", key_alive)
+            "--key-alive", key_alive,
+            if (!is.null(worker_time_poll)) "--time-poll", worker_time_poll)
 
   code <- integer(n)
   with_wd(path, {

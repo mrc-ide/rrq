@@ -7,6 +7,7 @@ rrq_worker_main <- function(args=commandArgs(TRUE)) {
   --redis-host=IP      Redis host [default: 127.0.0.1]
   --redis-port=PORT    Redis port [default: 6379]
   --key-alive=KEY      Key to write to after worker comes alive
+  --time-poll=TIME     Time (in seconds) to poll queues
   --worker-name=NAME   Optional name to use for the worker
 ' -> doc
 
@@ -26,7 +27,11 @@ rrq_worker_main <- function(args=commandArgs(TRUE)) {
                    context_root, paste0("\t-", ids, collapse="\n")))
     }
   }
+  worker_name <- args[["worker-name"]]
+  time_poll <- args[["time-poll"]] %||% formals(rrq_worker)$time_poll
+
   context <- context::context_handle(context_root, context_id)
   con <- redux::hiredis(host=args[["redis-host"]], port=args[["redis-port"]])
-  rrq_worker(context, con, args[["key-alive"]], args[["worker-name"]])
+
+  rrq_worker(context, con, args[["key-alive"]], worker_name, time_poll)
 }

@@ -5,8 +5,6 @@ WORKER_EXITED <- "EXITED"
 WORKER_LOST <- "LOST"
 WORKER_PAUSED <- "PAUSED"
 
-WORKER_POLL_PERIOD <- 60 # seconds, make it short for debugging!
-
 ##' A rrq queue worker.  These are not for interacting with but will
 ##' sit and poll a queue for jobs.
 ##' @title rrq queue worker
@@ -18,9 +16,15 @@ WORKER_POLL_PERIOD <- 60 # seconds, make it short for debugging!
 ##' @param worker_name Optional worker name.  If omitted, a random
 ##'   name will be created.
 ##'
+##' @param time_poll Poll time.  Longer values here will reduce the
+##'   impact on the database but make workers less responsive to being
+##'   killed with an interrupt.  The default should be good for most
+##'   uses, but shorter values are used for debugging.
+##'
 ##' @export
-rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL) {
-  .R6_rrq_worker$new(context, con, key_alive, worker_name)
+rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
+                       time_poll=60) {
+  .R6_rrq_worker$new(context, con, key_alive, worker_name, time_poll)
   invisible()
 }
 
@@ -34,8 +38,9 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL) {
     con=NULL,
     db=NULL,
     paused=FALSE,
+    time_poll=NULL,
 
-    initialize=function(context, con, key_alive, worker_name) {
+    initialize=function(context, con, key_alive, worker_name, time_poll) {
       self$context <- context
       self$con <- con
 
@@ -43,6 +48,8 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL) {
 
       self$name <- worker_name %||% ids::random_id()
       self$keys <- rrq_keys(context$id, self$name)
+
+      self$time_poll <- time_poll
 
       self$load_context()
 
@@ -115,6 +122,7 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL) {
       continue <- TRUE
       listen_message <- keys$message
       listen <- c(listen_message, keys$tasks_queue)
+      time_poll <- self$time_poll
 
       catch_worker_stop <- function(e) {
         self$shutdown("OK")
@@ -128,7 +136,7 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL) {
 
       while (continue) {
         tryCatch({
-          task <- con$BLPOP(listen, WORKER_POLL_PERIOD)
+          task <- con$BLPOP(listen, time_poll)
           if (!is.null(task)) {
             if (task[[1]] == listen_message) {
               self$run_message(task[[2]])
@@ -264,6 +272,7 @@ worker_info <- function(worker) {
               redis_host=redis_config$host,
               redis_port=redis_config$port,
               worker=worker$name,
+              time_poll=worker$time_poll,
               context_id=worker$context$id,
               context_root=worker$context$root,
               message=worker$keys$message,

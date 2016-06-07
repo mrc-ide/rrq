@@ -4,7 +4,8 @@
 \alias{rrq_worker}
 \title{rrq queue worker}
 \usage{
-rrq_worker(context, con, key_alive = NULL, worker_name = NULL)
+rrq_worker(context, con, key_alive = NULL, worker_name = NULL,
+  time_poll = 60)
 }
 \arguments{
 \item{context}{A context handle object.  The context needs to be loaded.}
@@ -16,6 +17,11 @@ worker is alive.}
 
 \item{worker_name}{Optional worker name.  If omitted, a random
 name will be created.}
+
+\item{time_poll}{Poll time.  Longer values here will reduce the
+impact on the database but make workers less responsive to being
+killed with an interrupt.  The default should be good for most
+uses, but shorter values are used for debugging.}
 }
 \description{
 A rrq queue worker.  These are not for interacting with but will

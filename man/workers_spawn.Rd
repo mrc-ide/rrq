@@ -6,7 +6,8 @@
 \title{Spawn a worker}
 \usage{
 workers_spawn(context, con, n = 1, logdir = ".", timeout = 600,
-  time_poll = 1, path = ".", worker_name_base = NULL)
+  time_poll = 1, path = ".", worker_name_base = NULL,
+  worker_time_poll = NULL)
 
 workers_wait(con, n, key_alive, timeout = 600, time_poll = 1)
 }
