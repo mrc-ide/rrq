@@ -39,6 +39,8 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
     db=NULL,
     paused=FALSE,
     time_poll=NULL,
+    timeout=NULL,
+    timer=NULL,
 
     initialize=function(context, con, key_alive, worker_name, time_poll) {
       self$context <- context
@@ -138,10 +140,20 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
         tryCatch({
           task <- con$BLPOP(listen, time_poll)
           if (!is.null(task)) {
-            if (task[[1]] == listen_message) {
-              self$run_message(task[[2]])
-            } else { # is a task
-              self$run_task(task[[2]])
+            if (task[[1L]] == listen_message) {
+              self$run_message(task[[2L]])
+            } else {
+              self$run_task(task[[2L]])
+              self$timer <- NULL
+              next # don't check timeouts when processing tasks...
+            }
+          }
+          if (!is.null(self$timeout)) {
+            if (is.null(task) && is.null(self$timer)) {
+              self$timer <- time_checker(self$timeout, TRUE)
+            }
+            if (is.function(self$timer) && self$timer() < 0L) {
+              stop(WorkerStop(self, "TIMEOUT"))
             }
           }
         },
@@ -225,8 +237,9 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
                     INFO=run_message_INFO(self),
                     PAUSE=run_message_PAUSE(self, args),
                     RESUME=run_message_RESUME(self, args),
-                    ## RELOAD=run_message_RELOAD(self),
-                    ## FINISH=run_message_FINISH(self, args),
+                    REFRESH=run_message_REFRESH(self),
+                    TIMEOUT_SET=run_message_TIMEOUT_SET(self, args),
+                    TIMEOUT_GET=run_message_TIMEOUT_GET(self),
                     run_message_unknown(cmd, args))
 
       self$send_response(message_id, cmd, res)
@@ -244,7 +257,7 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
 
     catch_error=function(e) {
       self$shutdown("ERROR")
-      message("This is an uncaught error in rrqueue, probably a bug!")
+      message("This is an uncaught error in rrq, probably a bug!")
       stop(e)
     },
 

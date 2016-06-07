@@ -31,26 +31,53 @@ run_message_INFO <- function(worker) {
   info
 }
 
-run_message_ENVIR <- function(worker, args) {
-  if (worker$initialize_environment(args)) {
-    "ENVIR OK"
-  } else {
-    "ENVIR ERROR"
-  }
+run_message_REFRESH <- function(worker) {
+  worker$load_context()
+  "OK"
 }
 
 run_message_PAUSE <- function(worker, args) {
-  worker$paused <- TRUE
-  worker$set_key_queue(clear=TRUE)
-  worker$con$HSET(worker$keys$workers_status, worker$name, WORKER_PAUSED)
-  "OK"
+  if (worker$paused) {
+    "NOOP"
+  } else {
+    worker$paused <- TRUE
+    worker$set_key_queue(clear=TRUE)
+    worker$con$HSET(worker$keys$workers_status, worker$name, WORKER_PAUSED)
+    "OK"
+  }
 }
 
 run_message_RESUME <- function(worker, args) {
-  worker$paused <- FALSE
-  worker$set_key_queue()
-  worker$con$HSET(worker$keys$workers_status, worker$name, WORKER_IDLE)
-  "OK"
+  if (worker$paused) {
+    worker$paused <- FALSE
+    worker$set_key_queue()
+    worker$con$HSET(worker$keys$workers_status, worker$name, WORKER_IDLE)
+    "OK"
+  } else {
+    "NOOP"
+  }
+}
+
+run_message_TIMEOUT_SET <- function(worker, args) {
+  if (is.numeric(args) || is.null(args)) {
+    worker$timeout <- args
+    if (is.null(args)) {
+      worker$timer <- NULL
+    } else {
+      worker$timer <- time_checker(args, remaining=TRUE)
+    }
+    "OK"
+  } else {
+    "INVALID"
+  }
+}
+
+run_message_TIMEOUT_GET <- function(worker) {
+  if (is.null(worker$timeout)) {
+    c(timeout=Inf, remaining=Inf)
+  } else {
+    c(timeout=worker$timeout, remaining=worker$timer())
+  }
 }
 
 run_message_unknown <- function(cmd, args) {
