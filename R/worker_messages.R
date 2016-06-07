@@ -10,7 +10,10 @@ run_message_ECHO <- function(msg) {
 }
 
 run_message_EVAL <- function(args) {
-  print(try(eval(parse(text=args), .GlobalEnv)))
+  if (is.character(args)) {
+    args <- parse(text=args)
+  }
+  print(try(eval(args, .GlobalEnv)))
 }
 
 run_message_STOP <- function(worker, message_id, args) {
