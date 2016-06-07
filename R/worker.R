@@ -344,6 +344,10 @@ workers_list <- function(con, keys) {
   as.character(con$SMEMBERS(keys$workers_name))
 }
 
+workers_list_exited <- function(con, keys) {
+  setdiff(as.character(con$HKEYS(keys$workers_info)), workers_list(con, keys))
+}
+
 workers_status <- function(con, keys, worker_ids=NULL) {
   from_redis_hash(con, keys$workers_status, worker_ids)
 }

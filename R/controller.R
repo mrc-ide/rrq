@@ -165,6 +165,9 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
     workers_list=function() {
       workers_list(self$con, self$keys)
     },
+    workers_list_exited=function() {
+      workers_list_exited(self$con, self$keys)
+    },
     workers_info=function(worker_ids=NULL) {
       workers_info(self$con, self$keys, worker_ids)
     }
