@@ -184,6 +184,14 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
       workers_delete_exited(self$con, self$keys, worker_ids)
     },
 
+    ## This one is a bit unfortunately named, but should do for now.
+    ## It only works if the worker has appropriately saved logging
+    ## information.
+    worker_log=function(worker_id) {
+      assert_scalar(worker_id)
+      context::task_log(self$context, worker_id)
+    },
+
     workers_stop=function(worker_ids=NULL, type="message", wait=0) {
       workers_stop(self$con, self$keys, worker_ids, type, wait)
     }
