@@ -25,7 +25,6 @@ test_that("basic use", {
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
-  ## This needs to send output to a file and not to stdout!
   wid <- workers_spawn(obj$context, obj$con)
 
   t <- obj$enqueue(slowdouble(0.1))

@@ -182,10 +182,6 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
     workers_task_id=function(worker_ids=NULL) {
       workers_task_id(self$con, self$keys, worker_ids)
     },
-    worker_load=function(worker_id) {
-      assert_scalar(worker_id)
-      worker_load(self$con, self$keys, worker_id)
-    },
     workers_delete_exited=function(worker_ids=NULL) {
       workers_delete_exited(self$con, self$keys, worker_ids)
     },

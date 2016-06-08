@@ -416,11 +416,6 @@ workers_task_id <- function(con, keys, worker_id) {
   from_redis_hash(con, keys$workers_task, worker_id)
 }
 
-worker_load <- function(con, keys, worker_id) {
-  log <- worker_log_tail(con, keys, worker_id, 0)
-  browser()
-}
-
 workers_delete_exited <- function(con, keys, worker_ids=NULL) {
   ## This only includes things that have been processed and had task
   ## orphaning completed.
