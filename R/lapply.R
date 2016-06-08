@@ -26,7 +26,7 @@ rrq_lapply_submit <- function(obj, X, FUN, envir, ...) {
   }
 
   template <- as.call(c(list(fun), list(NULL), DOTS))
-  dat <- prepare_expression(template, envir, db, hash)
+  dat <- prepare_expression(template, envir, obj$envir, db, hash)
   f <- function(x) {
     dat$expr[[2L]] <- x
     object_to_bin(dat)

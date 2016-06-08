@@ -68,7 +68,7 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
     },
 
     enqueue_=function(expr, envir=parent.frame(), key_complete=NULL) {
-      dat <- prepare_expression(expr, envir, self$db)
+      dat <- prepare_expression(expr, envir, self$envir, self$db)
       task_submit(self$con, self$keys, dat, key_complete)
     },
 

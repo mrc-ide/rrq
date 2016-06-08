@@ -5,7 +5,7 @@
 ##
 ## So we'll register "groups" and schedule prefix deletion once the
 ## group is done.  But for now, don't do any of that.
-prepare_expression <- function(expr, envir, db, hash=NULL) {
+prepare_expression <- function(expr, envir, envir_queue, db, hash=NULL) {
   fun <- expr[[1]]
   args <- expr[-1]
 
@@ -37,19 +37,36 @@ prepare_expression <- function(expr, envir, db, hash=NULL) {
     ret$hash <- hash
   }
   if (length(symbols) > 0L) {
-    local <- exists(symbols, envir, inherits=FALSE)
+    local <- vlapply(symbols, exists, envir, inherits=FALSE)
+
     if (any(!local)) {
-      test <- symbols[!local]
-      ## TODO: Doing this *properly* requires that we know what was
-      ## created in the context.  So this is going to probably copy
-      ## too much over I think.  But distinguishing between Global
-      ## environment variables that were created when the context was
-      ## set up and from variables that have been changed is
-      ## challenging.
-      global <- exists(test, parent.env(.GlobalEnv))
-      if (any(!global)) {
-        stop("not all objects found: ",
-             paste(test[!global], collapse=", "))
+      ## TODO: This is going to be really hard to test!
+      missing <- symbols[!local]
+      ## Perhaps these are found in packages that are below the global
+      ## environment?
+      sub_global <- vlapply(missing, exists, parent.env(.GlobalEnv))
+      missing <- missing[!sub_global]
+
+      if (length(missing) > 0L) {
+        ## TODO: Doing this *properly* requires that we know what was
+        ## created in the context.  So this is going to probably copy
+        ## too much over I think.  But distinguishing between Global
+        ## environment variables that were created when the context
+        ## was set up and from variables that have been changed is
+        ## challenging.
+        ##
+        ## Because the context environment is global there's no
+        ## practical way of knowing what is going to be available on
+        ## the worker.  So we err on the side of copying too much over
+        ## here:
+       if (identical(envir_queue, .GlobalEnv)) {
+          ok <- vlapply(missing, exists, envir, inherits=TRUE)
+          local[missing[ok]] <- TRUE
+          missing <- missing[!ok]
+        }
+        if (length(missing) > 0L) {
+          stop("not all objects found: ", paste(missing[!ok], collapse=", "))
+        }
       }
     }
 
@@ -61,7 +78,7 @@ prepare_expression <- function(expr, envir, db, hash=NULL) {
     ## perspective.
     if (any(local)) {
       ret$objects <- vcapply(symbols[local], function(i)
-        db$set_by_value(get(i, envir, inherits=FALSE), namespace="objects"))
+        db$set_by_value(get(i, envir), namespace="objects"))
     }
   }
 
