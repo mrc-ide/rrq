@@ -72,17 +72,6 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
       task_submit(self$con, self$keys, dat, key_complete)
     },
 
-    collect=function(task_id) {
-      if (length(task_id) != !L) {
-        stop("Expected a scalar task_id")
-      }
-      collect_n(self$con, self$keys, task_id)[[1L]]
-    },
-
-    collect_n=function(task_id) {
-      collect_n(self$con, self$keys, task_id)
-    },
-
     ## TODO: These all need to have similar names, semantics,
     ## arguments as queuer if I will ever merge these and not go mad.
     ## Go through and check.
@@ -95,6 +84,9 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
     task_status=function(task_id) {
       assert_scalar(task_id)
       self$tasks_status(task_id)[[1L]]
+    },
+    tasks_overview=function(task_ids=NULL) {
+      tasks_overview(self$con, self$keys, task_ids)
     },
 
     ## One result, as the object
@@ -135,6 +127,8 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
       as.character(self$con$LRANGE(self$keys$tasks_queue, 0, -1))
     },
 
+    ## TODO: This might merge with some of queuer, as there's a lot of
+    ## overlap here.
     lapply=function(X, FUN, ..., envir=parent.frame(),
                     timeout=Inf, time_poll=1, progress_bar=TRUE) {
       rrq_lapply(self, X, FUN, ..., envir=envir,
@@ -167,6 +161,9 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
     },
 
     ## Query workers:
+    workers_len=function() {
+      workers_len(self$con, self$keys)
+    },
     workers_list=function() {
       workers_list(self$con, self$keys)
     },
@@ -181,6 +178,20 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
     },
     workers_log_tail=function(worker_ids=NULL, n=1) {
       workers_log_tail(self$con, self$keys, worker_ids, n)
+    },
+    workers_task_id=function(worker_ids=NULL) {
+      workers_task_id(self$con, self$keys, worker_ids)
+    },
+    worker_load=function(worker_id) {
+      assert_scalar(worker_id)
+      worker_load(self$con, self$keys, worker_id)
+    },
+    workers_delete_exited=function(worker_ids=NULL) {
+      workers_delete_exited(self$con, self$keys, worker_ids)
+    },
+
+    workers_stop=function(worker_ids=NULL, type="message", wait=0) {
+      workers_stop(self$con, self$keys, worker_ids, type, wait)
     }
 
     ## But the most common thing is going to be to run a bunch of jobs
@@ -189,8 +200,15 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
     ## evaluating them.
     ))
 
-tasks_status <- function(con, keys, task_id) {
-  from_redis_hash(con, keys$tasks_status, task_id, missing=TASK_MISSING)
+tasks_status <- function(con, keys, task_ids) {
+  from_redis_hash(con, keys$tasks_status, task_ids, missing=TASK_MISSING)
+}
+
+tasks_overview <- function(con, keys, task_ids) {
+  lvls <- c(TASK_PENDING, TASK_RUNNING, TASK_COMPLETE, TASK_ERROR)
+  status <- tasks_status(con, keys, task_ids)
+  lvls <- c(lvls, setdiff(unique(status), lvls))
+  table(factor(status, lvls))
 }
 
 task_submit <- function(con, keys, dat, key_complete) {
@@ -248,7 +266,6 @@ task_results <- function(con, keys, task_ids) {
 ##
 ## * collect_wait_n:      sits on a special key, so is quite responsive
 ## * collect_wait_n_poll: actively polls the hashes
-## * collect_n:           collects straight away, but also deletes!
 collect_wait_n <- function(con, keys, task_ids, key_complete,
                            timeout=Inf, time_poll=NULL, progress_bar=TRUE) {
   time_poll <- time_poll %||% 1
@@ -331,19 +348,6 @@ collect_wait_n_poll <- function(con, keys, task_ids, timeout, time_poll,
     }
   }
 
-  res
-}
-
-collect_n <- function(con, keys, task_id) {
-  status <- tasks_status(con, keys, task_id)
-  ok <- status == TASK_COMPLETE | status == TASK_ERROR
-  if (all(ok)) {
-    res <- task_results(con, keys, task_id)
-  } else {
-    stop(sprintf("tasks %s is unfetchable: %s",
-                 paste(task_id[ok], collapse=", "),
-                 paste(status[ok], collapse=", ")))
-  }
   res
 }
 
