@@ -275,38 +275,31 @@ collect_wait_n <- function(con, keys, task_ids, key_complete,
 
   status <- from_redis_hash(con, keys$tasks_status, task_ids)
   done <- status == TASK_COMPLETE | status == TASK_ERROR
-  res <- setNames(vector("list", length(task_ids)), task_ids)
-  if (any(done)) {
-    res[done] <- task_results(con, keys, task_ids[done])
-  }
   if (all(done)) {
     con$DEL(key_complete)
   } else {
     times_up <- time_checker(timeout)
     p <- progress(length(task_ids), show=progress_bar)
     while (!all(done)) {
-      if (times_up()) {
-        if (progress_bar) {
-          message()
-        }
-        stop(sprintf("Exceeded maximum time (%d / %d tasks pending)",
-                     sum(!done), length(task_ids)))
-      }
       tmp <- con$BLPOP(key_complete, time_poll)
       if (is.null(tmp)) {
         p(0)
+        if (times_up()) {
+          if (progress_bar) {
+            message()
+          }
+          stop(sprintf("Exceeded maximum time (%d / %d tasks pending)",
+                       sum(!done), length(task_ids)))
+        }
       } else {
         p(1)
         id <- tmp[[2L]]
-        if (!done[[id]]) {
-          res[id] <- task_results(con, keys, id)
-          done[[id]] <- TRUE
-        }
+        done[[id]] <- TRUE
       }
     }
   }
 
-  res
+  task_results(con, keys, task_ids)
 }
 
 collect_wait_n_poll <- function(con, keys, task_ids, timeout, time_poll,
@@ -314,43 +307,36 @@ collect_wait_n_poll <- function(con, keys, task_ids, timeout, time_poll,
   time_poll <- time_poll %||% 0.1
   status <- from_redis_hash(con, keys$tasks_status, task_ids)
   done <- status == TASK_COMPLETE | status == TASK_ERROR
-  res <- setNames(vector("list", length(task_ids)), task_ids)
-  if (any(done)) {
-    res[done] <- task_results(con, keys, task_ids[done])
-  }
   if (all(done)) {
-    return(res)
+    ## pass
   } else if (timeout == 0) {
     stop("Tasks not yet completed; can't be immediately returned")
-  }
+  } else {
+    times_up <- time_checker(timeout)
+    p <- progress(length(task_ids), show=progress_bar)
+    remaining <- task_ids[!done]
 
-  times_up <- time_checker(timeout)
-  p <- progress(length(task_ids), show=progress_bar)
-  remaining <- task_ids[!done]
-
-  ## Or poll:
-  while (length(remaining) > 0L) {
-    if (times_up()) {
-      if (progress_bar) {
-        message()
+    ## Or poll:
+    while (length(remaining) > 0L) {
+      ok <- viapply(remaining, con$HEXISTS, key=keys$tasks_result) == 1L
+      if (any(ok)) {
+        i <- remaining[ok]
+        p(length(i))
+        remaining <- remaining[!ok]
+      } else {
+        p(0)
+        if (times_up()) {
+          if (progress_bar) {
+            message()
+          }
+          stop(sprintf("Exceeded maximum time (%d / %d tasks pending)",
+                       length(remaining), length(task_ids)))
+        }
+        Sys.sleep(time_poll)
       }
-      stop(sprintf("Exceeded maximum time (%d / %d tasks pending)",
-                   length(remaining), length(task_ids)))
-    }
-
-    ok <- viapply(remaining, con$HEXISTS, key=keys$tasks_result) == 1L
-    if (any(ok)) {
-      i <- remaining[ok]
-      p(length(i))
-      res[i] <- task_results(con, keys, i)
-      remaining <- remaining[!ok]
-    } else {
-      p(0)
-      Sys.sleep(time_poll)
     }
   }
-
-  res
+  task_results(con, keys, task_ids)
 }
 
 ##' Try and get an \code{rrq_controller} object
