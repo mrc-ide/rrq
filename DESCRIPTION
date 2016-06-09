@@ -16,7 +16,7 @@ Imports:
     lazyeval,
     progress,
     queuer (>= 0.0.4),
-    redux (>= 0.5.0)
+    redux (>= 0.5.1)
 Suggests:
     testthat
 RoxygenNote: 5.0.1

@@ -244,13 +244,13 @@ task_submit_n <- function(con, keys, dat, key_complete) {
   n <- length(dat)
   task_ids <- ids::random_id(length(dat))
 
-  if (!is.null(key_complete)) {
-    con$HMSET(keys$tasks_complete, task_ids, rep_len(key_complete, n))
-  }
-  con$HMSET(keys$tasks_expr, task_ids, dat)
-  con$HMSET(keys$tasks_status, task_ids, rep_len(TASK_PENDING, n))
-  ## Must be last:
-  con$RPUSH(keys$queue_rrq, task_ids)
+  con$pipeline(
+    if (!is.null(key_complete)) {
+      redis$HMSET(keys$tasks_complete, task_ids, rep_len(key_complete, n))
+    },
+    redis$HMSET(keys$tasks_expr, task_ids, dat),
+    redis$HMSET(keys$tasks_status, task_ids, rep_len(TASK_PENDING, n)),
+    redis$RPUSH(keys$queue_rrq, task_ids))
 
   task_ids
 }

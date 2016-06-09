@@ -99,13 +99,12 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
       info <- object_to_bin(self$print_info())
       keys <- self$keys
 
-      redux::redis_multi(self$con, {
-        self$con$SADD(keys$workers_name,   self$name)
-        self$con$HSET(keys$workers_status, self$name, WORKER_IDLE)
-        self$con$HDEL(keys$workers_task,   self$name)
-        self$con$DEL(keys$log)
-        self$con$HSET(keys$workers_info,   self$name, info)
-      })
+      self$con$pipeline(
+        redis$SADD(keys$workers_name,   self$name),
+        redis$HSET(keys$workers_status, self$name, WORKER_IDLE),
+        redis$HDEL(keys$workers_task,   self$name),
+        redis$DEL(keys$log),
+        redis$HSET(keys$workers_info,   self$name, info))
       self$log("ALIVE")
 
       ## This announces that we're up; things may monitor this
@@ -189,10 +188,11 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
       con <- self$con
       keys <- self$keys
 
-      ## TODO: pipeline
-      con$HSET(keys$workers_status, self$name, WORKER_BUSY)
-      con$HSET(keys$workers_task,   self$name, task_id)
-      con$HSET(keys$tasks_worker,   task_id,   self$name)
+      con$pipeline(
+        redis$HSET(keys$workers_status, self$name, WORKER_BUSY),
+        redis$HSET(keys$workers_task,   self$name, task_id),
+        redis$HSET(keys$tasks_worker,   task_id,   self$name),
+        redis$HSET(keys$tasks_status,   task_id,   TASK_RUNNING))
       ## Run the task:
       if (rrq) {
         self$run_task_rrq(task_id)
@@ -209,9 +209,6 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
       dat <- con$HGET(keys$tasks_expr, task_id)
       expr <- restore_expression(bin_to_object(dat), e, self$db)
 
-      con$HSET(keys$tasks_status,   task_id,   TASK_RUNNING)
-
-      ## TODO: Consider per-task logging.
       res <- tryCatch(eval(expr, e),
                       error=WorkerTaskError)
 
@@ -255,13 +252,12 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
       ## refuse to write it to the db but instead route it through the
       ## context db.  That policy can be set by the db pretty easily
       ## actually.
-      ##
-      ## TOOD: pipeline
-      con$HSET(keys$workers_status, self$name, WORKER_IDLE)
-      con$HDEL(keys$workers_task,   self$name)
-      if (!is.null(key_complete)) {
-        con$RPUSH(key_complete, task_id)
-      }
+      con$pipeline(
+        redis$HSET(keys$workers_status, self$name, WORKER_IDLE),
+        redis$HDEL(keys$workers_task,   self$name),
+        if (!is.null(key_complete)) {
+          redis$RPUSH(key_complete, task_id)
+        })
 
       self$log(paste0("TASK_", task_status), task_id)
     },
