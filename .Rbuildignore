@@ -8,3 +8,4 @@
 ^rrq_.*\.tar\.gz$
 ^ignore$
 ^tests/testthat/contexts$
+^extra$
