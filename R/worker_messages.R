@@ -114,6 +114,11 @@ has_responses <- function(con, keys, message_id, worker_ids) {
   setNames(as.logical(res), worker_ids)
 }
 
+has_response <- function(con, keys, message_id, worker_id) {
+  assert_scalar(worker_id)
+  has_responses(con, keys, message_id, worker_id)[[1L]]
+}
+
 get_responses <- function(con, keys, message_id, worker_ids=NULL,
                           delete=FALSE, wait=0, every=0.05) {
   ## NOTE: this won't work well if the message was sent only to a
@@ -139,4 +144,16 @@ get_responses <- function(con, keys, message_id, worker_ids=NULL,
 
   names(res) <- worker_ids
   lapply(res, function(x) bin_to_object(x)$result)
+}
+
+get_response <- function(con, keys, message_id, worker_id,
+                         delete=FALSE, wait=0, every=0.05) {
+  assert_scalar(worker_id)
+  get_responses(con, keys, message_id, worker_id, delete, wait, every)[[1L]]
+}
+
+response_ids <- function(con, keys, worker_id) {
+  response_keys <- rrq_key_worker_response(keys$queue_name, worker_id)
+  ids <- as.character(con$HKEYS(response_keys))
+  ids[order(as.numeric(ids))]
 }

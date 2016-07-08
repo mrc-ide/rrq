@@ -29,6 +29,9 @@
 ##' @param worker_name_base Optional base to construct the worker
 ##'   names from.  If omitted a random name will be used.
 ##'
+##' @param worker_time_poll Interval that the worker should poll at
+##'   (not the same as \code{time_poll}.
+##'
 ##' @export
 workers_spawn <- function(context, con, n=1, logdir=".",
                           timeout=600, time_poll=1,

@@ -144,20 +144,16 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
       has_responses(self$con, self$keys, message_id, worker_ids)
     },
     has_response=function(message_id, worker_id) {
-      assert_scalar(worker_id)
-      self$has_responses(message_id, worker_id)[[1L]]
+      has_response(self$con, self$keys, message_id, worker_id)
     },
     get_responses=function(message_id, worker_ids=NULL, delete=FALSE, wait=0) {
       get_responses(self$con, self$keys, message_id, worker_ids, delete, wait)
     },
     get_response=function(message_id, worker_id, delete=FALSE, wait=0) {
-      assert_scalar(worker_id)
-      self$get_responses(message_id, worker_id, delete, wait)[[1L]]
+      get_response(self$con, self$keys, message_id, worker_id, delete, wait)
     },
     response_ids=function(worker_id) {
-      response_keys <- rrq_key_worker_response(self$context$id, worker_id)
-      ids <- as.character(self$con$HKEYS(response_keys))
-      ids[order(as.numeric(ids))]
+      response_ids(self$con, self$keys, worker_id)
     },
 
     ## Query workers:

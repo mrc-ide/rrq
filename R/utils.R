@@ -112,3 +112,19 @@ lstrip <- function(x) {
 rstrip <- function(x) {
   sub("\\s+$", "", x, perl=TRUE)
 }
+
+capture_log <- function(expr, filename, suppress_messages=FALSE) {
+  con <- file(filename, "w")
+  sink(con, split=FALSE)
+  on.exit({
+    sink(NULL)
+    close(con)
+    ## close(con2)
+  })
+  handle_message <- function(e) cat(e$message, file=stdout())
+  if (suppress_messages) {
+    suppressMessages(withCallingHandlers(expr, message=handle_message))
+  } else {
+    withCallingHandlers(expr, message=handle_message)
+  }
+}

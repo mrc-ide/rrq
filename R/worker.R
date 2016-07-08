@@ -21,10 +21,20 @@ WORKER_PAUSED <- "PAUSED"
 ##'   killed with an interrupt.  The default should be good for most
 ##'   uses, but shorter values are used for debugging.
 ##'
+##' @param standalone Logical, indicating if this is a standalone
+##'   queue (designed to be used with this package) or if it is going
+##'   to be wrap a \code{context}/\code{queuer} based queue.  The
+##'   interface here may change, and eventually automatically switch,
+##'   so be warned.
+##'
+##' @param log_path Optional log path, used for storing per-task logs,
+##'   rather than leaving them within the worker logs.
+##'
 ##' @export
 rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
-                       time_poll=60) {
-  .R6_rrq_worker$new(context, con, key_alive, worker_name, time_poll)
+                       time_poll=60, standalone=TRUE, log_path=NULL) {
+  .R6_rrq_worker$new(context, con, key_alive, worker_name, time_poll,
+                     standalone, log_path)
   invisible()
 }
 
@@ -38,11 +48,14 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
     con=NULL,
     db=NULL,
     paused=FALSE,
+    standalone=NULL,
+    log_path=NULL,
     time_poll=NULL,
     timeout=NULL,
     timer=NULL,
 
-    initialize=function(context, con, key_alive, worker_name, time_poll) {
+    initialize=function(context, con, key_alive, worker_name, time_poll,
+                        standalone, log_path) {
       self$context <- context
       self$con <- con
 
@@ -52,6 +65,10 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
       self$keys <- rrq_keys(context$id, self$name)
 
       self$time_poll <- time_poll
+
+      ## See comments in docs above; may change.
+      self$standalone <- standalone
+      self$log_path
 
       self$load_context()
 
@@ -165,28 +182,33 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
     },
 
     run_task=function(task_id) {
+      self$log("TASK_START", task_id)
+      con <- self$con
+      keys <- self$keys
+
+      ## TODO: pipeline
+      con$HSET(keys$workers_status, self$name, WORKER_BUSY)
+      con$HSET(keys$workers_task,   self$name, task_id)
+      con$HSET(keys$tasks_worker,   task_id,   self$name)
+      ## Run the task:
+      if (self$standalone) {
+        self$run_task_standalone(task_id)
+      } else {
+        self$run_task_context(task_id)
+      }
+    },
+
+    run_task_standalone=function(task_id) {
       keys <- self$keys
       con <- self$con
-      db <- self$db
+
       e <- new.env(parent=self$envir)
-
-      self$log("TASK_START", task_id)
-
-      ## TODO: I don't see how locals are going to work.  So when we
-      ## pass in a big sod-off matrix, etc.  Probably we can serialise
-      ## them into the context rather than passing them through the
-      ## db.
-      ##
       dat <- con$HGET(keys$tasks_expr, task_id)
-      expr <- restore_expression(bin_to_object(dat), e, db)
+      expr <- restore_expression(bin_to_object(dat), e, self$db)
 
-      redux::redis_multi(con, {
-        con$HSET(keys$workers_status, self$name, WORKER_BUSY)
-        con$HSET(keys$workers_task,   self$name, task_id)
-        con$HSET(keys$tasks_worker,   task_id,   self$name)
-        con$HSET(keys$tasks_status,   task_id,   TASK_RUNNING)
-      })
+      con$HSET(keys$tasks_status,   task_id,   TASK_RUNNING)
 
+      ## TODO: Consider per-task logging.
       res <- tryCatch(eval(expr, e),
                       error=WorkerTaskError)
 
@@ -196,6 +218,27 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
         task_status <- TASK_COMPLETE
       }
 
+      con$HSET(keys$tasks_result,   task_id,   object_to_bin(res))
+      con$HSET(keys$tasks_status,   task_id,   task_status)
+
+      self$task_cleanup(res, task_id, task_status)
+    },
+
+    run_task_context=function(task_id) {
+      h <- context::task_handle(self$context, task_id)
+
+      if (is.null(self$log_path)) {
+        ## TODO: Probably the correct environment to run this in is
+        ## self$envir, not .GlobalEnv, as that's appropriately set up
+        ## by the context.
+        res <- context::task_run(h)
+      } else {
+        self$db$set(task_id, self$log_path, "log_path")
+        logf <- file.path(context::context_root(self), self$log_path, task_id)
+        res <- capture_log(context::task_run(h), logf, TRUE)
+      }
+
+      task_status <- if (inherits(res, "error")) TASK_ERROR else TASK_COMPLETE
       self$task_cleanup(res, task_id, task_status)
     },
 
@@ -209,8 +252,8 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
       ## refuse to write it to the db but instead route it through the
       ## context db.  That policy can be set by the db pretty easily
       ## actually.
-      con$HSET(keys$tasks_result,   task_id,   object_to_bin(res))
-      con$HSET(keys$tasks_status,   task_id,   task_status)
+      ##
+      ## TOOD: pipeline
       con$HSET(keys$workers_status, self$name, WORKER_IDLE)
       con$HDEL(keys$workers_task,   self$name)
       if (!is.null(key_complete)) {
@@ -433,9 +476,9 @@ workers_delete_exited <- function(con, keys, worker_ids=NULL) {
     con$HDEL(keys$workers_status, worker_ids)
     con$HDEL(keys$workers_task,   worker_ids)
     con$HDEL(keys$workers_info,   worker_ids)
-    con$DEL(c(rrqueue_key_worker_log(keys$queue_name, worker_ids),
-              rrqueue_key_worker_message(keys$queue_name, worker_ids),
-              rrqueue_key_worker_response(keys$queue_name, worker_ids)))
+    con$DEL(c(rrq_key_worker_log(keys$queue_name, worker_ids),
+              rrq_key_worker_message(keys$queue_name, worker_ids),
+              rrq_key_worker_response(keys$queue_name, worker_ids)))
   }
   worker_ids
 }
