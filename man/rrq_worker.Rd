@@ -5,7 +5,7 @@
 \title{rrq queue worker}
 \usage{
 rrq_worker(context, con, key_alive = NULL, worker_name = NULL,
-  time_poll = 60, standalone = TRUE, log_path = NULL)
+  time_poll = 60, log_path = NULL)
 }
 \arguments{
 \item{context}{A context handle object.  The context needs to be loaded.}
@@ -23,14 +23,10 @@ impact on the database but make workers less responsive to being
 killed with an interrupt.  The default should be good for most
 uses, but shorter values are used for debugging.}
 
-\item{standalone}{Logical, indicating if this is a standalone
-queue (designed to be used with this package) or if it is going
-to be wrap a \code{context}/\code{queuer} based queue.  The
-interface here may change, and eventually automatically switch,
-so be warned.}
-
 \item{log_path}{Optional log path, used for storing per-task logs,
-rather than leaving them within the worker logs.}
+rather than leaving them within the worker logs.  This affects
+only the context queue and not the rrq queue, which is not
+logged.}
 }
 \description{
 A rrq queue worker.  These are not for interacting with but will

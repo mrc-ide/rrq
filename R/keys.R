@@ -18,7 +18,9 @@ rrq_keys_queue <- function(queue) {
        workers_task    = sprintf("rrq:%s:workers:task",    queue),
        workers_info    = sprintf("rrq:%s:workers:info",    queue),
 
-       tasks_queue     = sprintf("rrq:%s:tasks:id",        queue),
+       queue_rrq       = sprintf("rrq:%s:queue:rrq:id",    queue),
+       queue_ctx       = sprintf("rrq:%s:queue:ctx:id",    queue),
+
        tasks_expr      = sprintf("rrq:%s:tasks:expr",      queue),
        tasks_status    = sprintf("rrq:%s:tasks:status",    queue),
        tasks_worker    = sprintf("rrq:%s:tasks:worker",    queue),

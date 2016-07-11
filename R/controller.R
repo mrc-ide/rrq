@@ -32,6 +32,8 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
 .R6_rrq_controller <- R6::R6Class(
   "rrq_controller",
   public=list(
+    ## TODO: This should either inherit or compose with the worker
+    ## controller.
     context=NULL,
     con=NULL,
     keys=NULL,
@@ -120,11 +122,11 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
     },
 
     queue_length=function() {
-      self$con$LLEN(self$keys$tasks_queue)
+      self$con$LLEN(self$keys$queue_rrq)
     },
 
     queue_list=function() {
-      as.character(self$con$LRANGE(self$keys$tasks_queue, 0, -1))
+      as.character(self$con$LRANGE(self$keys$queue_rrq, 0, -1))
     },
 
     ## TODO: This might merge with some of queuer, as there's a lot of
@@ -240,7 +242,7 @@ task_submit_n <- function(con, keys, dat, key_complete) {
   con$HMSET(keys$tasks_expr, task_ids, dat)
   con$HMSET(keys$tasks_status, task_ids, rep_len(TASK_PENDING, n))
   ## Must be last:
-  con$RPUSH(keys$tasks_queue, task_ids)
+  con$RPUSH(keys$queue_rrq, task_ids)
 
   task_ids
 }

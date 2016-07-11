@@ -21,20 +21,16 @@ WORKER_PAUSED <- "PAUSED"
 ##'   killed with an interrupt.  The default should be good for most
 ##'   uses, but shorter values are used for debugging.
 ##'
-##' @param standalone Logical, indicating if this is a standalone
-##'   queue (designed to be used with this package) or if it is going
-##'   to be wrap a \code{context}/\code{queuer} based queue.  The
-##'   interface here may change, and eventually automatically switch,
-##'   so be warned.
-##'
 ##' @param log_path Optional log path, used for storing per-task logs,
-##'   rather than leaving them within the worker logs.
+##'   rather than leaving them within the worker logs.  This affects
+##'   only the context queue and not the rrq queue, which is not
+##'   logged.
 ##'
 ##' @export
 rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
-                       time_poll=60, standalone=TRUE, log_path=NULL) {
+                       time_poll=60, log_path=NULL) {
   .R6_rrq_worker$new(context, con, key_alive, worker_name, time_poll,
-                     standalone, log_path)
+                     log_path)
   invisible()
 }
 
@@ -48,14 +44,13 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
     con=NULL,
     db=NULL,
     paused=FALSE,
-    standalone=NULL,
     log_path=NULL,
     time_poll=NULL,
     timeout=NULL,
     timer=NULL,
 
     initialize=function(context, con, key_alive, worker_name, time_poll,
-                        standalone, log_path) {
+                        log_path) {
       self$context <- context
       self$con <- con
 
@@ -66,8 +61,6 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
 
       self$time_poll <- time_poll
 
-      ## See comments in docs above; may change.
-      self$standalone <- standalone
       self$log_path
 
       self$load_context()
@@ -140,7 +133,7 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
       keys <- self$keys
       continue <- TRUE
       listen_message <- keys$message
-      listen <- c(listen_message, keys$tasks_queue)
+      listen <- c(listen_message, keys$queue_rrq, keys$queue_ctx)
       time_poll <- self$time_poll
 
       catch_worker_stop <- function(e) {
@@ -161,7 +154,7 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
             if (task[[1L]] == listen_message) {
               self$run_message(task[[2L]])
             } else {
-              self$run_task(task[[2L]])
+              self$run_task(task[[2L]], task[[1L]] == keys$queue_rrq)
               self$timer <- NULL
               next # don't check timeouts when processing tasks...
             }
@@ -181,7 +174,7 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
       }
     },
 
-    run_task=function(task_id) {
+    run_task=function(task_id, rrq) {
       self$log("TASK_START", task_id)
       con <- self$con
       keys <- self$keys
@@ -191,14 +184,14 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
       con$HSET(keys$workers_task,   self$name, task_id)
       con$HSET(keys$tasks_worker,   task_id,   self$name)
       ## Run the task:
-      if (self$standalone) {
-        self$run_task_standalone(task_id)
+      if (rrq) {
+        self$run_task_rrq(task_id)
       } else {
         self$run_task_context(task_id)
       }
     },
 
-    run_task_standalone=function(task_id) {
+    run_task_rrq=function(task_id) {
       keys <- self$keys
       con <- self$con
 

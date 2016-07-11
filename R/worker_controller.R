@@ -23,15 +23,15 @@
     ## These ones probably aren't totally needed, but are quite nice
     ## to have:
     queue_length=function() {
-      self$con$LLEN(self$keys$tasks_queue)
+      self$con$LLEN(self$keys$queue_ctx)
     },
     queue_list=function() {
-      as.character(self$con$LRANGE(self$keys$tasks_queue, 0, -1))
+      as.character(self$con$LRANGE(self$keys$queue_ctx, 0, -1))
     },
 
     ## These ones do the actual submission
     queue_submit=function(task_ids) {
-      self$con$RPUSH(self$keys$tasks_queue, task_ids)
+      self$con$RPUSH(self$keys$queue_ctx, task_ids)
     },
     queue_unsubmit=function(task_ids) {
       ## NOTE: probable race condition, consider rename, which has bad
@@ -39,10 +39,10 @@
       ## would be to do a lua script.
       ids_queued <- self$queue_list()
       if (length(ids_queued) > 0L) {
-        self$con$DEL(self$keys$tasks_queue)
+        self$con$DEL(self$keys$queue_ctx)
         ids_keep <- setdiff(ids_queued, task_ids)
         if (length(ids_keep) > 0L) {
-          self$con$RPUSH(self$keys$tasks_queue, ids_keep)
+          self$con$RPUSH(self$keys$queue_ctx, ids_keep)
         }
       }
     },
