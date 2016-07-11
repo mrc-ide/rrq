@@ -1,21 +1,33 @@
-## In a departure from how things have been arranged so far, pushing a
-## bit harder for composition here; this is a special worker
-## controller thing that we'll compose into the main queue.
+##' Create a "worker controller" object, which can deal with
+##' coordinating rrq workers.  This is subject to change.
+##'
+##' @title Create a worker controller
+##'
+##' @param context_id A context ID; this will not be checked for
+##'   existance, and no root is needed (everything this object does
+##'   affects only the Redis database).
+##'
+##' @param con A Redis connection (optional; the default connection
+##'   will be used otherwise).
+##'
+##' @export
+worker_controller <- function(context_id, con=redux::hiredis()) {
+  .R6_worker_controller$new(context_id, con)
+}
 
 .R6_worker_controller <- R6::R6Class(
   "worker_controller",
   public=list(
     con=NULL,
     keys=NULL,
-    initialize=function(con, queue_name) {
+    initialize=function(context_id, con) {
       self$con <- con
-      self$keys <- rrq_keys(queue_name)
+      self$keys <- rrq_keys(context_id)
     },
 
     destroy=function(delete=TRUE, type="message") {
-      rrq_clean(self$con, self$context$id, delete, type)
+      rrq_clean(self$con, self$keys$context_id, delete, type)
       ## render the controller useless:
-      self$context <- NULL
       self$con <- NULL
       self$keys <- NULL
     },

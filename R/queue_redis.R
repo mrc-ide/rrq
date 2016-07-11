@@ -10,7 +10,7 @@ queue_redis <- function(context, initialise=TRUE, con=redux::hiredis()) {
     rrq=NULL,
     initialize=function(context, initialise, con) {
       super$initialize(context, initialise)
-      self$rrq <- .R6_worker_controller$new(con, context$id)
+      self$rrq <- worker_controller(context$id, con)
     },
     submit=function(task_ids, names=NULL) {
       self$rrq$queue_submit(task_ids)
