@@ -5,7 +5,7 @@
 \title{rrq queue worker}
 \usage{
 rrq_worker(context, con, key_alive = NULL, worker_name = NULL,
-  time_poll = 60, log_path = NULL)
+  time_poll = 60, log_path = NULL, timeout = NULL)
 }
 \arguments{
 \item{context}{A context handle object.  The context needs to be loaded.}
@@ -27,6 +27,11 @@ uses, but shorter values are used for debugging.}
 rather than leaving them within the worker logs.  This affects
 only the context queue and not the rrq queue, which is not
 logged.}
+
+\item{timeout}{Optional timeout to set for the worker.  This is
+(roughly) quivalent to issuing a \code{TIMEOUT_SET} message
+after initialising the worker, except that it's guaranteed to be
+run by all workers.}
 }
 \description{
 A rrq queue worker.  These are not for interacting with but will

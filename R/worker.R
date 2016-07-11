@@ -26,11 +26,16 @@ WORKER_PAUSED <- "PAUSED"
 ##'   only the context queue and not the rrq queue, which is not
 ##'   logged.
 ##'
+##' @param timeout Optional timeout to set for the worker.  This is
+##'   (roughly) quivalent to issuing a \code{TIMEOUT_SET} message
+##'   after initialising the worker, except that it's guaranteed to be
+##'   run by all workers.
+##'
 ##' @export
 rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
-                       time_poll=60, log_path=NULL) {
+                       time_poll=60, log_path=NULL, timeout=NULL) {
   .R6_rrq_worker$new(context, con, key_alive, worker_name, time_poll,
-                     log_path)
+                     log_path, timeout)
   invisible()
 }
 
@@ -50,7 +55,7 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
     timer=NULL,
 
     initialize=function(context, con, key_alive, worker_name, time_poll,
-                        log_path) {
+                        log_path, timeout) {
       self$context <- context
       self$con <- con
 
@@ -77,6 +82,11 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
 
       withCallingHandlers(self$initialise_worker(key_alive),
                           error=self$catch_error)
+
+      if (!is.null(timeout)) {
+        run_message_TIMEOUT_SET(self, timeout)
+      }
+
       self$main_loop()
       message(worker_exit_text())
     },
