@@ -30,12 +30,25 @@ rrq_worker_main <- function(args=commandArgs(TRUE)) {
     }
   }
   worker_name <- args[["worker-name"]]
-  time_poll <- args[["time-poll"]] %||% formals(rrq_worker)$time_poll
-  timeout <- args[["timeout"]]
+  time_poll <- docopt_number(args, "time_poll", formals(rrq_worker)$time_poll)
+  timeout <- docopt_number(args, "timeout")
 
   context <- context::context_handle(context_root, context_id)
   con <- redux::hiredis(host=args[["redis-host"]], port=args[["redis-port"]])
 
   rrq_worker(context, con, key_alive=args[["key-alive"]],
              worker_name=worker_name, time_poll=time_poll, timeout=timeout)
+}
+
+docopt_number <- function(args, name, default = NULL) {
+  x <- args[[name]]
+  if (is.null(x)) {
+    default
+  } else {
+    h <- function(e) {
+      stop(sprintf("while processing %s:\n\t",
+                   name, e$message), call. = FALSE)
+    }
+    withCallingHandlers(as.numeric(x), warning = h)
+  }
 }
