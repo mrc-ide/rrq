@@ -46,3 +46,28 @@ test_that("worker name", {
   expect_equal(wid, paste0(name, "_1"))
   expect_true(file.exists(file.path("logs", paste0(name, "_1.log"))))
 })
+
+test_that("worker timeout", {
+  Sys.setenv(R_TESTS="")
+  root <- tempfile()
+  context <- context::context_save(root, sources="myfuns.R")
+  obj <- rrq_controller(context, redux::hiredis())
+  on.exit(obj$destroy())
+
+  t <- as.integer(runif(1, min=100, max=10000))
+  wid <- workers_spawn(obj$context, obj$con,
+                       logdir="logs", worker_timeout=t)
+  id <- obj$send_message("TIMEOUT_GET")
+  res <- obj$get_response(id, wid, wait=10)
+  expect_equal(res[["timeout"]], t)
+  expect_lte(res[["remaining"]], t)
+  obj$send_message("STOP")
+
+  wid <- workers_spawn(obj$context, obj$con,
+                       logdir="logs", worker_timeout=Inf)
+  id <- obj$send_message("TIMEOUT_GET")
+  res <- obj$get_response(id, wid, wait=10)
+  expect_equal(res[["timeout"]], Inf)
+  expect_equal(res[["remaining"]], Inf)
+  obj$send_message("STOP")
+})

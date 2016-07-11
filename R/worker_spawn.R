@@ -30,13 +30,16 @@
 ##'   names from.  If omitted a random name will be used.
 ##'
 ##' @param worker_time_poll Interval that the worker should poll at
-##'   (not the same as \code{time_poll}.
+##'   (not the same as \code{time_poll}).
+##'
+##' @param worker_timeout Time before workers should turn off (not the
+##'   same as \code{timeout})
 ##'
 ##' @export
 workers_spawn <- function(context, con, n=1, logdir=".",
                           timeout=600, time_poll=1,
                           path=".", worker_name_base=NULL,
-                          worker_time_poll=NULL) {
+                          worker_time_poll=NULL, worker_timeout=NULL) {
   rrq_worker <- system.file("rrq_worker", package="rrq")
   env <- paste0("RLIBS=", paste(.libPaths(), collapse=":"),
                 'R_TESTS=""')
@@ -61,7 +64,8 @@ workers_spawn <- function(context, con, n=1, logdir=".",
             "--redis-host", con$config()$host,
             "--redis-port", con$config()$port,
             "--key-alive", key_alive,
-            if (!is.null(worker_time_poll)) "--time-poll", worker_time_poll)
+            if (!is.null(worker_time_poll)) "--time-poll", worker_time_poll,
+            if (!is.null(worker_timeout)) "--timeout", worker_timeout)
 
   code <- integer(n)
   with_wd(path, {
