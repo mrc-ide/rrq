@@ -13,6 +13,8 @@ rrq_keys <- function(queue_name, worker_name=NULL) {
 rrq_keys_queue <- function(queue) {
   list(queue_name      = queue,
 
+       controllers     = sprintf("rrq:%s:controllers",     queue),
+
        workers_name    = sprintf("rrq:%s:workers:name",    queue),
        workers_status  = sprintf("rrq:%s:workers:status",  queue),
        workers_task    = sprintf("rrq:%s:workers:task",    queue),

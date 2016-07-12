@@ -4,6 +4,12 @@ hostname <- function() {
 process_id <- function() {
   Sys.getpid()
 }
+username <- function() {
+  Sys.getenv("LOGNAME",
+             Sys.getenv("USER",
+                        Sys.getenv("LNAME",
+                                   Sys.getenv("USERNAME"))))
+}
 
 vcapply <- function(X, FUN, ...) {
   vapply(X, FUN, character(1), ...)

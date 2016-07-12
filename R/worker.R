@@ -320,20 +320,17 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
 worker_info <- function(worker) {
   sys <- sessionInfo()
   redis_config <- worker$con$config()
-  dat <- list(version=version_string(),
+  dat <- list(worker=worker$name,
+              rrq_version=version_string(),
               platform=sys$platform,
               running=sys$running,
               hostname=hostname(),
+              username=username(),
               pid=process_id(),
               redis_host=redis_config$host,
               redis_port=redis_config$port,
-              worker=worker$name,
-              time_poll=worker$time_poll,
               context_id=worker$context$id,
-              context_root=worker$context$root,
-              message=worker$keys$message,
-              response=worker$keys$response,
-              log=worker$keys$log)
+              context_root=worker$context$root)
   class(dat) <- "worker_info"
   dat
 }
