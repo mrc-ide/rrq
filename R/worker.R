@@ -441,7 +441,11 @@ workers_log_tail <- function(con, keys, worker_ids=NULL, n=1) {
   tmp <- lapply(worker_ids, function(i) worker_log_tail(con, keys, i, n))
   if (length(tmp) > 0L) {
     n <- viapply(tmp, nrow)
-    cbind(worker_id=rep(worker_ids, n), do.call("rbind", tmp, quote=TRUE))
+    ret <- cbind(worker_id=rep(worker_ids, n),
+                 do.call("rbind", tmp, quote=TRUE))
+    ret <- ret[order(ret$time, ret$worker_id), ]
+    rownames(ret) <- NULL
+    ret
   } else {
     ## NOTE: Need to keep this in sync with parse_worker_log; get some
     ## tests in here to make sure...
