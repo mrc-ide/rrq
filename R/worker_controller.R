@@ -26,7 +26,7 @@ worker_controller <- function(context_id, con=redux::hiredis()) {
     },
 
     destroy=function(delete=TRUE, type="message") {
-      rrq_clean(self$con, self$keys$context_id, delete, type)
+      rrq_clean(self$con, self$keys$queue_name, delete, type)
       ## render the controller useless:
       self$con <- NULL
       self$keys <- NULL
