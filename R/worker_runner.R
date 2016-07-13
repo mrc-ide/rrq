@@ -11,12 +11,14 @@ rrq_worker_main <- function(args=commandArgs(TRUE)) {
   --time-poll=TIME     Time (in seconds) to poll queues
   --worker-name=NAME   Optional name to use for the worker
   --timeout=TIME       Optional worker timeout (in seconds)
+  --log-path=PATH      Optional path for logs
 ' -> doc
 
   args <- docopt::docopt(doc, args)
 
   context_root <- args[["context-root"]]
   context_id <- args[["context-id"]]
+  context::context_log_start()
 
   if (is.null(context_id)) {
     ids <- context::contexts_list(context_root)
@@ -37,7 +39,8 @@ rrq_worker_main <- function(args=commandArgs(TRUE)) {
   con <- redux::hiredis(host=args[["redis-host"]], port=args[["redis-port"]])
 
   rrq_worker(context, con, key_alive=args[["key-alive"]],
-             worker_name=worker_name, time_poll=time_poll, timeout=timeout)
+             worker_name=worker_name, time_poll=time_poll,
+             log_path=args[["log-path"]], timeout=timeout)
 }
 
 docopt_number <- function(args, name, default = NULL) {

@@ -35,11 +35,15 @@
 ##' @param worker_timeout Time before workers should turn off (not the
 ##'   same as \code{timeout})
 ##'
+##' @param worker_log_path Per-task log directory for workers (not the
+##'   same as \code{logdir}, which is for the worker overall).
+##'
 ##' @export
 workers_spawn <- function(context, con, n=1, logdir=".",
                           timeout=600, time_poll=1,
                           path=".", worker_name_base=NULL,
-                          worker_time_poll=NULL, worker_timeout=NULL) {
+                          worker_time_poll=NULL, worker_timeout=NULL,
+                          worker_log_path=NULL) {
   rrq_worker <- system.file("rrq_worker", package="rrq")
   env <- paste0("RLIBS=", paste(.libPaths(), collapse=":"),
                 'R_TESTS=""')
@@ -55,6 +59,10 @@ workers_spawn <- function(context, con, n=1, logdir=".",
   logdir <- normalizePath(logdir, mustWork=TRUE)
   logfile <- file.path(logdir, paste0(worker_names, ".log"))
 
+  if (!is.null(worker_log_path)) {
+    dir.create(worker_log_path, FALSE, TRUE)
+  }
+
   assert_integer_like(time_poll)
 
   key_alive <- rrq_key_worker_alive(context$id)
@@ -65,7 +73,8 @@ workers_spawn <- function(context, con, n=1, logdir=".",
             "--redis-port", con$config()$port,
             "--key-alive", key_alive,
             if (!is.null(worker_time_poll)) "--time-poll", worker_time_poll,
-            if (!is.null(worker_timeout)) "--timeout", worker_timeout)
+            if (!is.null(worker_timeout)) "--timeout", worker_timeout,
+            if (!is.null(worker_log_path)) "--log-path", worker_log_path)
 
   code <- integer(n)
   with_wd(path, {

@@ -71,3 +71,31 @@ test_that("worker timeout", {
   expect_equal(res[["remaining"]], Inf)
   obj$send_message("STOP")
 })
+
+test_that("log dir", {
+  Sys.setenv(R_TESTS="")
+  root <- tempfile()
+  context <- context::context_save(root, sources="myfuns.R")
+  obj <- rrq_controller(context, redux::hiredis())
+  r <- worker_controller(context$id, redux::hiredis())
+
+  on.exit(obj$destroy())
+
+  wid <- workers_spawn(obj$context, obj$con,
+                       logdir="logs", worker_log_path="logs_worker")
+
+
+  expect_true(file.exists(file.path(root, "logs_worker")))
+
+  t <- context::task_save(quote(sin(1)), context)
+  tt <- queuer:::task(context, t$id)
+
+  r$queue_submit(t$id)
+  res <- tt$wait(10)
+
+  logf <- file.path(root, "logs_worker", t$id)
+  expect_true(file.exists(logf))
+  log <- readLines(logf)
+  expect_true(any(grepl("[ expr", log, fixed=TRUE)))
+  expect_is(tt$log(), "context_log")
+})

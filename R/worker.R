@@ -24,7 +24,9 @@ WORKER_PAUSED <- "PAUSED"
 ##' @param log_path Optional log path, used for storing per-task logs,
 ##'   rather than leaving them within the worker logs.  This affects
 ##'   only the context queue and not the rrq queue, which is not
-##'   logged.
+##'   logged.  This path will be intepreted as relative to the context
+##'   root (though perhaps later this will be sanitised to support
+##'   absolute paths...).
 ##'
 ##' @param timeout Optional timeout to set for the worker.  This is
 ##'   (roughly) quivalent to issuing a \code{TIMEOUT_SET} message
@@ -53,6 +55,7 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
     time_poll=NULL,
     timeout=NULL,
     timer=NULL,
+    root=NULL,
 
     initialize=function(context, con, key_alive, worker_name, time_poll,
                         log_path, timeout) {
@@ -66,7 +69,11 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
 
       self$time_poll <- time_poll
 
-      self$log_path
+      self$log_path <- log_path
+      self$root <- context::context_root(context)
+      if (!is.null(log_path)) {
+        dir.create(file.path(self$root, self$log_path), FALSE, TRUE)
+      }
 
       self$load_context()
 
@@ -231,11 +238,11 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
         ## TODO: Probably the correct environment to run this in is
         ## self$envir, not .GlobalEnv, as that's appropriately set up
         ## by the context.
-        res <- context::task_run(h)
+        res <- context::task_run(h, load_context=FALSE)
       } else {
         self$db$set(task_id, self$log_path, "log_path")
-        logf <- file.path(context::context_root(self), self$log_path, task_id)
-        res <- capture_log(context::task_run(h), logf, TRUE)
+        logf <- file.path(self$root, self$log_path, task_id)
+        res <- capture_log(context::task_run(h, load_context=FALSE), logf, TRUE)
       }
 
       task_status <- if (inherits(res, "error")) TASK_ERROR else TASK_COMPLETE

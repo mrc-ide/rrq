@@ -26,7 +26,9 @@ uses, but shorter values are used for debugging.}
 \item{log_path}{Optional log path, used for storing per-task logs,
 rather than leaving them within the worker logs.  This affects
 only the context queue and not the rrq queue, which is not
-logged.}
+logged.  This path will be intepreted as relative to the context
+root (though perhaps later this will be sanitised to support
+absolute paths...).}
 
 \item{timeout}{Optional timeout to set for the worker.  This is
 (roughly) quivalent to issuing a \code{TIMEOUT_SET} message
