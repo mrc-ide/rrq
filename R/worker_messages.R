@@ -75,7 +75,7 @@ run_message_TIMEOUT_GET <- function(worker) {
     c(timeout=Inf, remaining=Inf)
   } else {
     if (is.null(worker$timer)) {
-      worker$timer <- time_checker(self$timeout, TRUE)
+      worker$timer <- time_checker(worker$timeout, TRUE)
     }
     c(timeout=worker$timeout, remaining=worker$timer())
   }
