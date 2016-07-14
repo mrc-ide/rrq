@@ -47,8 +47,9 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
       self$envir <- envir
       self$db <- context::context_db(context)
       ## This is used to create a hint as to who is using the queue.
-      ## It's done as a list so will accumulate elements over time.
-      self$con$RPUSH(self$keys$controllers, object_to_bin(controller_info()))
+      ## It's done as a list so will accumulate elements over time,
+      ## but cap at the 10 most recent uses.
+      push_controller_info(self$con, self$keys)
     },
 
     destroy=function(delete=TRUE, type="message") {
@@ -363,4 +364,11 @@ get_rrq_controller.NULL <- function(x, ...) {
 controller_info <- function() {
   list(hostname=hostname(), pid=process_id(),
        username=username(), time=Sys.time())
+}
+
+push_controller_info <- function(con, keys, max_n=10) {
+  n <- con$RPUSH(keys$controllers, object_to_bin(controller_info()))
+  if (n > max_n) {
+    con$LTRIM(keys$controllers, -max_n, -1)
+  }
 }

@@ -23,6 +23,7 @@ worker_controller <- function(context_id, con=redux::hiredis()) {
     initialize=function(context_id, con) {
       self$con <- con
       self$keys <- rrq_keys(context_id)
+      push_controller_info(self$con, self$keys)
     },
 
     destroy=function(delete=TRUE, type="message") {
