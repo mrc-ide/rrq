@@ -238,11 +238,14 @@ rrq_worker <- function(context, con, key_alive=NULL, worker_name=NULL,
         ## TODO: Probably the correct environment to run this in is
         ## self$envir, not .GlobalEnv, as that's appropriately set up
         ## by the context.
-        res <- context::task_run(h, load_context=FALSE)
+        res <- tryCatch(context::task_run(h, load_context=FALSE),
+                        error=WorkerTaskError)
       } else {
         self$db$set(task_id, self$log_path, "log_path")
         logf <- file.path(self$root, self$log_path, task_id)
-        res <- capture_log(context::task_run(h, load_context=FALSE), logf, TRUE)
+        res <- capture_log(tryCatch(context::task_run(h, load_context=FALSE),
+                                    error=WorkerTaskError),
+                           logf, TRUE)
       }
 
       task_status <- if (inherits(res, "error")) TASK_ERROR else TASK_COMPLETE
