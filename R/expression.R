@@ -1,3 +1,6 @@
+## TODO merge with queuer's work in this area; it does it all properly
+## now.
+
 ## TODO: come up with a way of scheduling object deletion.  Things
 ## that are created here should be deleted immediately after the
 ## function ends (perhaps on exit).  *Objects* should only be deleted

@@ -1,3 +1,5 @@
+## TODO: roll together with queuer
+
 ## NOTE: this is largely duplicated from the queuer::qlapply but
 ## tweaked a bit.  I'll be rolling these together perhaps at some
 ## point.

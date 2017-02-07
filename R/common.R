@@ -15,16 +15,15 @@ TASK_REDIRECT <- "REDIRECT"
 ## An unknown task
 TASK_MISSING  <- "MISSING"
 
-
-version_info <- function(package=.packageName) {
+version_info <- function(package = "rrq") {
   descr <- packageDescription(package)
   version <- package_version(descr$Version)
   repository <- descr$Repository
   sha <- descr$RemoteSha
-  list(package=package,
-       version=version,
-       repository=repository,
-       sha=sha)
+  list(package = package,
+       version = version,
+       repository = repository,
+       sha = sha)
 }
 
 version_string <- function() {

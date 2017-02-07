@@ -11,7 +11,7 @@ run_message_ECHO <- function(msg) {
 
 run_message_EVAL <- function(args) {
   if (is.character(args)) {
-    args <- parse(text=args)
+    args <- parse(text = args)
   }
   print(try(eval(args, .GlobalEnv)))
 }
@@ -62,7 +62,7 @@ run_message_TIMEOUT_SET <- function(worker, args) {
     if (is.null(args)) {
       worker$timer <- NULL
     } else {
-      worker$timer <- time_checker(args, remaining=TRUE)
+      worker$timer <- time_checker(args, remaining = TRUE)
     }
     "OK"
   } else {
@@ -72,30 +72,30 @@ run_message_TIMEOUT_SET <- function(worker, args) {
 
 run_message_TIMEOUT_GET <- function(worker) {
   if (is.null(worker$timeout)) {
-    c(timeout=Inf, remaining=Inf)
+    c(timeout = Inf, remaining = Inf)
   } else {
     if (is.null(worker$timer)) {
       worker$timer <- time_checker(worker$timeout, TRUE)
     }
-    c(timeout=worker$timeout, remaining=worker$timer())
+    c(timeout = worker$timeout, remaining = worker$timer())
   }
 }
 
 run_message_unknown <- function(cmd, args) {
   msg <- sprintf("Recieved unknown message: [%s]", cmd)
   message(msg)
-  structure(list(message=msg, command=cmd, args=args),
-            class=c("condition"))
+  structure(list(message = msg, command = cmd, args = args),
+            class = c("condition"))
 }
 
 message_prepare <- function(id, command, args) {
-  object_to_bin(list(id=id, command=command, args=args))
+  object_to_bin(list(id = id, command = command, args = args))
 }
 response_prepare <- function(id, command, result) {
-  object_to_bin(list(id=id, command=command, result=result))
+  object_to_bin(list(id = id, command = command, result = result))
 }
 
-send_message <- function(con, keys, command, args=NULL, worker_ids=NULL) {
+send_message <- function(con, keys, command, args = NULL, worker_ids = NULL) {
   if (is.null(worker_ids)) {
     worker_ids <- workers_list(con, keys)
   }
@@ -122,8 +122,8 @@ has_response <- function(con, keys, message_id, worker_id) {
   has_responses(con, keys, message_id, worker_id)[[1L]]
 }
 
-get_responses <- function(con, keys, message_id, worker_ids=NULL,
-                          delete=FALSE, wait=0, every=0.05) {
+get_responses <- function(con, keys, message_id, worker_ids = NULL,
+                          delete = FALSE, wait = 0, every = 0.05) {
   ## NOTE: this won't work well if the message was sent only to a
   ## single worker, or a worker who was not yet started.
   ##
@@ -137,7 +137,7 @@ get_responses <- function(con, keys, message_id, worker_ids=NULL,
   msg <- vlapply(res, is.null)
   if (any(msg)) {
     stop(paste0("Response missing for workers: ",
-                paste(worker_ids[msg], collapse=", ")))
+                paste(worker_ids[msg], collapse = ", ")))
   }
   if (delete) {
     for (k in response_keys) {
@@ -150,7 +150,7 @@ get_responses <- function(con, keys, message_id, worker_ids=NULL,
 }
 
 get_response <- function(con, keys, message_id, worker_id,
-                         delete=FALSE, wait=0, every=0.05) {
+                         delete = FALSE, wait = 0, every = 0.05) {
   assert_scalar(worker_id)
   get_responses(con, keys, message_id, worker_id, delete, wait, every)[[1L]]
 }

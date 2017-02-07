@@ -25,22 +25,22 @@
 ##'   at the moment).
 ##'
 ##' @export
-rrq_controller <- function(context, con, envir=.GlobalEnv) {
-  .R6_rrq_controller$new(context, con, envir)
+rrq_controller <- function(context, con, envir = .GlobalEnv) {
+  R6_rrq_controller$new(context, con, envir)
 }
 
-.R6_rrq_controller <- R6::R6Class(
+R6_rrq_controller <- R6::R6Class(
   "rrq_controller",
-  public=list(
+  public = list(
     ## TODO: This should either inherit or compose with the worker
     ## controller.
-    context=NULL,
-    con=NULL,
-    keys=NULL,
-    envir=NULL,
-    db=NULL,
+    context = NULL,
+    con = NULL,
+    keys = NULL,
+    envir = NULL,
+    db = NULL,
 
-    initialize=function(context, con, envir=.GlobalEnv) {
+    initialize = function(context, con, envir = .GlobalEnv) {
       self$context <- context
       self$con <- con
       self$keys <- rrq_keys(context$id)
@@ -52,7 +52,7 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
       push_controller_info(self$con, self$keys)
     },
 
-    destroy=function(delete=TRUE, type="message") {
+    destroy = function(delete = TRUE, type = "message") {
       rrq_clean(self$con, self$context$id, delete, type)
       ## render the controller useless:
       self$context <- NULL
@@ -69,11 +69,11 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
     ##
     ## In contrast with my other interfaces, for now don't save times.
     ## Keeping it as simple as possible here.
-    enqueue=function(expr, envir=parent.frame(), key_complete=NULL) {
+    enqueue = function(expr, envir = parent.frame(), key_complete = NULL) {
       self$enqueue_(substitute(expr), envir, key_complete)
     },
 
-    enqueue_=function(expr, envir=parent.frame(), key_complete=NULL) {
+    enqueue_ = function(expr, envir = parent.frame(), key_complete = NULL) {
       dat <- prepare_expression(expr, envir, self$envir, self$db)
       task_submit(self$con, self$keys, dat, key_complete)
     },
@@ -81,38 +81,38 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
     ## TODO: These all need to have similar names, semantics,
     ## arguments as queuer if I will ever merge these and not go mad.
     ## Go through and check.
-    tasks_list=function() {
+    tasks_list = function() {
       as.character(self$con$HKEYS(self$keys$tasks_expr))
     },
-    tasks_status=function(task_ids=NULL) {
+    tasks_status = function(task_ids = NULL) {
       tasks_status(self$con, self$keys, task_ids)
     },
-    task_status=function(task_id) {
+    task_status = function(task_id) {
       assert_scalar(task_id)
       self$tasks_status(task_id)[[1L]]
     },
-    tasks_overview=function(task_ids=NULL) {
+    tasks_overview = function(task_ids = NULL) {
       tasks_overview(self$con, self$keys, task_ids)
     },
 
     ## One result, as the object
-    task_result=function(task_id) {
+    task_result = function(task_id) {
       assert_scalar_character(task_id)
       self$tasks_result(task_id)[[1L]]
     },
     ## zero, one or more tasks as a list
-    tasks_result=function(task_ids) {
+    tasks_result = function(task_ids) {
       task_results(self$con, self$keys, task_ids)
     },
 
-    task_wait=function(task_id, timeout=Inf, time_poll=0.1,
-                       progress_bar=FALSE, key_complete=NULL) {
+    task_wait = function(task_id, timeout = Inf, time_poll = 0.1,
+                       progress_bar = FALSE, key_complete = NULL) {
       assert_scalar_character(task_id)
       self$tasks_wait(task_id, timeout, time_poll,
                       progress_bar, key_complete)[[1L]]
     },
-    tasks_wait=function(task_ids, timeout=Inf, time_poll=NULL,
-                        progress_bar=TRUE, key_complete=NULL) {
+    tasks_wait = function(task_ids, timeout = Inf, time_poll = NULL,
+                        progress_bar = TRUE, key_complete = NULL) {
       if (is.null(key_complete)) {
         collect_wait_n_poll(self$con, self$keys, task_ids,
                             timeout, time_poll, progress_bar)
@@ -121,82 +121,83 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
                        timeout, time_poll, progress_bar)
       }
     },
-    tasks_delete=function(task_ids, check=TRUE) {
+    tasks_delete = function(task_ids, check = TRUE) {
       tasks_delete(self$con, self$keys, task_ids, check)
     },
 
-    queue_length=function() {
+    queue_length = function() {
       self$con$LLEN(self$keys$queue_rrq)
     },
 
-    queue_list=function() {
+    queue_list = function() {
       as.character(self$con$LRANGE(self$keys$queue_rrq, 0, -1))
     },
 
     ## TODO: This might merge with some of queuer, as there's a lot of
     ## overlap here.
-    lapply=function(X, FUN, ..., envir=parent.frame(),
-                    timeout=Inf, time_poll=1, progress_bar=TRUE) {
-      rrq_lapply(self, X, FUN, ..., envir=envir,
-                 timeout=timeout, time_poll=time_poll,
-                 progress_bar=progress_bar)
+    lapply = function(X, FUN, ..., envir = parent.frame(),
+                    timeout = Inf, time_poll = 1, progress_bar = TRUE) {
+      rrq_lapply(self, X, FUN, ..., envir = envir,
+                 timeout = timeout, time_poll = time_poll,
+                 progress_bar = progress_bar)
     },
 
     ## The messaging system from rrqueue, verbatim:
-    send_message=function(command, args=NULL, worker_ids=NULL) {
+    send_message = function(command, args = NULL, worker_ids = NULL) {
       send_message(self$con, self$keys, command, args, worker_ids)
     },
-    has_responses=function(message_id, worker_ids=NULL) {
+    has_responses = function(message_id, worker_ids = NULL) {
       has_responses(self$con, self$keys, message_id, worker_ids)
     },
-    has_response=function(message_id, worker_id) {
+    has_response = function(message_id, worker_id) {
       has_response(self$con, self$keys, message_id, worker_id)
     },
-    get_responses=function(message_id, worker_ids=NULL, delete=FALSE, wait=0) {
+    get_responses = function(message_id, worker_ids = NULL, delete = FALSE,
+                             wait = 0) {
       get_responses(self$con, self$keys, message_id, worker_ids, delete, wait)
     },
-    get_response=function(message_id, worker_id, delete=FALSE, wait=0) {
+    get_response = function(message_id, worker_id, delete = FALSE, wait = 0) {
       get_response(self$con, self$keys, message_id, worker_id, delete, wait)
     },
-    response_ids=function(worker_id) {
+    response_ids = function(worker_id) {
       response_ids(self$con, self$keys, worker_id)
     },
 
     ## Query workers:
-    workers_len=function() {
+    workers_len = function() {
       workers_len(self$con, self$keys)
     },
-    workers_list=function() {
+    workers_list = function() {
       workers_list(self$con, self$keys)
     },
-    workers_list_exited=function() {
+    workers_list_exited = function() {
       workers_list_exited(self$con, self$keys)
     },
-    workers_info=function(worker_ids=NULL) {
+    workers_info = function(worker_ids = NULL) {
       workers_info(self$con, self$keys, worker_ids)
     },
-    workers_status=function(worker_ids=NULL) {
+    workers_status = function(worker_ids = NULL) {
       workers_status(self$con, self$keys, worker_ids)
     },
-    workers_log_tail=function(worker_ids=NULL, n=1) {
+    workers_log_tail = function(worker_ids = NULL, n = 1) {
       workers_log_tail(self$con, self$keys, worker_ids, n)
     },
-    workers_task_id=function(worker_ids=NULL) {
+    workers_task_id = function(worker_ids = NULL) {
       workers_task_id(self$con, self$keys, worker_ids)
     },
-    workers_delete_exited=function(worker_ids=NULL) {
+    workers_delete_exited = function(worker_ids = NULL) {
       workers_delete_exited(self$con, self$keys, worker_ids)
     },
 
     ## This one is a bit unfortunately named, but should do for now.
     ## It only works if the worker has appropriately saved logging
     ## information.
-    worker_log=function(worker_id) {
+    worker_log = function(worker_id) {
       assert_scalar(worker_id)
       context::task_log(self$context, worker_id)
     },
 
-    workers_stop=function(worker_ids=NULL, type="message", wait=0) {
+    workers_stop = function(worker_ids = NULL, type = "message", wait = 0) {
       workers_stop(self$con, self$keys, worker_ids, type, wait)
     }
 
@@ -207,7 +208,7 @@ rrq_controller <- function(context, con, envir=.GlobalEnv) {
     ))
 
 tasks_status <- function(con, keys, task_ids) {
-  from_redis_hash(con, keys$tasks_status, task_ids, missing=TASK_MISSING)
+  from_redis_hash(con, keys$tasks_status, task_ids, missing = TASK_MISSING)
 }
 
 tasks_overview <- function(con, keys, task_ids) {
@@ -221,7 +222,7 @@ task_submit <- function(con, keys, dat, key_complete) {
   task_submit_n(con, keys, list(object_to_bin(dat)), key_complete)
 }
 
-tasks_delete <- function(con, keys, task_ids, check=TRUE) {
+tasks_delete <- function(con, keys, task_ids, check = TRUE) {
   if (check) {
     ## TODO: filter from the running list if not running, but be
     ## aware of race conditions. This is really only for doing
@@ -229,7 +230,7 @@ tasks_delete <- function(con, keys, task_ids, check=TRUE) {
     ## status is one of the finished ones.  Write a small lua
     ## script that can take the setdiff of these perhaps...
     st <- from_redis_hash(con, keys$tasks_status, task_ids,
-                          missing=TASK_MISSING)
+                          missing = TASK_MISSING)
     if (any(st == "RUNNING")) {
       stop("Can't delete running tasks")
     }
@@ -273,7 +274,8 @@ task_results <- function(con, keys, task_ids) {
 ## * collect_wait_n:      sits on a special key, so is quite responsive
 ## * collect_wait_n_poll: actively polls the hashes
 collect_wait_n <- function(con, keys, task_ids, key_complete,
-                           timeout=Inf, time_poll=NULL, progress_bar=TRUE) {
+                           timeout = Inf, time_poll = NULL,
+                           progress_bar = TRUE) {
   time_poll <- time_poll %||% 1
   assert_integer_like(time_poll)
 
@@ -283,7 +285,7 @@ collect_wait_n <- function(con, keys, task_ids, key_complete,
     con$DEL(key_complete)
   } else {
     times_up <- time_checker(timeout)
-    p <- progress(length(task_ids), show=progress_bar)
+    p <- progress(length(task_ids), show= progress_bar)
     while (!all(done)) {
       tmp <- con$BLPOP(key_complete, time_poll)
       if (is.null(tmp)) {
@@ -307,7 +309,7 @@ collect_wait_n <- function(con, keys, task_ids, key_complete,
 }
 
 collect_wait_n_poll <- function(con, keys, task_ids, timeout, time_poll,
-                                progress_bar=TRUE) {
+                                progress_bar= TRUE) {
   time_poll <- time_poll %||% 0.1
   status <- from_redis_hash(con, keys$tasks_status, task_ids)
   done <- status == TASK_COMPLETE | status == TASK_ERROR
@@ -317,12 +319,12 @@ collect_wait_n_poll <- function(con, keys, task_ids, timeout, time_poll,
     stop("Tasks not yet completed; can't be immediately returned")
   } else {
     times_up <- time_checker(timeout)
-    p <- progress(length(task_ids), show=progress_bar)
+    p <- progress(length(task_ids), show = progress_bar)
     remaining <- task_ids[!done]
 
     ## Or poll:
     while (length(remaining) > 0L) {
-      ok <- viapply(remaining, con$HEXISTS, key=keys$tasks_result) == 1L
+      ok <- viapply(remaining, con$HEXISTS, key = keys$tasks_result) == 1L
       if (any(ok)) {
         i <- remaining[ok]
         p(length(i))
@@ -354,7 +356,7 @@ get_rrq_controller <- function(x, ...) {
 
 ##' @export
 get_rrq_controller.NULL <- function(x, ...) {
-  con <- redux::hiredis(host=Sys_getenv("REDIS_HOST"))
+  con <- redux::hiredis(host = Sys_getenv("REDIS_HOST"))
   ctx <- context::context_handle(Sys_getenv("CONTEXT_ROOT"),
                                  Sys_getenv("CONTEXT_ID"))
   envir <- .GlobalEnv
@@ -362,11 +364,11 @@ get_rrq_controller.NULL <- function(x, ...) {
 }
 
 controller_info <- function() {
-  list(hostname=hostname(), pid=process_id(),
-       username=username(), time=Sys.time())
+  list(hostname = hostname(), pid = process_id(),
+       username = username(), time = Sys.time())
 }
 
-push_controller_info <- function(con, keys, max_n=10) {
+push_controller_info <- function(con, keys, max_n = 10) {
   n <- con$RPUSH(keys$controllers, object_to_bin(controller_info()))
   if (n > max_n) {
     con$LTRIM(keys$controllers, -max_n, -1)

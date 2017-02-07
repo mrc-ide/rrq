@@ -1,9 +1,9 @@
-poll_hash_keys <- function(con, keys, field, wait, every=0.05) {
+poll_hash_keys <- function(con, keys, field, wait, every = 0.05) {
   if (wait <= 0) {
     res <- lapply(keys, con$HGET, field)
   } else {
-    ## TODO: I have a generic timeout thing somewhere...
-    timeout <- as.difftime(wait, units="secs")
+    ## TODO: I have a generic timeout thing in queuer (time_checker)
+    timeout <- as.difftime(wait, units = "secs")
     t0 <- Sys.time()
     ok <- logical(length(keys))
     res <- vector("list", length(keys))

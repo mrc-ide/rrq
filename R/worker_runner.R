@@ -1,4 +1,4 @@
-rrq_worker_main <- function(args=commandArgs(TRUE)) {
+rrq_worker_main <- function(args = commandArgs(TRUE)) {
   'Usage:
   rrq_worker --context-root=ROOT [options]
 
@@ -28,7 +28,7 @@ rrq_worker_main <- function(args=commandArgs(TRUE)) {
       stop("No contexts found in ", context_root)
     } else {
       stop(sprintf("More than 1 contexts founds in %s; pick one of:\n%s",
-                   context_root, paste0("\t-", ids, collapse="\n")))
+                   context_root, paste0("\t-", ids, collapse = "\n")))
     }
   }
   worker_name <- args[["worker-name"]]
@@ -36,11 +36,14 @@ rrq_worker_main <- function(args=commandArgs(TRUE)) {
   timeout <- docopt_number(args, "timeout")
 
   context <- context::context_handle(context_root, context_id)
-  con <- redux::hiredis(host=args[["redis-host"]], port=args[["redis-port"]])
+  ## TODO: This interacts badly with having set REDIS_URL!  Decide on
+  ## sensible defaults.
+  con <- redux::hiredis(host = args[["redis-host"]],
+                        port = args[["redis-port"]])
 
-  rrq_worker(context, con, key_alive=args[["key-alive"]],
-             worker_name=worker_name, time_poll=time_poll,
-             log_path=args[["log-path"]], timeout=timeout)
+  rrq_worker(context, con, key_alive = args[["key-alive"]],
+             worker_name = worker_name, time_poll = time_poll,
+             log_path = args[["log-path"]], timeout = timeout)
 }
 
 docopt_number <- function(args, name, default = NULL) {
