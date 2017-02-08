@@ -36,7 +36,10 @@
 ##'   same as \code{timeout})
 ##'
 ##' @param worker_log_path Per-task log directory for workers (not the
-##'   same as \code{logdir}, which is for the worker overall).
+##'   same as \code{logdir}, which is for the worker overall).  This
+##'   is interpreted as relative to the \emph{context root}, not the
+##'   current directory.  This will allow the \code{$log()} method of
+##'   a task object to work as expected.
 ##'
 ##' @export
 workers_spawn <- function(context, con, n = 1, logdir = ".",
@@ -58,10 +61,6 @@ workers_spawn <- function(context, con, n = 1, logdir = ".",
   }
   logdir <- normalizePath(logdir, mustWork = TRUE)
   logfile <- file.path(logdir, paste0(worker_names, ".log"))
-
-  if (!is.null(worker_log_path)) {
-    dir.create(worker_log_path, FALSE, TRUE)
-  }
 
   assert_integer_like(time_poll)
 

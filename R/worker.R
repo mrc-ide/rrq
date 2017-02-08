@@ -69,9 +69,13 @@ R6_rrq_worker <- R6::R6Class(
 
       self$time_poll <- time_poll
 
-      self$log_path <- log_path
       if (!is.null(log_path)) {
-        dir.create(file.path(context$root$path, self$log_path), FALSE, TRUE)
+        if (!context:::is_relative_path(log_path)) {
+          stop("Must be a relative path")
+        }
+        self$log_path <- log_path
+        dir.create(file.path(self$context$root$path, self$log_path),
+                   FALSE, TRUE)
       }
 
       self$load_context()
@@ -226,14 +230,17 @@ R6_rrq_worker <- R6::R6Class(
     },
 
     run_task_context = function(task_id) {
-      if (!is.null(self$log_path)) {
-        self$db$set(task_id, self$log_path, "log_path")
+      if (is.null(self$log_path)) {
+        log_file <- NULL
+      } else {
+        log_path <- file.path(self$log_path, paste0(task_id, ".log"))
+        self$db$set(task_id, log_path, "log_path")
+        log_file <- file.path(self$context$root$path, log_path)
       }
-      browser()
       res <- tryCatch(
         context::task_run(task_id, self$context$root, self$envir,
                           load_context = FALSE,
-                          filename = self$log_path),
+                          filename = log_file),
         error = WorkerTaskError)
       task_status <-
         if (inherits(res, "WorkerTaskError")) TASK_ERROR else TASK_COMPLETE

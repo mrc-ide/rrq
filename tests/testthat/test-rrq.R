@@ -25,16 +25,41 @@ test_that("basic use", {
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
-  ## TODO: workers_spawn is not putting the worker logs into a
-  ## sensible directory.
-
   ## For testing, use: worker_command(obj)
-  wid <- workers_spawn(obj$context, obj$con, timeout = 5)
+  wid <- workers_spawn(obj$context, obj$con, timeout = 5, logdir = "logs")
 
   t <- obj$enqueue(slowdouble(0.1))
   expect_is(t, "character")
   expect_equal(obj$task_wait(t, 2), 0.2)
   expect_equal(obj$task_result(t), 0.2)
+
+  t <- obj$enqueue(getwd())
+  expect_equal(obj$task_wait(t, 2), getwd())
+})
+
+test_that("worker working directory", {
+  other <- tempfile()
+  dir.create(other, FALSE, TRUE)
+  file.copy("myfuns.R", other)
+
+  with_wd(other, {
+    root <- "context"
+    context <- context::context_save(root, sources = "myfuns.R")
+    obj <- rrq_controller(context, redux::hiredis())
+    on.exit(obj$destroy())
+
+    ## For testing, use: worker_command(obj)
+    wid <- workers_spawn(obj$context, obj$con, timeout = 5, logdir = "logs")
+
+    t <- obj$enqueue(getwd())
+    ## So, the worker is not spawned into the correct directory!
+    res <- obj$task_wait(t, 2)
+    expect_equal(res, getwd())
+    expect_equal(getwd(), normalizePath(other))
+
+    expect_true(file.exists("logs"))
+    expect_true(file.exists(file.path("logs", sprintf("%s.log", wid))))
+  })
 })
 
 test_that("worker name", {
@@ -84,7 +109,7 @@ test_that("context job", {
   on.exit(obj$destroy())
 
   ## For testing, use: worker_command(obj)
-  wid <- workers_spawn(obj$context, obj$con, timeout = 5)
+  wid <- workers_spawn(obj$context, obj$con, timeout = 5, logdir = "logs")
 
   id <- context::task_save(quote(sin(1)), context)
   t <- queuer:::queuer_task(id, context$root)
@@ -109,30 +134,15 @@ test_that("log dir", {
   ## make the worker_spawn function much more verbose about workers.
   wid <- workers_spawn(obj$context, obj$con,
                        logdir = "logs", worker_log_path = "logs_worker")
-  worker_command(obj)
 
   expect_true(file.exists(file.path(root, "logs_worker")))
 
-  ## This gets to the point where we run the task, but it never gets
-  ## the status updated, but the worker does not die; it reports error
-  ## but I think not where I expect it to.
-  ##
-  ## No interesting logs are generated either.
-  ##
-  ## Hmm.
-  ##
-  ## I have the with-context version working, so try breaking the
-  ## logging a little to do all but run the log, then see if the
-  ## logging is actually working.
   id <- context::task_save(quote(sin(1)), context)
   t <- queuer:::queuer_task(id, context$root)
 
   r$queue_submit(t$id)
   res <- t$wait(10)
 
-  logf <- file.path(root, "logs_worker", t$id)
-  expect_true(file.exists(logf))
-  log <- readLines(logf)
-  expect_true(any(grepl("[ expr", log, fixed = TRUE)))
-  expect_is(tt$log(), "context_log")
+  expect_true(file.exists(file.path(root, obj$db$get(t$id, "log_path"))))
+  expect_is(t$log(), "context_log")
 })
