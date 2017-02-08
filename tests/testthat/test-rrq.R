@@ -13,19 +13,23 @@ test_that("sanity checking", {
   id <- obj$enqueue(sin(1))
   expect_equal(obj$tasks_list(), id)
   expect_equal(obj$queue_list(), id)
-  expect_equal(unname(obj$tasks_status(id)), TASK_PENDING)
+  expect_equal(obj$tasks_status(id), setNames(TASK_PENDING, id))
 
   test_queue_clean(context$id)
 })
 
 test_that("basic use", {
-  Sys.setenv(R_TESTS="")
+  Sys.setenv(R_TESTS = "")
   root <- tempfile()
-  context <- context::context_save(root, sources="myfuns.R")
+  context <- context::context_save(root, sources = "myfuns.R")
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
-  wid <- workers_spawn(obj$context, obj$con)
+  ## TODO: workers_spawn is not putting the worker logs into a
+  ## sensible directory.
+
+  ## For testing, use: worker_command(obj)
+  wid <- workers_spawn(obj$context, obj$con, timeout = 5)
 
   t <- obj$enqueue(slowdouble(0.1))
   expect_is(t, "character")
@@ -34,68 +38,101 @@ test_that("basic use", {
 })
 
 test_that("worker name", {
-  Sys.setenv(R_TESTS="")
+  Sys.setenv(R_TESTS = "")
   root <- tempfile()
-  context <- context::context_save(root, sources="myfuns.R")
+  context <- context::context_save(root, sources = "myfuns.R")
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
   name <- ids::random_id()
   wid <- workers_spawn(obj$context, obj$con,
-                      logdir="logs", worker_name_base=name)
+                      logdir = "logs", worker_name_base = name)
   expect_equal(wid, paste0(name, "_1"))
   expect_true(file.exists(file.path("logs", paste0(name, "_1.log"))))
 })
 
 test_that("worker timeout", {
-  Sys.setenv(R_TESTS="")
+  Sys.setenv(R_TESTS = "")
   root <- tempfile()
-  context <- context::context_save(root, sources="myfuns.R")
+  context <- context::context_save(root, sources = "myfuns.R")
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
-  t <- as.integer(runif(1, min=100, max=10000))
+  t <- as.integer(runif(1, min = 100, max = 10000))
   wid <- workers_spawn(obj$context, obj$con,
-                       logdir="logs", worker_timeout=t)
+                       logdir = "logs", worker_timeout = t)
   id <- obj$send_message("TIMEOUT_GET")
-  res <- obj$get_response(id, wid, wait=10)
+  res <- obj$get_response(id, wid, wait = 10)
   expect_equal(res[["timeout"]], t)
   expect_lte(res[["remaining"]], t)
   obj$send_message("STOP")
 
   wid <- workers_spawn(obj$context, obj$con,
-                       logdir="logs", worker_timeout=Inf)
+                       logdir = "logs", worker_timeout = Inf)
   id <- obj$send_message("TIMEOUT_GET")
-  res <- obj$get_response(id, wid, wait=10)
+  res <- obj$get_response(id, wid, wait = 10)
   expect_equal(res[["timeout"]], Inf)
   expect_equal(res[["remaining"]], Inf)
   obj$send_message("STOP")
 })
 
-test_that("log dir", {
-  Sys.setenv(R_TESTS="")
+test_that("context job", {
+  Sys.setenv(R_TESTS = "")
   root <- tempfile()
-  context <- context::context_save(root, sources="myfuns.R")
+  context <- context::context_save(root, sources = "myfuns.R")
+  obj <- rrq_controller(context, redux::hiredis())
+  on.exit(obj$destroy())
+
+  ## For testing, use: worker_command(obj)
+  wid <- workers_spawn(obj$context, obj$con, timeout = 5)
+
+  id <- context::task_save(quote(sin(1)), context)
+  t <- queuer:::queuer_task(id, context$root)
+
+  r <- worker_controller(context$id, redux::hiredis())
+
+  r$queue_submit(t$id)
+  expect_equal(t$wait(10, progress = FALSE), sin(1))
+  expect_equal(t$status(), "COMPLETE")
+  expect_equal(r$queue_length(), 0L)
+})
+
+test_that("log dir", {
+  Sys.setenv(R_TESTS = "")
+  root <- tempfile()
+  context <- context::context_save(root, sources = "myfuns.R")
   obj <- rrq_controller(context, redux::hiredis())
   r <- worker_controller(context$id, redux::hiredis())
 
   on.exit(obj$destroy())
 
+  ## make the worker_spawn function much more verbose about workers.
   wid <- workers_spawn(obj$context, obj$con,
-                       logdir="logs", worker_log_path="logs_worker")
-
+                       logdir = "logs", worker_log_path = "logs_worker")
+  worker_command(obj)
 
   expect_true(file.exists(file.path(root, "logs_worker")))
 
-  t <- context::task_save(quote(sin(1)), context)
-  tt <- queuer:::task(context, t$id)
+  ## This gets to the point where we run the task, but it never gets
+  ## the status updated, but the worker does not die; it reports error
+  ## but I think not where I expect it to.
+  ##
+  ## No interesting logs are generated either.
+  ##
+  ## Hmm.
+  ##
+  ## I have the with-context version working, so try breaking the
+  ## logging a little to do all but run the log, then see if the
+  ## logging is actually working.
+  id <- context::task_save(quote(sin(1)), context)
+  t <- queuer:::queuer_task(id, context$root)
 
   r$queue_submit(t$id)
-  res <- tt$wait(10)
+  res <- t$wait(10)
 
   logf <- file.path(root, "logs_worker", t$id)
   expect_true(file.exists(logf))
   log <- readLines(logf)
-  expect_true(any(grepl("[ expr", log, fixed=TRUE)))
+  expect_true(any(grepl("[ expr", log, fixed = TRUE)))
   expect_is(tt$log(), "context_log")
 })

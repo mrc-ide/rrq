@@ -18,7 +18,7 @@ temp_context <- function(sources=NULL, ...) {
 }
 
 worker_command <- function(obj) {
-  bquote(rrq_worker(context::context_handle(.(root), .(id)),
+  bquote(rrq_worker(context::context_read(.(id), .(root$path)),
                     redux::hiredis()),
          obj$context)
 }

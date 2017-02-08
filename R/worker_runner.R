@@ -35,7 +35,7 @@ rrq_worker_main <- function(args = commandArgs(TRUE)) {
   time_poll <- docopt_number(args, "time_poll", formals(rrq_worker)$time_poll)
   timeout <- docopt_number(args, "timeout")
 
-  context <- context::context_handle(context_root, context_id)
+  context <- context::context_read(context_id, context_root)
   ## TODO: This interacts badly with having set REDIS_URL!  Decide on
   ## sensible defaults.
   con <- redux::hiredis(host = args[["redis-host"]],

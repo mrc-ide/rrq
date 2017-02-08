@@ -55,14 +55,14 @@ R6_rrq_worker <- R6::R6Class(
     time_poll = NULL,
     timeout = NULL,
     timer = NULL,
-    root = NULL,
 
     initialize = function(context, con, key_alive, worker_name, time_poll,
                           log_path, timeout) {
+      assert_inherits(context, "context")
+      assert_inherits(con, "redis_api")
       self$context <- context
       self$con <- con
-
-      self$db <- context::context_db(context)
+      self$db <- context$db
 
       self$name <- worker_name %||% ids::random_id()
       self$keys <- rrq_keys(context$id, self$name)
@@ -70,9 +70,8 @@ R6_rrq_worker <- R6::R6Class(
       self$time_poll <- time_poll
 
       self$log_path <- log_path
-      self$root <- context::context_root(context)
       if (!is.null(log_path)) {
-        dir.create(file.path(self$root, self$log_path), FALSE, TRUE)
+        dir.create(file.path(context$root$path, self$log_path), FALSE, TRUE)
       }
 
       self$load_context()
@@ -216,40 +215,28 @@ R6_rrq_worker <- R6::R6Class(
       e <- new.env(parent = self$envir)
       dat <- con$HGET(keys$tasks_expr, task_id)
       expr <- restore_expression(bin_to_object(dat), e, self$db)
+      res <- tryCatch(eval(expr, e), error = WorkerTaskError)
+      task_status <-
+        if (inherits(res, "WorkerTaskError")) TASK_ERROR else TASK_COMPLETE
 
-      res <- tryCatch(eval(expr, e),
-                      error = WorkerTaskError)
-
-      if (inherits(res, "WorkerTaskError")) {
-        task_status <- TASK_ERROR
-      } else {
-        task_status <- TASK_COMPLETE
-      }
-
-      con$HSET(keys$tasks_result,   task_id,   object_to_bin(res))
-      con$HSET(keys$tasks_status,   task_id,   task_status)
+      con$HSET(keys$tasks_result, task_id, object_to_bin(res))
+      con$HSET(keys$tasks_status, task_id, task_status)
 
       self$task_cleanup(res, task_id, task_status)
     },
 
     run_task_context = function(task_id) {
-      h <- context::task_handle(self$context, task_id)
-
-      if (is.null(self$log_path)) {
-        ## TODO: Probably the correct environment to run this in is
-        ## self$envir, not .GlobalEnv, as that's appropriately set up
-        ## by the context.
-        res <- tryCatch(context::task_run(h, load_context = FALSE),
-                        error = WorkerTaskError)
-      } else {
+      if (!is.null(self$log_path)) {
         self$db$set(task_id, self$log_path, "log_path")
-        logf <- file.path(self$root, self$log_path, task_id)
-        res <- capture_log(tryCatch(context::task_run(h, load_context = FALSE),
-                                    error = WorkerTaskError),
-                           logf, TRUE)
       }
-
-      task_status <- if (inherits(res, "error")) TASK_ERROR else TASK_COMPLETE
+      browser()
+      res <- tryCatch(
+        context::task_run(task_id, self$context$root, self$envir,
+                          load_context = FALSE,
+                          filename = self$log_path),
+        error = WorkerTaskError)
+      task_status <-
+        if (inherits(res, "WorkerTaskError")) TASK_ERROR else TASK_COMPLETE
       self$task_cleanup(res, task_id, task_status)
     },
 
@@ -341,7 +328,7 @@ worker_info <- function(worker) {
               redis_host = redis_config$host,
               redis_port = redis_config$port,
               context_id = worker$context$id,
-              context_root = worker$context$root)
+              context_root = worker$context$root$path)
   class(dat) <- "worker_info"
   dat
 }

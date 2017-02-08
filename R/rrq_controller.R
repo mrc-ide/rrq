@@ -41,11 +41,13 @@ R6_rrq_controller <- R6::R6Class(
     db = NULL,
 
     initialize = function(context, con, envir = .GlobalEnv) {
+      assert_inherits(context, "context")
+      assert_inherits(con, "redis_api")
       self$context <- context
       self$con <- con
       self$keys <- rrq_keys(context$id)
       self$envir <- envir
-      self$db <- context::context_db(context)
+      self$db <- context$db
       ## This is used to create a hint as to who is using the queue.
       ## It's done as a list so will accumulate elements over time,
       ## but cap at the 10 most recent uses.

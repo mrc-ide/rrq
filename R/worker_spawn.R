@@ -45,8 +45,8 @@ workers_spawn <- function(context, con, n = 1, logdir = ".",
                           worker_time_poll = NULL, worker_timeout = NULL,
                           worker_log_path = NULL) {
   rrq_worker <- system.file("rrq_worker", package = "rrq")
-  env <- paste0("RLIBS = ", paste(.libPaths(), collapse = ":"),
-                'R_TESTS = ""')
+  env <- paste0("RLIBS=", paste(.libPaths(), collapse = ":"),
+                'R_TESTS=""')
 
   worker_names <- sprintf(
     "%s_%d", worker_name_base %||% ids::adjective_animal(), seq_len(n))
@@ -67,7 +67,7 @@ workers_spawn <- function(context, con, n = 1, logdir = ".",
 
   key_alive <- rrq_key_worker_alive(context$id)
 
-  args <- c("--context-root", normalizePath(context$root),
+  args <- c("--context-root", normalizePath(context$root$path),
             "--context-id", context$id,
             "--redis-host", con$config()$host,
             "--redis-port", con$config()$port,
@@ -75,6 +75,14 @@ workers_spawn <- function(context, con, n = 1, logdir = ".",
             if (!is.null(worker_time_poll)) "--time-poll", worker_time_poll,
             if (!is.null(worker_timeout)) "--timeout", worker_timeout,
             if (!is.null(worker_log_path)) "--log-path", worker_log_path)
+
+  message(sprintf("Spawning %d %s", n, ngettext(n, "worker", "workers")))
+  message("Logs in directory ", logdir)
+  if (is.null(worker_log_path)) {
+    message("Worker jobs log to main log")
+  } else {
+    message("Worker jobs log to ", worker_log_path)
+  }
 
   code <- integer(n)
   with_wd(path, {
