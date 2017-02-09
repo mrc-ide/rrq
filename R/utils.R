@@ -33,10 +33,6 @@ blank <- function(n) {
   strrep(" ", n)
 }
 
-is_error <- function(x) {
-  inherits(x, "try-error")
-}
-
 with_wd <- function(path, expr) {
   if (path != ".") {
     if (!file.exists(path)) {
@@ -69,12 +65,6 @@ time_checker <- function(timeout, remaining = FALSE) {
   if (is.null(a)) b else a
 }
 
-dir_create <- function(paths) {
-  for (p in unique(paths)) {
-    dir.create(p, FALSE, TRUE)
-  }
-}
-
 is_directory <- function(path) {
   file.exists(path) && file.info(path, extra_cols = FALSE)[["isdir"]]
 }
@@ -92,20 +82,4 @@ lstrip <- function(x) {
 }
 rstrip <- function(x) {
   sub("\\s+$", "", x, perl = TRUE)
-}
-
-capture_log <- function(expr, filename, suppress_messages = FALSE) {
-  con <- file(filename, "w")
-  sink(con, split = FALSE)
-  on.exit({
-    sink(NULL)
-    close(con)
-    ## close(con2)
-  })
-  handle_message <- function(e) cat(e$message, file = stdout())
-  if (suppress_messages) {
-    suppressMessages(withCallingHandlers(expr, message = handle_message))
-  } else {
-    withCallingHandlers(expr, message = handle_message)
-  }
 }

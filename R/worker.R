@@ -518,7 +518,7 @@ workers_stop <- function(con, keys, worker_ids = NULL, type = "message",
       ok <- try(get_responses(con, keys, message_id, worker_ids,
                               delete = FALSE, wait = wait),
                 silent = TRUE)
-      ## if (is_error(ok)) {
+      ## if (inherits(ok, "try-error")) {
       ##   done <- has_responses(con, keys, message_id, worker_ids)
       ##   workers_stop(con, keys, worker_ids[!done], "kill")
       ## }

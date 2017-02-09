@@ -9,7 +9,6 @@
 ## the prepared expressions.  This is a good approach to use in queuer
 ## too.  The workers will do a reasonable job of not reloading locals.
 rrq_lapply_submit <- function(obj, X, FUN, envir, ...) {
-  con <- obj$con
   keys <- obj$keys
   db <- obj$db
   XX <- as.list(X)
