@@ -1,4 +1,30 @@
 ## Pulled out because otherwise they clutter the place up.
+run_message <- function(worker, msg) {
+  ## TODO: these can be unserialised...
+  content <- bin_to_object(msg)
+  message_id <- content$id
+  cmd <- content$command
+  args <- content$args
+
+  worker$log("MESSAGE", cmd)
+
+  ## TODO: worker restart?  Is that even possible?
+  res <- switch(cmd,
+                PING = run_message_PING(),
+                ECHO = run_message_ECHO(args),
+                EVAL = run_message_EVAL(args),
+                STOP = run_message_STOP(worker, message_id, args), # noreturn
+                INFO = run_message_INFO(worker),
+                PAUSE = run_message_PAUSE(worker),
+                RESUME = run_message_RESUME(worker),
+                REFRESH = run_message_REFRESH(worker),
+                TIMEOUT_SET = run_message_TIMEOUT_SET(worker, args),
+                TIMEOUT_GET = run_message_TIMEOUT_GET(worker),
+                run_message_unknown(cmd, args))
+
+  worker$send_response(message_id, cmd, res)
+}
+
 run_message_PING <- function() {
   message("PONG")
   "PONG"

@@ -15,11 +15,17 @@ TASK_REDIRECT <- "REDIRECT"
 ## An unknown task
 TASK_MISSING  <- "MISSING"
 
+WORKER_IDLE <- "IDLE"
+WORKER_BUSY <- "BUSY"
+WORKER_EXITED <- "EXITED"
+WORKER_LOST <- "LOST"
+WORKER_PAUSED <- "PAUSED"
+
 version_info <- function(package = "rrq") {
   descr <- packageDescription(package)
   version <- package_version(descr$Version)
   repository <- descr$Repository
-  sha <- descr$RemoteSha
+  sha <- descr[["RemoteSha"]]
   list(package = package,
        version = version,
        repository = repository,

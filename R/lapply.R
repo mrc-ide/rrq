@@ -12,7 +12,6 @@ rrq_lapply_submit <- function(obj, X, FUN, envir, ...) {
   keys <- obj$keys
   db <- obj$db
   XX <- as.list(X)
-  n <- length(XX)
   DOTS <- lapply(lazyeval::lazy_dots(...), "[[", "expr")
   key_complete <- rrq_key_task_complete(keys$queue_name)
 

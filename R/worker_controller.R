@@ -111,3 +111,139 @@ R6_worker_controller <- R6::R6Class(
       workers_stop(self$con, self$keys, worker_ids, type, wait)
     }
   ))
+
+workers_len <- function(con, keys) {
+  con$SCARD(keys$workers_name)
+}
+workers_list <- function(con, keys) {
+  as.character(con$SMEMBERS(keys$workers_name))
+}
+
+workers_list_exited <- function(con, keys) {
+  setdiff(as.character(con$HKEYS(keys$workers_info)), workers_list(con, keys))
+}
+
+workers_status <- function(con, keys, worker_ids = NULL) {
+  from_redis_hash(con, keys$workers_status, worker_ids)
+}
+
+workers_info <- function(con, keys, worker_ids = NULL) {
+  from_redis_hash(con, keys$workers_info, worker_ids,
+                  f = Vectorize(bin_to_object, SIMPLIFY = FALSE))
+}
+
+workers_log_tail <- function(con, keys, worker_ids = NULL, n = 1) {
+  if (is.null(worker_ids)) {
+    worker_ids <- workers_list(con, keys)
+  }
+  tmp <- lapply(worker_ids, function(i) worker_log_tail(con, keys, i, n))
+  if (length(tmp) > 0L) {
+    n <- viapply(tmp, nrow)
+    ret <- cbind(worker_id = rep(worker_ids, n),
+                 do.call("rbind", tmp, quote = TRUE))
+    ret <- ret[order(ret$time, ret$worker_id), ]
+    rownames(ret) <- NULL
+    ret
+  } else {
+    ## NOTE: Need to keep this in sync with parse_worker_log; get some
+    ## tests in here to make sure...
+    data.frame(worker_id = worker_ids, time = character(0),
+               command = character(0), message = character(0),
+               stringsAsFactors = FALSE)
+  }
+}
+
+worker_log_tail <- function(con, keys, worker_id, n = 1) {
+  ## More intuitive `n` behaviour for "print all entries"; n of Inf
+  if (identical(n, Inf)) {
+    n <- 0
+  }
+  log_key <- rrq_key_worker_log(keys$queue_name, worker_id)
+  log <- as.character(con$LRANGE(log_key, -n, -1))
+  re <- "^([0-9]+) ([^ ]+) ?(.*)$"
+  if (!all(grepl(re, log))) {
+    stop("Corrupt log")
+  }
+  time <- as.integer(sub(re, "\\1", log))
+  command <- sub(re, "\\2", log)
+  message <- lstrip(sub(re, "\\3", log))
+  data.frame(time, command, message, stringsAsFactors = FALSE)
+}
+
+workers_task_id <- function(con, keys, worker_id) {
+  from_redis_hash(con, keys$workers_task, worker_id)
+}
+
+workers_delete_exited <- function(con, keys, worker_ids = NULL) {
+  ## This only includes things that have been processed and had task
+  ## orphaning completed.
+  if (is.null(worker_ids)) {
+    worker_ids <- workers_list_exited(con, keys)
+  } else {
+    extra <- setdiff(worker_ids, workers_list_exited(con, keys))
+    if (length(extra)) {
+      stop(sprintf(
+        ## TODO: this function does not exist!  It's in rrqueue and I
+        ## think depends on heartbeat.
+        "Workers %s may not have exited;\n\trun workers_identify_lost first",
+        paste(extra, collapse = ", ")))
+    }
+  }
+  if (length(worker_ids) > 0L) {
+    con$HDEL(keys$workers_name,   worker_ids)
+    con$HDEL(keys$workers_status, worker_ids)
+    con$HDEL(keys$workers_task,   worker_ids)
+    con$HDEL(keys$workers_info,   worker_ids)
+    con$DEL(c(rrq_key_worker_log(keys$queue_name, worker_ids),
+              rrq_key_worker_message(keys$queue_name, worker_ids),
+              rrq_key_worker_response(keys$queue_name, worker_ids)))
+  }
+  worker_ids
+}
+
+workers_stop <- function(con, keys, worker_ids = NULL, type = "message",
+                         wait = 0) {
+  type <- match.arg(type, c("message", "kill", "kill_local"))
+  if (is.null(worker_ids)) {
+    worker_ids <- workers_list(con, keys)
+  }
+  if (length(worker_ids) == 0L) {
+    return(invisible(worker_ids))
+  }
+
+  if (type == "message") {
+    ## First, we send a message saying 'STOP'
+    message_id <- send_message(con, keys, "STOP", worker_ids = worker_ids)
+    ## ## TODO: This needs RedisHeartbeat support
+    ##
+    ## if (interrupt) {
+    ##   is_busy <- workers_status(con, keys, worker_ids) == WORKER_BUSY
+    ##   if (any(is_busy)) {
+    ##     queue_send_signal(con, keys, tools::SIGINT, worker_ids[is_busy])
+    ##   }
+    ## }
+    if (wait > 0L) {
+      ok <- try(get_responses(con, keys, message_id, worker_ids,
+                              delete = FALSE, wait = wait),
+                silent = TRUE)
+      ## if (inherits(ok, "try-error")) {
+      ##   done <- has_responses(con, keys, message_id, worker_ids)
+      ##   workers_stop(con, keys, worker_ids[!done], "kill")
+      ## }
+    }
+    ## TODO: This requires RedisHeartbeat support
+  } else if (type == "kill") {
+    ## queue_send_signal(con, keys, tools::SIGTERM, worker_ids)
+    stop("Needs redis heartbeat support")
+  } else {
+    ## kill_local
+    w_info <- workers_info(con, keys, worker_ids)
+    w_local <- vcapply(w_info, "[[", "hostname") == hostname()
+    if (!all(w_local)) {
+      stop("Not all workers are local: ",
+           paste(worker_ids[!w_local], collapse = ", "))
+    }
+    tools::pskill(vnapply(w_info, "[[", "pid"), tools::SIGTERM)
+  }
+  invisible(worker_ids)
+}
