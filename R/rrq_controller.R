@@ -108,19 +108,19 @@ R6_rrq_controller <- R6::R6Class(
     },
 
     task_wait = function(task_id, timeout = Inf, time_poll = 0.1,
-                       progress_bar = FALSE, key_complete = NULL) {
+                       progress = FALSE, key_complete = NULL) {
       assert_scalar_character(task_id)
       self$tasks_wait(task_id, timeout, time_poll,
-                      progress_bar, key_complete)[[1L]]
+                      progress, key_complete)[[1L]]
     },
     tasks_wait = function(task_ids, timeout = Inf, time_poll = NULL,
-                        progress_bar = TRUE, key_complete = NULL) {
+                        progress = TRUE, key_complete = NULL) {
       if (is.null(key_complete)) {
         collect_wait_n_poll(self$con, self$keys, task_ids,
-                            timeout, time_poll, progress_bar)
+                            timeout, time_poll, progress)
       } else {
         collect_wait_n(self$con, self$keys, task_ids, key_complete,
-                       timeout, time_poll, progress_bar)
+                       timeout, time_poll, progress)
       }
     },
     tasks_delete = function(task_ids, check = TRUE) {
@@ -138,10 +138,10 @@ R6_rrq_controller <- R6::R6Class(
     ## TODO: This might merge with some of queuer, as there's a lot of
     ## overlap here.
     lapply = function(X, FUN, ..., envir = parent.frame(),
-                    timeout = Inf, time_poll = 1, progress_bar = TRUE) {
+                    timeout = Inf, time_poll = 1, progress = TRUE) {
       rrq_lapply(self, X, FUN, ..., envir = envir,
                  timeout = timeout, time_poll = time_poll,
-                 progress_bar = progress_bar)
+                 progress = progress)
     },
 
     ## The messaging system from rrqueue, verbatim:
@@ -277,7 +277,7 @@ task_results <- function(con, keys, task_ids) {
 ## * collect_wait_n_poll: actively polls the hashes
 collect_wait_n <- function(con, keys, task_ids, key_complete,
                            timeout = Inf, time_poll = NULL,
-                           progress_bar = TRUE) {
+                           progress = TRUE) {
   time_poll <- time_poll %||% 1
   assert_integer_like(time_poll)
 
@@ -287,13 +287,13 @@ collect_wait_n <- function(con, keys, task_ids, key_complete,
     con$DEL(key_complete)
   } else {
     times_up <- time_checker(timeout)
-    p <- progress(length(task_ids), show= progress_bar)
+    p <- queuer:::progress(length(task_ids), show = progress)
     while (!all(done)) {
       tmp <- con$BLPOP(key_complete, time_poll)
       if (is.null(tmp)) {
         p(0)
         if (times_up()) {
-          if (progress_bar) {
+          if (progress) {
             message()
           }
           stop(sprintf("Exceeded maximum time (%d / %d tasks pending)",
@@ -311,7 +311,7 @@ collect_wait_n <- function(con, keys, task_ids, key_complete,
 }
 
 collect_wait_n_poll <- function(con, keys, task_ids, timeout, time_poll,
-                                progress_bar= TRUE) {
+                                progress = TRUE) {
   time_poll <- time_poll %||% 0.1
   status <- from_redis_hash(con, keys$tasks_status, task_ids)
   done <- status == TASK_COMPLETE | status == TASK_ERROR
@@ -321,7 +321,7 @@ collect_wait_n_poll <- function(con, keys, task_ids, timeout, time_poll,
     stop("Tasks not yet completed; can't be immediately returned")
   } else {
     times_up <- time_checker(timeout)
-    p <- progress(length(task_ids), show = progress_bar)
+    p <- queuer:::progress(length(task_ids), show = progress)
     remaining <- task_ids[!done]
 
     ## Or poll:
@@ -334,7 +334,7 @@ collect_wait_n_poll <- function(con, keys, task_ids, timeout, time_poll,
       } else {
         p(0)
         if (times_up()) {
-          if (progress_bar) {
+          if (progress) {
             message()
           }
           stop(sprintf("Exceeded maximum time (%d / %d tasks pending)",

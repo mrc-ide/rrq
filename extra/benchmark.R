@@ -18,7 +18,7 @@ obj <- rrq::rrq_controller(context, redux::hiredis())
 wid <- rrq::workers_spawn(obj$context, obj$con, logdir=tempdir())
 
 ## Look in particular at `elapsed`
-system.time(obj$lapply(1:1000, identity, progress_bar=FALSE))
+system.time(obj$lapply(1:1000, identity, progress=FALSE))
 
 ## In contrast with the built in socket cluster (though this also pays
 ## for the `fork()` operation):
@@ -45,7 +45,7 @@ f_rrq <- function(n, nrep, nworkers) {
   i <- seq_len(n)
   replicate(
     nrep,
-    system.time(obj$lapply(i, identity, progress_bar=FALSE))[["elapsed"]])
+    system.time(obj$lapply(i, identity, progress=FALSE))[["elapsed"]])
 }
 f_mc <- function(n, nrep, nworkers) {
   if (interactive()) {

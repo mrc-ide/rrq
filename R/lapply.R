@@ -39,7 +39,7 @@ rrq_lapply_submit <- function(obj, X, FUN, envir, ...) {
 }
 
 rrq_lapply_collect <- function(obj, dat, nms,
-                               timeout=Inf, time_poll=NULL, progress_bar=TRUE) {
+                               timeout=Inf, time_poll=NULL, progress=TRUE) {
   con <- obj$con
   keys <- obj$keys
   task_ids <- dat$task_ids
@@ -50,7 +50,7 @@ rrq_lapply_collect <- function(obj, dat, nms,
   ## this point, or implement various error handling approaches.
   ret <- collect_wait_n(con, keys, task_ids, key_complete,
                         timeout=timeout, time_poll=time_poll,
-                        progress_bar=progress_bar)
+                        progress=progress)
   tasks_delete(con, keys, task_ids, FALSE)
   if (!is.null(dat$hash)) {
     obj$db$del(dat$hash, "rrq_functions")
@@ -59,7 +59,7 @@ rrq_lapply_collect <- function(obj, dat, nms,
 }
 
 rrq_lapply <- function(obj, X, FUN, ..., envir=parent.frame(),
-                       timeout=Inf, time_poll=NULL, progress_bar=TRUE) {
+                       timeout=Inf, time_poll=NULL, progress=TRUE) {
   dat <- rrq_lapply_submit(obj, X, FUN, envir, ...)
-  rrq_lapply_collect(obj, dat, names(X), timeout, time_poll, progress_bar)
+  rrq_lapply_collect(obj, dat, names(X), timeout, time_poll, progress)
 }

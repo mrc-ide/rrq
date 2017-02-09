@@ -33,7 +33,7 @@ test_that("bulk", {
   wid <- workers_spawn(obj$context, obj$con, n_workers, "logs")
   expect_true(all(file.exists(file.path("logs", paste0(wid, ".log")))))
 
-  res <- obj$lapply(x, quote(slowdouble), progress_bar=FALSE)
+  res <- obj$lapply(x, quote(slowdouble), progress=FALSE)
 
   expect_equal(res, as.list(x * 2))
 
@@ -61,19 +61,19 @@ test_that("exotic functions", {
   ## worker_command(obj)
   
   x <- 1:3
-  res <- obj$lapply(x, quote(f1), progress_bar=FALSE)
+  res <- obj$lapply(x, quote(f1), progress=FALSE)
   expect_equal(res, lapply(x, f1))
 
   res <- local({
     f_local <- function(x) {
       x + 2
     }
-    obj$lapply(x, quote(f_local), progress_bar=FALSE)
+    obj$lapply(x, quote(f_local), progress=FALSE)
   })
   expect_equal(res, as.list(x + 2))
 
   res <- local({
-    obj$lapply(x, function(x) x + 3, progress_bar=FALSE)
+    obj$lapply(x, function(x) x + 3, progress=FALSE)
   })
   expect_equal(res, as.list(x + 3))
 })

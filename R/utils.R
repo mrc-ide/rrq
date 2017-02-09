@@ -33,31 +33,6 @@ blank <- function(n) {
   strrep(" ", n)
 }
 
-## Copied from rrqueue; consider exposing?
-progress_has_spin <- function() {
-  packageVersion("progress") > numeric_version("1.0.2")
-}
-
-progress <- function(total, ..., show = TRUE, prefix = "", fmt = NULL) {
-  if (show) {
-    if (is.null(fmt)) {
-      fmt <- paste0(prefix,
-                    if (progress_has_spin()) "(:spin) ",
-                    "[:bar] :percent")
-    }
-    pb <- progress::progress_bar$new(fmt, total = total)
-    pb_private <- environment(pb$tick)$private
-    function(len = 1, ..., clear = FALSE) {
-      if (clear) {
-        len <- pb_private$total - pb_private$current
-      }
-      invisible(pb$tick(len, ...))
-    }
-  } else {
-    function(...) {}
-  }
-}
-
 is_error <- function(x) {
   inherits(x, "try-error")
 }

@@ -141,7 +141,7 @@ test_that("log dir", {
   t <- queuer:::queuer_task(id, context$root)
 
   r$queue_submit(t$id)
-  res <- t$wait(10)
+  res <- t$wait(10, progress = FALSE)
 
   expect_true(file.exists(file.path(root, obj$db$get(t$id, "log_path"))))
   expect_is(t$log(), "context_log")
