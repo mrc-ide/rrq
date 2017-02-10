@@ -76,7 +76,7 @@ R6_rrq_controller <- R6::R6Class(
     },
 
     enqueue_ = function(expr, envir = parent.frame(), key_complete = NULL) {
-      dat <- prepare_expression(expr, envir, self$envir, self$db)
+      dat <- context::prepare_expression(expr, envir, self$db)
       task_submit(self$con, self$keys, dat, key_complete)
     },
 
@@ -135,13 +135,20 @@ R6_rrq_controller <- R6::R6Class(
       as.character(self$con$LRANGE(self$keys$queue_rrq, 0, -1))
     },
 
-    ## TODO: This might merge with some of queuer, as there's a lot of
-    ## overlap here.
-    lapply = function(X, FUN, ..., envir = parent.frame(),
+    lapply = function(X, FUN, ..., DOTS = NULL,
+                      envir = parent.frame(),
                     timeout = Inf, time_poll = 1, progress = TRUE) {
-      rrq_lapply(self, X, FUN, ..., envir = envir,
+      rrq_lapply(self, X, FUN, ..., DOTS = NULL, envir = envir,
                  timeout = timeout, time_poll = time_poll,
                  progress = progress)
+    },
+
+    enqueue_bulk = function(X, FUN, ..., DOTS = NULL, do_call = FALSE,
+                            envir = parent.frame(),
+                            timeout = Inf, time_poll = 1, progress = TRUE) {
+      rrq_enqueue_bulk(self, X, FUN, ..., DOTS = DOTS, do_call = do_call,
+                       envir = envir, timeout = timeout, time_poll = time_poll,
+                       progress = progress)
     },
 
     ## The messaging system from rrqueue, verbatim:
@@ -358,6 +365,7 @@ get_rrq_controller <- function(x, ...) {
 
 ##' @export
 get_rrq_controller.NULL <- function(x, ...) {
+  stop("FIXME")
   con <- redux::hiredis(host = Sys_getenv("REDIS_HOST"))
   ctx <- context::context_handle(Sys_getenv("CONTEXT_ROOT"),
                                  Sys_getenv("CONTEXT_ID"))
