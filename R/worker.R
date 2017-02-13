@@ -211,10 +211,9 @@ R6_rrq_worker <- R6::R6Class(
       keys <- self$keys
       con <- self$con
 
-      e <- new.env(parent = self$envir)
-      dat <- con$HGET(keys$tasks_expr, task_id)
-      expr <- context::restore_expression(bin_to_object(dat), e, self$db)
-      res <- tryCatch(eval(expr, e), error = WorkerTaskError)
+      dat <- bin_to_object(con$HGET(keys$tasks_expr, task_id))
+      e <- context::restore_locals(dat, self$envir, self$db)
+      res <- tryCatch(eval(dat$expr, e), error = WorkerTaskError)
       task_status <-
         if (inherits(res, "WorkerTaskError")) TASK_ERROR else TASK_COMPLETE
 

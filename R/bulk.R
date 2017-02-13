@@ -19,18 +19,9 @@ rrq_lapply <- function(obj, X, FUN, ..., DOTS = NULL,
 rrq_enqueue_bulk_submit <- function(obj, X, FUN, ..., DOTS = NULL,
                                     do_call = FALSE,
                                     envir = parent.frame(), use_names = TRUE) {
-  keys <- obj$keys
-
+  ## See queuer:::enqueue_bulk_submit for the general approach used here.
   fun_dat <- queuer::match_fun_queue(FUN, envir, obj$envir)
-  if (is.null(fun_dat$name_symbol)) {
-    stop("Not yet supported")
-    ## This needs implementing in context, then queuer; it's not
-    ## trivial and not tested.  But serialise the function and load it
-    ## by value when rebuilding the expression.  See rrq@2f879fd for
-    ## an implementation.
-  } else {
-    FUN <- fun_dat$name_symbol
-  }
+  FUN <- fun_dat$name_symbol %||% fun_dat$value
 
   ## It is important not to use list(...) here and instead capture the
   ## symbols.  Otherwise later when we print the expression bad things
@@ -39,8 +30,9 @@ rrq_enqueue_bulk_submit <- function(obj, X, FUN, ..., DOTS = NULL,
     DOTS <- lapply(lazyeval::lazy_dots(...), "[[", "expr")
   }
 
-  dat <- context::task_bulk_prepare(X, FUN, DOTS, do_call, envir, obj$db)
+  dat <- context::task_bulk_prepare(X, FUN, DOTS, do_call, FALSE, envir, obj$db)
 
+  keys <- obj$keys
   key_complete <- rrq_key_task_complete(keys$queue_name)
   tasks_dat <- lapply(dat, object_to_bin)
   task_ids <- task_submit_n(obj$con, keys, tasks_dat, key_complete)

@@ -47,7 +47,6 @@ test_that("exotic functions", {
   res <- obj$lapply(x, quote(f1), progress = FALSE)
   expect_equal(res, lapply(x, f1))
 
-  skip("needs more work")
   res <- local({
     f_local <- function(x) {
       x + 2
