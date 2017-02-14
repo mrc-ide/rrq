@@ -4,10 +4,9 @@ test_that("bulk", {
   Sys.setenv(R_TESTS = "")
   root <- tempfile()
   context <- context::context_save(root, sources = "myfuns.R")
-  ## This is a bug on context;
-  env <- context::context_load(context, environment())
+  context <- context::context_load(context, environment())
 
-  obj <- rrq_controller(context, redux::hiredis(), env)
+  obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
   n_workers <- 5
@@ -36,8 +35,8 @@ test_that("exotic functions", {
   Sys.setenv(R_TESTS = "")
   root <- tempfile()
   context <- context::context_save(root, sources = "myfuns.R")
-  env <- context::context_load(context, environment())
-  obj <- rrq_controller(context, redux::hiredis(), env)
+  context <- context::context_load(context, environment())
+  obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
   wid <- workers_spawn(context, obj$con, logdir = "logs")

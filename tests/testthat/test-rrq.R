@@ -3,6 +3,7 @@ context("rrq")
 test_that("sanity checking", {
   root <- tempfile()
   context <- context::context_save(root)
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
 
   obj <- rrq_controller(context, redux::hiredis())
   expect_equal(obj$workers_list(), character(0))
@@ -22,6 +23,7 @@ test_that("basic use", {
   Sys.setenv(R_TESTS = "")
   root <- tempfile()
   context <- context::context_save(root, sources = "myfuns.R")
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
@@ -45,6 +47,7 @@ test_that("worker working directory", {
   with_wd(other, {
     root <- "context"
     context <- context::context_save(root, sources = "myfuns.R")
+    context <- context::context_load(context, new.env(parent = .GlobalEnv))
     obj <- rrq_controller(context, redux::hiredis())
     on.exit(obj$destroy())
 
@@ -66,6 +69,7 @@ test_that("worker name", {
   Sys.setenv(R_TESTS = "")
   root <- tempfile()
   context <- context::context_save(root, sources = "myfuns.R")
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
@@ -80,6 +84,7 @@ test_that("worker timeout", {
   Sys.setenv(R_TESTS = "")
   root <- tempfile()
   context <- context::context_save(root, sources = "myfuns.R")
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
@@ -105,6 +110,7 @@ test_that("context job", {
   Sys.setenv(R_TESTS = "")
   root <- tempfile()
   context <- context::context_save(root, sources = "myfuns.R")
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
@@ -126,6 +132,7 @@ test_that("log dir", {
   Sys.setenv(R_TESTS = "")
   root <- tempfile()
   context <- context::context_save(root, sources = "myfuns.R")
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
   obj <- rrq_controller(context, redux::hiredis())
   r <- worker_controller(context$id, redux::hiredis())
 

@@ -4,7 +4,7 @@ rrq_worker_main <- function(args = commandArgs(TRUE)) {
 
   Options:
   --context-root=ROOT  Context root (required)
-  --context-id=ID      Context id (may be required)
+  --context-id=ID      Context id (required)
   --redis-host=IP      Redis host [default: 127.0.0.1]
   --redis-port=PORT    Redis port [default: 6379]
   --key-alive=KEY      Key to write to after worker comes alive
@@ -20,17 +20,6 @@ rrq_worker_main <- function(args = commandArgs(TRUE)) {
   context_id <- args[["context-id"]]
   context::context_log_start()
 
-  if (is.null(context_id)) {
-    ids <- context::contexts_list(context_root)
-    if (length(ids) == 1L) {
-      context_id <- ids
-    } else if (length(ids) == 0L) {
-      stop("No contexts found in ", context_root)
-    } else {
-      stop(sprintf("More than 1 contexts founds in %s; pick one of:\n%s",
-                   context_root, paste0("\t-", ids, collapse = "\n")))
-    }
-  }
   worker_name <- args[["worker-name"]]
   time_poll <- docopt_number(args, "time_poll", formals(rrq_worker)$time_poll)
   timeout <- docopt_number(args, "timeout")

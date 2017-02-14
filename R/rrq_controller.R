@@ -21,12 +21,9 @@
 ##'
 ##' @param con A redis connection (redux object).
 ##'
-##' @param envir An environment (will change; this is a bit of a faff
-##'   at the moment).
-##'
 ##' @export
-rrq_controller <- function(context, con, envir = .GlobalEnv) {
-  R6_rrq_controller$new(context, con, envir)
+rrq_controller <- function(context, con) {
+  R6_rrq_controller$new(context, con)
 }
 
 R6_rrq_controller <- R6::R6Class(
@@ -40,13 +37,16 @@ R6_rrq_controller <- R6::R6Class(
     envir = NULL,
     db = NULL,
 
-    initialize = function(context, con, envir = .GlobalEnv) {
+    initialize = function(context, con) {
       assert_inherits(context, "context")
       assert_inherits(con, "redis_api")
+      if (!is.environment(context$envir)) {
+        stop("context is not loaded")
+      }
       self$context <- context
       self$con <- con
       self$keys <- rrq_keys(context$id)
-      self$envir <- envir
+      self$envir <- context$envir
       self$db <- context$db
       ## This is used to create a hint as to who is using the queue.
       ## It's done as a list so will accumulate elements over time,
@@ -352,25 +352,6 @@ collect_wait_n_poll <- function(con, keys, task_ids, timeout, time_poll,
     }
   }
   task_results(con, keys, task_ids)
-}
-
-##' Try and get an \code{rrq_controller} object
-##' @title Try and get an rrq controller
-##' @param x An object
-##' @param ... Arguments passed through to methods
-##' @export
-get_rrq_controller <- function(x, ...) {
-  UseMethod("get_rrq_controller")
-}
-
-##' @export
-get_rrq_controller.NULL <- function(x, ...) {
-  stop("FIXME")
-  con <- redux::hiredis(host = Sys_getenv("REDIS_HOST"))
-  ctx <- context::context_handle(Sys_getenv("CONTEXT_ROOT"),
-                                 Sys_getenv("CONTEXT_ID"))
-  envir <- .GlobalEnv
-  rrq_controller(ctx, con, envir)
 }
 
 controller_info <- function() {

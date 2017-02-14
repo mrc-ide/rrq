@@ -4,6 +4,7 @@ test_that("timeout", {
   Sys.setenv(R_TESTS = "")
   root <- tempfile()
   context <- context::context_save(root, sources = "myfuns.R")
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
@@ -79,6 +80,7 @@ test_that("pause", {
   Sys.setenv(R_TESTS = "")
   root <- tempfile()
   context <- context::context_save(root, sources = "myfuns.R")
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
@@ -141,6 +143,7 @@ test_that("unknown command", {
   Sys.setenv(R_TESTS = "")
   root <- tempfile()
   context <- context::context_save(root, sources = "myfuns.R")
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 

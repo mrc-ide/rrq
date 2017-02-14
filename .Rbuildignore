@@ -9,3 +9,5 @@
 ^ignore$
 ^tests/testthat/contexts$
 ^extra$
+^\.lintr$
+^TODO\.md$

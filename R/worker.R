@@ -97,7 +97,8 @@ R6_rrq_worker <- R6::R6Class(
     },
 
     load_context = function() {
-      self$envir <- context::context_load(self$context)
+      self$context <- context::context_load(self$context)
+      self$envir <- self$context$envir
     },
 
     initialise_worker = function(key_alive) {
@@ -232,9 +233,7 @@ R6_rrq_worker <- R6::R6Class(
         log_file <- file.path(self$context$root$path, log_path)
       }
       res <- tryCatch(
-        context::task_run(task_id, self$context$root, self$envir,
-                          load_context = FALSE,
-                          filename = log_file),
+        context::task_run(task_id, self$context, log_file),
         error = WorkerTaskError)
       task_status <-
         if (inherits(res, "WorkerTaskError")) TASK_ERROR else TASK_COMPLETE

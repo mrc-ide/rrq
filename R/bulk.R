@@ -30,7 +30,9 @@ rrq_enqueue_bulk_submit <- function(obj, X, FUN, ..., DOTS = NULL,
     DOTS <- lapply(lazyeval::lazy_dots(...), "[[", "expr")
   }
 
-  dat <- context::task_bulk_prepare(X, FUN, DOTS, do_call, FALSE, envir, obj$db)
+  ## TODO: use_names support here not tested
+  dat <- context::bulk_prepare_expression(X, FUN, DOTS, do_call, use_names,
+                                          envir, obj$db)
 
   keys <- obj$keys
   key_complete <- rrq_key_task_complete(keys$queue_name)

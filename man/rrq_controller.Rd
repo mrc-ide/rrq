@@ -4,15 +4,12 @@
 \alias{rrq_controller}
 \title{rrq queue controller}
 \usage{
-rrq_controller(context, con, envir = .GlobalEnv)
+rrq_controller(context, con)
 }
 \arguments{
 \item{context}{A context handle object.  The context needs to be loaded.}
 
 \item{con}{A redis connection (redux object).}
-
-\item{envir}{An environment (will change; this is a bit of a faff
-at the moment).}
 }
 \description{
 A queue controller.  Use this to interact with a queue/cluster.

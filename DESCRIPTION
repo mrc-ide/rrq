@@ -14,7 +14,6 @@ Imports:
     docopt,
     ids,
     lazyeval,
-    progress,
     queuer (>= 0.0.4),
     redux (>= 0.5.1)
 Suggests:
