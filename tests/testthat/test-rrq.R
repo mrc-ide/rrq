@@ -87,7 +87,8 @@ test_that("worker timeout", {
   on.exit(obj$destroy())
 
   t <- as.integer(runif(1, min = 100, max = 10000))
-  obj$worker_config_save("localhost", timeout = t, copy_redis = TRUE)
+  res <- obj$worker_config_save("localhost", timeout = t, copy_redis = TRUE)
+  expect_equal(res$timeout, t)
 
   wid <- workers_spawn(obj, timeout = 5, progress = FALSE)
   id <- obj$send_message("TIMEOUT_GET")

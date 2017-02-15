@@ -54,7 +54,7 @@ R6_rrq_controller <- R6::R6Class(
                                      4:5)
       ## TODO: I don't know that this is an ideal name, really - I'd
       ## be concerned that something else will clobber this.
-      self$worker_config_save("localhost", copy_redis = TRUE)
+      self$worker_config_save("localhost", copy_redis = TRUE, overwrite = FALSE)
       ## This is used to create a hint as to who is using the queue.
       ## It's done as a list so will accumulate elements over time,
       ## but cap at the 10 most recent uses.
@@ -221,13 +221,10 @@ R6_rrq_controller <- R6::R6Class(
 
     worker_config_save = function(key, redis_host = NULL, redis_port = NULL,
                                   time_poll = NULL, timeout = NULL,
-                                  log_path = NULL, copy_redis = FALSE) {
-      if (copy_redis) {
-        redis_host <- self$con$config()$host
-        redis_port <- self$con$config()$port
-      }
-      worker_config_save(self$context$root$path, key, redis_host, redis_port,
-                         time_poll, timeout, log_path)
+                                  log_path = NULL,
+                                  copy_redis = FALSE, overwrite = TRUE) {
+      rrq_worker_config_save(self, key, redis_host, redis_port,
+                             time_poll, timeout, log_path, copy_redis, overwrite)
     }
   ))
 
