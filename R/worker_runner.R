@@ -1,49 +1,53 @@
 rrq_worker_main <- function(args = commandArgs(TRUE)) {
-  'Usage:
-  rrq_worker --context-root=ROOT [options]
+  dat <- rrq_worker_main_args(args)
+  con <- redux::hiredis(host = dat[["redis-host"]],
+                        port = dat[["redis-port"]])
+  context <- context::context_read(dat[["context_id"]], dat[["context_root"]])
 
-  Options:
-  --context-root=ROOT  Context root (required)
-  --context-id=ID      Context id (required)
-  --redis-host=IP      Redis host [default: 127.0.0.1]
-  --redis-port=PORT    Redis port [default: 6379]
-  --key-alive=KEY      Key to write to after worker comes alive
-  --time-poll=TIME     Time (in seconds) to poll queues
-  --worker-name=NAME   Optional name to use for the worker
-  --timeout=TIME       Optional worker timeout (in seconds)
-  --log-path=PATH      Optional path for logs
-' -> doc
-
-  args <- docopt::docopt(doc, args)
-
-  context_root <- args[["context-root"]]
-  context_id <- args[["context-id"]]
-  context::context_log_start()
-
-  worker_name <- args[["worker-name"]]
-  time_poll <- docopt_number(args, "time_poll", formals(rrq_worker)$time_poll)
-  timeout <- docopt_number(args, "timeout")
-
-  context <- context::context_read(context_id, context_root)
-  ## TODO: This interacts badly with having set REDIS_URL!  Decide on
-  ## sensible defaults.
-  con <- redux::hiredis(host = args[["redis-host"]],
-                        port = args[["redis-port"]])
-
-  rrq_worker(context, con, key_alive = args[["key-alive"]],
-             worker_name = worker_name, time_poll = time_poll,
-             log_path = args[["log-path"]], timeout = timeout)
+  rrq_worker(context, con,
+             key_alive   = dat[["key_alive"]],
+             worker_name = dat[["worker_name"]],
+             time_poll   = dat[["time_poll"]],
+             log_path    = dat[["log-path"]],
+             timeout     = dat[["timeout"]])
 }
 
-docopt_number <- function(args, name, default = NULL) {
-  x <- args[[name]]
-  if (is.null(x)) {
-    default
-  } else {
-    h <- function(e) {
-      stop(sprintf("while processing %s:\n\t",
-                   name, e$message), call. = FALSE)
-    }
-    withCallingHandlers(as.numeric(x), warning = h)
-  }
+rrq_worker_main_args <- function(args) {
+  message("Arguments:")
+  message(paste(sprintf("- %s", args), collapse = "\n"))
+  args <- context:::parse_command_args(args, "rrq_worker", 3:4)
+  context_root <- args$root
+  context_id <- args$args[[1L]]
+  config_key <- args$args[[2L]]
+  worker_name <- args$args[[3L]]
+  key_alive <- if (args$n == 4L) args$args[[4L]] else NULL
+
+  config <- worker_config_read(context_root, config_key)
+  config$context_id <- context_id
+  config$context_root <- context_root
+  config$worker_name <- worker_name
+  config$key_alive <- key_alive
+  config
+}
+
+## TODO: This might become the primary way of launching workers?
+## Rework things using it and see what it's like that way.  We can
+## always tweak the rrq_worker functions a bit further to test if need
+## be.
+##
+## TODO: is it ever useful to save the context_id into the config?  It
+## seems that would lead to a proliferation of configurations and make
+## it difficult to know when to save them.
+rrq_worker_from_config <- function(root, context_id, worker_config,
+                                   worker_name = NULL, key_alive = NULL) {
+  context <- context::context_read(context_id, root)
+  config <- worker_config_read(context, worker_config)
+  con <- redux::hiredis(host = config[["redis-host"]],
+                        port = config[["redis-port"]])
+  rrq_worker(context, con,
+             key_alive   = config[["key_alive"]],
+             worker_name = config[["worker_name"]],
+             time_poll   = config[["time_poll"]],
+             log_path    = config[["log-path"]],
+             timeout     = config[["timeout"]])
 }

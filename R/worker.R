@@ -30,7 +30,7 @@
 ##'
 ##' @export
 rrq_worker <- function(context, con, key_alive = NULL, worker_name = NULL,
-                       time_poll = 60, log_path = NULL, timeout = NULL) {
+                       time_poll = NULL, log_path = NULL, timeout = NULL) {
   R6_rrq_worker$new(context, con, key_alive, worker_name, time_poll,
                      log_path, timeout)
   invisible()
@@ -62,7 +62,7 @@ R6_rrq_worker <- R6::R6Class(
       self$name <- worker_name %||% ids::random_id()
       self$keys <- rrq_keys(context$id, self$name)
 
-      self$time_poll <- time_poll
+      self$time_poll <- time_poll %||% 60
 
       if (!is.null(log_path)) {
         if (!context:::is_relative_path(log_path)) {

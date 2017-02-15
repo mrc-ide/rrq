@@ -48,6 +48,9 @@ R6_rrq_controller <- R6::R6Class(
       self$keys <- rrq_keys(context$id)
       self$envir <- context$envir
       self$db <- context$db
+      ## TODO: I don't know that this is an ideal name, really - I'd
+      ## be concerned that something else will clobber this.
+      self$worker_config_save("localhost", copy_redis = TRUE)
       ## This is used to create a hint as to who is using the queue.
       ## It's done as a list so will accumulate elements over time,
       ## but cap at the 10 most recent uses.
@@ -200,21 +203,29 @@ R6_rrq_controller <- R6::R6Class(
 
     ## This one is a bit unfortunately named, but should do for now.
     ## It only works if the worker has appropriately saved logging
-    ## information.
-    worker_log = function(worker_id) {
+    ## information.  Given the existance of things like
+    ## workers_log_tail this should be renamed something like
+    ## worker_text_log perhaps?
+    worker_process_log = function(worker_id) {
       assert_scalar(worker_id)
-      context::task_log(self$context, worker_id)
+      context::task_log(worker_id, self$context, parse = FALSE)
     },
 
     workers_stop = function(worker_ids = NULL, type = "message", wait = 0) {
       workers_stop(self$con, self$keys, worker_ids, type, wait)
-    }
+    },
 
-    ## But the most common thing is going to be to run a bunch of jobs
-    ## in a row with relatively low latency.  That's going to involve
-    ## writing a bunch of data, bunch of expressions and then
-    ## evaluating them.
-    ))
+    worker_config_save = function(key, redis_host = NULL, redis_port = NULL,
+                                  time_poll = NULL, timeout = NULL,
+                                  log_path = NULL, copy_redis = FALSE) {
+      if (copy_redis) {
+        redis_host <- self$con$config()$host
+        redis_port <- self$con$config()$port
+      }
+      worker_config_save(self$context$root$path, key, redis_host, redis_port,
+                         time_poll, timeout, log_path)
+    }
+  ))
 
 tasks_status <- function(con, keys, task_ids) {
   from_redis_hash(con, keys$tasks_status, task_ids, missing = TASK_MISSING)

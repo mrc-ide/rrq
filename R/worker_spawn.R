@@ -10,12 +10,24 @@
 ##' completely separate session.
 ##'
 ##' @title Spawn a worker
-##' @inheritParams rrq_controller
+##'
+##' @param obj An \code{rrq_controller} object
+##'
 ##' @param n Number of workers to spawn
-##' @param logdir Path of a log directory to write to.
-##' @param timeout Time to wait for the worker to appear
-##' @param time_poll Period to poll for the worker (must be in
-##'   seconds)
+##'
+##' @param logdir Path of a log directory to write to.  This will be
+##'   interpreted relative to the context root.
+##'
+##' @param timeout Time to wait for workers to appear
+##'
+##' @param worker_config Name of the configuration to use.  By default
+##'   the \code{"localhost"} configuration is used, which duplicates
+##'   the redis information from the local configuration but otherwise
+##'   uses the defaults.
+##'
+##' @param worker_name_base Optional base to construct the worker
+##'   names from.  If omitted a random name will be used.
+##'
 ##' @param path Path to start the worker in.  By default workers will
 ##'   start in the current working directory, but you can start them
 ##'   elsewhere by providing a path here.  If the path does not exist,
@@ -26,112 +38,94 @@
 ##'   \code{\link{normalizePath}} to convert into an absolute path
 ##'   name to prevent this.
 ##'
-##' @param worker_name_base Optional base to construct the worker
-##'   names from.  If omitted a random name will be used.
-##'
-##' @param worker_time_poll Interval that the worker should poll at
-##'   (not the same as \code{time_poll}).
-##'
-##' @param worker_timeout Time before workers should turn off (not the
-##'   same as \code{timeout})
-##'
-##' @param worker_log_path Per-task log directory for workers (not the
-##'   same as \code{logdir}, which is for the worker overall).  This
-##'   is interpreted as relative to the \emph{context root}, not the
-##'   current directory.  This will allow the \code{$log()} method of
-##'   a task object to work as expected.
+##' @param progress Show a progress bar while waiting for workers
+##'   (when \code{timeout} is at least 0)
 ##'
 ##' @export
-workers_spawn <- function(context, con, n = 1, logdir = ".",
-                          timeout = 600, time_poll = 1,
-                          path = ".", worker_name_base = NULL,
-                          worker_time_poll = NULL, worker_timeout = NULL,
-                          worker_log_path = NULL) {
+workers_spawn <- function(obj, n = 1, logdir = "worker_logs",
+                          timeout = 600, worker_config = "localhost",
+                          worker_name_base = NULL, path = NULL,
+                          progress = TRUE) {
+  assert_inherits(obj, "rrq_controller")
+  if (!obj$db$exists(worker_config, "worker_config")) {
+    stop(sprintf("worker config '%s' does not exist", worker_config))
+  }
+  if (!is.null(path)) {
+    stop("FIXME")
+  }
+
   rrq_worker <- system.file("rrq_worker", package = "rrq")
   env <- paste0("RLIBS=", paste(.libPaths(), collapse = ":"),
-                'R_TESTS=""')
+                ' R_TESTS=""')
+  worker_name_base <- worker_name_base %||% ids::adjective_animal()
+  worker_names <- sprintf("%s_%d", worker_name_base, seq_len(n))
 
-  worker_names <- sprintf(
-    "%s_%d", worker_name_base %||% ids::adjective_animal(), seq_len(n))
-
-  if (!file.exists(logdir)) {
-    dir.create(logdir, FALSE, TRUE)
-  } else if (!file.info(logdir)$isdir) {
-    stop("logdir exists but is not a directory")
+  logdir_abs <- file.path(obj$context$root$path, logdir)
+  if (!file.exists(logdir_abs)) {
+    dir.create(logdir_abs, FALSE, TRUE)
   }
-  logdir <- normalizePath(logdir, mustWork = TRUE)
-  logfile <- file.path(logdir, paste0(worker_names, ".log"))
+  obj$context$db$mset(worker_names, file.path(logdir, worker_names), "log_path")
+  logfile <- file.path(logdir_abs, worker_names)
 
-  assert_integer_like(time_poll)
+  root <- normalizePath(obj$context$root$path)
+  context_id <- obj$context$id
+  key_alive <- rrq_key_worker_alive(context_id)
 
-  key_alive <- rrq_key_worker_alive(context$id)
-
-  args <- c("--context-root", normalizePath(context$root$path),
-            "--context-id", context$id,
-            "--redis-host", con$config()$host,
-            "--redis-port", con$config()$port,
-            "--key-alive", key_alive,
-            if (!is.null(worker_time_poll)) "--time-poll", worker_time_poll,
-            if (!is.null(worker_timeout)) "--timeout", worker_timeout,
-            if (!is.null(worker_log_path)) "--log-path", worker_log_path)
-
-  message(sprintf("Spawning %d %s", n, ngettext(n, "worker", "workers")))
-  message("Logs in directory ", logdir)
-  if (is.null(worker_log_path)) {
-    message("Worker jobs log to main log")
-  } else {
-    message("Worker jobs log to ", worker_log_path)
+  if (progress) {
+    message(sprintf("Spawning %d %s", n, ngettext(n, "worker", "workers")))
   }
-
   code <- integer(n)
-  with_wd(path, {
-    for (i in seq_len(n)) {
-      code[[i]] <- system2(rrq_worker,
-                           c(args, "--worker-name", worker_names[[i]]),
-                           env = env, wait = FALSE,
-                           stdout = logfile[[i]], stderr = logfile[[i]])
-    }
-  })
+  ## TODO: path is never used in the package
+  ## with_wd(path, {
+  for (i in seq_len(n)) {
+    args <- c(root, context_id, worker_config, worker_names[[i]], key_alive)
+    code[[i]] <- system2(rrq_worker, args, env = env, wait = FALSE,
+                         stdout = logfile[[i]], stderr = logfile[[i]])
+  }
+  ## })
   if (any(code != 0L)) {
     warning("Error launching script: worker *probably* does not exist")
   }
 
-  workers_wait(con, n, key_alive, timeout, time_poll)
+  if (timeout > 0) {
+    time_poll <- 1
+    workers_wait(obj$con, n, key_alive, timeout, time_poll, progress)
+  } else {
+    worker_names
+  }
 }
 
 ##' @export
 ##' @rdname workers_spawn
 ##' @param key_alive A key as generated by \code{\link{rrq_key_worker_alive}}
-workers_wait <- function(con, n, key_alive, timeout = 600, time_poll = 1) {
-  ret <- rep.int(NA_character_, n)
-  t0 <- Sys.time()
-  timeout <- as.difftime(timeout, units = "secs")
-
+workers_wait <- function(con, n, key_alive, timeout = 600, time_poll = 1,
+                         progress = TRUE) {
+  p <- queuer:::progress(total = n, show = progress)
+  time_poll <- min(time_poll, timeout)
+  times_up <- time_checker(timeout)
   i <- 1L
+  ret <- rep.int(NA_character_, n)
   repeat {
     x <- con$BLPOP(key_alive, time_poll)
     if (is.null(x)) {
-      message(".", appendLF = FALSE)
-      flush.console()
+      p(0)
     } else {
       ret[[i]] <- x[[2]]
-      if (n > 1L) {
-        message(sprintf("new worker: %s (%d / %d)", x[[2]], i, n))
-      } else {
-        message(sprintf("new worker: %s", x[[2]]))
-      }
-      i <- i + 1
+      p(1)
+      i <- i + 1L
     }
     if (!any(is.na(ret))) {
       break
     }
-    if (Sys.time() - t0 > timeout) {
-      ## TODO: Better recover here.  Ideally we'd stop any workers
-      ## that *are* running, and provide data from the log files.
-      stop(sprintf("%d / %d workers not identified in time",
-                   sum(is.na(ret)), n))
+    if (times_up()) {
+      if (progress) {
+        message()
+        ## TODO: Better recover here.  Ideally we'd stop any workers
+        ## that *are* running, and provide data from the log files.
+        stop(sprintf("%d / %d workers not identified in time",
+                     sum(is.na(ret)), n))
+      }
     }
   }
-
   ret
 }
