@@ -2,12 +2,13 @@ context("worker_config")
 
 test_that("rrq_default configuration", {
   path <- tempfile()
-  on.exit(unlink(path, recursive = TRUE))
 
   expect_error(rrq_worker_main_args(c()), "At least 4 arguments required")
   ctx <- context::context_save(path)
   ctx <- context::context_load(ctx, new.env(parent = .GlobalEnv))
   obj <- rrq_controller(ctx, redux::hiredis())
+  on.exit(obj$destroy())
+
   expect_equal(obj$db$get("localhost", "worker_config"),
                list(redis_host = obj$con$config()$host,
                     redis_port = obj$con$config()$port))
@@ -20,6 +21,7 @@ test_that("rrq_worker_main_args", {
   ctx <- context::context_save(path)
   ctx <- context::context_load(ctx, new.env(parent = .GlobalEnv))
   obj <- rrq_controller(ctx, redux::hiredis())
+  on.exit(obj$destroy())
 
   host <- "redis_host"
   port <- 8888
@@ -50,6 +52,7 @@ test_that("create short-lived worker", {
   ctx <- context::context_save(path)
   ctx <- context::context_load(ctx, new.env(parent = .GlobalEnv))
   obj <- rrq_controller(ctx, redux::hiredis())
+  on.exit(obj$destroy())
 
   key <- "stop_immediately"
   cfg <- obj$worker_config_save(key, timeout = 0, time_poll = 1,
