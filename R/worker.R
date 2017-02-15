@@ -1,4 +1,6 @@
 ## TODO: decide if workers clean up on exit.
+##
+## TODO: decide if there is an implicit timeout (e.g., an hour)
 
 ##' A rrq queue worker.  These are not for interacting with but will
 ##' sit and poll a queue for jobs.
@@ -97,7 +99,8 @@ R6_rrq_worker <- R6::R6Class(
     },
 
     load_context = function() {
-      self$context <- context::context_load(self$context)
+      e <- new.env(parent = .GlobalEnv)
+      self$context <- context::context_load(self$context, e, refresh = TRUE)
       self$envir <- self$context$envir
     },
 
@@ -302,19 +305,22 @@ worker_info <- function(worker) {
               running = sys$running,
               hostname = hostname(),
               username = username(),
+              wd = getwd(),
               pid = process_id(),
               redis_host = redis_config$host,
               redis_port = redis_config$port,
               context_id = worker$context$id,
-              context_root = worker$context$root$path)
+              context_root = worker$context$root$path,
+              log_path = worker$log_path)
   class(dat) <- "worker_info"
   dat
 }
 
 ##' @export
 print.worker_info <- function(x, banner = FALSE, ...) {
-  xx <- x
+  xx <- unclass(x)
   n <- nchar(names(xx))
+  xx$log_path <- x$log_path %||% "<not set>"
   pad <- vcapply(max(n) - n, strrep, x = " ")
   ret <- sprintf("    %s:%s %s", names(xx), pad, as.character(xx))
   if (banner) {

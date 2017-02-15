@@ -6,3 +6,8 @@ slowdouble <- function(x) {
 f1 <- function(x) {
   x + 1
 }
+
+noisydouble <- function(x) {
+  message("doubling ", x)
+  x * 2
+}

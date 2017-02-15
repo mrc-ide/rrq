@@ -29,27 +29,20 @@ test_that("rrq_worker_main_args", {
   args <- c(path, ctx$id, use, nm)
   args2 <- c(args, key)
 
-  expect_error(rrq_worker_main_args(args),
+  ## This can't be easily tested here, but could be done with
+  ## rrq_worker_from_config
+  expect_error(rrq_worker_main(args),
                "Invalid rrq worker configuration key")
-  expect_error(rrq_worker_main_args(args2),
+  expect_error(rrq_worker_main(args2),
                "Invalid rrq worker configuration key")
 
   ## Then save a configuration:
   obj$worker_config_save(use, redis_host = host, redis_port = port)
-  config <- rrq_worker_main_args(args)
+  config <- worker_config_read(ctx, use)
 
   ## And show that we can load it appropriately
   expect_equal(config$redis_host, host)
   expect_equal(config$redis_port, port)
-  expect_equal(config$context_root, path)
-  expect_equal(config$context_id, ctx$id)
-  expect_equal(config$worker_name, nm)
-  expect_equal(length(config), 5L) # as above
-
-  config2 <- rrq_worker_main_args(args2)
-  expect_equal(config2$key_alive, key)
-  expect_equal(config2[names(config)], config)
-  expect_equal(length(config2), 6L)
 })
 
 test_that("create short-lived worker", {

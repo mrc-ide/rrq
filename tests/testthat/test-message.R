@@ -8,7 +8,8 @@ test_that("timeout", {
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
-  wid <- workers_spawn(context, obj$con, logdir = "logs", worker_time_poll = 1)
+  obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
+  wid <- workers_spawn(obj, timeout = 5, progress = FALSE)
 
   ## First, let's test the basic messaging approach:
   ##
@@ -70,7 +71,7 @@ test_that("timeout", {
   id <- obj$send_message("TIMEOUT_SET", 0)
   expect_equal(obj$get_response(id, wid, wait = 1), "OK")
 
-  Sys.sleep(1)
+  Sys.sleep(1.2)
 
   expect_equal(obj$workers_list(), character(0))
   expect_equal(obj$workers_list_exited(), wid)
@@ -84,7 +85,8 @@ test_that("pause", {
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
-  wid <- workers_spawn(context, obj$con, logdir = "logs", worker_time_poll = 1)
+  obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
+  wid <- workers_spawn(obj, timeout = 5, progress = FALSE)
 
   expect_that(obj$workers_status(),
               equals(setNames(WORKER_IDLE, wid)))
@@ -120,15 +122,16 @@ test_that("pause", {
 
   ## Check the log.
 
-  log <- obj$workers_log_tail(wid, 0)
+  log <- obj$workers_log_tail(wid, Inf)
 
-  expect_that(log$command, equals(c("ALIVE",
-                                    rep(c("MESSAGE", "RESPONSE"), 4),
-                                    "TASK_START", "TASK_COMPLETE")))
-  expect_that(log$message, equals(c("",
-                                    rep(c("PAUSE", "PING", "PAUSE", "RESUME"),
-                                        each = 2),
-                                    t, t)))
+  cmp_cmd <- c("ALIVE",
+               rep(c("MESSAGE", "RESPONSE"), 4),
+               "TASK_START", "TASK_COMPLETE")
+  cmp_msg <- c("",
+               rep(c("PAUSE", "PING", "PAUSE", "RESUME"), each = 2),
+               t, t)
+  expect_that(log$command, equals(cmp_cmd))
+  expect_that(log$message, equals(cmp_msg))
 
   ## Will stop when paused:
   id <- obj$send_message("PAUSE")
@@ -147,7 +150,8 @@ test_that("unknown command", {
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
-  wid <- workers_spawn(context, obj$con, logdir = "logs", worker_time_poll = 1)
+  obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
+  wid <- workers_spawn(obj, timeout = 5, progress = FALSE)
 
   expect_that(obj$workers_status(),
               equals(setNames(WORKER_IDLE, wid)))

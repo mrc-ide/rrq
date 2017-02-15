@@ -10,9 +10,7 @@ test_that("bulk", {
   on.exit(obj$destroy())
 
   n_workers <- 5
-
-  wid <- workers_spawn(obj$context, obj$con, n_workers, "logs")
-  expect_true(all(file.exists(file.path("logs", paste0(wid, ".log")))))
+  wid <- workers_spawn(obj, n_workers, timeout = 5, progress = FALSE)
 
   x <- runif(n_workers * 2) / 10
   res <- obj$lapply(x, quote(slowdouble), progress = FALSE)
@@ -39,7 +37,7 @@ test_that("exotic functions", {
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
-  wid <- workers_spawn(context, obj$con, logdir = "logs")
+  wid <- workers_spawn(obj, timeout = 5, progress = FALSE)
   ## worker_command(obj)
 
   x <- 1:3

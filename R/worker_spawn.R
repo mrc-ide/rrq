@@ -72,7 +72,8 @@ workers_spawn <- function(obj, n = 1, logdir = "worker_logs",
   key_alive <- rrq_key_worker_alive(context_id)
 
   if (progress) {
-    message(sprintf("Spawning %d %s", n, ngettext(n, "worker", "workers")))
+    message(sprintf("Spawning %d %s with prefix %s",
+                    n, ngettext(n, "worker", "workers"), worker_name_base))
   }
   code <- integer(n)
   ## TODO: path is never used in the package
@@ -120,11 +121,11 @@ workers_wait <- function(con, n, key_alive, timeout = 600, time_poll = 1,
     if (times_up()) {
       if (progress) {
         message()
-        ## TODO: Better recover here.  Ideally we'd stop any workers
-        ## that *are* running, and provide data from the log files.
-        stop(sprintf("%d / %d workers not identified in time",
-                     sum(is.na(ret)), n))
       }
+      ## TODO: Better recover here.  Ideally we'd stop any workers
+      ## that *are* running, and provide data from the log files.
+      stop(sprintf("%d / %d workers not identified in time",
+                   sum(is.na(ret)), n), call. = FALSE)
     }
   }
   ret

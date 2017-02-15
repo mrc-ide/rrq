@@ -18,7 +18,7 @@ temp_context <- function(sources=NULL, ...) {
 }
 
 worker_command <- function(obj) {
-  bquote(rrq_worker(context::context_read(.(id), .(root$path)),
-                    redux::hiredis()),
-         obj$context)
+  root <- obj$context$root$path
+  context_id <- obj$context$id
+  bquote(rrq_worker_from_config(.(root), .(context_id), "localhost"))
 }

@@ -29,11 +29,11 @@ worker_config_make <- function(redis_host = NULL, redis_port = NULL,
   if (!is.null(time_poll)) {
     assert_integer_like(time_poll)
   }
-  if (!is.null(timeout)) {
+  if (!(is.null(timeout) || identical(timeout, Inf))) {
     assert_integer_like(timeout)
   }
   if (!is.null(log_path)) {
-    assert_scalar_chararcter(log_path)
+    assert_scalar_character(log_path)
   }
   config <- list(redis_host = redis_host,
                  redis_port = redis_port,
