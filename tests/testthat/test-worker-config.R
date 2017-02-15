@@ -68,11 +68,17 @@ test_that("create short-lived worker", {
   expect_is(wid, "character")
   log <- obj$workers_log_tail(wid, Inf)
   expect_is(log, "data.frame")
-  expect_true(nrow(log) > 0)
-  if (nrow(log) == 1L) {
-    Sys.sleep(1.2)
+  expect_true(nrow(log) >= 1)
+
+  times_up <- queuer:::time_checker(3)
+  while (!times_up()) {
+    log <- obj$workers_log_tail(wid, Inf)
+    if (nrow(log) >= 2L) {
+      break
+    } else {
+      Sys.sleep(0.1)
+    }
   }
-  log <- obj$workers_log_tail(wid, Inf)
   expect_equal(nrow(log), 2L)
   expect_equal(log$command[[2]], "STOP")
   expect_true(file.exists(file.path(path, "worker_logs", wid)))
