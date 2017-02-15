@@ -54,7 +54,7 @@ workers_spawn <- function(obj, n = 1, logdir = "worker_logs",
     stop("FIXME")
   }
 
-  rrq_worker <- system.file("rrq_worker", package = "rrq")
+  rrq_worker <- file.path(obj$context$root$path, "bin", "rrq_worker")
   env <- paste0("RLIBS=", paste(.libPaths(), collapse = ":"),
                 ' R_TESTS=""')
   worker_name_base <- worker_name_base %||% ids::adjective_animal()

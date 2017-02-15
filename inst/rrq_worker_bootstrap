@@ -1,9 +1,0 @@
-#!/usr/bin/env Rscript
-library(methods)
-local({
-  CONTEXT_ROOT <- Sys.getenv("CONTEXT_ROOT")
-  if (nzchar(CONTEXT_ROOT)) {
-    source(file.path(CONTEXT_ROOT, "bin", "context_bootstrap"), TRUE)
-  }
-})
-rrq:::rrq_worker_main()

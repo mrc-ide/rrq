@@ -1,3 +1,0 @@
-#!/usr/bin/env Rscript
-library(methods)
-rrq:::rrq_worker_main()

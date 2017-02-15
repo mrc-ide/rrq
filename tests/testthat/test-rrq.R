@@ -16,6 +16,9 @@ test_that("sanity checking", {
   expect_equal(obj$queue_list(), id)
   expect_equal(obj$tasks_status(id), setNames(TASK_PENDING, id))
 
+  expect_true(
+    file.exists(file.path(obj$context$root$path, "bin", "rrq_worker")))
+
   test_queue_clean(context$id)
 })
 
