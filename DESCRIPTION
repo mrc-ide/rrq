@@ -16,6 +16,5 @@ Imports:
     queuer (>= 0.0.4),
     redux (>= 0.5.1)
 Suggests:
-    docopt,
     testthat
 RoxygenNote: 5.0.1
