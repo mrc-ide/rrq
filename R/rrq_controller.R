@@ -48,10 +48,7 @@ R6_rrq_controller <- R6::R6Class(
       self$keys <- rrq_keys(context$id)
       self$envir <- context$envir
       self$db <- context$db
-      context:::write_context_script(self$context$root$path,
-                                     "rrq_worker",
-                                     "rrq:::rrq_worker_main",
-                                     4:5)
+      write_rrq_worker(self$context)
       ## TODO: I don't know that this is an ideal name, really - I'd
       ## be concerned that something else will clobber this.
       self$worker_config_save("localhost", copy_redis = TRUE, overwrite = FALSE)

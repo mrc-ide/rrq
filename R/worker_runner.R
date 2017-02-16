@@ -57,3 +57,8 @@ rrq_worker_from_config <- function(root, context_id, worker_config,
              log_path    = config$log_path,
              timeout     = config$timeout)
 }
+
+write_rrq_worker <- function(root) {
+  path <- context::context_root_get(root)$path
+  context:::write_context_script(path, "rrq_worker", "rrq:::rrq_worker_main", 4:5)
+}
