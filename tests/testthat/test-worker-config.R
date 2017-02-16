@@ -64,7 +64,8 @@ test_that("create short-lived worker", {
   expect_true(any(grepl("STOP OK (TIMEOUT)", msg, fixed = TRUE)))
 
   ## Remote:
-  wid <- workers_spawn(obj, timeout = 10, worker_config = key, progress = FALSE)
+  wid <- workers_spawn(obj, timeout = 10, worker_config = key,
+                       progress = PROGRESS)
   expect_is(wid, "character")
   log <- obj$workers_log_tail(wid, Inf)
   expect_is(log, "data.frame")

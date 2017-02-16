@@ -47,20 +47,6 @@ with_wd <- function(path, expr) {
   force(expr)
 }
 
-time_checker <- function(timeout, remaining = FALSE) {
-  t0 <- Sys.time()
-  timeout <- as.difftime(timeout, units = "secs")
-  if (remaining) {
-    function() {
-      as.double(timeout - (Sys.time() - t0), "secs")
-    }
-  } else {
-    function() {
-      Sys.time() - t0 > timeout
-    }
-  }
-}
-
 `%||%` <- function(a, b) {
   if (is.null(a)) b else a
 }

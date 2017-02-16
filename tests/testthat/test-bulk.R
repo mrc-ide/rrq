@@ -10,10 +10,10 @@ test_that("bulk", {
   on.exit(obj$destroy())
 
   n_workers <- 5
-  wid <- workers_spawn(obj, n_workers, timeout = 5, progress = FALSE)
+  wid <- workers_spawn(obj, n_workers, timeout = 5, progress = PROGRESS)
 
   x <- runif(n_workers * 2) / 10
-  res <- obj$lapply(x, quote(slowdouble), progress = FALSE)
+  res <- obj$lapply(x, quote(slowdouble), progress = PROGRESS)
 
   expect_equal(res, as.list(x * 2))
 
@@ -37,23 +37,23 @@ test_that("exotic functions", {
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
-  wid <- workers_spawn(obj, timeout = 5, progress = FALSE)
+  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
   ## worker_command(obj)
 
   x <- 1:3
-  res <- obj$lapply(x, quote(f1), progress = FALSE)
+  res <- obj$lapply(x, quote(f1), progress = PROGRESS)
   expect_equal(res, lapply(x, f1))
 
   res <- local({
     f_local <- function(x) {
       x + 2
     }
-    obj$lapply(x, quote(f_local), progress = FALSE)
+    obj$lapply(x, quote(f_local), progress = PROGRESS)
   })
   expect_equal(res, as.list(x + 2))
 
   res <- local({
-    obj$lapply(x, function(x) x + 3, progress = FALSE)
+    obj$lapply(x, function(x) x + 3, progress = PROGRESS)
   })
   expect_equal(res, as.list(x + 3))
 })

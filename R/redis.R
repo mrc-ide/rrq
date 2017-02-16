@@ -1,24 +1,30 @@
-poll_hash_keys <- function(con, keys, field, wait, every = 0.05) {
-  if (wait <= 0) {
+## This is duplicate of collect_wait_n_poll, except that one polls a
+## *single* hash and this one polls a set of hashes.  would be good to
+## merge them perhaps.
+##
+## It's only used in one place
+poll_hash_keys <- function(con, keys, field, timeout, time_poll, progress) {
+  if (timeout <= 0) {
     res <- lapply(keys, con$HGET, field)
   } else {
-    ## TODO: I have a generic timeout thing in queuer (time_checker)
-    timeout <- as.difftime(wait, units = "secs")
-    t0 <- Sys.time()
+    time_poll <- time_poll %||% 0.1
+    p <- queuer:::progress_timeout(length(keys),
+                                   show = progress, timeout = timeout)
     ok <- logical(length(keys))
     res <- vector("list", length(keys))
-    while (Sys.time() - t0 < timeout) {
+    while (!all(ok)) {
       exists <- as.logical(vnapply(keys[!ok], con$HEXISTS, field))
       if (any(exists)) {
         i <- which(!ok)[exists]
         res[i] <- lapply(keys[i], con$HGET, field)
         ok[i] <- TRUE
-        if (all(ok)) {
+      } else {
+        if (p(0)) {
+          p(clear = TRUE)
           break
         }
+        Sys.sleep(time_poll)
       }
-      ## This should not be called on the last way through...
-      Sys.sleep(every)
     }
   }
   names(res) <- keys

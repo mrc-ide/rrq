@@ -111,7 +111,7 @@ R6_rrq_controller <- R6::R6Class(
       task_results(self$con, self$keys, task_ids)
     },
 
-    task_wait = function(task_id, timeout = Inf, time_poll = 0.1,
+    task_wait = function(task_id, timeout = Inf, time_poll = NULL,
                        progress = FALSE, key_complete = NULL) {
       assert_scalar_character(task_id)
       self$tasks_wait(task_id, timeout, time_poll,
@@ -141,7 +141,7 @@ R6_rrq_controller <- R6::R6Class(
 
     lapply = function(X, FUN, ..., DOTS = NULL,
                       envir = parent.frame(),
-                    timeout = Inf, time_poll = 1, progress = TRUE) {
+                      timeout = Inf, time_poll = 1, progress = TRUE) {
       rrq_lapply(self, X, FUN, ..., DOTS = NULL, envir = envir,
                  timeout = timeout, time_poll = time_poll,
                  progress = progress)
@@ -166,19 +166,23 @@ R6_rrq_controller <- R6::R6Class(
       has_response(self$con, self$keys, message_id, worker_id)
     },
     get_responses = function(message_id, worker_ids = NULL, delete = FALSE,
-                             wait = 0) {
-      get_responses(self$con, self$keys, message_id, worker_ids, delete, wait)
+                             timeout = 0, time_poll = 1, progress = TRUE) {
+      get_responses(self$con, self$keys, message_id, worker_ids, delete,
+                    timeout, time_poll, progress)
     },
-    get_response = function(message_id, worker_id, delete = FALSE, wait = 0) {
-      get_response(self$con, self$keys, message_id, worker_id, delete, wait)
+    get_response = function(message_id, worker_id, delete = FALSE,
+                            timeout = 0, time_poll = 1, progress = TRUE) {
+      get_response(self$con, self$keys, message_id, worker_id, delete,
+                   timeout, time_poll, progress)
     },
     response_ids = function(worker_id) {
       response_ids(self$con, self$keys, worker_id)
     },
     send_message_and_wait = function(command, args = NULL, worker_ids = NULL,
-                                     delete = TRUE, wait = 600, every = 0.05) {
+                                     delete = TRUE, timeout = 600,
+                                     time_poll = 0.05, progress = TRUE) {
       send_message_and_wait(self$con, self$keys, command, args, worker_ids,
-                            delete, wait, every)
+                            delete, timeout, time_poll, progress)
     },
 
     ## Query workers:
@@ -217,8 +221,10 @@ R6_rrq_controller <- R6::R6Class(
       context::task_log(worker_id, self$context, parse = FALSE)
     },
 
-    workers_stop = function(worker_ids = NULL, type = "message", wait = 0) {
-      workers_stop(self$con, self$keys, worker_ids, type, wait)
+    workers_stop = function(worker_ids = NULL, type = "message",
+                            timeout = 0, time_poll = 1, progress = TRUE) {
+      workers_stop(self$con, self$keys, worker_ids, type,
+                   timeout, time_poll, progress)
     },
 
     worker_config_save = function(key, redis_host = NULL, redis_port = NULL,
@@ -297,26 +303,28 @@ task_results <- function(con, keys, task_ids) {
 ## * collect_wait_n:      sits on a special key, so is quite responsive
 ## * collect_wait_n_poll: actively polls the hashes
 collect_wait_n <- function(con, keys, task_ids, key_complete,
-                           timeout = Inf, time_poll = NULL,
-                           progress = TRUE) {
+                           timeout, time_poll, progress) {
   time_poll <- time_poll %||% 1
   assert_integer_like(time_poll)
+  if (time_poll < 1L) {
+    warning(
+      "time_poll cannot be less than 1 with this function; increasing to 1")
+    time_poll <- 1L
+  }
 
   status <- from_redis_hash(con, keys$tasks_status, task_ids)
+
   done <- status == TASK_COMPLETE | status == TASK_ERROR
   if (all(done)) {
     con$DEL(key_complete)
   } else {
-    times_up <- time_checker(timeout)
-    p <- queuer:::progress(length(task_ids), show = progress)
+    p <- queuer:::progress_timeout(total = length(status),
+                                   show = progress, timeout = timeout)
     while (!all(done)) {
       tmp <- con$BLPOP(key_complete, time_poll)
       if (is.null(tmp)) {
-        p(0)
-        if (times_up()) {
-          if (progress) {
-            message()
-          }
+        if (p(0)) {
+          p(clear = TRUE)
           stop(sprintf("Exceeded maximum time (%d / %d tasks pending)",
                        sum(!done), length(task_ids)))
         }
@@ -331,8 +339,8 @@ collect_wait_n <- function(con, keys, task_ids, key_complete,
   task_results(con, keys, task_ids)
 }
 
-collect_wait_n_poll <- function(con, keys, task_ids, timeout, time_poll,
-                                progress = TRUE) {
+collect_wait_n_poll <- function(con, keys, task_ids,
+                                timeout, time_poll, progress) {
   time_poll <- time_poll %||% 0.1
   status <- from_redis_hash(con, keys$tasks_status, task_ids)
   done <- status == TASK_COMPLETE | status == TASK_ERROR
@@ -341,23 +349,18 @@ collect_wait_n_poll <- function(con, keys, task_ids, timeout, time_poll,
   } else if (timeout == 0) {
     stop("Tasks not yet completed; can't be immediately returned")
   } else {
-    times_up <- time_checker(timeout)
-    p <- queuer:::progress(length(task_ids), show = progress)
+    p <- queuer:::progress_timeout(length(task_ids),
+                                   show = progress, timeout = timeout)
     remaining <- task_ids[!done]
-
-    ## Or poll:
     while (length(remaining) > 0L) {
-      ok <- viapply(remaining, con$HEXISTS, key = keys$tasks_result) == 1L
-      if (any(ok)) {
-        i <- remaining[ok]
+      exists <- viapply(remaining, con$HEXISTS, key = keys$tasks_result) == 1L
+      if (any(exists)) {
+        i <- remaining[exists]
         p(length(i))
-        remaining <- remaining[!ok]
+        remaining <- remaining[!exists]
       } else {
-        p(0)
-        if (times_up()) {
-          if (progress) {
-            message()
-          }
+        if (p(0)) {
+          p(clear = TRUE)
           stop(sprintf("Exceeded maximum time (%d / %d tasks pending)",
                        length(remaining), length(task_ids)))
         }

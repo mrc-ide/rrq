@@ -71,11 +71,14 @@ R6_worker_controller <- R6::R6Class(
       has_response(self$con, self$keys, message_id, worker_id)
     },
     get_responses = function(message_id, worker_ids = NULL, delete = FALSE,
-                             wait = 0) {
-      get_responses(self$con, self$keys, message_id, worker_ids, delete, wait)
+                             timeout = 0, time_poll = 1, progress = TRUE) {
+      get_responses(self$con, self$keys, message_id, worker_ids, delete,
+                    timeout, time_poll, progress)
     },
-    get_response = function(message_id, worker_id, delete = FALSE, wait = 0) {
-      get_response(self$con, self$keys, message_id, worker_id, delete, wait)
+    get_response = function(message_id, worker_id, delete = FALSE,
+                            timeout = 0, time_poll = 1, progress = TRUE) {
+      get_response(self$con, self$keys, message_id, worker_id, delete,
+                   timeout, time_poll, progress)
     },
     response_ids = function(worker_id) {
       response_ids(self$con, self$keys, worker_id)
@@ -83,9 +86,10 @@ R6_worker_controller <- R6::R6Class(
 
     ## All in one:
     send_message_and_wait = function(command, args = NULL, worker_ids = NULL,
-                                     delete = TRUE, wait = 600, every = 0.05) {
+                                     delete = TRUE, timeout = 600,
+                                     time_poll = 0.05, progress = TRUE) {
       send_message_and_wait(self$con, self$keys, command, args, worker_ids,
-                            delete, wait, every)
+                            delete, timeout, time_poll, progress)
     },
 
     ## Query workers:
@@ -114,8 +118,10 @@ R6_worker_controller <- R6::R6Class(
       workers_delete_exited(self$con, self$keys, worker_ids)
     },
 
-    workers_stop = function(worker_ids = NULL, type = "message", wait = 0) {
-      workers_stop(self$con, self$keys, worker_ids, type, wait)
+    workers_stop = function(worker_ids = NULL, type = "message",
+                            timeout = 0, time_poll = 1, progress = TRUE) {
+      workers_stop(self$con, self$keys, worker_ids, type,
+                   timeout, time_poll, progress)
     }
   ))
 
@@ -209,7 +215,7 @@ workers_delete_exited <- function(con, keys, worker_ids = NULL) {
 }
 
 workers_stop <- function(con, keys, worker_ids = NULL, type = "message",
-                         wait = 0) {
+                         timeout = 0, time_poll = 1, progress = TRUE) {
   type <- match.arg(type, c("message", "kill", "kill_local"))
   if (is.null(worker_ids)) {
     worker_ids <- workers_list(con, keys)
@@ -229,9 +235,10 @@ workers_stop <- function(con, keys, worker_ids = NULL, type = "message",
     ##     queue_send_signal(con, keys, tools::SIGINT, worker_ids[is_busy])
     ##   }
     ## }
-    if (wait > 0L) {
+    if (timeout > 0L) {
       ok <- try(get_responses(con, keys, message_id, worker_ids,
-                              delete = FALSE, wait = wait),
+                              delete = FALSE, timeout = timeout,
+                              time_poll = time_poll, progress = progress),
                 silent = TRUE)
       ## if (inherits(ok, "try-error")) {
       ##   done <- has_responses(con, keys, message_id, worker_ids)

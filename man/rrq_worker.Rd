@@ -5,7 +5,7 @@
 \title{rrq queue worker}
 \usage{
 rrq_worker(context, con, key_alive = NULL, worker_name = NULL,
-  time_poll = 60, log_path = NULL, timeout = NULL)
+  time_poll = NULL, log_path = NULL, timeout = NULL)
 }
 \arguments{
 \item{context}{A context handle object.  The context needs to be loaded.}

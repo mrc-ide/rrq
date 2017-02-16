@@ -2,12 +2,6 @@ test_queue_clean <- function(context_id, delete=TRUE) {
   invisible(rrq_clean(redux::hiredis(), context_id, delete, "message"))
 }
 
-## Looks like a bug to me, relative to the docs:
-PSKILL_SUCCESS <- tools::pskill(Sys.getpid(), 0)
-pid_exists <- function(pid) {
-  tools::pskill(pid, 0) == PSKILL_SUCCESS
-}
-
 temp_context <- function(sources=NULL, ...) {
   root <- tempfile()
   dir.create(root, TRUE, FALSE)
@@ -22,3 +16,5 @@ worker_command <- function(obj) {
   context_id <- obj$context$id
   bquote(rrq_worker_from_config(.(root), .(context_id), "localhost"))
 }
+
+PROGRESS <- FALSE

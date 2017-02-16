@@ -88,7 +88,7 @@ run_message_TIMEOUT_SET <- function(worker, args) {
     if (is.null(args)) {
       worker$timer <- NULL
     } else {
-      worker$timer <- time_checker(args, remaining = TRUE)
+      worker$timer <- queuer:::time_checker(args, remaining = TRUE)
     }
     "OK"
   } else {
@@ -101,7 +101,7 @@ run_message_TIMEOUT_GET <- function(worker) {
     c(timeout = Inf, remaining = Inf)
   } else {
     if (is.null(worker$timer)) {
-      worker$timer <- time_checker(worker$timeout, TRUE)
+      worker$timer <- queuer:::time_checker(worker$timeout, TRUE)
     }
     c(timeout = worker$timeout, remaining = worker$timer())
   }
@@ -136,12 +136,14 @@ send_message <- function(con, keys, command, args = NULL, worker_ids = NULL) {
 
 send_message_and_wait <- function(con, keys, command,
                                   args = NULL, worker_ids = NULL,
-                                  delete = TRUE, wait = 600, every = 0.05) {
+                                  delete = TRUE, timeout = 600,
+                                  time_poll = 0.05, progress = TRUE) {
   if (is.null(worker_ids)) {
     worker_ids <- workers_list(con, keys)
   }
   message_id <- send_message(con, keys, command, args, worker_ids)
-  ret <- get_responses(con, keys, message_id, worker_ids, delete, wait, every)
+  ret <- get_responses(con, keys, message_id, worker_ids, delete,
+                       timeout, time_poll, progress)
   if (!delete) {
     attr(ret, "message_id") <- message_id
   }
@@ -163,7 +165,8 @@ has_response <- function(con, keys, message_id, worker_id) {
 }
 
 get_responses <- function(con, keys, message_id, worker_ids = NULL,
-                          delete = FALSE, wait = 0, every = 0.05) {
+                          delete = FALSE,
+                          timeout = 0, time_poll = 0.05, progress = TRUE) {
   ## NOTE: this won't work well if the message was sent only to a
   ## single worker, or a worker who was not yet started.
   ##
@@ -172,7 +175,8 @@ get_responses <- function(con, keys, message_id, worker_ids = NULL,
     worker_ids <- workers_list(con, keys)
   }
   response_keys <- rrq_key_worker_response(keys$queue_name, worker_ids)
-  res <- poll_hash_keys(con, response_keys, message_id, wait, every)
+  res <- poll_hash_keys(con, response_keys, message_id,
+                        timeout, time_poll, progress)
 
   msg <- vlapply(res, is.null)
   if (any(msg)) {
@@ -189,10 +193,11 @@ get_responses <- function(con, keys, message_id, worker_ids = NULL,
   lapply(res, function(x) bin_to_object(x)$result)
 }
 
-get_response <- function(con, keys, message_id, worker_id,
-                         delete = FALSE, wait = 0, every = 0.05) {
+get_response <- function(con, keys, message_id, worker_id, delete = FALSE,
+                         timeout = 0, time_poll = 0.05, progress = TRUE) {
   assert_scalar(worker_id)
-  get_responses(con, keys, message_id, worker_id, delete, wait, every)[[1L]]
+  get_responses(con, keys, message_id, worker_id, delete,
+                timeout, time_poll, progress)[[1L]]
 }
 
 response_ids <- function(con, keys, worker_id) {

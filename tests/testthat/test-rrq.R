@@ -31,15 +31,15 @@ test_that("basic use", {
   on.exit(obj$destroy())
 
   ## For testing, use: worker_command(obj)
-  wid <- workers_spawn(obj, timeout = 5, progress = FALSE)
+  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
 
   t <- obj$enqueue(slowdouble(0.1))
   expect_is(t, "character")
-  expect_equal(obj$task_wait(t, 2), 0.2)
+  expect_equal(obj$task_wait(t, 2, progress = PROGRESS), 0.2)
   expect_equal(obj$task_result(t), 0.2)
 
   t <- obj$enqueue(getwd())
-  expect_equal(obj$task_wait(t, 2), getwd())
+  expect_equal(obj$task_wait(t, 2, progress = PROGRESS), getwd())
 })
 
 test_that("worker working directory", {
@@ -55,7 +55,7 @@ test_that("worker working directory", {
     on.exit(obj$destroy())
 
     ## For testing, use: worker_command(obj)
-    wid <- workers_spawn(obj, timeout = 5, progress = FALSE)
+    wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
 
     t <- obj$enqueue(getwd())
     res <- obj$task_wait(t, 2)
@@ -73,7 +73,7 @@ test_that("worker name", {
   on.exit(obj$destroy())
 
   name <- ids::random_id()
-  wid <- workers_spawn(obj, timeout = 5, progress = FALSE,
+  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS,
                       worker_name_base = name)
   expect_equal(wid, paste0(name, "_1"))
 })
@@ -90,19 +90,20 @@ test_that("worker timeout", {
   res <- obj$worker_config_save("localhost", timeout = t, copy_redis = TRUE)
   expect_equal(res$timeout, t)
 
-  wid <- workers_spawn(obj, timeout = 5, progress = FALSE)
+  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
+
   id <- obj$send_message("TIMEOUT_GET")
-  res <- obj$get_response(id, wid, wait = 10)
+  res <- obj$get_response(id, wid, timeout = 10)
   expect_equal(res[["timeout"]], t)
   expect_lte(res[["remaining"]], t)
   obj$send_message("STOP")
 
   obj$worker_config_save("infinite", timeout = Inf, copy_redis = TRUE)
 
-  wid <- workers_spawn(obj, timeout = 5, progress = 5,
+  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS,
                        worker_config = "infinite")
   id <- obj$send_message("TIMEOUT_GET")
-  res <- obj$get_response(id, wid, wait = 10)
+  res <- obj$get_response(id, wid, timeout = 10)
   expect_equal(res[["timeout"]], Inf)
   expect_equal(res[["remaining"]], Inf)
   obj$send_message("STOP")
@@ -117,7 +118,7 @@ test_that("context job", {
   on.exit(obj$destroy())
 
   ## For testing, use: worker_command(obj)
-  wid <- workers_spawn(obj, timeout = 5, progress = FALSE)
+  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
 
   id <- context::task_save(quote(sin(1)), context)
   t <- queuer:::queuer_task(id, context$root)
@@ -125,7 +126,7 @@ test_that("context job", {
   r <- worker_controller(context$id, redux::hiredis())
 
   r$queue_submit(t$id)
-  expect_equal(t$wait(10, progress = FALSE), sin(1))
+  expect_equal(t$wait(10, progress = PROGRESS), sin(1))
   expect_equal(t$status(), "COMPLETE")
   expect_equal(r$queue_length(), 0L)
 })
@@ -143,7 +144,7 @@ test_that("log dir", {
   obj$worker_config_save("localhost", log_path = "worker_logs_task",
                          copy_redis = TRUE)
   worker_command(obj)
-  wid <- workers_spawn(obj, timeout = 5, progress = TRUE)
+  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
 
   info <- obj$workers_info(wid)[[wid]]
   expect_equal(info$log_path, "worker_logs_task")
@@ -153,7 +154,7 @@ test_that("log dir", {
   id <- context::task_save(quote(noisydouble(1)), context)
   t <- queuer:::queuer_task(id, context$root)
   r$queue_submit(t$id)
-  res <- t$wait(10, every = 0.1, progress = FALSE)
+  res <- t$wait(10, time_poll = 0.1, progress = PROGRESS)
 
   expect_true(file.exists(file.path(root, obj$db$get(t$id, "log_path"))))
   expect_is(t$log(), "context_log")
