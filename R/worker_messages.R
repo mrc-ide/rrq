@@ -134,6 +134,20 @@ send_message <- function(con, keys, command, args = NULL, worker_ids = NULL) {
   invisible(message_id)
 }
 
+send_message_and_wait <- function(con, keys, command,
+                                  args = NULL, worker_ids = NULL,
+                                  delete = TRUE, wait = 600, every = 0.05) {
+  if (is.null(worker_ids)) {
+    worker_ids <- workers_list(con, keys)
+  }
+  message_id <- send_message(con, keys, command, args, worker_ids)
+  ret <- get_responses(con, keys, message_id, worker_ids, delete, wait, every)
+  if (!delete) {
+    attr(ret, "message_id") <- message_id
+  }
+  ret
+}
+
 has_responses <- function(con, keys, message_id, worker_ids) {
   if (is.null(worker_ids)) {
     worker_ids <- workers_list(con, keys)

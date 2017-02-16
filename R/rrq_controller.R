@@ -178,6 +178,11 @@ R6_rrq_controller <- R6::R6Class(
     response_ids = function(worker_id) {
       response_ids(self$con, self$keys, worker_id)
     },
+    send_message_and_wait = function(command, args = NULL, worker_ids = NULL,
+                                     delete = TRUE, wait = 600, every = 0.05) {
+      send_message_and_wait(self$con, self$keys, command, args, worker_ids,
+                            delete, wait, every)
+    },
 
     ## Query workers:
     workers_len = function() {

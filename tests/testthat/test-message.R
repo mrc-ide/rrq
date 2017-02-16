@@ -179,3 +179,31 @@ test_that("unknown command", {
   expect_that(res$command, equals("YYYY"))
   expect_that(res$args, equals(d))
 })
+
+test_that("send and wait", {
+  Sys.setenv(R_TESTS = "")
+  root <- tempfile()
+  context <- context::context_save(root, sources = "myfuns.R",
+                                   unique_value = ids::random_id())
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
+  obj <- rrq_controller(context, redux::hiredis())
+  on.exit(obj$destroy())
+
+  obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
+  wid <- workers_spawn(obj, 5, timeout = 5, progress = FALSE)
+
+  expect_that(obj$workers_status(),
+              equals(setNames(rep(WORKER_IDLE, length(wid)), wid)))
+
+  res <- obj$send_message_and_wait("PING")
+  expect_equal(sort(names(res)), sort(wid))
+  expect_equal(unname(res), rep(list("PONG"), length(wid)))
+
+  ## Send to just one worker:
+  res <- obj$send_message_and_wait("PING", worker_ids = wid[[1]])
+  expect_equal(res, setNames(list("PONG"), wid[[1]]))
+
+  res <- obj$send_message_and_wait("STOP")
+  expect_equal(sort(names(res)), sort(wid))
+  expect_equal(unname(res), rep(list("BYE"), length(wid)))
+})
