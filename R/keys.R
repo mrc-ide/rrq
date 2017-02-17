@@ -19,6 +19,7 @@ rrq_keys_queue <- function(queue) {
        workers_status = sprintf("rrq:%s:workers:status",  queue),
        workers_task   = sprintf("rrq:%s:workers:task",    queue),
        workers_info   = sprintf("rrq:%s:workers:info",    queue),
+       workers_expect = sprintf("rrq:%s:workers:expect",  queue),
 
        queue_rrq      = sprintf("rrq:%s:queue:rrq:id",    queue),
        queue_ctx      = sprintf("rrq:%s:queue:ctx:id",    queue),
@@ -52,11 +53,6 @@ rrq_key_task_complete <- function(queue) {
   sprintf("rrq:%s:tasks:complete:%s", queue, ids::random_id())
 }
 
-##' Randomly generate key for polling new workers
-##' @title Randomly generate key for polling new workers
-##' @param queue_name Name of the queue (the context id)
-##' @export
-##' @author Rich FitzJohn
 rrq_key_worker_alive <- function(queue_name) {
   sprintf("rrq:%s:workers:alive:%s", queue_name, ids::random_id())
 }

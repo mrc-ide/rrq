@@ -166,12 +166,12 @@ R6_rrq_controller <- R6::R6Class(
       has_response(self$con, self$keys, message_id, worker_id)
     },
     get_responses = function(message_id, worker_ids = NULL, delete = FALSE,
-                             timeout = 0, time_poll = 1, progress = TRUE) {
+                             timeout = 0, time_poll = 0.05, progress = TRUE) {
       get_responses(self$con, self$keys, message_id, worker_ids, delete,
                     timeout, time_poll, progress)
     },
     get_response = function(message_id, worker_id, delete = FALSE,
-                            timeout = 0, time_poll = 1, progress = TRUE) {
+                            timeout = 0, time_poll = 0.05, progress = TRUE) {
       get_response(self$con, self$keys, message_id, worker_id, delete,
                    timeout, time_poll, progress)
     },

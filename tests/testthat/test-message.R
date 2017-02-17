@@ -190,10 +190,11 @@ test_that("send and wait", {
   on.exit(obj$destroy())
 
   obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
-  wid <- workers_spawn(obj, 5, timeout = 5, progress = FALSE)
+  wid <- workers_spawn(obj, 5, timeout = 5, progress = PROGRESS)
 
-  expect_that(obj$workers_status(),
-              equals(setNames(rep(WORKER_IDLE, length(wid)), wid)))
+  st <- obj$workers_status()
+  expect_equal(sort(names(st)), sort(wid))
+  expect_equal(unname(st), rep(WORKER_IDLE, length(wid)))
 
   res <- obj$send_message_and_wait("PING")
   expect_equal(sort(names(res)), sort(wid))

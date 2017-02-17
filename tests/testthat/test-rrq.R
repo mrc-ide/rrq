@@ -81,7 +81,8 @@ test_that("worker name", {
 test_that("worker timeout", {
   Sys.setenv(R_TESTS = "")
   root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
+  context <- context::context_save(root, sources = "myfuns.R",
+                                   unique_value = ids::random_id())
   context <- context::context_load(context, new.env(parent = .GlobalEnv))
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
@@ -93,7 +94,7 @@ test_that("worker timeout", {
   wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
 
   id <- obj$send_message("TIMEOUT_GET")
-  res <- obj$get_response(id, wid, timeout = 10)
+  res <- obj$get_response(id, wid, timeout = 10, progress = PROGRESS)
   expect_equal(res[["timeout"]], t)
   expect_lte(res[["remaining"]], t)
   obj$send_message("STOP")
@@ -103,7 +104,7 @@ test_that("worker timeout", {
   wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS,
                        worker_config = "infinite")
   id <- obj$send_message("TIMEOUT_GET")
-  res <- obj$get_response(id, wid, timeout = 10)
+  res <- obj$get_response(id, wid, timeout = 10, progress = PROGRESS)
   expect_equal(res[["timeout"]], Inf)
   expect_equal(res[["remaining"]], Inf)
   obj$send_message("STOP")
@@ -161,4 +162,29 @@ test_that("log dir", {
   x <- t$log()
   expect_true("start" %in% x$title)
   expect_equal(x$body[[which(x$title == "start")]], "doubling 1")
+})
+
+test_that("failed spawn", {
+  Sys.setenv(R_TESTS = "")
+  root <- tempfile()
+  tmp <- basename(tempfile("myfuns_", fileext = ".R"))
+  file.copy("myfuns.R", tmp)
+  context <- context::context_save(root, sources = tmp,
+                                   unique_value = ids::random_id())
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
+  file.remove(tmp)
+  obj <- rrq_controller(context, redux::hiredis())
+  on.exit(obj$destroy())
+
+  dat <- evaluate_promise(
+    try(workers_spawn(obj, 2, timeout = 2, progress = PROGRESS),
+        silent = TRUE))
+
+  expect_is(dat$result, "try-error")
+  expect_match(dat$messages, "2 / 2 workers not identified in time",
+               all = FALSE, fixed = TRUE)
+  expect_match(dat$messages, "Log files recovered for 2 workers",
+               all = FALSE, fixed = TRUE)
+  expect_match(dat$output, "No such file or directory",
+               all = FALSE, fixed = TRUE)
 })

@@ -24,6 +24,10 @@ vlapply <- function(X, FUN, ...) {
   vapply(X, FUN, logical(1), ...)
 }
 
+l2c <- function(x) {
+  vcapply(x, identity)
+}
+
 ## TODO: After requiring 3.3.0, this can be dropped.
 strrep <- function(x, times) {
   paste(rep(x, times), collapse = "")
