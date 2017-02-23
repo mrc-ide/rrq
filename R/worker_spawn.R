@@ -107,7 +107,7 @@ workers_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
   con <- obj$con
   expected <- bin_to_object(con$HGET(obj$keys$workers_expect, key_alive))
   n <- length(expected)
-  p <- queuer:::progress_timeout(total = n, show = progress, timeout = timeout)
+  p <- queuer::progress_timeout(total = n, show = progress, timeout = timeout)
   time_poll <- min(time_poll, timeout)
   ret <- rep.int(NA_character_, n)
 

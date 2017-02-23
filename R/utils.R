@@ -73,3 +73,12 @@ lstrip <- function(x) {
 rstrip <- function(x) {
   sub("\\s+$", "", x, perl = TRUE)
 }
+
+## NOTE: duplicated from context, and will be replaced by using pathr
+## once it's done.
+is_absolute_path <- function(path) {
+  grepl("^(/|[A-Za-z]:[/\\]|//|\\\\\\\\)", path)
+}
+is_relative_path <- function(path) {
+  !is_absolute_path(path)
+}

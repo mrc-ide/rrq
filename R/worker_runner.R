@@ -4,34 +4,15 @@ rrq_worker_main <- function(args = commandArgs(TRUE)) {
                          dat$worker_name, dat$key_alive)
 }
 
-## until I fix the tests:
-rrq_worker_main_args_old <- function(args) {
-  message("Arguments:")
-  message(paste(sprintf("- %s", args), collapse = "\n"))
-  args <- context:::parse_command_args(args, "rrq_worker", 3:4)
-  context_root <- args$root
-  context_id <- args$args[[1L]]
-  config_key <- args$args[[2L]]
-  worker_name <- args$args[[3L]]
-  key_alive <- if (args$n == 4L) args$args[[4L]] else NULL
-
-  config <- worker_config_read(context_root, config_key)
-  config$context_id <- context_id
-  config$context_root <- context_root
-  config$worker_name <- worker_name
-  config$key_alive <- key_alive
-  config
-}
-
 rrq_worker_main_args <- function(args) {
   message("Arguments:")
   message(paste(sprintf("- %s", args), collapse = "\n"))
-  args <- context:::parse_command_args(args, "rrq_worker", 3:4)
-  list(root = args$root,
-       context_id = args$args[[1L]],
-       worker_config = args$args[[2L]],
-       worker_name = args$args[[3L]],
-       key_alive = if (args$n == 4L) args$args[[4L]] else NULL)
+  dat <- context::parse_context_args(args, "rrq_worker", 3:4)
+  list(root = dat$root,
+       context_id = dat$args[[1L]],
+       worker_config = dat$args[[2L]],
+       worker_name = dat$args[[3L]],
+       key_alive = if (dat$n == 4L) dat$args[[4L]] else NULL)
 }
 
 ## TODO: This might become the primary way of launching workers?
@@ -60,5 +41,6 @@ rrq_worker_from_config <- function(root, context_id, worker_config,
 
 write_rrq_worker <- function(root) {
   path <- context::context_root_get(root)$path
-  context:::write_context_script(path, "rrq_worker", "rrq:::rrq_worker_main", 4:5)
+  context::write_context_script(path, "rrq_worker",
+                                "rrq:::rrq_worker_main", 4:5)
 }

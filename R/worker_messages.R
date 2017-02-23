@@ -88,7 +88,7 @@ run_message_TIMEOUT_SET <- function(worker, args) {
     if (is.null(args)) {
       worker$timer <- NULL
     } else {
-      worker$timer <- queuer:::time_checker(args, remaining = TRUE)
+      worker$timer <- queuer::time_checker(args, remaining = TRUE)
     }
     "OK"
   } else {
@@ -101,7 +101,7 @@ run_message_TIMEOUT_GET <- function(worker) {
     c(timeout = Inf, remaining = Inf)
   } else {
     if (is.null(worker$timer)) {
-      worker$timer <- queuer:::time_checker(worker$timeout, TRUE)
+      worker$timer <- queuer::time_checker(worker$timeout, TRUE)
     }
     c(timeout = worker$timeout, remaining = worker$timer())
   }

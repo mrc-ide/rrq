@@ -8,8 +8,8 @@ poll_hash_keys <- function(con, keys, field, timeout, time_poll, progress) {
     res <- lapply(keys, con$HGET, field)
   } else {
     time_poll <- time_poll %||% 0.1
-    p <- queuer:::progress_timeout(length(keys),
-                                   show = progress, timeout = timeout)
+    p <- queuer::progress_timeout(length(keys),
+                                  show = progress, timeout = timeout)
     ok <- logical(length(keys))
     res <- vector("list", length(keys))
     while (!all(ok)) {

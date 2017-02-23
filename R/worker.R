@@ -67,7 +67,7 @@ R6_rrq_worker <- R6::R6Class(
       self$time_poll <- time_poll %||% 60
 
       if (!is.null(log_path)) {
-        if (!context:::is_relative_path(log_path)) {
+        if (!is_relative_path(log_path)) {
           stop("Must be a relative path")
         }
         self$log_path <- log_path
@@ -180,7 +180,7 @@ R6_rrq_worker <- R6::R6Class(
           }
           if (!is.null(self$timeout)) {
             if (is.null(task) && is.null(self$timer)) {
-              self$timer <- queuer:::time_checker(self$timeout, TRUE)
+              self$timer <- queuer::time_checker(self$timeout, TRUE)
             }
             if (is.function(self$timer) && self$timer() < 0L) {
               stop(WorkerStop(self, "TIMEOUT"))

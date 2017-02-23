@@ -318,8 +318,8 @@ collect_wait_n <- function(con, keys, task_ids, key_complete,
   if (all(done)) {
     con$DEL(key_complete)
   } else {
-    p <- queuer:::progress_timeout(total = length(status),
-                                   show = progress, timeout = timeout)
+    p <- queuer::progress_timeout(total = length(status),
+                                  show = progress, timeout = timeout)
     while (!all(done)) {
       tmp <- con$BLPOP(key_complete, time_poll)
       if (is.null(tmp)) {
@@ -349,8 +349,8 @@ collect_wait_n_poll <- function(con, keys, task_ids,
   } else if (timeout == 0) {
     stop("Tasks not yet completed; can't be immediately returned")
   } else {
-    p <- queuer:::progress_timeout(length(task_ids),
-                                   show = progress, timeout = timeout)
+    p <- queuer::progress_timeout(length(task_ids),
+                                  show = progress, timeout = timeout)
     remaining <- task_ids[!done]
     while (length(remaining) > 0L) {
       exists <- viapply(remaining, con$HEXISTS, key = keys$tasks_result) == 1L
