@@ -103,17 +103,19 @@ workers_spawn <- function(obj, n = 1, logdir = "worker_logs",
 workers_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
                          progress = NULL) {
   con <- obj$con
-  expected <- bin_to_object(con$HGET(obj$keys$workers_expect, key_alive))
+  keys <- obj$keys
+  expected <- bin_to_object(con$HGET(keys$workers_expect, key_alive))
   n <- length(expected)
   p <- queuer::progress_timeout(total = n, show = progress, timeout = timeout)
   time_poll <- min(time_poll, timeout)
   ret <- rep.int(NA_character_, n)
 
   ## Previously found workers:
-  previous <- intersect(expected, workers_list(con, obj$keys))
+  previous <- intersect(expected, workers_list(con, keys))
   if (length(previous) > 0L) {
     ret[seq_along(previous)] <- previous
     p(length(previous))
+    con$LTRIM(key_alive, length(previous), -1)
   }
 
   i <- sum(!is.na(ret)) + 1L
@@ -134,7 +136,7 @@ workers_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
       p(1)
     }
   }
-  obj$con$HDEL(obj$keys$workers_expect, key_alive)
+  obj$con$HDEL(keys$workers_expect, key_alive)
   ret
 }
 
