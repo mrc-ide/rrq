@@ -1,6 +1,6 @@
 rrq_enqueue_bulk <- function(obj, X, FUN, ..., DOTS = NULL, do_call = FALSE,
                              envir = parent.frame(), use_names = TRUE,
-                             timeout = Inf, time_poll = NULL, progress = TRUE) {
+                             timeout = Inf, time_poll = NULL, progress = NULL) {
   dat <- rrq_enqueue_bulk_submit(obj, X, FUN, ..., DOTS = DOTS,
                                  do_call = do_call,
                                  envir = envir, use_names = use_names)
@@ -9,7 +9,7 @@ rrq_enqueue_bulk <- function(obj, X, FUN, ..., DOTS = NULL, do_call = FALSE,
 
 rrq_lapply <- function(obj, X, FUN, ..., DOTS = NULL,
                        envir = parent.frame(), use_names = TRUE,
-                       timeout = Inf, time_poll = NULL, progress = TRUE) {
+                       timeout = Inf, time_poll = NULL, progress = NULL) {
   rrq_enqueue_bulk(obj, X, FUN, ..., DOTS = DOTS, do_call = FALSE,
                    envir = envir, use_names = use_names,
                    timeout = timeout, time_poll = time_poll,
@@ -43,7 +43,7 @@ rrq_enqueue_bulk_submit <- function(obj, X, FUN, ..., DOTS = NULL,
 }
 
 rrq_enqueue_bulk_wait <- function(obj, dat, timeout = Inf, time_poll = NULL,
-                                  progress = TRUE) {
+                                  progress = NULL) {
   con <- obj$con
   keys <- obj$keys
   task_ids <- dat$task_ids

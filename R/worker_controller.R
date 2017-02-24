@@ -71,12 +71,12 @@ R6_worker_controller <- R6::R6Class(
       has_response(self$con, self$keys, message_id, worker_id)
     },
     get_responses = function(message_id, worker_ids = NULL, delete = FALSE,
-                             timeout = 0, time_poll = 1, progress = TRUE) {
+                             timeout = 0, time_poll = 1, progress = NULL) {
       get_responses(self$con, self$keys, message_id, worker_ids, delete,
                     timeout, time_poll, progress)
     },
     get_response = function(message_id, worker_id, delete = FALSE,
-                            timeout = 0, time_poll = 1, progress = TRUE) {
+                            timeout = 0, time_poll = 1, progress = NULL) {
       get_response(self$con, self$keys, message_id, worker_id, delete,
                    timeout, time_poll, progress)
     },
@@ -87,7 +87,7 @@ R6_worker_controller <- R6::R6Class(
     ## All in one:
     send_message_and_wait = function(command, args = NULL, worker_ids = NULL,
                                      delete = TRUE, timeout = 600,
-                                     time_poll = 0.05, progress = TRUE) {
+                                     time_poll = 0.05, progress = NULL) {
       send_message_and_wait(self$con, self$keys, command, args, worker_ids,
                             delete, timeout, time_poll, progress)
     },
@@ -119,7 +119,7 @@ R6_worker_controller <- R6::R6Class(
     },
 
     workers_stop = function(worker_ids = NULL, type = "message",
-                            timeout = 0, time_poll = 1, progress = TRUE) {
+                            timeout = 0, time_poll = 1, progress = NULL) {
       workers_stop(self$con, self$keys, worker_ids, type,
                    timeout, time_poll, progress)
     }
@@ -215,7 +215,7 @@ workers_delete_exited <- function(con, keys, worker_ids = NULL) {
 }
 
 workers_stop <- function(con, keys, worker_ids = NULL, type = "message",
-                         timeout = 0, time_poll = 1, progress = TRUE) {
+                         timeout = 0, time_poll = 1, progress = NULL) {
   type <- match.arg(type, c("message", "kill", "kill_local"))
   if (is.null(worker_ids)) {
     worker_ids <- workers_list(con, keys)

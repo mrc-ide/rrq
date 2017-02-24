@@ -137,7 +137,7 @@ send_message <- function(con, keys, command, args = NULL, worker_ids = NULL) {
 send_message_and_wait <- function(con, keys, command,
                                   args = NULL, worker_ids = NULL,
                                   delete = TRUE, timeout = 600,
-                                  time_poll = 0.05, progress = TRUE) {
+                                  time_poll = 0.05, progress = NULL) {
   if (is.null(worker_ids)) {
     worker_ids <- workers_list(con, keys)
   }
@@ -166,11 +166,9 @@ has_response <- function(con, keys, message_id, worker_id) {
 
 get_responses <- function(con, keys, message_id, worker_ids = NULL,
                           delete = FALSE,
-                          timeout = 0, time_poll = 0.05, progress = TRUE) {
+                          timeout = 0, time_poll = 0.05, progress = NULL) {
   ## NOTE: this won't work well if the message was sent only to a
   ## single worker, or a worker who was not yet started.
-  ##
-  ## TODO: Could do a progress bar easily enough here.
   if (is.null(worker_ids)) {
     worker_ids <- workers_list(con, keys)
   }
@@ -194,7 +192,7 @@ get_responses <- function(con, keys, message_id, worker_ids = NULL,
 }
 
 get_response <- function(con, keys, message_id, worker_id, delete = FALSE,
-                         timeout = 0, time_poll = 0.05, progress = TRUE) {
+                         timeout = 0, time_poll = 0.05, progress = NULL) {
   assert_scalar(worker_id)
   get_responses(con, keys, message_id, worker_id, delete,
                 timeout, time_poll, progress)[[1L]]

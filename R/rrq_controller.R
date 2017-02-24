@@ -112,13 +112,13 @@ R6_rrq_controller <- R6::R6Class(
     },
 
     task_wait = function(task_id, timeout = Inf, time_poll = NULL,
-                       progress = FALSE, key_complete = NULL) {
+                       progress = NULL, key_complete = NULL) {
       assert_scalar_character(task_id)
       self$tasks_wait(task_id, timeout, time_poll,
                       progress, key_complete)[[1L]]
     },
     tasks_wait = function(task_ids, timeout = Inf, time_poll = NULL,
-                        progress = TRUE, key_complete = NULL) {
+                        progress = NULL, key_complete = NULL) {
       if (is.null(key_complete)) {
         collect_wait_n_poll(self$con, self$keys, task_ids,
                             timeout, time_poll, progress)
@@ -141,7 +141,7 @@ R6_rrq_controller <- R6::R6Class(
 
     lapply = function(X, FUN, ..., DOTS = NULL,
                       envir = parent.frame(),
-                      timeout = Inf, time_poll = 1, progress = TRUE) {
+                      timeout = Inf, time_poll = 1, progress = NULL) {
       rrq_lapply(self, X, FUN, ..., DOTS = NULL, envir = envir,
                  timeout = timeout, time_poll = time_poll,
                  progress = progress)
@@ -149,7 +149,7 @@ R6_rrq_controller <- R6::R6Class(
 
     enqueue_bulk = function(X, FUN, ..., DOTS = NULL, do_call = FALSE,
                             envir = parent.frame(),
-                            timeout = Inf, time_poll = 1, progress = TRUE) {
+                            timeout = Inf, time_poll = 1, progress = NULL) {
       rrq_enqueue_bulk(self, X, FUN, ..., DOTS = DOTS, do_call = do_call,
                        envir = envir, timeout = timeout, time_poll = time_poll,
                        progress = progress)
@@ -166,12 +166,12 @@ R6_rrq_controller <- R6::R6Class(
       has_response(self$con, self$keys, message_id, worker_id)
     },
     get_responses = function(message_id, worker_ids = NULL, delete = FALSE,
-                             timeout = 0, time_poll = 0.05, progress = TRUE) {
+                             timeout = 0, time_poll = 0.05, progress = NULL) {
       get_responses(self$con, self$keys, message_id, worker_ids, delete,
                     timeout, time_poll, progress)
     },
     get_response = function(message_id, worker_id, delete = FALSE,
-                            timeout = 0, time_poll = 0.05, progress = TRUE) {
+                            timeout = 0, time_poll = 0.05, progress = NULL) {
       get_response(self$con, self$keys, message_id, worker_id, delete,
                    timeout, time_poll, progress)
     },
@@ -180,7 +180,7 @@ R6_rrq_controller <- R6::R6Class(
     },
     send_message_and_wait = function(command, args = NULL, worker_ids = NULL,
                                      delete = TRUE, timeout = 600,
-                                     time_poll = 0.05, progress = TRUE) {
+                                     time_poll = 0.05, progress = NULL) {
       send_message_and_wait(self$con, self$keys, command, args, worker_ids,
                             delete, timeout, time_poll, progress)
     },
@@ -222,7 +222,7 @@ R6_rrq_controller <- R6::R6Class(
     },
 
     workers_stop = function(worker_ids = NULL, type = "message",
-                            timeout = 0, time_poll = 1, progress = TRUE) {
+                            timeout = 0, time_poll = 1, progress = NULL) {
       workers_stop(self$con, self$keys, worker_ids, type,
                    timeout, time_poll, progress)
     },

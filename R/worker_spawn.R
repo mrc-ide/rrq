@@ -48,7 +48,7 @@
 workers_spawn <- function(obj, n = 1, logdir = "worker_logs",
                           timeout = 600, worker_config = "localhost",
                           worker_name_base = NULL, path = NULL,
-                          time_poll = 1, progress = TRUE) {
+                          time_poll = 1, progress = NULL) {
   assert_inherits(obj, "rrq_controller")
   if (!obj$db$exists(worker_config, "worker_config")) {
     stop(sprintf("worker config '%s' does not exist", worker_config))
@@ -74,10 +74,8 @@ workers_spawn <- function(obj, n = 1, logdir = "worker_logs",
   root <- normalizePath(obj$context$root$path)
   context_id <- obj$context$id
 
-  if (progress) {
-    message(sprintf("Spawning %d %s with prefix %s",
-                    n, ngettext(n, "worker", "workers"), worker_name_base))
-  }
+  message(sprintf("Spawning %d %s with prefix %s",
+                  n, ngettext(n, "worker", "workers"), worker_name_base))
   code <- integer(n)
   ## TODO: path is never used in the package
   ## with_wd(path, {
@@ -103,7 +101,7 @@ workers_spawn <- function(obj, n = 1, logdir = "worker_logs",
 ##' @param key_alive A key name (generated from
 ##'   \code{\link{rrq_expect_workers}} or \code{workers_spawn})
 workers_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
-                         progress = TRUE) {
+                         progress = NULL) {
   con <- obj$con
   expected <- bin_to_object(con$HGET(obj$keys$workers_expect, key_alive))
   n <- length(expected)
