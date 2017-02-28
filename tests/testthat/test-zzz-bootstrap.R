@@ -14,8 +14,14 @@ test_that("bootstrap", {
   obj <- rrq_controller(ctx, redux::hiredis())
   on.exit(obj$destroy())
 
+  Sys.setenv(CONTEXT_BOOTSTRAP = "TRUE")
+  on.exit(Sys.unsetenv("CONTEXT_BOOTSTRAP"), add = TRUE)
   wid <- workers_spawn(obj, timeout = 5, progress = FALSE)
-  obj$worker_process_log(wid)
+
+  ## Worker reports lib on startup:
+  log <- context:::parse_context_log(obj$worker_process_log(wid))
+  expect_equal(trimws(log$value[[which(log$title == "lib")]]),
+               normalizePath(lib))
 
   t <- obj$enqueue(.libPaths())
   res <- obj$task_wait(t, 10, progress = FALSE)
