@@ -10,7 +10,8 @@ Once this works I'll rework `rrqueue` off of this codebase probably.
 ## Installation
 
 ```r
-devtools::install_github("richfitz/rrq")
+drat:::add("dide-tools")
+install.packages("rrq")
 ```
 
 ## License

@@ -10,10 +10,10 @@ URL: https://github.com/richfitz/rrq
 BugReports: https://github.com/richfitz/rrq/issues
 Imports:
     R6,
-    context (>= 0.0.9),
+    context (>= 0.1.0),
     ids,
     lazyeval,
-    queuer (>= 0.0.4),
+    queuer (>= 0.1.0),
     redux (>= 0.5.1)
 Suggests:
     testthat
