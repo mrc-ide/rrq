@@ -183,8 +183,7 @@ test_that("unknown command", {
 test_that("send and wait", {
   Sys.setenv(R_TESTS = "")
   root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R",
-                                   unique_value = ids::random_id())
+  context <- context::context_save(root, sources = "myfuns.R")
   context <- context::context_load(context, new.env(parent = .GlobalEnv))
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())

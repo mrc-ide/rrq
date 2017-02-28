@@ -81,8 +81,7 @@ test_that("worker name", {
 test_that("worker timeout", {
   Sys.setenv(R_TESTS = "")
   root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R",
-                                   unique_value = ids::random_id())
+  context <- context::context_save(root, sources = "myfuns.R")
   context <- context::context_load(context, new.env(parent = .GlobalEnv))
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
@@ -169,8 +168,7 @@ test_that("failed spawn", {
   root <- tempfile()
   tmp <- basename(tempfile("myfuns_", fileext = ".R"))
   file.copy("myfuns.R", tmp)
-  context <- context::context_save(root, sources = tmp,
-                                   unique_value = ids::random_id())
+  context <- context::context_save(root, sources = tmp)
   context <- context::context_load(context, new.env(parent = .GlobalEnv))
   file.remove(tmp)
   obj <- rrq_controller(context, redux::hiredis())
