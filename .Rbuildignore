@@ -11,3 +11,4 @@
 ^extra$
 ^\.lintr$
 ^TODO\.md$
+^appveyor\.yml$
