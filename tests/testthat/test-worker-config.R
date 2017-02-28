@@ -83,7 +83,7 @@ test_that("create short-lived worker", {
   expect_equal(nrow(log), 2L)
   expect_equal(log$command[[2]], "STOP")
   expect_true(file.exists(file.path(path, "worker_logs", wid)))
-  txt <- obj$worker_process_log(wid)
+  txt <- obj$worker_process_log(wid, FALSE)
   expect_is(txt, "character")
   expect_true(any(grepl("STOP OK (TIMEOUT)", txt, fixed = TRUE)))
 })

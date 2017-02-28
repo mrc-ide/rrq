@@ -216,9 +216,9 @@ R6_rrq_controller <- R6::R6Class(
     ## information.  Given the existance of things like
     ## workers_log_tail this should be renamed something like
     ## worker_text_log perhaps?
-    worker_process_log = function(worker_id) {
+    worker_process_log = function(worker_id, parse = TRUE) {
       assert_scalar(worker_id)
-      context::task_log(worker_id, self$context, parse = FALSE)
+      context::task_log(worker_id, self$context, parse = parse)
     },
 
     workers_stop = function(worker_ids = NULL, type = "message",
