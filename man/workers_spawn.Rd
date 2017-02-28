@@ -7,10 +7,10 @@
 \usage{
 workers_spawn(obj, n = 1, logdir = "worker_logs", timeout = 600,
   worker_config = "localhost", worker_name_base = NULL, path = NULL,
-  time_poll = 1, progress = TRUE)
+  time_poll = 1, progress = NULL)
 
 workers_wait(obj, key_alive, timeout = 600, time_poll = 1,
-  progress = TRUE)
+  progress = NULL)
 }
 \arguments{
 \item{obj}{An \code{rrq_controller} object}

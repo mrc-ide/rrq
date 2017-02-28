@@ -125,7 +125,7 @@ workers_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
       if (p(0)) {
         n_msg <- sum(is.na(ret))
         message(sprintf("%d / %d workers not identified in time", n_msg, n))
-        missing <- setdiff(expected, na.omit(ret))
+        missing <- setdiff(expected, ret[!is.na(ret)])
         logs <- workers_read_failed_logs(obj$context, missing)
         workers_print_failed_logs(logs)
         stop(sprintf("Not all workers recovered (key_alive: %s)", key_alive))
