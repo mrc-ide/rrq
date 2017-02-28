@@ -1,14 +1,16 @@
 language: R
-sudo: true
+sudo: false
 cache: packages
+r_packages:
+  - covr
+after_success:
+  - Rscript -e 'covr::codecov()'
 
-apt_packages:
-  - libhiredis-dev
+addons:
+  apt:
+    packages:
+      - libhiredis-dev
+      - redis-server
 
 services:
   - redis-server
-
-notifications:
-  email:
-    on_success: change
-    on_failure: change
