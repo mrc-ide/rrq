@@ -147,7 +147,7 @@ R6_rrq_controller <- R6::R6Class(
                  progress = progress)
     },
 
-    enqueue_bulk = function(X, FUN, ..., DOTS = NULL, do_call = FALSE,
+    enqueue_bulk = function(X, FUN, ..., DOTS = NULL, do_call = TRUE,
                             envir = parent.frame(),
                             timeout = Inf, time_poll = 1, progress = NULL) {
       rrq_enqueue_bulk(self, X, FUN, ..., DOTS = DOTS, do_call = do_call,
