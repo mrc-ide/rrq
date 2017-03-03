@@ -101,6 +101,13 @@ run_message_TIMEOUT_GET <- function(worker) {
     c(timeout = Inf, remaining = Inf)
   } else {
     if (is.null(worker$timer)) {
+      ## NOTE: This is a slightly odd construction; it arises because
+      ## the timer is not just suspended between tasks; it is removed
+      ## entirely.  So the worker runs a task (deleting the timer),
+      ## and the timer will not be restored until after it makes it
+      ## through one BLPOP cycle.  So, if a TIMEOUT_GET message is
+      ## issued _immediately_ after running a task then there will be
+      ## no timer here, but there should be.
       worker$timer <- queuer::time_checker(worker$timeout, TRUE)
     }
     c(timeout = worker$timeout, remaining = worker$timer())

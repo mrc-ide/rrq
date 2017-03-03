@@ -1,6 +1,6 @@
 context("messaging")
 
-test_that("timeout", {
+test_that("basic", {
   Sys.setenv(R_TESTS = "")
   root <- tempfile()
   context <- context::context_save(root, sources = "myfuns.R")
@@ -56,23 +56,9 @@ test_that("timeout", {
   expect_equal(res$worker, wid)
   expect_equal(res$hostname, hostname())
 
-  id <- obj$send_message("TIMEOUT_GET")
-  expect_equal(obj$get_response(id, wid, timeout = 1),
-               c(timeout = Inf, remaining = Inf))
-
-  id <- obj$send_message("TIMEOUT_SET", 1000)
-  expect_equal(obj$get_response(id, wid, timeout = 1), "OK")
-
-  id <- obj$send_message("TIMEOUT_GET")
+  id <- obj$send_message("STOP")
   res <- obj$get_response(id, wid, timeout = 1)
-  expect_equal(res[["timeout"]], 1000)
-  expect_lte(res[["remaining"]], 1000)
-
-  id <- obj$send_message("TIMEOUT_SET", 0)
-  expect_equal(obj$get_response(id, wid, timeout = 1), "OK")
-
-  Sys.sleep(1.2)
-
+  expect_equal(res, "BYE")
   expect_equal(obj$workers_list(), character(0))
   expect_equal(obj$workers_list_exited(), wid)
 })
@@ -114,6 +100,9 @@ test_that("pause", {
   id <- obj$send_message("RESUME")
   expect_that(obj$get_response(id, wid, timeout = 1), equals("OK"))
 
+  id <- obj$send_message("RESUME")
+  expect_that(obj$get_response(id, wid, timeout = 1), equals("NOOP"))
+
   res <- obj$task_wait(t, 1)
   expect_equal(res, sin(1))
 
@@ -126,10 +115,10 @@ test_that("pause", {
 
   cmp_cmd <- c("ALIVE",
                rep(c("MESSAGE", "RESPONSE"), 4),
-               "TASK_START", "TASK_COMPLETE")
+               "TASK_START", "TASK_COMPLETE", "MESSAGE", "RESPONSE")
   cmp_msg <- c("",
                rep(c("PAUSE", "PING", "PAUSE", "RESUME"), each = 2),
-               t, t)
+               t, t, "RESUME", "RESUME")
   expect_that(log$command, equals(cmp_cmd))
   expect_that(log$message, equals(cmp_msg))
 
@@ -203,7 +192,101 @@ test_that("send and wait", {
   res <- obj$send_message_and_wait("PING", worker_ids = wid[[1]])
   expect_equal(res, setNames(list("PONG"), wid[[1]]))
 
+  ## Don't delete:
+  res <- obj$send_message_and_wait("PING", worker_ids = wid[[1]],
+                                   delete = FALSE)
+  expect_equal(res[[1]], "PONG")
+  expect_equal(names(res), wid[[1]])
+  id <- attr(res, "message_id")
+  expect_is(id, "character")
+  expect_equal(obj$get_responses(id, wid[[1]]),
+               setNames(list("PONG"), wid[[1]]))
+
   res <- obj$send_message_and_wait("STOP")
   expect_equal(sort(names(res)), sort(wid))
   expect_equal(unname(res), rep(list("BYE"), length(wid)))
+})
+
+test_that("refresh", {
+  Sys.setenv(R_TESTS = "")
+  root <- tempfile()
+  myfuns <- tempfile("myfuns_", ".", ".R")
+  writeLines("f <- function(x) x * 2", myfuns)
+
+  context <- context::context_save(root, sources = myfuns)
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
+  obj <- rrq_controller(context, redux::hiredis())
+  on.exit({
+    obj$destroy()
+    file.remove(myfuns)
+  })
+
+  obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
+  wid <- workers_spawn(obj, 1, timeout = 5, progress = PROGRESS)
+
+  t1 <- obj$enqueue(f(10))
+  expect_equal(obj$task_wait(t1, 10, progress = FALSE), 20)
+
+  writeLines("f <- function(x) x * 3", myfuns)
+  t2 <- obj$enqueue(f(20))
+  expect_equal(obj$task_wait(t2, 10, progress = FALSE), 40)
+
+  res <- obj$send_message_and_wait("REFRESH")
+  expect_equal(res, setNames(list("OK"), wid))
+
+  t3 <- obj$enqueue(f(30))
+  expect_equal(obj$task_wait(t3, 10, progress = FALSE), 90)
+})
+
+test_that("timeout", {
+  Sys.setenv(R_TESTS = "")
+  root <- tempfile()
+  context <- context::context_save(root, sources = "myfuns.R")
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
+  obj <- rrq_controller(context, redux::hiredis())
+  on.exit(obj$destroy())
+
+  obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
+  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
+
+  expect_equal(obj$send_message_and_wait("TIMEOUT_GET"),
+               setNames(list(c(timeout = Inf, remaining = Inf)), wid))
+  expect_equal(obj$send_message_and_wait("TIMEOUT_SET", 1000),
+               setNames(list("OK"), wid))
+  res <- obj$send_message_and_wait("TIMEOUT_GET")
+  expect_equal(names(res), wid)
+  expect_equal(res[[1]][["timeout"]], 1000)
+  expect_lte(res[[1]][["remaining"]], 1000)
+
+  Sys.sleep(1)
+
+  ## This just checks that the timeout is reset correctly after a task
+  ## and that the timer deletion on task does not cause problems.
+  t <- obj$enqueue(sin(1))
+  res <- obj$send_message_and_wait("TIMEOUT_GET")[[1]]
+  expect_equal(res[["timeout"]], 1000)
+  expect_gt(res[["remaining"]], 999.5)
+
+  ## Clear the timeout:
+  expect_equal(obj$send_message_and_wait("TIMEOUT_SET", NULL),
+               setNames(list("OK"), wid))
+  expect_equal(obj$send_message_and_wait("TIMEOUT_GET"),
+               setNames(list(c(timeout = Inf, remaining = Inf)), wid))
+  expect_equal(obj$send_message_and_wait("TIMEOUT_SET", Inf),
+               setNames(list("OK"), wid))
+  expect_equal(obj$send_message_and_wait("TIMEOUT_GET"),
+               setNames(list(c(timeout = Inf, remaining = Inf)), wid))
+
+  expect_equal(obj$send_message_and_wait("TIMEOUT_SET", "hello!"),
+               setNames(list("INVALID"), wid))
+  expect_equal(obj$send_message_and_wait("TIMEOUT_GET"),
+               setNames(list(c(timeout = Inf, remaining = Inf)), wid))
+
+  expect_equal(obj$send_message_and_wait("TIMEOUT_SET", 0),
+               setNames(list("OK"), wid))
+
+  Sys.sleep(1.2)
+
+  expect_equal(obj$workers_list(), character(0))
+  expect_equal(obj$workers_list_exited(), wid)
 })
