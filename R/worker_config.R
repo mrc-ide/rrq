@@ -49,13 +49,15 @@ rrq_worker_config_save <- function(obj, key,
                                    time_poll = NULL, timeout = NULL,
                                    log_path = NULL, copy_redis = FALSE,
                                    overwrite = TRUE) {
-  if (!overwrite && obj$db$exists(key, "worker_config")) {
-    return()
+  write <- overwrite || !obj$db$exists(key, "worker_config")
+  if (write) {
+    if (copy_redis) {
+      redis_host <- obj$con$config()$host
+      redis_port <- obj$con$config()$port
+    }
+    worker_config_save(obj$context$root$path, key, redis_host, redis_port,
+                       time_poll, timeout, log_path)
+  } else {
+    NULL
   }
-  if (copy_redis) {
-    redis_host <- obj$con$config()$host
-    redis_port <- obj$con$config()$port
-  }
-  worker_config_save(obj$context$root$path, key, redis_host, redis_port,
-                     time_poll, timeout, log_path)
 }

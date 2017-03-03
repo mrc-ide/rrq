@@ -45,6 +45,15 @@ test_that("rrq_worker_main_args", {
   ## And show that we can load it appropriately
   expect_equal(config$redis_host, host)
   expect_equal(config$redis_port, port)
+
+  expect_null(
+    obj$worker_config_save(use, redis_host = host, redis_port = port,
+                           overwrite = FALSE))
+  expect_identical(worker_config_read(ctx, use), config)
+
+  expect_identical(
+    obj$worker_config_save(use, redis_host = host, redis_port = port,
+                           overwrite = TRUE), config)
 })
 
 test_that("create short-lived worker", {
