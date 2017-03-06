@@ -2,6 +2,7 @@ context("bootstrap")
 
 test_that("bootstrap", {
   skip_if_not_installed("provisionr")
+  skip_if_no_internet()
   path <- tempfile()
 
   ctx <- context::context_save(path, packages = list(loaded = "rrq"))

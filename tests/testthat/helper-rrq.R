@@ -17,4 +17,15 @@ worker_command <- function(obj) {
   bquote(rrq_worker_from_config(.(root), .(context_id), "localhost"))
 }
 
+has_internet <- function() {
+  !is.null(suppressWarnings(utils::nsl("www.google.com")))
+}
+
+skip_if_no_internet <- function() {
+  if (has_internet()) {
+    return()
+  }
+  testthat::skip("no internet")
+}
+
 PROGRESS <- FALSE
