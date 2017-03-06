@@ -11,3 +11,10 @@ noisydouble <- function(x) {
   message("doubling ", x)
   x * 2
 }
+
+only_positive <- function(x) {
+  if (x < 0) {
+    stop("x must be positive")
+  }
+  x
+}

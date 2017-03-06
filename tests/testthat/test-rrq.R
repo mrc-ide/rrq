@@ -186,3 +186,25 @@ test_that("failed spawn", {
   expect_match(dat$output, "No such file or directory",
                all = FALSE, fixed = TRUE)
 })
+
+test_that("error", {
+  Sys.setenv(R_TESTS = "")
+  root <- tempfile()
+  context <- context::context_save(root, sources = "myfuns.R")
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
+  obj <- rrq_controller(context, redux::hiredis())
+  on.exit(obj$destroy())
+
+  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
+
+  t1 <- obj$enqueue(only_positive(1))
+  expect_equal(obj$task_wait(t1, 2, progress = PROGRESS), 1)
+
+  t2 <- obj$enqueue(only_positive(-1))
+  res <- obj$task_wait(t2, 2, progress = PROGRESS)
+  expect_is(res, "rrq_task_error")
+
+  t3 <- obj$enqueue(nonexistant_function(-1))
+  res <- obj$task_wait(t3, 2, progress = PROGRESS)
+  expect_is(res, "rrq_task_error")
+})

@@ -171,11 +171,6 @@ R6_rrq_worker <- R6::R6Class(
         self$shutdown(sprintf("OK (%s)", e$message))
         continue <<- FALSE
       }
-      catch_worker_error <- function(e) {
-        if (!is.null(e$task_id)) {
-          self$task_cleanup(e, e$task_id, e$task_status)
-        }
-      }
 
       while (continue) {
         tryCatch({
@@ -195,12 +190,11 @@ R6_rrq_worker <- R6::R6Class(
               self$timer <- queuer::time_checker(self$timeout, TRUE)
             }
             if (is.function(self$timer) && self$timer() < 0L) {
-              stop(WorkerStop(self, "TIMEOUT"))
+              stop(rrq_worker_stop(self, "TIMEOUT"))
             }
           }
         },
-        WorkerStop = catch_worker_stop,
-        WorkerError = catch_worker_error,
+        rrq_worker_stop = catch_worker_stop,
         error = self$catch_error)
       }
     },
@@ -229,9 +223,10 @@ R6_rrq_worker <- R6::R6Class(
 
       dat <- bin_to_object(con$HGET(keys$tasks_expr, task_id))
       e <- context::restore_locals(dat, self$envir, self$db)
-      res <- tryCatch(eval(dat$expr, e), error = WorkerTaskError)
+      ## TODO: context captures warnings here too; we could do that?
+      res <- tryCatch(eval(dat$expr, e), error = rrq_task_error)
       task_status <-
-        if (inherits(res, "WorkerTaskError")) TASK_ERROR else TASK_COMPLETE
+        if (inherits(res, "rrq_task_error")) TASK_ERROR else TASK_COMPLETE
 
       con$HSET(keys$tasks_result, task_id, object_to_bin(res))
       con$HSET(keys$tasks_status, task_id, task_status)
@@ -249,9 +244,9 @@ R6_rrq_worker <- R6::R6Class(
       }
       res <- tryCatch(
         context::task_run(task_id, self$context, log_file),
-        error = WorkerTaskError)
+        error = rrq_task_error)
       task_status <-
-        if (inherits(res, "WorkerTaskError")) TASK_ERROR else TASK_COMPLETE
+        if (inherits(res, "rrq_task_error")) TASK_ERROR else TASK_COMPLETE
       self$task_cleanup(res, task_id, task_status)
     },
 
@@ -367,32 +362,17 @@ worker_exit_text <- function() {
   paste(txt, collapse = "\n")
 }
 
-## Errors:
-WorkerError <- function(worker, message, ...,
-                        task_id = NULL,
-                        task_status = NULL,
-                        class = character(0),
-                        call = NULL) {
+## Controlled stop:
+rrq_worker_stop <- function(worker, message) {
   structure(list(worker = worker,
-                 task_id = task_id,
-                 task_status = task_status, ...,
-                 message = message, call = call),
-            class = c(class, "WorkerError", "error", "condition"))
+                 message = message),
+            class = c("rrq_worker_stop", "error", "condition"))
 }
 
-WorkerStop <- function(worker, message) {
-  WorkerError(worker, message, class = "WorkerStop")
-}
-
-WorkerTaskError <- function(e) {
-  class(e) <- c("WorkerTaskError", "try-error", class(e))
+## Error within a task (gets a condition message to work with)
+## should this be rrq_worker_task_error perhaps?
+rrq_task_error <- function(e) {
+  e$trace <- context:::call_trace(0, 3)
+  class(e) <- c("rrq_task_error", "try-error", class(e))
   e
-}
-
-WorkerTaskMissing <- function(worker, task_id) {
-  msg <- sprintf("Task %s/%s not found", worker$name, task_id)
-  worker$log("TASK_MISSING", task_id)
-  WorkerError(worker, msg,
-              task_id = task_id, task_status = TASK_MISSING,
-              class = "WorkerTaskMissing")
 }
