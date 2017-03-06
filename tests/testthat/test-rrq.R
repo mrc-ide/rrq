@@ -203,8 +203,33 @@ test_that("error", {
   t2 <- obj$enqueue(only_positive(-1))
   res <- obj$task_wait(t2, 2, progress = PROGRESS)
   expect_is(res, "rrq_task_error")
+  expect_null(res$warnings)
 
   t3 <- obj$enqueue(nonexistant_function(-1))
   res <- obj$task_wait(t3, 2, progress = PROGRESS)
   expect_is(res, "rrq_task_error")
+  expect_null(res$warnings)
+})
+
+test_that("error", {
+  Sys.setenv(R_TESTS = "")
+  root <- tempfile()
+  context <- context::context_save(root, sources = "myfuns.R")
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
+  obj <- rrq_controller(context, redux::hiredis())
+  on.exit(obj$destroy())
+
+  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
+
+  t1 <- obj$enqueue(warning_then_error(2))
+  r1 <- obj$task_wait(t1, 2, progress = PROGRESS)
+  expect_is(r1, "rrq_task_error")
+  expect_is(r1, "try-error")
+  expect_is(r1$warnings, "list")
+  expect_equal(length(r1$warnings), 2)
+  expect_is(r1$warnings[[1]], "simpleWarning")
+  expect_equal(r1$warnings[[1]]$message, "This is warning number 1")
+  expect_equal(r1$warnings[[2]]$message, "This is warning number 2")
+
+  expect_match(tail(r1$trace, 2)[[1]], "^warning_then_error")
 })

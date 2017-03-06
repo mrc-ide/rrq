@@ -18,3 +18,10 @@ only_positive <- function(x) {
   }
   x
 }
+
+warning_then_error <- function(x) {
+  for (i in seq_len(x)) {
+    warning("This is warning number ", i)
+  }
+  stop("Giving up now")
+}

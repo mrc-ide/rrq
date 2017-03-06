@@ -223,15 +223,16 @@ R6_rrq_worker <- R6::R6Class(
 
       dat <- bin_to_object(con$HGET(keys$tasks_expr, task_id))
       e <- context::restore_locals(dat, self$envir, self$db)
-      ## TODO: context captures warnings here too; we could do that?
-      res <- tryCatch(eval(dat$expr, e), error = rrq_task_error)
-      task_status <-
-        if (inherits(res, "rrq_task_error")) TASK_ERROR else TASK_COMPLETE
 
-      con$HSET(keys$tasks_result, task_id, object_to_bin(res))
+      cl <- c("rrq_task_error", "try-error")
+      res <- context:::eval_safely(dat$expr, e, cl, 3L)
+      value <- res$value
+
+      task_status <- if (res$success) TASK_COMPLETE else TASK_ERROR
+      con$HSET(keys$tasks_result, task_id, object_to_bin(value))
       con$HSET(keys$tasks_status, task_id, task_status)
 
-      self$task_cleanup(res, task_id, task_status)
+      self$task_cleanup(value, task_id, task_status)
     },
 
     run_task_context = function(task_id) {
@@ -242,11 +243,9 @@ R6_rrq_worker <- R6::R6Class(
         self$db$set(task_id, log_path, "log_path")
         log_file <- file.path(self$context$root$path, log_path)
       }
-      res <- tryCatch(
-        context::task_run(task_id, self$context, log_file),
-        error = rrq_task_error)
+      res <- context::task_run(task_id, self$context, log_file)
       task_status <-
-        if (inherits(res, "rrq_task_error")) TASK_ERROR else TASK_COMPLETE
+        if (inherits(res, "context_task_error")) TASK_ERROR else TASK_COMPLETE
       self$task_cleanup(res, task_id, task_status)
     },
 
@@ -367,12 +366,4 @@ rrq_worker_stop <- function(worker, message) {
   structure(list(worker = worker,
                  message = message),
             class = c("rrq_worker_stop", "error", "condition"))
-}
-
-## Error within a task (gets a condition message to work with)
-## should this be rrq_worker_task_error perhaps?
-rrq_task_error <- function(e) {
-  e$trace <- context:::call_trace(0, 3)
-  class(e) <- c("rrq_task_error", "try-error", class(e))
-  e
 }
