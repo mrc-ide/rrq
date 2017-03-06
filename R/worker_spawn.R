@@ -49,7 +49,7 @@ workers_spawn <- function(obj, n = 1, logdir = "worker_logs",
                           timeout = 600, worker_config = "localhost",
                           worker_name_base = NULL, path = NULL,
                           time_poll = 1, progress = NULL) {
-  assert_inherits(obj, "rrq_controller")
+  assert_is(obj, "rrq_controller")
   if (!obj$db$exists(worker_config, "worker_config")) {
     stop(sprintf("worker config '%s' does not exist", worker_config))
   }

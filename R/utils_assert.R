@@ -1,7 +1,7 @@
 ## Type
-assert_inherits <- function(x, what, name = deparse(substitute(x))) {
+assert_is <- function(x, what, name = deparse(substitute(x))) {
   if (!inherits(x, what)) {
-    stop(sprintf("%s must be a %s", name,
+    stop(sprintf("%s must inherit from %s", name,
                  paste(what, collapse = " / ")), call. = FALSE)
   }
 }
@@ -38,6 +38,6 @@ assert_scalar_character <- function(x, name = deparse(substitute(x))) {
 
 assert_integer_like <- function(x, name = deparse(substitute(x))) {
   if (!isTRUE(all.equal(as.integer(x), x))) {
-    stop(sprintf("%s is not integer like", name))
+    stop(sprintf("%s must be integer like", name))
   }
 }

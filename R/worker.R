@@ -55,8 +55,8 @@ R6_rrq_worker <- R6::R6Class(
 
     initialize = function(context, con, key_alive, worker_name, time_poll,
                           log_path, timeout) {
-      assert_inherits(context, "context")
-      assert_inherits(con, "redis_api")
+      assert_is(context, "context")
+      assert_is(con, "redis_api")
       self$context <- context
       self$con <- con
       self$db <- context$db

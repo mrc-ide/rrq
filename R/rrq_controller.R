@@ -38,8 +38,8 @@ R6_rrq_controller <- R6::R6Class(
     db = NULL,
 
     initialize = function(context, con) {
-      assert_inherits(context, "context")
-      assert_inherits(con, "redis_api")
+      assert_is(context, "context")
+      assert_is(con, "redis_api")
       if (!is.environment(context$envir)) {
         stop("context is not loaded")
       }
