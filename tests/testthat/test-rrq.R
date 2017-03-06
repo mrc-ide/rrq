@@ -232,4 +232,19 @@ test_that("error", {
   expect_equal(r1$warnings[[2]]$message, "This is warning number 2")
 
   expect_match(tail(r1$trace, 2)[[1]], "^warning_then_error")
+
+  id <- context::task_save(quote(warning_then_error(2)), context)
+  ## TODO: why does rrq_controller not have queue_submit?
+  worker_controller(context$id, obj$con)$queue_submit(id)
+  t <- queuer:::queuer_task(id, context$root)
+  r2 <- t$wait(10, time_poll = 0.1, progress = PROGRESS)
+
+  expect_is(r2, "context_task_error")
+  expect_is(r2$warnings, "list")
+  expect_equal(length(r2$warnings), 2)
+  expect_is(r2$warnings[[1]], "simpleWarning")
+  expect_equal(r2$warnings[[1]]$message, "This is warning number 1")
+  expect_equal(r2$warnings[[2]]$message, "This is warning number 2")
+
+  expect_match(tail(r2$trace, 2)[[1]], "^warning_then_error")
 })
