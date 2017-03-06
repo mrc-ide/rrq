@@ -25,17 +25,17 @@ version_info <- function(package = "rrq") {
   descr <- packageDescription(package)
   version <- package_version(descr$Version)
   repository <- descr$Repository
-  sha <- descr[["RemoteSha"]]
+  sha <- descr$RemoteSha
   list(package = package,
        version = version,
        repository = repository,
+       packaged = descr$Packaged %||% "(unknown packaged)",
        sha = sha)
 }
 
-version_string <- function() {
-  data <- version_info()
+version_string <- function(data = version_info()) {
   if (!is.null(data$repository)) {
-    qual <- data$repository
+    qual <- sprintf("%s; %s", data$repository, data$packaged)
   } else if (!is.null(data$sha)) {
     qual <- data$sha
   } else {
