@@ -44,18 +44,18 @@ worker_config_make <- function(redis_host = NULL, redis_port = NULL,
 }
 
 ## All this duplication is a bit horrid, but for now it'll have to do.
-rrq_worker_config_save <- function(obj, key,
+rrq_worker_config_save <- function(root, con, name,
                                    redis_host = NULL, redis_port = NULL,
                                    time_poll = NULL, timeout = NULL,
                                    log_path = NULL, copy_redis = FALSE,
                                    overwrite = TRUE) {
-  write <- overwrite || !obj$db$exists(key, "worker_config")
+  write <- overwrite || !root$db$exists(name, "worker_config")
   if (write) {
     if (copy_redis) {
-      redis_host <- obj$con$config()$host
-      redis_port <- obj$con$config()$port
+      redis_host <- con$config()$host
+      redis_port <- con$config()$port
     }
-    worker_config_save(obj$context$root$path, key, redis_host, redis_port,
+    worker_config_save(root$path, name, redis_host, redis_port,
                        time_poll, timeout, log_path)
   } else {
     NULL

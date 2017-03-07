@@ -20,7 +20,7 @@ rrq_enqueue_bulk_submit <- function(obj, X, FUN, ..., DOTS = NULL,
                                     do_call = FALSE,
                                     envir = parent.frame(), use_names = TRUE) {
   ## See queuer:::enqueue_bulk_submit for the general approach used here.
-  fun_dat <- queuer::match_fun_queue(FUN, envir, obj$envir)
+  fun_dat <- queuer::match_fun_queue(FUN, envir, obj$context$envir)
   FUN <- fun_dat$name_symbol %||% fun_dat$value
 
   ## It is important not to use list(...) here and instead capture the

@@ -142,7 +142,7 @@ workers_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
 
 ##' Register that workers are expected
 ##' @title Registed expected workers
-##' @param obj A rrq_controller or worker_controller object
+##' @param obj A rrq_controller object
 ##' @param names Names of expected workers
 ##' @export
 rrq_expect_workers <- function(obj, names) {

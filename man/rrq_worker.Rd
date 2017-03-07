@@ -8,7 +8,17 @@ rrq_worker(context, con, key_alive = NULL, worker_name = NULL,
   time_poll = NULL, log_path = NULL, timeout = NULL)
 }
 \arguments{
-\item{context}{A context handle object.  The context needs to be loaded.}
+\item{context}{A context handle object.  The context needs to be
+loaded.  Alternatively, just the context id can be passed
+through here (not the context object itself).  In that case,
+some communication is disabled (we will not have access to
+context's internal database, nor the filesystem (of course it
+does sort of have access via the workers if there are any).
+Currently this impacts \code{worker_process_log} (which needs
+access to the filesystem), \code{worker_config_save} (which
+needs access to both the filesystem and the context database),
+and \code{lapply} and \code{enqueue_bulk} which both need access
+to the \emph{loaded} context, at least for now.}
 
 \item{con}{A redis connection (redux object).}
 

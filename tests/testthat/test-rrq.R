@@ -1,11 +1,13 @@
 context("rrq")
 
-test_that("sanity checking", {
+test_that("empty", {
   root <- tempfile()
   context <- context::context_save(root)
   context <- context::context_load(context, new.env(parent = .GlobalEnv))
 
   obj <- rrq_controller(context, redux::hiredis())
+  expect_is(obj, "rrq_controller")
+
   expect_equal(obj$workers_list(), character(0))
   expect_equal(obj$tasks_list(), character(0))
   expect_equal(obj$queue_length(), 0)
@@ -123,7 +125,7 @@ test_that("context job", {
   id <- context::task_save(quote(sin(1)), context)
   t <- queuer:::queuer_task(id, context$root)
 
-  r <- worker_controller(context$id, redux::hiredis())
+  r <- rrq_controller(context$id, redux::hiredis())
 
   r$queue_submit(t$id)
   expect_equal(t$wait(10, progress = PROGRESS), sin(1))
@@ -137,7 +139,7 @@ test_that("log dir", {
   context <- context::context_save(root, sources = "myfuns.R")
   context <- context::context_load(context, new.env(parent = .GlobalEnv))
   obj <- rrq_controller(context, redux::hiredis())
-  r <- worker_controller(context$id, redux::hiredis())
+  r <- rrq_controller(context$id, redux::hiredis())
 
   on.exit(obj$destroy())
 
@@ -234,8 +236,7 @@ test_that("error", {
   expect_match(tail(r1$trace, 2)[[1]], "^warning_then_error")
 
   id <- context::task_save(quote(warning_then_error(2)), context)
-  ## TODO: why does rrq_controller not have queue_submit?
-  worker_controller(context$id, obj$con)$queue_submit(id)
+  obj$queue_submit(id)
   t <- queuer:::queuer_task(id, context$root)
   r2 <- t$wait(10, time_poll = 0.1, progress = PROGRESS)
 

@@ -10,7 +10,7 @@ R6_queue_redis <- R6::R6Class(
     rrq = NULL,
     initialize = function(context, initialise, con) {
       super$initialize(context, initialise)
-      self$rrq <- worker_controller(context$id, con)
+      self$rrq <- rrq_controller(context, con)
     },
     submit = function(task_ids, names = NULL) {
       self$rrq$queue_submit(task_ids)

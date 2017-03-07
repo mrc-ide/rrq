@@ -7,7 +7,7 @@
 rrq_expect_workers(obj, names)
 }
 \arguments{
-\item{obj}{A rrq_controller or worker_controller object}
+\item{obj}{A rrq_controller object}
 
 \item{names}{Names of expected workers}
 }
