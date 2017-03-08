@@ -83,7 +83,7 @@ R6_rrq_worker <- R6::R6Class(
       ## worker.  An error here will not be caught.
       ##
       ## TODO: Provide some guidance as to what to do here!
-      if (self$con$SISMEMBER(self$keys$workers_name, self$name) == 1L) {
+      if (self$con$SISMEMBER(self$keys$worker_name, self$name) == 1L) {
         stop("Looks like this worker exists already...")
       }
 
@@ -121,15 +121,15 @@ R6_rrq_worker <- R6::R6Class(
       keys <- self$keys
 
       self$con$pipeline(
-        redis$SADD(keys$workers_name,   self$name),
-        redis$HSET(keys$workers_status, self$name, WORKER_IDLE),
-        redis$HDEL(keys$workers_task,   self$name),
+        redis$SADD(keys$worker_name,   self$name),
+        redis$HSET(keys$worker_status, self$name, WORKER_IDLE),
+        redis$HDEL(keys$worker_task,   self$name),
         redis$DEL(keys$log),
-        redis$HSET(keys$workers_info,   self$name, info))
+        redis$HSET(keys$worker_info,   self$name, info))
       self$log("ALIVE")
 
       ## This announces that we're up; things may monitor this
-      ## queue, and workers_spawn does a BLPOP to
+      ## queue, and worker_spawn does a BLPOP to
       if (!is.null(key_alive)) {
         self$con$RPUSH(key_alive, self$name)
       }
@@ -205,10 +205,10 @@ R6_rrq_worker <- R6::R6Class(
       keys <- self$keys
 
       con$pipeline(
-        redis$HSET(keys$workers_status, self$name, WORKER_BUSY),
-        redis$HSET(keys$workers_task,   self$name, task_id),
-        redis$HSET(keys$tasks_worker,   task_id,   self$name),
-        redis$HSET(keys$tasks_status,   task_id,   TASK_RUNNING))
+        redis$HSET(keys$worker_status, self$name, WORKER_BUSY),
+        redis$HSET(keys$worker_task,   self$name, task_id),
+        redis$HSET(keys$task_worker,   task_id,   self$name),
+        redis$HSET(keys$task_status,   task_id,   TASK_RUNNING))
       ## Run the task:
       if (rrq) {
         self$run_task_rrq(task_id)
@@ -221,7 +221,7 @@ R6_rrq_worker <- R6::R6Class(
       keys <- self$keys
       con <- self$con
 
-      dat <- bin_to_object(con$HGET(keys$tasks_expr, task_id))
+      dat <- bin_to_object(con$HGET(keys$task_expr, task_id))
       e <- context::restore_locals(dat, self$envir, self$db)
 
       cl <- c("rrq_task_error", "try-error")
@@ -229,8 +229,8 @@ R6_rrq_worker <- R6::R6Class(
       value <- res$value
 
       task_status <- if (res$success) TASK_COMPLETE else TASK_ERROR
-      con$HSET(keys$tasks_result, task_id, object_to_bin(value))
-      con$HSET(keys$tasks_status, task_id, task_status)
+      con$HSET(keys$task_result, task_id, object_to_bin(value))
+      con$HSET(keys$task_status, task_id, task_status)
 
       self$task_cleanup(value, task_id, task_status)
     },
@@ -252,7 +252,7 @@ R6_rrq_worker <- R6::R6Class(
     task_cleanup = function(res, task_id, task_status) {
       con <- self$con
       keys <- self$keys
-      key_complete <- con$HGET(keys$tasks_complete, task_id)
+      key_complete <- con$HGET(keys$task_complete, task_id)
 
       ## TODO: I should enforce a max size policy here.  So if the
       ## return value is too large (say more than a few kb) we can
@@ -260,8 +260,8 @@ R6_rrq_worker <- R6::R6Class(
       ## context db.  That policy can be set by the db pretty easily
       ## actually.
       con$pipeline(
-        redis$HSET(keys$workers_status, self$name, WORKER_IDLE),
-        redis$HDEL(keys$workers_task,   self$name),
+        redis$HSET(keys$worker_status, self$name, WORKER_IDLE),
+        redis$HDEL(keys$worker_task,   self$name),
         if (!is.null(key_complete)) {
           redis$RPUSH(key_complete, task_id)
         })
@@ -280,7 +280,7 @@ R6_rrq_worker <- R6::R6Class(
     },
 
     print_info = function() {
-      print(worker_info(self), banner = TRUE, styles = self$styles)
+      print(worker_info_collect(self), banner = TRUE, styles = self$styles)
     },
 
     catch_error = function(e) {
@@ -296,13 +296,13 @@ R6_rrq_worker <- R6::R6Class(
       ##   self$heartbeat$stop()
       ## }
       ## self$con$DEL(self$keys$heartbeat)
-      self$con$SREM(self$keys$workers_name,   self$name)
-      self$con$HSET(self$keys$workers_status, self$name, WORKER_EXITED)
+      self$con$SREM(self$keys$worker_name,   self$name)
+      self$con$HSET(self$keys$worker_status, self$name, WORKER_EXITED)
       self$log("STOP", status)
     }
   ))
 
-worker_info <- function(worker) {
+worker_info_collect <- function(worker) {
   sys <- sessionInfo()
   redis_config <- worker$con$config()
   dat <- list(worker = worker$name,

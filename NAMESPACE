@@ -2,10 +2,10 @@
 
 S3method(print,worker_info)
 export(rrq_controller)
-export(rrq_expect_workers)
+export(rrq_expect_worker)
 export(rrq_worker)
-export(workers_spawn)
-export(workers_wait)
+export(worker_spawn)
+export(worker_wait)
 import(utils)
 importFrom(R6,R6Class)
 importFrom(redux,bin_to_object)

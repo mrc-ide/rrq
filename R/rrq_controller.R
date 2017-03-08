@@ -123,18 +123,14 @@ R6_rrq_controller <- R6::R6Class(
     ## The big issue is things like tasks_result and tasks_wait which
     ## return vectors.  Another way of doing this is to have a
     ## `multiple = TRUE` argument which always returns a list.
-    tasks_list = function() {
-      as.character(self$con$HKEYS(self$keys$tasks_expr))
+    task_list = function() {
+      as.character(self$con$HKEYS(self$keys$task_expr))
     },
-    tasks_status = function(task_ids = NULL) {
-      tasks_status(self$con, self$keys, task_ids)
+    task_status = function(task_ids = NULL) {
+      task_status(self$con, self$keys, task_ids)
     },
-    task_status = function(task_id) {
-      assert_scalar(task_id)
-      self$tasks_status(task_id)[[1L]]
-    },
-    tasks_overview = function(task_ids = NULL) {
-      tasks_overview(self$con, self$keys, task_ids)
+    task_overview = function(task_ids = NULL) {
+      task_overview(self$con, self$keys, task_ids)
     },
 
     ## One result, as the object
@@ -163,8 +159,8 @@ R6_rrq_controller <- R6::R6Class(
                        timeout, time_poll, progress)
       }
     },
-    tasks_delete = function(task_ids, check = TRUE) {
-      tasks_delete(self$con, self$keys, task_ids, check)
+    task_delete = function(task_ids, check = TRUE) {
+      task_delete(self$con, self$keys, task_ids, check)
     },
 
     ## 2. Queue state
@@ -200,41 +196,39 @@ R6_rrq_controller <- R6::R6Class(
     },
 
     ## 3. Workers
-    ##
-    ## TODO: these all become worker_ rather than workers_
-    workers_len = function() {
-      workers_len(self$con, self$keys)
+    worker_len = function() {
+      worker_len(self$con, self$keys)
     },
-    workers_list = function() {
-      workers_list(self$con, self$keys)
+    worker_list = function() {
+      worker_list(self$con, self$keys)
     },
-    workers_list_exited = function() {
-      workers_list_exited(self$con, self$keys)
+    worker_list_exited = function() {
+      worker_list_exited(self$con, self$keys)
     },
-    workers_info = function(worker_ids = NULL) {
-      workers_info(self$con, self$keys, worker_ids)
+    worker_info = function(worker_ids = NULL) {
+      worker_info(self$con, self$keys, worker_ids)
     },
-    workers_status = function(worker_ids = NULL) {
-      workers_status(self$con, self$keys, worker_ids)
+    worker_status = function(worker_ids = NULL) {
+      worker_status(self$con, self$keys, worker_ids)
     },
-    workers_log_tail = function(worker_ids = NULL, n = 1) {
-      workers_log_tail(self$con, self$keys, worker_ids, n)
+    worker_log_tail = function(worker_ids = NULL, n = 1) {
+      worker_log_tail(self$con, self$keys, worker_ids, n)
     },
-    workers_task_id = function(worker_ids = NULL) {
-      workers_task_id(self$con, self$keys, worker_ids)
+    worker_task_id = function(worker_ids = NULL) {
+      worker_task_id(self$con, self$keys, worker_ids)
     },
-    workers_delete_exited = function(worker_ids = NULL) {
-      workers_delete_exited(self$con, self$keys, worker_ids)
+    worker_delete_exited = function(worker_ids = NULL) {
+      worker_delete_exited(self$con, self$keys, worker_ids)
     },
-    workers_stop = function(worker_ids = NULL, type = "message",
+    worker_stop = function(worker_ids = NULL, type = "message",
                             timeout = 0, time_poll = 1, progress = NULL) {
-      workers_stop(self$con, self$keys, worker_ids, type,
+      worker_stop(self$con, self$keys, worker_ids, type,
                    timeout, time_poll, progress)
     },
     ## This one is a bit unfortunately named, but should do for now.
     ## It only works if the worker has appropriately saved logging
     ## information.  Given the existance of things like
-    ## workers_log_tail this should be renamed something like
+    ## worker_log_tail this should be renamed something like
     ## worker_text_log perhaps?
     worker_process_log = function(worker_id, parse = TRUE) {
       root <- self$context$root
@@ -258,51 +252,39 @@ R6_rrq_controller <- R6::R6Class(
     },
 
     ## 4. Messaging
-    ##
-    ## TODO: all the methods here get renamed shortly
-    ##
-    ## TODO: at the same time, deal with the plural thing.  This is
-    ## not too bad to do as has_responses is type safe and we can do
-    ## the same thing with get_responses as with the tasks above via a
-    ## 'multiple' argument.
-    send_message = function(command, args = NULL, worker_ids = NULL) {
-      send_message(self$con, self$keys, command, args, worker_ids)
+    message_send = function(command, args = NULL, worker_ids = NULL) {
+      message_send(self$con, self$keys, command, args, worker_ids)
     },
-    has_responses = function(message_id, worker_ids = NULL) {
-      has_responses(self$con, self$keys, message_id, worker_ids)
+    message_has_response = function(message_id, worker_ids = NULL,
+                                    named = TRUE) {
+      message_has_response(self$con, self$keys, message_id, worker_ids, named)
     },
-    has_response = function(message_id, worker_id) {
-      has_response(self$con, self$keys, message_id, worker_id)
+    message_get_response = function(message_id, worker_ids = NULL, named = TRUE,
+                                     delete = FALSE, timeout = 0,
+                                     time_poll = 1, progress = NULL) {
+      message_get_response(self$con, self$keys, message_id, worker_ids, named,
+                           delete, timeout, time_poll, progress)
     },
-    get_responses = function(message_id, worker_ids = NULL, delete = FALSE,
-                             timeout = 0, time_poll = 1, progress = NULL) {
-      get_responses(self$con, self$keys, message_id, worker_ids, delete,
-                    timeout, time_poll, progress)
+    message_response_ids = function(worker_id) {
+      message_response_ids(self$con, self$keys, worker_id)
     },
-    get_response = function(message_id, worker_id, delete = FALSE,
-                            timeout = 0, time_poll = 1, progress = NULL) {
-      get_response(self$con, self$keys, message_id, worker_id, delete,
-                   timeout, time_poll, progress)
-    },
-    response_ids = function(worker_id) {
-      response_ids(self$con, self$keys, worker_id)
-    },
-    ## All in one:
-    send_message_and_wait = function(command, args = NULL, worker_ids = NULL,
-                                     delete = TRUE, timeout = 600,
+    ## All in one; this gets merged into the send function, just like
+    ## the bulk submissing thing (TODO)
+    message_send_and_wait = function(command, args = NULL, worker_ids = NULL,
+                                     named = TRUE, delete = TRUE, timeout = 600,
                                      time_poll = 0.05, progress = NULL) {
-      send_message_and_wait(self$con, self$keys, command, args, worker_ids,
-                            delete, timeout, time_poll, progress)
+      message_send_and_wait(self$con, self$keys, command, args, worker_ids,
+                            named, delete, timeout, time_poll, progress)
     }
   ))
 
-tasks_status <- function(con, keys, task_ids) {
-  from_redis_hash(con, keys$tasks_status, task_ids, missing = TASK_MISSING)
+task_status <- function(con, keys, task_ids) {
+  from_redis_hash(con, keys$task_status, task_ids, missing = TASK_MISSING)
 }
 
-tasks_overview <- function(con, keys, task_ids) {
+task_overview <- function(con, keys, task_ids) {
   lvls <- c(TASK_PENDING, TASK_RUNNING, TASK_COMPLETE, TASK_ERROR)
-  status <- tasks_status(con, keys, task_ids)
+  status <- task_status(con, keys, task_ids)
   lvls <- c(lvls, setdiff(unique(status), lvls))
   table(factor(status, lvls))
 }
@@ -311,24 +293,24 @@ task_submit <- function(con, keys, dat, key_complete) {
   task_submit_n(con, keys, list(object_to_bin(dat)), key_complete)
 }
 
-tasks_delete <- function(con, keys, task_ids, check = TRUE) {
+task_delete <- function(con, keys, task_ids, check = TRUE) {
   if (check) {
     ## TODO: filter from the running list if not running, but be
     ## aware of race conditions. This is really only for doing
     ## things that have finished so could just check that the
     ## status is one of the finished ones.  Write a small lua
     ## script that can take the setdiff of these perhaps...
-    st <- from_redis_hash(con, keys$tasks_status, task_ids,
+    st <- from_redis_hash(con, keys$task_status, task_ids,
                           missing = TASK_MISSING)
     if (any(st == "RUNNING")) {
       stop("Can't delete running tasks")
     }
   }
-  con$HDEL(keys$tasks_expr,     task_ids)
-  con$HDEL(keys$tasks_status,   task_ids)
-  con$HDEL(keys$tasks_result,   task_ids)
-  con$HDEL(keys$tasks_complete, task_ids)
-  con$HDEL(keys$tasks_worker,   task_ids)
+  con$HDEL(keys$task_expr,     task_ids)
+  con$HDEL(keys$task_status,   task_ids)
+  con$HDEL(keys$task_result,   task_ids)
+  con$HDEL(keys$task_complete, task_ids)
+  con$HDEL(keys$task_worker,   task_ids)
 }
 
 task_submit_n <- function(con, keys, dat, key_complete) {
@@ -340,17 +322,17 @@ task_submit_n <- function(con, keys, dat, key_complete) {
 
   con$pipeline(
     if (!is.null(key_complete)) {
-      redis$HMSET(keys$tasks_complete, task_ids, rep_len(key_complete, n))
+      redis$HMSET(keys$task_complete, task_ids, rep_len(key_complete, n))
     },
-    redis$HMSET(keys$tasks_expr, task_ids, dat),
-    redis$HMSET(keys$tasks_status, task_ids, rep_len(TASK_PENDING, n)),
+    redis$HMSET(keys$task_expr, task_ids, dat),
+    redis$HMSET(keys$task_status, task_ids, rep_len(TASK_PENDING, n)),
     redis$RPUSH(keys$queue_rrq, task_ids))
 
   task_ids
 }
 
 task_results <- function(con, keys, task_ids) {
-  res <- from_redis_hash(con, keys$tasks_result, task_ids, identity, NULL)
+  res <- from_redis_hash(con, keys$task_result, task_ids, identity, NULL)
   err <- lengths(res) == 0L
   if (any(err)) {
     stop("Missing some results")
@@ -358,29 +340,29 @@ task_results <- function(con, keys, task_ids) {
   lapply(res, bin_to_object)
 }
 
-workers_len <- function(con, keys) {
-  con$SCARD(keys$workers_name)
+worker_len <- function(con, keys) {
+  con$SCARD(keys$worker_name)
 }
-workers_list <- function(con, keys) {
-  as.character(con$SMEMBERS(keys$workers_name))
-}
-
-workers_list_exited <- function(con, keys) {
-  setdiff(as.character(con$HKEYS(keys$workers_info)), workers_list(con, keys))
+worker_list <- function(con, keys) {
+  as.character(con$SMEMBERS(keys$worker_name))
 }
 
-workers_status <- function(con, keys, worker_ids = NULL) {
-  from_redis_hash(con, keys$workers_status, worker_ids)
+worker_list_exited <- function(con, keys) {
+  setdiff(as.character(con$HKEYS(keys$worker_info)), worker_list(con, keys))
 }
 
-workers_info <- function(con, keys, worker_ids = NULL) {
-  from_redis_hash(con, keys$workers_info, worker_ids,
+worker_status <- function(con, keys, worker_ids = NULL) {
+  from_redis_hash(con, keys$worker_status, worker_ids)
+}
+
+worker_info <- function(con, keys, worker_ids = NULL) {
+  from_redis_hash(con, keys$worker_info, worker_ids,
                   f = Vectorize(bin_to_object, SIMPLIFY = FALSE))
 }
 
-workers_log_tail <- function(con, keys, worker_ids = NULL, n = 1) {
+worker_log_tail <- function(con, keys, worker_ids = NULL, n = 1) {
   if (is.null(worker_ids)) {
-    worker_ids <- workers_list(con, keys)
+    worker_ids <- worker_list(con, keys)
   }
   tmp <- lapply(worker_ids, function(i) worker_log_tail(con, keys, i, n))
   if (length(tmp) > 0L) {
@@ -416,30 +398,30 @@ worker_log_tail <- function(con, keys, worker_id, n = 1) {
   data.frame(time, command, message, stringsAsFactors = FALSE)
 }
 
-workers_task_id <- function(con, keys, worker_id) {
-  from_redis_hash(con, keys$workers_task, worker_id)
+worker_task_id <- function(con, keys, worker_id) {
+  from_redis_hash(con, keys$worker_task, worker_id)
 }
 
-workers_delete_exited <- function(con, keys, worker_ids = NULL) {
+worker_delete_exited <- function(con, keys, worker_ids = NULL) {
   ## This only includes things that have been processed and had task
   ## orphaning completed.
   if (is.null(worker_ids)) {
-    worker_ids <- workers_list_exited(con, keys)
+    worker_ids <- worker_list_exited(con, keys)
   } else {
-    extra <- setdiff(worker_ids, workers_list_exited(con, keys))
+    extra <- setdiff(worker_ids, worker_list_exited(con, keys))
     if (length(extra)) {
       stop(sprintf(
         ## TODO: this function does not exist!  It's in rrqueue and I
         ## think depends on heartbeat.
-        "Workers %s may not have exited;\n\trun workers_identify_lost first",
+        "Workers %s may not have exited;\n\trun worker_identify_lost first",
         paste(extra, collapse = ", ")))
     }
   }
   if (length(worker_ids) > 0L) {
-    con$HDEL(keys$workers_name,   worker_ids)
-    con$HDEL(keys$workers_status, worker_ids)
-    con$HDEL(keys$workers_task,   worker_ids)
-    con$HDEL(keys$workers_info,   worker_ids)
+    con$HDEL(keys$worker_name,   worker_ids)
+    con$HDEL(keys$worker_status, worker_ids)
+    con$HDEL(keys$worker_task,   worker_ids)
+    con$HDEL(keys$worker_info,   worker_ids)
     con$DEL(c(rrq_key_worker_log(keys$queue_name, worker_ids),
               rrq_key_worker_message(keys$queue_name, worker_ids),
               rrq_key_worker_response(keys$queue_name, worker_ids)))
@@ -447,11 +429,11 @@ workers_delete_exited <- function(con, keys, worker_ids = NULL) {
   worker_ids
 }
 
-workers_stop <- function(con, keys, worker_ids = NULL, type = "message",
+worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
                          timeout = 0, time_poll = 1, progress = NULL) {
   type <- match.arg(type, c("message", "kill", "kill_local"))
   if (is.null(worker_ids)) {
-    worker_ids <- workers_list(con, keys)
+    worker_ids <- worker_list(con, keys)
   }
   if (length(worker_ids) == 0L) {
     return(invisible(worker_ids))
@@ -459,23 +441,24 @@ workers_stop <- function(con, keys, worker_ids = NULL, type = "message",
 
   if (type == "message") {
     ## First, we send a message saying 'STOP'
-    message_id <- send_message(con, keys, "STOP", worker_ids = worker_ids)
+    message_id <- message_send(con, keys, "STOP", worker_ids = worker_ids)
     ## ## TODO: This needs RedisHeartbeat support
     ##
     ## if (interrupt) {
-    ##   is_busy <- workers_status(con, keys, worker_ids) == WORKER_BUSY
+    ##   is_busy <- worker_status(con, keys, worker_ids) == WORKER_BUSY
     ##   if (any(is_busy)) {
     ##     queue_send_signal(con, keys, tools::SIGINT, worker_ids[is_busy])
     ##   }
     ## }
     if (timeout > 0L) {
-      ok <- try(get_responses(con, keys, message_id, worker_ids,
-                              delete = FALSE, timeout = timeout,
-                              time_poll = time_poll, progress = progress),
+      ok <- try(message_get_response(con, keys, message_id, worker_ids,
+                                     delete = FALSE, timeout = timeout,
+                                     time_poll = time_poll,
+                                     progress = progress),
                 silent = TRUE)
       ## if (inherits(ok, "try-error")) {
-      ##   done <- has_responses(con, keys, message_id, worker_ids)
-      ##   workers_stop(con, keys, worker_ids[!done], "kill")
+      ##   done <- message_has_response(con, keys, message_id, worker_ids)
+      ##   worker_stop(con, keys, worker_ids[!done], "kill")
       ## }
     }
     ## TODO: This requires RedisHeartbeat support
@@ -484,7 +467,7 @@ workers_stop <- function(con, keys, worker_ids = NULL, type = "message",
     stop("Needs redis heartbeat support")
   } else {
     ## kill_local
-    w_info <- workers_info(con, keys, worker_ids)
+    w_info <- worker_info(con, keys, worker_ids)
     w_local <- vcapply(w_info, "[[", "hostname") == hostname()
     if (!all(w_local)) {
       stop("Not all workers are local: ",
@@ -509,7 +492,7 @@ collect_wait_n <- function(con, keys, task_ids, key_complete,
     time_poll <- 1L
   }
 
-  status <- from_redis_hash(con, keys$tasks_status, task_ids)
+  status <- from_redis_hash(con, keys$task_status, task_ids)
 
   done <- status == TASK_COMPLETE | status == TASK_ERROR
   if (all(done)) {
@@ -539,7 +522,7 @@ collect_wait_n <- function(con, keys, task_ids, key_complete,
 collect_wait_n_poll <- function(con, keys, task_ids,
                                 timeout, time_poll, progress) {
   time_poll <- time_poll %||% 0.1
-  status <- from_redis_hash(con, keys$tasks_status, task_ids)
+  status <- from_redis_hash(con, keys$task_status, task_ids)
   done <- status == TASK_COMPLETE | status == TASK_ERROR
   if (all(done)) {
     ## pass
@@ -550,7 +533,7 @@ collect_wait_n_poll <- function(con, keys, task_ids,
                                   show = progress, timeout = timeout)
     remaining <- task_ids[!done]
     while (length(remaining) > 0L) {
-      exists <- viapply(remaining, con$HEXISTS, key = keys$tasks_result) == 1L
+      exists <- viapply(remaining, con$HEXISTS, key = keys$task_result) == 1L
       if (any(exists)) {
         i <- remaining[exists]
         p(length(i))
@@ -576,8 +559,8 @@ controller_info <- function() {
 }
 
 push_controller_info <- function(con, keys, max_n = 10) {
-  n <- con$RPUSH(keys$controllers, object_to_bin(controller_info()))
+  n <- con$RPUSH(keys$controller, object_to_bin(controller_info()))
   if (n > max_n) {
-    con$LTRIM(keys$controllers, -max_n, -1)
+    con$LTRIM(keys$controller, -max_n, -1)
   }
 }

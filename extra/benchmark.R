@@ -15,7 +15,7 @@ root <- tempfile()
 context <- context::context_save(root)
 obj <- rrq::rrq_controller(context, redux::hiredis())
 
-wid <- rrq::workers_spawn(obj$context, obj$con, logdir=tempdir())
+wid <- rrq::worker_spawn(obj$context, obj$con, logdir=tempdir())
 
 ## Look in particular at `elapsed`
 system.time(obj$lapply(1:1000, identity, progress=FALSE))
@@ -36,11 +36,11 @@ f_rrq <- function(n, nrep, nworkers) {
   if (interactive()) {
     message(sprintf("%d / %d / %d", n, nrep, nworkers))
   }
-  diff <- nworkers - obj$workers_len()
+  diff <- nworkers - obj$worker_len()
   if (diff > 0L) {
-    rrq::workers_spawn(obj$context, obj$con, diff, logdir=tempdir())
+    rrq::worker_spawn(obj$context, obj$con, diff, logdir=tempdir())
   } else if (diff < 0L) {
-    obj$workers_stop(obj$workers_list()[seq_len(-diff)])
+    obj$worker_stop(obj$worker_list()[seq_len(-diff)])
   }
   i <- seq_len(n)
   replicate(

@@ -8,15 +8,15 @@ test_that("empty", {
   obj <- rrq_controller(context, redux::hiredis())
   expect_is(obj, "rrq_controller")
 
-  expect_equal(obj$workers_list(), character(0))
-  expect_equal(obj$tasks_list(), character(0))
+  expect_equal(obj$worker_list(), character(0))
+  expect_equal(obj$task_list(), character(0))
   expect_equal(obj$queue_length(), 0)
   expect_equal(obj$queue_list(), character(0))
 
   id <- obj$enqueue(sin(1))
-  expect_equal(obj$tasks_list(), id)
+  expect_equal(obj$task_list(), id)
   expect_equal(obj$queue_list(), id)
-  expect_equal(obj$tasks_status(id), setNames(TASK_PENDING, id))
+  expect_equal(obj$task_status(id), setNames(TASK_PENDING, id))
 
   expect_true(
     file.exists(file.path(obj$context$root$path, "bin", "rrq_worker")))
@@ -33,7 +33,7 @@ test_that("basic use", {
   on.exit(obj$destroy())
 
   ## For testing, use: worker_command(obj)
-  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
+  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
 
   t <- obj$enqueue(slowdouble(0.1))
   expect_is(t, "character")
@@ -57,7 +57,7 @@ test_that("worker working directory", {
     on.exit(obj$destroy())
 
     ## For testing, use: worker_command(obj)
-    wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
+    wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
 
     t <- obj$enqueue(getwd())
     res <- obj$task_wait(t, 2)
@@ -75,7 +75,7 @@ test_that("worker name", {
   on.exit(obj$destroy())
 
   name <- ids::random_id()
-  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS,
+  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS,
                       worker_name_base = name)
   expect_equal(wid, paste0(name, "_1"))
 })
@@ -92,23 +92,23 @@ test_that("worker timeout", {
   res <- obj$worker_config_save("localhost", timeout = t, copy_redis = TRUE)
   expect_equal(res$timeout, t)
 
-  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
+  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
 
-  id <- obj$send_message("TIMEOUT_GET")
-  res <- obj$get_response(id, wid, timeout = 10, progress = PROGRESS)
+  id <- obj$message_send("TIMEOUT_GET")
+  res <- obj$message_get_response(id, wid, timeout = 10)[[1]]
   expect_equal(res[["timeout"]], t)
   expect_lte(res[["remaining"]], t)
-  obj$send_message("STOP")
+  obj$message_send("STOP")
 
   obj$worker_config_save("infinite", timeout = Inf, copy_redis = TRUE)
 
-  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS,
+  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS,
                        worker_config = "infinite")
-  id <- obj$send_message("TIMEOUT_GET")
-  res <- obj$get_response(id, wid, timeout = 10, progress = PROGRESS)
+  id <- obj$message_send("TIMEOUT_GET")
+  res <- obj$message_get_response(id, wid, timeout = 10)[[1]]
   expect_equal(res[["timeout"]], Inf)
   expect_equal(res[["remaining"]], Inf)
-  obj$send_message("STOP")
+  obj$message_send("STOP")
 })
 
 test_that("context job", {
@@ -120,7 +120,7 @@ test_that("context job", {
   on.exit(obj$destroy())
 
   ## For testing, use: worker_command(obj)
-  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
+  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
 
   id <- context::task_save(quote(sin(1)), context)
   t <- queuer:::queuer_task(id, context$root)
@@ -146,9 +146,9 @@ test_that("log dir", {
   obj$worker_config_save("localhost", log_path = "worker_logs_task",
                          copy_redis = TRUE)
   worker_command(obj)
-  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
+  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
 
-  info <- obj$workers_info(wid)[[wid]]
+  info <- obj$worker_info(wid)[[wid]]
   expect_equal(info$log_path, "worker_logs_task")
 
   expect_true(file.exists(file.path(root, "worker_logs_task")))
@@ -177,7 +177,7 @@ test_that("failed spawn", {
   on.exit(obj$destroy())
 
   dat <- evaluate_promise(
-    try(workers_spawn(obj, 2, timeout = 2, progress = PROGRESS),
+    try(worker_spawn(obj, 2, timeout = 2, progress = PROGRESS),
         silent = TRUE))
 
   expect_is(dat$result, "try-error")
@@ -197,7 +197,7 @@ test_that("error", {
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
-  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
+  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
 
   t1 <- obj$enqueue(only_positive(1))
   expect_equal(obj$task_wait(t1, 2, progress = PROGRESS), 1)
@@ -221,7 +221,7 @@ test_that("error", {
   obj <- rrq_controller(context, redux::hiredis())
   on.exit(obj$destroy())
 
-  wid <- workers_spawn(obj, timeout = 5, progress = PROGRESS)
+  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
 
   t1 <- obj$enqueue(warning_then_error(2))
   r1 <- obj$task_wait(t1, 2, progress = PROGRESS)

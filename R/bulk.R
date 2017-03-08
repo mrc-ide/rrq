@@ -36,8 +36,8 @@ rrq_enqueue_bulk_submit <- function(obj, X, FUN, ..., DOTS = NULL,
 
   keys <- obj$keys
   key_complete <- rrq_key_task_complete(keys$queue_name)
-  tasks_dat <- lapply(dat, object_to_bin)
-  task_ids <- task_submit_n(obj$con, keys, tasks_dat, key_complete)
+  task_dat <- lapply(dat, object_to_bin)
+  task_ids <- task_submit_n(obj$con, keys, task_dat, key_complete)
   list(key_complete = key_complete,
        task_ids = task_ids)
 }
@@ -52,6 +52,6 @@ rrq_enqueue_bulk_wait <- function(obj, dat, timeout = Inf, time_poll = NULL,
   ret <- collect_wait_n(con, keys, task_ids, key_complete,
                         timeout = timeout, time_poll = time_poll,
                         progress = progress)
-  tasks_delete(con, keys, task_ids, FALSE)
+  task_delete(con, keys, task_ids, FALSE)
   setNames(ret, names(task_ids))
 }

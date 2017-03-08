@@ -45,7 +45,7 @@
 ##'   (when \code{timeout} is at least 0)
 ##'
 ##' @export
-workers_spawn <- function(obj, n = 1, logdir = "worker_logs",
+worker_spawn <- function(obj, n = 1, logdir = "worker_logs",
                           timeout = 600, worker_config = "localhost",
                           worker_name_base = NULL, path = NULL,
                           time_poll = 1, progress = NULL) {
@@ -62,7 +62,7 @@ workers_spawn <- function(obj, n = 1, logdir = "worker_logs",
                 ' R_TESTS=""')
   worker_name_base <- worker_name_base %||% ids::adjective_animal()
   worker_names <- sprintf("%s_%d", worker_name_base, seq_len(n))
-  key_alive <- rrq_expect_workers(obj, worker_names)
+  key_alive <- rrq_expect_worker(obj, worker_names)
 
   logdir_abs <- file.path(obj$context$root$path, logdir)
   if (!file.exists(logdir_abs)) {
@@ -90,28 +90,28 @@ workers_spawn <- function(obj, n = 1, logdir = "worker_logs",
   }
 
   if (timeout > 0) {
-    workers_wait(obj, key_alive, timeout, time_poll, progress)
+    worker_wait(obj, key_alive, timeout, time_poll, progress)
   } else {
     worker_names
   }
 }
 
 ##' @export
-##' @rdname workers_spawn
+##' @rdname worker_spawn
 ##' @param key_alive A key name (generated from
-##'   \code{\link{rrq_expect_workers}} or \code{workers_spawn})
-workers_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
-                         progress = NULL) {
+##'   \code{\link{rrq_expect_worker}} or \code{worker_spawn})
+worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
+                        progress = NULL) {
   con <- obj$con
   keys <- obj$keys
-  expected <- bin_to_object(con$HGET(keys$workers_expect, key_alive))
+  expected <- bin_to_object(con$HGET(keys$worker_expect, key_alive))
   n <- length(expected)
   p <- queuer::progress_timeout(total = n, show = progress, timeout = timeout)
   time_poll <- min(time_poll, timeout)
   ret <- rep.int(NA_character_, n)
 
   ## Previously found workers:
-  previous <- intersect(expected, workers_list(con, keys))
+  previous <- intersect(expected, worker_list(con, keys))
   if (length(previous) > 0L) {
     ret[seq_along(previous)] <- previous
     p(length(previous))
@@ -126,8 +126,8 @@ workers_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
         n_msg <- sum(is.na(ret))
         message(sprintf("%d / %d workers not identified in time", n_msg, n))
         missing <- setdiff(expected, ret[!is.na(ret)])
-        logs <- workers_read_failed_logs(obj$context, missing)
-        workers_print_failed_logs(logs)
+        logs <- worker_read_failed_logs(obj$context, missing)
+        worker_print_failed_logs(logs)
         stop(sprintf("Not all workers recovered (key_alive: %s)", key_alive))
       }
     } else {
@@ -136,25 +136,27 @@ workers_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
       p(1)
     }
   }
-  obj$con$HDEL(keys$workers_expect, key_alive)
+  obj$con$HDEL(keys$worker_expect, key_alive)
   ret
 }
 
-##' Register that workers are expected
+##' Register that workers are expected.  This generates a key that one
+##' or more workers will write to when they start up (as used by
+##' \code{worker_spawn}).
 ##' @title Registed expected workers
 ##' @param obj A rrq_controller object
 ##' @param names Names of expected workers
 ##' @export
-rrq_expect_workers <- function(obj, names) {
+rrq_expect_worker <- function(obj, names) {
   key_alive <- rrq_key_worker_alive(obj$keys$queue_name)
-  obj$con$HSET(obj$keys$workers_expect, key_alive, object_to_bin(names))
+  obj$con$HSET(obj$keys$worker_expect, key_alive, object_to_bin(names))
   key_alive
 }
 
 ## These bits exist in separate functions to keep the bits above
 ## relatively straightforward and to help with (eventual) unit
 ## testing.
-workers_read_failed_logs <- function(context, missing) {
+worker_read_failed_logs <- function(context, missing) {
   log_path <-
     l2c(context$db$mget(missing, "log_path", missing = NA_character_))
   i <- !is.na(log_path)
@@ -169,7 +171,7 @@ workers_read_failed_logs <- function(context, missing) {
   }
 }
 
-workers_print_failed_logs <- function(logs) {
+worker_print_failed_logs <- function(logs) {
   if (is.null(logs)) {
     cat("Logging not enabled for these workers\n")
   } else {

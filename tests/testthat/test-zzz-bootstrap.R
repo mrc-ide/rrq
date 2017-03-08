@@ -17,7 +17,7 @@ test_that("bootstrap", {
 
   Sys.setenv(CONTEXT_BOOTSTRAP = "TRUE")
   on.exit(Sys.unsetenv("CONTEXT_BOOTSTRAP"), add = TRUE)
-  wid <- workers_spawn(obj, timeout = 5, progress = FALSE)
+  wid <- worker_spawn(obj, timeout = 5, progress = FALSE)
 
   ## Worker reports lib on startup:
   log <- context:::parse_context_log(obj$worker_process_log(wid))

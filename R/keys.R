@@ -13,22 +13,22 @@ rrq_keys <- function(queue_name, worker_name = NULL) {
 rrq_keys_queue <- function(queue) {
   list(queue_name     = queue,
 
-       controllers    = sprintf("rrq:%s:controllers",     queue),
+       controller    = sprintf("rrq:%s:controller",     queue),
 
-       workers_name   = sprintf("rrq:%s:workers:name",    queue),
-       workers_status = sprintf("rrq:%s:workers:status",  queue),
-       workers_task   = sprintf("rrq:%s:workers:task",    queue),
-       workers_info   = sprintf("rrq:%s:workers:info",    queue),
-       workers_expect = sprintf("rrq:%s:workers:expect",  queue),
+       worker_name   = sprintf("rrq:%s:worker:name",    queue),
+       worker_status = sprintf("rrq:%s:worker:status",  queue),
+       worker_task   = sprintf("rrq:%s:worker:task",    queue),
+       worker_info   = sprintf("rrq:%s:worker:info",    queue),
+       worker_expect = sprintf("rrq:%s:worker:expect",  queue),
 
-       queue_rrq      = sprintf("rrq:%s:queue:rrq:id",    queue),
-       queue_ctx      = sprintf("rrq:%s:queue:ctx:id",    queue),
+       queue_rrq     = sprintf("rrq:%s:queue:rrq:id",   queue),
+       queue_ctx     = sprintf("rrq:%s:queue:ctx:id",   queue),
 
-       tasks_expr     = sprintf("rrq:%s:tasks:expr",      queue),
-       tasks_status   = sprintf("rrq:%s:tasks:status",    queue),
-       tasks_worker   = sprintf("rrq:%s:tasks:worker",    queue),
-       tasks_result   = sprintf("rrq:%s:tasks:result",    queue),
-       tasks_complete = sprintf("rrq:%s:tasks:complete",  queue))
+       task_expr     = sprintf("rrq:%s:task:expr",      queue),
+       task_status   = sprintf("rrq:%s:task:status",    queue),
+       task_worker   = sprintf("rrq:%s:task:worker",    queue),
+       task_result   = sprintf("rrq:%s:task:result",    queue),
+       task_complete = sprintf("rrq:%s:task:complete",  queue))
 }
 
 rrq_keys_worker <- function(queue, worker) {
@@ -39,13 +39,13 @@ rrq_keys_worker <- function(queue, worker) {
 
 ## Special key for worker-specific commands to be published to.
 rrq_key_worker_message <- function(queue, worker) {
-  sprintf("rrq:%s:workers:%s:message", queue, worker)
+  sprintf("rrq:%s:worker:%s:message", queue, worker)
 }
 rrq_key_worker_response <- function(queue, worker) {
-  sprintf("rrq:%s:workers:%s:response", queue, worker)
+  sprintf("rrq:%s:worker:%s:response", queue, worker)
 }
 rrq_key_worker_log <- function(queue, worker) {
-  sprintf("rrq:%s:workers:%s:log", queue, worker)
+  sprintf("rrq:%s:worker:%s:log", queue, worker)
 }
 
 ## Randomly generated keys:
@@ -54,5 +54,5 @@ rrq_key_task_complete <- function(queue) {
 }
 
 rrq_key_worker_alive <- function(queue_name) {
-  sprintf("rrq:%s:workers:alive:%s", queue_name, ids::random_id())
+  sprintf("rrq:%s:worker:alive:%s", queue_name, ids::random_id())
 }

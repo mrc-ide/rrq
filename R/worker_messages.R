@@ -52,7 +52,7 @@ run_message_STOP <- function(worker, message_id, args) {
 
 run_message_INFO <- function(worker) {
   info <- worker$print_info()
-  worker$con$HSET(worker$keys$workers_info, worker$name,
+  worker$con$HSET(worker$keys$worker_info, worker$name,
                   object_to_bin(info))
   info
 }
@@ -67,7 +67,7 @@ run_message_PAUSE <- function(worker) {
     "NOOP"
   } else {
     worker$paused <- TRUE
-    worker$con$HSET(worker$keys$workers_status, worker$name, WORKER_PAUSED)
+    worker$con$HSET(worker$keys$worker_status, worker$name, WORKER_PAUSED)
     "OK"
   }
 }
@@ -75,7 +75,7 @@ run_message_PAUSE <- function(worker) {
 run_message_RESUME <- function(worker, args) {
   if (worker$paused) {
     worker$paused <- FALSE
-    worker$con$HSET(worker$keys$workers_status, worker$name, WORKER_IDLE)
+    worker$con$HSET(worker$keys$worker_status, worker$name, WORKER_IDLE)
     "OK"
   } else {
     "NOOP"
@@ -128,9 +128,9 @@ response_prepare <- function(id, command, result) {
   object_to_bin(list(id = id, command = command, result = result))
 }
 
-send_message <- function(con, keys, command, args = NULL, worker_ids = NULL) {
+message_send <- function(con, keys, command, args = NULL, worker_ids = NULL) {
   if (is.null(worker_ids)) {
-    worker_ids <- workers_list(con, keys)
+    worker_ids <- worker_list(con, keys)
   }
   key <- rrq_key_worker_message(keys$queue_name, worker_ids)
   message_id <- redis_time(con)
@@ -141,43 +141,43 @@ send_message <- function(con, keys, command, args = NULL, worker_ids = NULL) {
   invisible(message_id)
 }
 
-send_message_and_wait <- function(con, keys, command,
-                                  args = NULL, worker_ids = NULL,
+message_send_and_wait <- function(con, keys, command,
+                                  args = NULL, worker_ids = NULL, named = TRUE,
                                   delete = TRUE, timeout = 600,
                                   time_poll = 0.05, progress = NULL) {
   if (is.null(worker_ids)) {
-    worker_ids <- workers_list(con, keys)
+    worker_ids <- worker_list(con, keys)
   }
-  message_id <- send_message(con, keys, command, args, worker_ids)
-  ret <- get_responses(con, keys, message_id, worker_ids, delete,
-                       timeout, time_poll, progress)
+  message_id <- message_send(con, keys, command, args, worker_ids)
+  ret <- message_get_response(con, keys, message_id, worker_ids, named, delete,
+                              timeout, time_poll, progress)
   if (!delete) {
     attr(ret, "message_id") <- message_id
   }
   ret
 }
 
-has_responses <- function(con, keys, message_id, worker_ids) {
+message_has_response <- function(con, keys, message_id, worker_ids, named) {
   if (is.null(worker_ids)) {
-    worker_ids <- workers_list(con, keys)
+    worker_ids <- worker_list(con, keys)
   }
   res <- vnapply(rrq_key_worker_response(keys$queue_name, worker_ids),
-                 con$HEXISTS, message_id)
-  setNames(as.logical(res), worker_ids)
+                 con$HEXISTS, message_id, USE.NAMES = FALSE)
+  res <- as.logical(res)
+  if (named) {
+    names(res) <- worker_ids
+  }
+  res
 }
 
-has_response <- function(con, keys, message_id, worker_id) {
-  assert_scalar(worker_id)
-  has_responses(con, keys, message_id, worker_id)[[1L]]
-}
-
-get_responses <- function(con, keys, message_id, worker_ids = NULL,
-                          delete = FALSE,
-                          timeout = 0, time_poll = 0.05, progress = NULL) {
+message_get_response <- function(con, keys, message_id, worker_ids = NULL,
+                                 named = TRUE, delete = FALSE,
+                                 timeout = 0, time_poll = 0.05,
+                                 progress = NULL) {
   ## NOTE: this won't work well if the message was sent only to a
   ## single worker, or a worker who was not yet started.
   if (is.null(worker_ids)) {
-    worker_ids <- workers_list(con, keys)
+    worker_ids <- worker_list(con, keys)
   }
   response_keys <- rrq_key_worker_response(keys$queue_name, worker_ids)
   res <- poll_hash_keys(con, response_keys, message_id,
@@ -194,18 +194,11 @@ get_responses <- function(con, keys, message_id, worker_ids = NULL,
     }
   }
 
-  names(res) <- worker_ids
+  names(res) <- if (named) worker_ids else NULL
   lapply(res, function(x) bin_to_object(x)$result)
 }
 
-get_response <- function(con, keys, message_id, worker_id, delete = FALSE,
-                         timeout = 0, time_poll = 0.05, progress = NULL) {
-  assert_scalar(worker_id)
-  get_responses(con, keys, message_id, worker_id, delete,
-                timeout, time_poll, progress)[[1L]]
-}
-
-response_ids <- function(con, keys, worker_id) {
+message_response_ids <- function(con, keys, worker_id) {
   response_keys <- rrq_key_worker_response(keys$queue_name, worker_id)
   ids <- as.character(con$HKEYS(response_keys))
   ids[order(as.numeric(ids))]
