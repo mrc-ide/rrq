@@ -364,24 +364,23 @@ worker_log_tail <- function(con, keys, worker_ids = NULL, n = 1) {
   if (is.null(worker_ids)) {
     worker_ids <- worker_list(con, keys)
   }
-  tmp <- lapply(worker_ids, function(i) worker_log_tail(con, keys, i, n))
+  tmp <- lapply(worker_ids, function(i) worker_log_tail_1(con, keys, i, n))
   if (length(tmp) > 0L) {
     n <- viapply(tmp, nrow)
-    ret <- cbind(worker_id = rep(worker_ids, n),
-                 do.call("rbind", tmp, quote = TRUE))
+    ret <- do.call("rbind", tmp, quote = TRUE)
     ret <- ret[order(ret$time, ret$worker_id), ]
     rownames(ret) <- NULL
     ret
   } else {
-    ## NOTE: Need to keep this in sync with parse_worker_log; get some
-    ## tests in here to make sure...
-    data.frame(worker_id = worker_ids, time = character(0),
-               command = character(0), message = character(0),
+    data.frame(worker_id = character(0),
+               time = character(0),
+               command = character(0),
+               message = character(0),
                stringsAsFactors = FALSE)
   }
 }
 
-worker_log_tail <- function(con, keys, worker_id, n = 1) {
+worker_log_tail_1 <- function(con, keys, worker_id, n = 1) {
   ## More intuitive `n` behaviour for "print all entries"; n of Inf
   if (identical(n, Inf)) {
     n <- 0
@@ -395,7 +394,7 @@ worker_log_tail <- function(con, keys, worker_id, n = 1) {
   time <- as.integer(sub(re, "\\1", log))
   command <- sub(re, "\\2", log)
   message <- lstrip(sub(re, "\\3", log))
-  data.frame(time, command, message, stringsAsFactors = FALSE)
+  data.frame(worker_id, time, command, message, stringsAsFactors = FALSE)
 }
 
 worker_task_id <- function(con, keys, worker_id) {
