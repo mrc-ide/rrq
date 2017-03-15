@@ -16,6 +16,7 @@ Imports:
     queuer (>= 0.1.0),
     redux (>= 0.5.1)
 Suggests:
+    heartbeatr,
     testthat
 RoxygenNote: 5.0.1
 Remotes:

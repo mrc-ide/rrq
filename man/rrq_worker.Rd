@@ -5,7 +5,8 @@
 \title{rrq queue worker}
 \usage{
 rrq_worker(context, con, key_alive = NULL, worker_name = NULL,
-  time_poll = NULL, log_path = NULL, timeout = NULL)
+  time_poll = NULL, log_path = NULL, timeout = NULL,
+  heartbeat_period = NULL)
 }
 \arguments{
 \item{context}{A context handle object.  The context needs to be
@@ -44,6 +45,11 @@ absolute paths...).}
 (roughly) quivalent to issuing a \code{TIMEOUT_SET} message
 after initialising the worker, except that it's guaranteed to be
 run by all workers.}
+
+\item{heartbeat_period}{Optional period for the heartbeat.  If
+non-NULL then a heartbeat process will be started (using the
+\code{heartbeatr} package) which can be used to build fault
+tolerant queues.}
 }
 \description{
 A rrq queue worker.  These are not for interacting with but will

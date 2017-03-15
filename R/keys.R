@@ -32,9 +32,10 @@ rrq_keys_queue <- function(queue) {
 }
 
 rrq_keys_worker <- function(queue, worker) {
-  list(message  = rrq_key_worker_message(queue, worker),
-       response = rrq_key_worker_response(queue, worker),
-       log      = rrq_key_worker_log(queue, worker))
+  list(message   = rrq_key_worker_message(queue, worker),
+       response  = rrq_key_worker_response(queue, worker),
+       log       = rrq_key_worker_log(queue, worker),
+       heartbeat = rrq_key_worker_heartbeat(queue, worker))
 }
 
 ## Special key for worker-specific commands to be published to.
@@ -46,6 +47,9 @@ rrq_key_worker_response <- function(queue, worker) {
 }
 rrq_key_worker_log <- function(queue, worker) {
   sprintf("rrq:%s:worker:%s:log", queue, worker)
+}
+rrq_key_worker_heartbeat <- function(queue, worker) {
+  sprintf("rrq:%s:worker:%s:heartbeat", queue, worker)
 }
 
 ## Randomly generated keys:

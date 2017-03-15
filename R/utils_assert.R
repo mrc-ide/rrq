@@ -41,3 +41,8 @@ assert_integer_like <- function(x, name = deparse(substitute(x))) {
     stop(sprintf("%s must be integer like", name))
   }
 }
+
+assert_scalar_integer_like <- function(x, name = deparse(substitute(x))) {
+  assert_scalar(x, name)
+  assert_integer_like(x, name)
+}

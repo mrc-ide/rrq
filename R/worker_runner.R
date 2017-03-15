@@ -32,11 +32,12 @@ rrq_worker_from_config <- function(root, context_id, worker_config,
   config <- worker_config_read(context, worker_config)
   con <- redux::hiredis(host = config$redis_host, port = config$redis_port)
   rrq_worker(context, con,
-             key_alive   = key_alive,
+             key_alive = key_alive,
              worker_name = worker_name,
-             time_poll   = config$time_poll,
-             log_path    = config$log_path,
-             timeout     = config$timeout)
+             time_poll = config$time_poll,
+             log_path = config$log_path,
+             timeout = config$timeout,
+             heartbeat_period = config$heartbeat_period)
 }
 
 write_rrq_worker <- function(root) {

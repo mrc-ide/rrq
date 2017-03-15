@@ -30,11 +30,17 @@
 ##'   after initialising the worker, except that it's guaranteed to be
 ##'   run by all workers.
 ##'
+##' @param heartbeat_period Optional period for the heartbeat.  If
+##'   non-NULL then a heartbeat process will be started (using the
+##'   \code{heartbeatr} package) which can be used to build fault
+##'   tolerant queues.
+##'
 ##' @export
 rrq_worker <- function(context, con, key_alive = NULL, worker_name = NULL,
-                       time_poll = NULL, log_path = NULL, timeout = NULL) {
+                       time_poll = NULL, log_path = NULL, timeout = NULL,
+                       heartbeat_period = NULL) {
   R6_rrq_worker$new(context, con, key_alive, worker_name, time_poll,
-                     log_path, timeout)
+                     log_path, timeout, heartbeat_period)
   invisible()
 }
 
@@ -52,16 +58,17 @@ R6_rrq_worker <- R6::R6Class(
     time_poll = NULL,
     timeout = NULL,
     timer = NULL,
+    heartbeat = NULL,
 
     initialize = function(context, con, key_alive, worker_name, time_poll,
-                          log_path, timeout) {
+                          log_path, timeout, heartbeat_period) {
       assert_is(context, "context")
       assert_is(con, "redis_api")
       self$context <- context
       self$con <- con
       self$db <- context$db
 
-      self$name <- worker_name %||% ids::random_id()
+      self$name <- worker_name %||% ids::adjective_animal()
       self$keys <- rrq_keys(context$id, self$name)
 
       self$time_poll <- time_poll %||% 60
@@ -86,6 +93,12 @@ R6_rrq_worker <- R6::R6Class(
       if (self$con$SISMEMBER(self$keys$worker_name, self$name) == 1L) {
         stop("Looks like this worker exists already...")
       }
+
+      ## NOTE: this could be moved into the main initialise_worker
+      ## function but I don't really think that it fits there.  This
+      ## function is allowed to throw.
+      self$heartbeat <- heartbeat(self$con, self$keys$heartbeat,
+                                  heartbeat_period)
 
       withCallingHandlers(self$initialise_worker(key_alive),
                           error = self$catch_error)
@@ -168,7 +181,7 @@ R6_rrq_worker <- R6::R6Class(
       time_poll <- self$time_poll
 
       catch_worker_stop <- function(e) {
-        self$shutdown(sprintf("OK (%s)", e$message))
+        self$shutdown(sprintf("OK (%s)", e$message), TRUE)
         continue <<- FALSE
       }
 
@@ -284,18 +297,18 @@ R6_rrq_worker <- R6::R6Class(
     },
 
     catch_error = function(e) {
-      self$shutdown("ERROR")
+      self$shutdown("ERROR", FALSE)
       message("This is an uncaught error in rrq, probably a bug!")
       stop(e)
     },
 
-    shutdown = function(status = "OK") {
-      ## Conditional here because the heartbeat can fail to start, in
-      ## which case we can't run the heartbeat shutdown.
-      ## if (!is.null(self$heartbeat$stop)) {
-      ##   self$heartbeat$stop()
-      ## }
-      ## self$con$DEL(self$keys$heartbeat)
+    shutdown = function(status = "OK", graceful = TRUE) {
+      if (!is.null(self$heartbeat)) {
+        message("Stopping heartbeat thread")
+        tryCatch(
+          self$heartbeat$stop(graceful),
+          error = function(e) message("Could not stop heartbeat"))
+      }
       self$con$SREM(self$keys$worker_name,   self$name)
       self$con$HSET(self$keys$worker_status, self$name, WORKER_EXITED)
       self$log("STOP", status)
@@ -318,6 +331,9 @@ worker_info_collect <- function(worker) {
               context_id = worker$context$id,
               context_root = worker$context$root$path,
               log_path = worker$log_path)
+  if (!is.null(worker$heartbeat)) {
+    dat$heartbeat_key = worker$keys$heartbeat
+  }
   class(dat) <- "worker_info"
   dat
 }
@@ -325,8 +341,9 @@ worker_info_collect <- function(worker) {
 ##' @export
 print.worker_info <- function(x, banner = FALSE, ...) {
   xx <- unclass(x)
-  n <- nchar(names(xx))
   xx$log_path <- x$log_path %||% "<not set>"
+  xx$heartbeat_key <- x$heartbeat_key %||% "<not set>"
+  n <- nchar(names(xx))
   pad <- vcapply(max(n) - n, strrep, x = " ")
   ret <- sprintf("    %s:%s %s", names(xx), pad, as.character(xx))
   if (banner) {
@@ -366,4 +383,15 @@ rrq_worker_stop <- function(worker, message) {
   structure(list(worker = worker,
                  message = message),
             class = c("rrq_worker_stop", "error", "condition"))
+}
+
+worker_send_signal <- function(con, keys, signal, worker_ids) {
+  if (is.null(worker_ids)) {
+    worker_ids <- worker_list(con, keys)
+  }
+  if (length(worker_ids) > 0L) {
+    for (key in rrq_key_worker_heartbeat(keys$queue_name, worker_ids)) {
+      heartbeatr::heartbeat_send_signal(con, key, signal)
+    }
+  }
 }

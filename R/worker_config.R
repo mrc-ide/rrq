@@ -19,27 +19,31 @@ worker_config_save <- function(root, key, ...) {
 
 worker_config_make <- function(redis_host = NULL, redis_port = NULL,
                                time_poll = NULL, timeout = NULL,
-                               log_path = NULL) {
+                               log_path = NULL, heartbeat_period = NULL) {
   if (!is.null(redis_host)) {
     assert_scalar_character(redis_host)
   }
   if (!is.null(redis_port)) {
-    assert_integer_like(redis_port)
+    assert_scalar_integer_like(redis_port)
   }
   if (!is.null(time_poll)) {
-    assert_integer_like(time_poll)
+    assert_scalar_integer_like(time_poll)
   }
   if (!(is.null(timeout) || identical(timeout, Inf))) {
-    assert_integer_like(timeout)
+    assert_scalar_integer_like(timeout)
   }
   if (!is.null(log_path)) {
     assert_scalar_character(log_path)
+  }
+  if (!is.null(heartbeat_period)) {
+    assert_scalar_integer_like(heartbeat_period)
   }
   config <- list(redis_host = redis_host,
                  redis_port = redis_port,
                  time_poll = time_poll,
                  timeout = timeout,
-                 log_path = log_path)
+                 log_path = log_path,
+                 heartbeat_period = heartbeat_period)
   config[!vlapply(config, is.null)]
 }
 
@@ -47,8 +51,8 @@ worker_config_make <- function(redis_host = NULL, redis_port = NULL,
 rrq_worker_config_save <- function(root, con, name,
                                    redis_host = NULL, redis_port = NULL,
                                    time_poll = NULL, timeout = NULL,
-                                   log_path = NULL, copy_redis = FALSE,
-                                   overwrite = TRUE) {
+                                   log_path = NULL, heartbeat_period = NULL,
+                                   copy_redis = FALSE, overwrite = TRUE) {
   write <- overwrite || !root$db$exists(name, "worker_config")
   if (write) {
     if (copy_redis) {
@@ -56,7 +60,7 @@ rrq_worker_config_save <- function(root, con, name,
       redis_port <- con$config()$port
     }
     worker_config_save(root$path, name, redis_host, redis_port,
-                       time_poll, timeout, log_path)
+                       time_poll, timeout, log_path, heartbeat_period)
   } else {
     NULL
   }

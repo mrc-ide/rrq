@@ -240,15 +240,15 @@ R6_rrq_controller <- R6::R6Class(
     },
     worker_config_save = function(name, redis_host = NULL, redis_port = NULL,
                                   time_poll = NULL, timeout = NULL,
-                                  log_path = NULL,
+                                  log_path = NULL, heartbeat_period = NULL,
                                   copy_redis = FALSE, overwrite = TRUE) {
       root <- self$context$root
       if (is.null(root)) {
         stop("To save a worker config, need access to context root")
       }
       rrq_worker_config_save(root, self$con, name, redis_host, redis_port,
-                             time_poll, timeout, log_path, copy_redis,
-                             overwrite)
+                             time_poll, timeout, log_path, heartbeat_period,
+                             copy_redis, overwrite)
     },
 
     ## 4. Messaging
