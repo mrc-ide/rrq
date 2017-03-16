@@ -176,6 +176,7 @@ R6_rrq_worker <- R6::R6Class(
       con <- self$con
       keys <- self$keys
       continue <- TRUE
+      task <- NULL # scoped variable
       listen_message <- keys$message
       listen <- c(listen_message, keys$queue_rrq, keys$queue_ctx)
       time_poll <- self$time_poll
@@ -184,11 +185,44 @@ R6_rrq_worker <- R6::R6Class(
         self$shutdown(sprintf("OK (%s)", e$message), TRUE)
         continue <<- FALSE
       }
+      catch_interrupt <- function(e) {
+        ## NOTE: this won't recursively catch interrupts.  Especially
+        ## on a high-latency connection this might be long enough for
+        ## a second interrupt to arrive.  We don't deal with that and
+        ## it will be about the same as a SIGTERM - we'll just die.
+        ## But that will disable the heartbeat so it should all end up
+        ## OK.
+        self$log("INTERRUPT")
+        ## This condition is not quite enough; I need to know if we're
+        ## working on a job at all.
+        task_running <- self$con$HGET(self$keys$worker_task, self$name)
+        if (!is.null(task_running)) {
+          self$task_cleanup(e, task_running, TASK_INTERRUPTED)
+          con$HSET(keys$task_status, task_running, TASK_INTERRUPTED)
+        }
 
-      while (continue) {
-        tryCatch({
-          task <- con$BLPOP(if (self$paused) listen_message else listen,
-                            time_poll)
+        ## There are two ways that interrupt happens (ignoring the
+        ## race condition where it comes in neither)
+        ##
+        ## 1. Interrupt a job; in that case, we have a task_running
+        ##    above and everything is all OK; we just mark this as done.
+        ##
+        ## 2. During BLPOP.  In that case we need to re-queue the
+        ##    message or the job or it is lost from the queue
+        ##    entirely.  This would include things like a STOP
+        ##    message, or a new task to run.
+        ##
+        ## NOTE that a SIGTERM signal might result in lost messages.
+        if (!is.null(task[[2]]) && !identical(task[[2]], task_running)) {
+          label <- if (task[[1L]] == listen_message) "<message>" else task[[2L]]
+          self$log("REQUEUE", label)
+          self$con$LPUSH(task[[1]], task[[2]])
+        }
+      }
+      loop <- function() {
+        while (continue) {
+          task <<- con$BLPOP(if (self$paused) listen_message else listen,
+                             time_poll)
           if (!is.null(task)) {
             if (task[[1L]] == listen_message) {
               self$run_message(task[[2L]])
@@ -206,9 +240,14 @@ R6_rrq_worker <- R6::R6Class(
               stop(rrq_worker_stop(self, "TIMEOUT"))
             }
           }
-        },
-        rrq_worker_stop = catch_worker_stop,
-        error = self$catch_error)
+        }
+      }
+
+      while (continue) {
+        tryCatch(loop(),
+                 interrupt = catch_interrupt,
+                 rrq_worker_stop = catch_worker_stop,
+                 error = self$catch_error)
       }
     },
 
@@ -272,10 +311,15 @@ R6_rrq_worker <- R6::R6Class(
       ## refuse to write it to the db but instead route it through the
       ## context db.  That policy can be set by the db pretty easily
       ## actually.
+      ##
+      ## TODO: for interrupted tasks, I don't know that we should
+      ## write to the key_complete set; at the same time _not_ doing
+      ## that requires that we can gracefully (and automatically)
+      ## handle the restarts.
       con$pipeline(
         redis$HSET(keys$worker_status, self$name, WORKER_IDLE),
         redis$HDEL(keys$worker_task,   self$name),
-        if (!is.null(key_complete)) {
+        if (!is.null(key_complete)) { # && task_status != TASK_ORPHAN
           redis$RPUSH(key_complete, task_id)
         })
 
@@ -304,7 +348,7 @@ R6_rrq_worker <- R6::R6Class(
 
     shutdown = function(status = "OK", graceful = TRUE) {
       if (!is.null(self$heartbeat)) {
-        message("Stopping heartbeat thread")
+        context::context_log("heartbeat", "stopping")
         tryCatch(
           self$heartbeat$stop(graceful),
           error = function(e) message("Could not stop heartbeat"))

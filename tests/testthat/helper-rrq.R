@@ -28,4 +28,17 @@ skip_if_no_internet <- function() {
   testthat::skip("no internet")
 }
 
+wait_status <- function(t, obj, timeout = 2, time_poll = 0.05,
+                        status = "PENDING") {
+  times_up <- queuer:::time_checker(timeout)
+  while (!times_up()) {
+    if (all(obj$task_status(t) != status)) {
+      return()
+    }
+    message(".")
+    Sys.sleep(time_poll)
+  }
+  stop(sprintf("Did not change status to %s in time", status))
+}
+
 PROGRESS <- FALSE

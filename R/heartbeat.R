@@ -1,13 +1,12 @@
 heartbeat <- function(con, key, period) {
   if (!is.null(period)) {
-    message(sprintf("Starting heartbeat thread on %s (period: %d s)",
-                    key, period))
+    context::context_log("heartbeat", key)
     loadNamespace("heartbeatr")
     config <- con$config()
     ret <- heartbeatr::heartbeat(key, period,
                                  host = config$host, port = config$port,
                                  password = config$password, db = config$db)
-    message("...ok")
+    context::context_log("heartbeat", "OK")
     ret
   }
 }

@@ -10,7 +10,9 @@ TASK_ERROR    <- "ERROR"
 ## Alternatively:
 ## worker node died
 TASK_ORPHAN   <- "ORPHAN"
-## orphaned task was requeued
+## task was interrupted
+TASK_INTERRUPTED <- "INTERRUPTED"
+## orphaned/interrupted task was redirected
 TASK_REDIRECT <- "REDIRECT"
 ## An unknown task
 TASK_MISSING  <- "MISSING"
