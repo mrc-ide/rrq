@@ -81,3 +81,53 @@ test_that("interrupt stuck worker (local)", {
   expect_equal(tmp$command,
                c("REQUEUE", "MESSAGE", "RESPONSE"))
 })
+
+test_that("interrupt stuck worker (via heartbeat)", {
+  ## Basically the same test as above, but we'll do it via the
+  ## heartbeat thread.  These might be worth merging.
+  skip_on_os("windows")
+
+  Sys.setenv(R_TESTS = "")
+  root <- tempfile()
+  context <- context::context_save(root, sources = "myfuns.R")
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
+
+  obj <- rrq_controller(context, redux::hiredis())
+  on.exit(obj$destroy())
+
+  ## We need to set time_poll to be fairly fast because BLPOP is not
+  ## interruptable; the interrupt will only be handled _after_ R gets
+  ## control back.
+  res <- obj$worker_config_save("localhost", time_poll = 1,
+                                heartbeat_period = 3,
+                                copy_redis = TRUE)
+
+  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
+
+  expect_equal(obj$message_send_and_wait("PING"),
+               setNames(list("PONG"), wid))
+
+  t <- obj$enqueue(slowdouble(10000))
+  wait_status(t, obj, status = TASK_PENDING)
+  expect_equal(obj$task_status(t), setNames(TASK_RUNNING, t))
+  expect_equal(obj$worker_status(wid), setNames(WORKER_BUSY, wid))
+
+  worker_send_signal(obj$con, obj$keys, tools::SIGINT, wid)
+  wait_status(t, obj, status = TASK_RUNNING)
+
+  expect_equal(obj$task_status(t), setNames(TASK_INTERRUPTED, t))
+  expect_equal(obj$worker_status(wid), setNames(WORKER_IDLE, wid))
+
+  expect_equal(obj$message_send_and_wait("PING"),
+               setNames(list("PONG"), wid))
+
+  ## Then try the interrupt _during_ a string of messages and be sure
+  ## that the messages get requeued correctly.
+  worker_send_signal(obj$con, obj$keys, tools::SIGINT, wid)
+  expect_equal(obj$message_send_and_wait("PING"),
+               setNames(list("PONG"), wid))
+
+  tmp <- obj$worker_log_tail(wid, 3L)
+  expect_equal(tmp$command,
+               c("REQUEUE", "MESSAGE", "RESPONSE"))
+})
