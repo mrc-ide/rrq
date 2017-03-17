@@ -18,6 +18,7 @@ poll_hash_keys <- function(con, keys, field, timeout, time_poll, progress) {
         i <- which(!ok)[exists]
         res[i] <- lapply(keys[i], con$HGET, field)
         ok[i] <- TRUE
+        p(length(i))
       } else {
         if (p(0)) {
           p(clear = TRUE)
