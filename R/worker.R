@@ -90,6 +90,18 @@ R6_rrq_worker <- R6::R6Class(
       withCallingHandlers(self$initialise_worker(key_alive),
                           error = self$catch_error)
 
+      cores <- Sys.getenv("CONTEXT_CORES")
+      if (nzchar(cores)) {
+        cores <- as.integer(cores)
+        context::context_log("parallel",
+                             sprintf("running as parallel job [%d cores]",
+                                     cores))
+        context::parallel_cluster_start(cores, self$context)
+        on.exit(context::parallel_cluster_stop())
+      } else {
+        context::context_log("parallel", "running as single core job")
+      }
+
       if (!is.null(timeout)) {
         run_message_TIMEOUT_SET(self, timeout)
       }
