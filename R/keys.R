@@ -11,7 +11,9 @@ rrq_keys <- function(queue_name, worker_name = NULL) {
 }
 
 rrq_keys_queue <- function(queue) {
-  list(queue_name     = queue,
+  ## TODO: queue_name should not be used like this because it's not a
+  ## key itself.
+  list(queue_name    = queue,
 
        controller    = sprintf("rrq:%s:controller",     queue),
 
@@ -24,6 +26,7 @@ rrq_keys_queue <- function(queue) {
        queue_rrq     = sprintf("rrq:%s:queue:rrq:id",   queue),
        queue_ctx     = sprintf("rrq:%s:queue:ctx:id",   queue),
 
+       task_count    = sprintf("rrq:%s:task:count",     queue),
        task_expr     = sprintf("rrq:%s:task:expr",      queue),
        task_status   = sprintf("rrq:%s:task:status",    queue),
        task_worker   = sprintf("rrq:%s:task:worker",    queue),

@@ -326,7 +326,9 @@ task_submit_n <- function(con, keys, dat, key_complete) {
     },
     redis$HMSET(keys$task_expr, task_ids, dat),
     redis$HMSET(keys$task_status, task_ids, rep_len(TASK_PENDING, n)),
-    redis$RPUSH(keys$queue_rrq, task_ids))
+    redis$RPUSH(keys$queue_rrq, task_ids),
+    redis$INCRBY(keys$task_count, length(task_ids))
+  )
 
   task_ids
 }
