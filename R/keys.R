@@ -35,10 +35,10 @@ rrq_keys_queue <- function(queue) {
 }
 
 rrq_keys_worker <- function(queue, worker) {
-  list(message   = rrq_key_worker_message(queue, worker),
-       response  = rrq_key_worker_response(queue, worker),
-       log       = rrq_key_worker_log(queue, worker),
-       heartbeat = rrq_key_worker_heartbeat(queue, worker))
+  list(worker_message   = rrq_key_worker_message(queue, worker),
+       worker_response  = rrq_key_worker_response(queue, worker),
+       worker_log       = rrq_key_worker_log(queue, worker),
+       worker_heartbeat = rrq_key_worker_heartbeat(queue, worker))
 }
 
 ## Special key for worker-specific commands to be published to.

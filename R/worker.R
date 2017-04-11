@@ -97,7 +97,7 @@ R6_rrq_worker <- R6::R6Class(
       ## NOTE: this could be moved into the main initialise_worker
       ## function but I don't really think that it fits there.  This
       ## function is allowed to throw.
-      self$heartbeat <- heartbeat(self$con, self$keys$heartbeat,
+      self$heartbeat <- heartbeat(self$con, self$keys$worker_heartbeat,
                                   heartbeat_period)
 
       withCallingHandlers(self$initialise_worker(key_alive),
@@ -137,7 +137,7 @@ R6_rrq_worker <- R6::R6Class(
         redis$SADD(keys$worker_name,   self$name),
         redis$HSET(keys$worker_status, self$name, WORKER_IDLE),
         redis$HDEL(keys$worker_task,   self$name),
-        redis$DEL(keys$log),
+        redis$DEL(keys$worker_log),
         redis$HSET(keys$worker_info,   self$name, info))
       self$log("ALIVE")
 
@@ -168,7 +168,7 @@ R6_rrq_worker <- R6::R6Class(
       }
       message(msg_scr)
       if (push) {
-        self$con$RPUSH(self$keys$log, msg_log)
+        self$con$RPUSH(self$keys$worker_log, msg_log)
       }
     },
 
@@ -177,7 +177,7 @@ R6_rrq_worker <- R6::R6Class(
       keys <- self$keys
       continue <- TRUE
       task <- NULL # scoped variable
-      listen_message <- keys$message
+      listen_message <- keys$worker_message
       listen <- c(listen_message, keys$queue_rrq, keys$queue_ctx)
       time_poll <- self$time_poll
 
@@ -332,7 +332,7 @@ R6_rrq_worker <- R6::R6Class(
 
     send_response = function(message_id, cmd, result) {
       self$log("RESPONSE", cmd)
-      self$con$HSET(self$keys$response, message_id,
+      self$con$HSET(self$keys$worker_response, message_id,
                     response_prepare(message_id, cmd, result))
     },
 
@@ -376,7 +376,7 @@ worker_info_collect <- function(worker) {
               context_root = worker$context$root$path,
               log_path = worker$log_path)
   if (!is.null(worker$heartbeat)) {
-    dat$heartbeat_key = worker$keys$heartbeat
+    dat$heartbeat_key = worker$keys$worker_heartbeat
   }
   class(dat) <- "worker_info"
   dat
