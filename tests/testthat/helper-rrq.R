@@ -41,4 +41,5 @@ wait_status <- function(t, obj, timeout = 2, time_poll = 0.05,
   stop(sprintf("Did not change status to %s in time", status))
 }
 
-PROGRESS <- FALSE
+PROGRESS <- FALSE # TODO: phase this one out
+options(queuer.progress_suppress = TRUE)
