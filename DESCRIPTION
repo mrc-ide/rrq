@@ -20,4 +20,5 @@ Suggests:
     testthat
 RoxygenNote: 5.0.1
 Remotes:
-    mrc-ide/queuer
+    mrc-ide/queuer,
+    richfitz/heartbeatr
