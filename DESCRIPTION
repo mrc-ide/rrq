@@ -13,7 +13,7 @@ Imports:
     context (>= 0.1.1),
     ids,
     lazyeval,
-    queuer (>= 0.1.1),
+    queuer (>= 0.1.0),
     redux (>= 0.5.1)
 Suggests:
     testthat
