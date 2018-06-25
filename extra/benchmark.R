@@ -86,7 +86,7 @@ m_rrq <- matrix(apply(y_rrq, 2, median), length(n))
 m_mc[m_mc == 0] <- 0.0001
 m_rrq[m_rrq == 0] <- 0.0001
 
-cols <- c("black", RColorBrewer::brewer.pal(length(nw) - 1L, "Blues"))
+cols <- RColorBrewer::brewer.pal(length(nw), "Blues")
 
 ## For multicore, the total time taken is not really affected by the
 ## number of processors.  There's a very slight cost at low n and a
@@ -104,11 +104,10 @@ matplot(n, m_rrq, type="l", log="xy", lty=1, col=cols, ylim=ylim,
 abline(h=max(m_mc), lty=3, col="blue")
 abline(h=min(m_mc), lty=3, col="red")
 
-ylim <- range(m_mc / n, m_rrq / n)
-
 ## As the number of elements being parallised over increases, the
 ## per-element cost shrinks to around 0.001s
 ##+ mc_percall
+ylim <- range(m_mc / n, m_rrq / n)
 matplot(n, m_mc / n, type="l", log="xy", lty=1, col=cols, ylim=ylim,
         ylab="parallel, per-call time")
 
