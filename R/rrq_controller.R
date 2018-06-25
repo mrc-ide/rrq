@@ -346,7 +346,7 @@ worker_len <- function(con, keys) {
   con$SCARD(keys$worker_name)
 }
 worker_list <- function(con, keys) {
-  as.character(con$SMEMBERS(keys$worker_name))
+  worker_naturalsort(as.character(con$SMEMBERS(keys$worker_name)))
 }
 
 worker_list_exited <- function(con, keys) {
@@ -564,4 +564,11 @@ push_controller_info <- function(con, keys, max_n = 10) {
   if (n > max_n) {
     con$LTRIM(keys$controller, -max_n, -1)
   }
+}
+
+worker_naturalsort <- function(x) {
+  re <- "^(.*)_(\\d+)$"
+  root <- sub(re, "\\1", x)
+  idx <- as.integer(sub(re, "\\2", x))
+  x[order(root, idx)]
 }
