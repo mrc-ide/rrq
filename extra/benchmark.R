@@ -7,15 +7,20 @@
 ## but knowing what the overhead is may help determine what
 ## "significant" means here.
 
+## The `parallel` package will not parallelise anything that uses just
+## one core, or just one job so we have to start from two cores and
+## two jobs for a fair comparison (otherwise `parallel` stays
+## in-process which is way faster).
+
 ##+ echo=FALSE, results="hide"
 knitr::opts_chunk$set(error = FALSE)
 
 ## A simple benchmark attempt:
 root <- tempfile()
-context <- context::context_save(root)
+context <- context::context_load(context::context_save(root))
 obj <- rrq::rrq_controller(context, redux::hiredis())
 
-wid <- rrq::worker_spawn(obj$context, obj$con, logdir=tempdir())
+wid <- rrq::worker_spawn(obj, 2L, logdir = tempdir())
 
 ## Look in particular at `elapsed`
 system.time(obj$lapply(1:1000, identity, progress=FALSE))
@@ -23,12 +28,12 @@ system.time(obj$lapply(1:1000, identity, progress=FALSE))
 ## In contrast with the built in socket cluster (though this also pays
 ## for the `fork()` operation):
 system.time(parallel::mclapply(1:1000, identity,
-                               mc.preschedule=FALSE, mc.cores=1L))
+                               mc.preschedule=FALSE, mc.cores=2L))
 
 ## Of course, not prescheduling will totally destroy either approach,
 ## as it has only a single roundtrip.
 system.time(parallel::mclapply(1:1000, identity,
-                               mc.preschedule=TRUE, mc.cores=1L))
+                               mc.preschedule=TRUE, mc.cores=2L))
 
 ## Let's check this over a matrix of n and workers.  This has to be
 ## done somewhat annoyingly:
@@ -38,7 +43,7 @@ f_rrq <- function(n, nrep, nworkers) {
   }
   diff <- nworkers - obj$worker_len()
   if (diff > 0L) {
-    rrq::worker_spawn(obj$context, obj$con, diff, logdir=tempdir())
+    rrq::worker_spawn(obj, diff, logdir=tempdir())
   } else if (diff < 0L) {
     obj$worker_stop(obj$worker_list()[seq_len(-diff)])
   }
@@ -58,8 +63,8 @@ f_mc <- function(n, nrep, nworkers) {
                                    mc.preschedule=FALSE))[["elapsed"]])
 }
 
-n <- round(exp(seq(log(1), log(1000), length.out=7)))
-nw <- 1:8
+n <- round(exp(seq(log(2), log(1024), length.out=7)))
+nw <- 2:8
 nrep <- 10
 dat <- expand.grid(n=n, nrep=nrep, nworkers=nw)
 
@@ -76,6 +81,10 @@ y_rrq <-
 ## Convert these into nice matrices, taking the median execution time:
 m_mc <- matrix(apply(y_mc, 2, median), length(n))
 m_rrq <- matrix(apply(y_rrq, 2, median), length(n))
+
+## Zeros cause trouble later, so set them to the minimum reported time
+m_mc[m_mc == 0] <- 0.0001
+m_rrq[m_rrq == 0] <- 0.0001
 
 cols <- c("black", RColorBrewer::brewer.pal(length(nw) - 1L, "Blues"))
 
