@@ -250,6 +250,9 @@ R6_rrq_controller <- R6::R6Class(
                              time_poll, timeout, log_path, heartbeat_period,
                              copy_redis, overwrite)
     },
+    worker_load = function(worker_ids = NULL, ...) {
+      worker_load(self$con, self$keys, worker_ids, ...)
+    },
 
     ## 4. Messaging
     message_send = function(command, args = NULL, worker_ids = NULL) {
@@ -327,7 +330,7 @@ task_submit_n <- function(con, keys, dat, key_complete) {
     redis$HMSET(keys$task_expr, task_ids, dat),
     redis$HMSET(keys$task_status, task_ids, rep_len(TASK_PENDING, n)),
     redis$RPUSH(keys$queue_rrq, task_ids),
-    redis$INCRBY(keys$task_count, length(task_ids))
+    redis$HINCRBY(keys$task_count, TASK_PENDING, length(task_ids))
   )
 
   task_ids
@@ -389,11 +392,11 @@ worker_log_tail_1 <- function(con, keys, worker_id, n = 1) {
   }
   log_key <- rrq_key_worker_log(keys$queue_name, worker_id)
   log <- as.character(con$LRANGE(log_key, -n, -1))
-  re <- "^([0-9]+) ([^ ]+) ?(.*)$"
+  re <- "^([0-9.]+) ([^ ]+) ?(.*)$"
   if (!all(grepl(re, log))) {
     stop("Corrupt log")
   }
-  time <- as.integer(sub(re, "\\1", log))
+  time <- as.numeric(sub(re, "\\1", log))
   command <- sub(re, "\\2", log)
   message <- lstrip(sub(re, "\\3", log))
   data.frame(worker_id, time, command, message, stringsAsFactors = FALSE)
@@ -571,4 +574,52 @@ worker_naturalsort <- function(x) {
   root <- sub(re, "\\1", x)
   idx <- as.integer(sub(re, "\\2", x))
   x[order(root, idx)]
+}
+
+## This is very much a beginning here; it might be nicer to be able to
+## do this for a given time interval as well as computing a rolling
+## average (to plot, for example).  But the concept is here now and we
+## can build off of it.
+worker_load <- function(con, keys, worker_ids) {
+  logs <- worker_log_tail(con, keys, worker_ids, Inf)
+  logs <- logs[order(logs$time), ]
+
+  logs$worker <- 0
+  logs$worker[logs$command == "ALIVE"] <- 1
+  logs$worker[logs$command == "STOP"] <- -1
+  logs$worker_cum <- cumsum(logs$worker)
+
+  logs$task <- 0
+  logs$task[logs$command == "TASK_START"] <- 1
+  logs$task[logs$command == "TASK_COMPLETE"] <- -1
+  logs$task_cum <- cumsum(logs$task)
+
+  logs$dt <- c(diff(logs$time), 0)
+  logs$ago <- logs$time[nrow(logs)] - logs$time
+
+  class(logs) <- c("worker_load", class(logs))
+  logs
+}
+
+##' @export
+mean.worker_load <- function(x, time = c(1, 5, 15, Inf), ...) {
+  ## make this slightly nicer to work with:
+  x$dt <- x$dt * 1000
+  x$ago <- x$ago * 1000
+
+  f <- function(t) {
+    i <- which(x$ago < t)[[1L]] - 1L
+    y <- x[i:nrow(x), ]
+    if (i > 0) {
+      dt <- y$ago[[1L]] - t
+      y$dt[[1L]] <- y$dt[[1L]] - dt
+      y$time[[1L]] <- y$time[[1L]] - dt
+      y$ago[[1L]] <- t
+    }
+    c(used = sum(y$task_cum * y$dt) / y$ago[[1L]],
+      available = sum(y$worker_cum * y$dt) / y$ago[[1L]])
+  }
+  res <- vapply(time, f, numeric(2))
+  colnames(res) <- as.character(time)
+  res
 }

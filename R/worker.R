@@ -152,14 +152,14 @@ R6_rrq_worker <- R6::R6Class(
     ## the worker id into the screen message.
     log = function(label, message = NULL, push = TRUE) {
       t <- Sys.time()
-      ti <- as.integer(t) # to nearest second
       ts <- as.character(t)
+      td <- sprintf("%.04f", t) # to nearest 1/10000 s
       if (is.null(message)) {
-        msg_log <- sprintf("%d %s", ti, label)
+        msg_log <- sprintf("%s %s", td, label)
         msg_scr <- sprintf("[%s] %s", ts, label)
       } else {
-        msg_log <- sprintf("%d %s %s",
-                           ti, label, paste(message, collapse = "\n"))
+        msg_log <- sprintf("%s %s %s",
+                           td, label, paste(message, collapse = "\n"))
         ## Try and make nicely printing logs for the case where the
         ## message length is longer than 1:
         lab <- c(label, rep_len(blank(nchar(label)), length(message) - 1L))
@@ -317,6 +317,7 @@ R6_rrq_worker <- R6::R6Class(
       ## that requires that we can gracefully (and automatically)
       ## handle the restarts.
       con$pipeline(
+        redis$HINCRBY(keys$task_status, task_status, 1),
         redis$HSET(keys$worker_status, self$name, WORKER_IDLE),
         redis$HDEL(keys$worker_task,   self$name),
         if (!is.null(key_complete)) { # && task_status != TASK_ORPHAN

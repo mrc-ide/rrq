@@ -82,3 +82,9 @@ is_absolute_path <- function(path) {
 is_relative_path <- function(path) {
   !is_absolute_path(path)
 }
+
+rbind_as_df <- function(x) {
+  do.call("rbind",
+          lapply(x, as.data.frame, stringsAsFactors = FALSE),
+          quote = TRUE)
+}
