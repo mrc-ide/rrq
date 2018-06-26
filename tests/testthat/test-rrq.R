@@ -249,3 +249,24 @@ test_that("error", {
 
   expect_match(tail(r2$trace, 2)[[1]], "^warning_then_error")
 })
+
+
+test_that("task_position", {
+  Sys.setenv(R_TESTS = "")
+  root <- tempfile()
+  context <- context::context_save(root, sources = "myfuns.R")
+  context <- context::context_load(context, new.env(parent = .GlobalEnv))
+  obj <- rrq_controller(context, redux::hiredis())
+  on.exit(obj$destroy())
+
+  t1 <- obj$enqueue(sin(1))
+  t2 <- obj$enqueue(sin(1))
+  t3 <- obj$enqueue(sin(1))
+
+  expect_equal(obj$task_position(t1), 1L)
+  expect_equal(obj$task_position(c(t1, t2, t3)), c(1L, 2L, 3L))
+  expect_equal(obj$task_position("not a real task"), 0L)
+  expect_equal(obj$task_position("not a real task", NA_integer_), NA_integer_)
+  expect_equal(obj$task_position(c(t1, "not a real task"), NA_integer_),
+               c(1L, NA_integer_))
+})

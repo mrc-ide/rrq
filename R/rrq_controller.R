@@ -132,6 +132,9 @@ R6_rrq_controller <- R6::R6Class(
     task_overview = function(task_ids = NULL) {
       task_overview(self$con, self$keys, task_ids)
     },
+    task_position = function(task_ids, missing = 0L) {
+      task_position(self$con, self$keys, task_ids, missing)
+    },
 
     ## One result, as the object
     task_result = function(task_id) {
@@ -290,6 +293,18 @@ task_overview <- function(con, keys, task_ids) {
   status <- task_status(con, keys, task_ids)
   lvls <- c(lvls, setdiff(unique(status), lvls))
   table(factor(status, lvls))
+}
+
+## NOTE: This is not crazy efficient; we pull the entire list down
+## which is not ideal.  However, in practice it seems fairly fast.
+## But one should be careful to adjust the polling interval of
+## something usnig this not to flood the server with excessive load.
+##
+## A better way would possibly be to use a LUA script; especially for
+## the case where there is a single job that'd be fairly easy to do.
+task_position <- function(con, keys, task_ids, missing) {
+  queue <- vcapply(con$LRANGE(keys$queue_rrq, 0, -1L), identity)
+  match(task_ids, queue, missing)
 }
 
 task_submit <- function(con, keys, dat, key_complete) {
