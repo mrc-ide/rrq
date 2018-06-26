@@ -81,25 +81,25 @@ test_that("pause", {
   obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
   wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
 
-  expect_that(obj$worker_status(),
-              equals(setNames(WORKER_IDLE, wid)))
+  expect_equal(obj$worker_status(),
+               setNames(WORKER_IDLE, wid))
 
   id <- obj$message_send("PAUSE")
-  expect_that(obj$message_get_response(id, wid, timeout = 1),
-              equals(setNames(list("OK"), wid)))
+  expect_equal(obj$message_get_response(id, wid, timeout = 1),
+               setNames(list("OK"), wid))
 
-  expect_that(obj$worker_status(),
-              equals(setNames(WORKER_PAUSED, wid)))
+  expect_equal(obj$worker_status(),
+               setNames(WORKER_PAUSED, wid))
 
   ## Can still ping the worker quite happily:
   id <- obj$message_send("PING")
-  expect_that(obj$message_get_response(id, wid, timeout = 1),
-              equals(setNames(list("PONG"), wid)))
+  expect_equal(obj$message_get_response(id, wid, timeout = 1),
+               setNames(list("PONG"), wid))
 
   ## Pausing again is a noop:
   id <- obj$message_send("PAUSE")
-  expect_that(obj$message_get_response(id, wid, timeout = 1),
-              equals(setNames(list("NOOP"), wid)))
+  expect_equal(obj$message_get_response(id, wid, timeout = 1),
+               setNames(list("NOOP"), wid))
 
   t <- obj$enqueue(sin(1))
   ## should have been queued by now if the worker was interested:
@@ -107,18 +107,18 @@ test_that("pause", {
   expect_equal(obj$task_status(t), setNames(TASK_PENDING, t))
 
   id <- obj$message_send("RESUME")
-  expect_that(obj$message_get_response(id, wid, timeout = 1),
-              equals(setNames(list("OK"), wid)))
+  expect_equal(obj$message_get_response(id, wid, timeout = 1),
+               setNames(list("OK"), wid))
 
   id <- obj$message_send("RESUME")
-  expect_that(obj$message_get_response(id, wid, timeout = 1),
-              equals(setNames(list("NOOP"), wid)))
+  expect_equal(obj$message_get_response(id, wid, timeout = 1),
+               setNames(list("NOOP"), wid))
 
   res <- obj$task_wait(t, 1)
   expect_equal(res, sin(1))
 
-  expect_that(obj$worker_status(),
-              equals(setNames(WORKER_IDLE, wid)))
+  expect_equal(obj$worker_status(),
+               setNames(WORKER_IDLE, wid))
 
   ## Check the log.
   log <- obj$worker_log_tail(wid, Inf)
@@ -129,18 +129,18 @@ test_that("pause", {
   cmp_msg <- c("",
                rep(c("PAUSE", "PING", "PAUSE", "RESUME"), each = 2),
                t, t, "RESUME", "RESUME")
-  expect_that(log$command, equals(cmp_cmd))
-  expect_that(log$message, equals(cmp_msg))
+  expect_equal(log$command, cmp_cmd)
+  expect_equal(log$message, cmp_msg)
 
   ## Will stop when paused:
   id <- obj$message_send("PAUSE")
-  expect_that(obj$message_get_response(id, wid, timeout = 1),
-              equals(setNames(list("OK"), wid)))
+  expect_equal(obj$message_get_response(id, wid, timeout = 1),
+               setNames(list("OK"), wid))
   id <- obj$message_send("STOP")
-  expect_that(obj$message_get_response(id, wid, timeout = 1),
-              equals(setNames(list("BYE"), wid)))
+  expect_equal(obj$message_get_response(id, wid, timeout = 1),
+               setNames(list("BYE"), wid))
 
-  expect_that(obj$worker_list_exited(), equals(wid))
+  expect_equal(obj$worker_list_exited(), wid)
 })
 
 test_that("unknown command", {
@@ -154,31 +154,31 @@ test_that("unknown command", {
   obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
   wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
 
-  expect_that(obj$worker_status(),
-              equals(setNames(WORKER_IDLE, wid)))
+  expect_equal(obj$worker_status(),
+               setNames(WORKER_IDLE, wid))
 
   id <- obj$message_send("XXXX")
   res <- obj$message_get_response(id, wid, timeout = 1)[[1]]
-  expect_that(res, is_a("condition"))
-  expect_that(res$message, matches("Recieved unknown message"))
-  expect_that(res$command, equals("XXXX"))
-  expect_that(res$args, equals(NULL))
+  expect_is(res, "condition")
+  expect_match(res$message, "Recieved unknown message")
+  expect_equal(res$command, "XXXX")
+  expect_null(res$args)
 
   id <- obj$message_send("YYYY", "ZZZZ")
   res <- obj$message_get_response(id, wid, timeout = 1)[[1]]
-  expect_that(res, is_a("condition"))
-  expect_that(res$message, matches("Recieved unknown message"))
-  expect_that(res$command, equals("YYYY"))
-  expect_that(res$args, equals("ZZZZ"))
+  expect_is(res, "condition")
+  expect_match(res$message, "Recieved unknown message")
+  expect_equal(res$command, "YYYY")
+  expect_equal(res$args, "ZZZZ")
 
   ## Complex arguments are supported:
   d <- data.frame(a = 1, b = 2)
   id <- obj$message_send("YYYY", d)
   res <- obj$message_get_response(id, wid, timeout = 1)[[1]]
-  expect_that(res, is_a("condition"))
-  expect_that(res$message, matches("Recieved unknown message"))
-  expect_that(res$command, equals("YYYY"))
-  expect_that(res$args, equals(d))
+  expect_is(res, "condition")
+  expect_match(res$message, "Recieved unknown message")
+  expect_equal(res$command, "YYYY")
+  expect_equal(res$args, d)
 })
 
 test_that("send and wait", {
