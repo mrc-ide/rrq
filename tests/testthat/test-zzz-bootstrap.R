@@ -20,7 +20,7 @@ test_that("bootstrap", {
   wid <- worker_spawn(obj, timeout = 5, progress = FALSE)
 
   ## Worker reports lib on startup:
-  log <- context:::parse_context_log(obj$worker_process_log(wid))
+  log <- obj$worker_process_log(wid)
   expect_equal(trimws(log$value[[which(log$title == "lib")]]),
                normalizePath(lib))
 
