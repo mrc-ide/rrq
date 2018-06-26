@@ -25,3 +25,8 @@ warning_then_error <- function(x) {
   }
   stop("Giving up now")
 }
+
+
+add <- function(a, b) {
+  a + b
+}

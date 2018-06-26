@@ -270,3 +270,25 @@ test_that("task_position", {
   expect_equal(obj$task_position(c(t1, "not a real task"), NA_integer_),
                c(1L, NA_integer_))
 })
+
+
+test_that("call", {
+  Sys.setenv(R_TESTS = "")
+  root <- tempfile()
+  context <- context::context_save(root, sources = "myfuns.R")
+  envir <- new.env(parent = .GlobalEnv)
+  context <- context::context_load(context, envir)
+  obj <- rrq_controller(context, redux::hiredis())
+  on.exit(obj$destroy())
+  a <- 20L
+
+  t1 <- obj$call(quote(noisydouble), 10, envir = envir)
+  t2 <- obj$call(quote(noisydouble), a, envir = envir)
+  t3 <- obj$call(quote(add), a, a, envir = envir)
+
+  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
+
+  expect_equal(obj$task_wait(t1, progress = PROGRESS), 20L)
+  expect_equal(obj$task_wait(t2, progress = PROGRESS), 40L)
+  expect_equal(obj$task_wait(t3, progress = PROGRESS), 40L)
+})

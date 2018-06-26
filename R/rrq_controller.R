@@ -85,6 +85,21 @@ R6_rrq_controller <- R6::R6Class(
       dat <- context::prepare_expression(expr, envir, self$db)
       task_submit(self$con, self$keys, dat, key_complete)
     },
+    ## This can probably done more nicely but this should work for
+    ## now.  This could be routed through either of the bulk or
+    ## expression submission systems but this way seems the least
+    ## work.  This needs to be ported over to queuer too.
+    ##
+    ## TODO: this should operate with locals and promises but that
+    ## seems not to work correctly - I can't get the local variable
+    ## lookup to be triggered and locally stored variables are not
+    ## found correctly!
+    call = function(FUN, ..., envir = parent.frame(), key_complete = NULL) {
+      rrq_enqueue_bulk_submit(self, list(list(...)), FUN,
+                              envir = envir, do_call = TRUE,
+                              key_complete = key_complete)$task_ids
+    },
+
     ## TODO: These all need to have similar names, semantics,
     ## arguments as queuer if I will ever merge these and not go mad.
     ## Go through and check.

@@ -18,7 +18,8 @@ rrq_lapply <- function(obj, X, FUN, ..., DOTS = NULL,
 
 rrq_enqueue_bulk_submit <- function(obj, X, FUN, ..., DOTS = NULL,
                                     do_call = FALSE,
-                                    envir = parent.frame(), use_names = TRUE) {
+                                    envir = parent.frame(), use_names = TRUE,
+                                    key_complete = NULL) {
   ## See queuer:::enqueue_bulk_submit for the general approach used here.
   fun_dat <- queuer::match_fun_queue(FUN, envir, obj$context$envir)
   FUN <- fun_dat$name_symbol %||% fun_dat$value
@@ -35,7 +36,7 @@ rrq_enqueue_bulk_submit <- function(obj, X, FUN, ..., DOTS = NULL,
                                           envir, obj$db)
 
   keys <- obj$keys
-  key_complete <- rrq_key_task_complete(keys$queue_name)
+  key_complete <- key_complete %||% rrq_key_task_complete(keys$queue_name)
   task_dat <- lapply(dat, object_to_bin)
   task_ids <- task_submit_n(obj$con, keys, task_dat, key_complete)
   list(key_complete = key_complete,
