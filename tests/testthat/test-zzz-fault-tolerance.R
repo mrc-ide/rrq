@@ -1,6 +1,7 @@
 context("fault tolerance")
 
 test_that("heartbeat", {
+  skip_if_not_installed("heartbeatr")
   Sys.setenv(R_TESTS = "")
   root <- tempfile()
   context <- context::context_save(root, sources = "myfuns.R")
@@ -32,6 +33,7 @@ test_that("heartbeat", {
 })
 
 test_that("interrupt stuck worker (local)", {
+  skip_if_not_installed("heartbeatr")
   ## This one tests that if a worker is stuck on a long running task
   ## that we can shunt them off it.  It will not work on windows
   ## because there is no concept of interrupt that we can easily use.
@@ -83,6 +85,7 @@ test_that("interrupt stuck worker (local)", {
 })
 
 test_that("interrupt stuck worker (via heartbeat)", {
+  skip_if_not_installed("heartbeatr")
   ## Basically the same test as above, but we'll do it via the
   ## heartbeat thread.  These might be worth merging.
   skip_on_os("windows")
@@ -133,6 +136,7 @@ test_that("interrupt stuck worker (via heartbeat)", {
 })
 
 test_that("detect killed worker (via heartbeat)", {
+  skip_if_not_installed("heartbeatr")
   Sys.setenv(R_TESTS = "")
   root <- tempfile()
   context <- context::context_save(root, sources = "myfuns.R")
