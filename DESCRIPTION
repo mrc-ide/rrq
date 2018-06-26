@@ -1,6 +1,6 @@
 Package: rrq
 Title: Simple Redis Queue
-Version: 0.1.0
+Version: 0.1.1
 Author: Rich FitzJohn
 Maintainer: Rich FitzJohn <rich.fitzjohn@gmail.com>
 Description: Simple Redis queue in R.
@@ -10,11 +10,11 @@ URL: https://github.com/mrc-ide/rrq
 BugReports: https://github.com/mrc-ide/rrq/issues
 Imports:
     R6,
-    context (>= 0.1.1),
+    context (>= 0.1.4),
     ids,
     lazyeval,
     queuer (>= 0.1.0),
-    redux (>= 0.5.1)
+    redux (>= 1.0.0)
 Suggests:
     heartbeatr,
     testthat

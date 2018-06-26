@@ -14,7 +14,3 @@ addons:
 
 services:
   - redis-server
-
-# Until I push some changes to CRAN
-r_github_packages:
-  - richfitz/redux
