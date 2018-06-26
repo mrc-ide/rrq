@@ -602,7 +602,9 @@ push_controller_info <- function(con, keys, max_n = 10) {
 worker_naturalsort <- function(x) {
   re <- "^(.*)_(\\d+)$"
   root <- sub(re, "\\1", x)
-  idx <- as.integer(sub(re, "\\2", x))
+  i <- grepl(re, x)
+  idx <- numeric(length(x))
+  idx[i] <- as.integer(sub(re, "\\2", x[i]))
   x[order(root, idx)]
 }
 
