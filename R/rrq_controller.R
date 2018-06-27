@@ -351,7 +351,7 @@ task_submit_n <- function(con, keys, dat, key_complete) {
     stop("dat must be a raw list")
   }
   n <- length(dat)
-  task_ids <- ids::random_id(length(dat))
+  task_ids <- ids::random_id(n)
 
   con$pipeline(
     if (!is.null(key_complete)) {
@@ -360,7 +360,7 @@ task_submit_n <- function(con, keys, dat, key_complete) {
     redis$HMSET(keys$task_expr, task_ids, dat),
     redis$HMSET(keys$task_status, task_ids, rep_len(TASK_PENDING, n)),
     redis$RPUSH(keys$queue_rrq, task_ids),
-    redis$HINCRBY(keys$task_count, TASK_PENDING, length(task_ids))
+    redis$HINCRBY(keys$task_count, TASK_PENDING, n)
   )
 
   task_ids
