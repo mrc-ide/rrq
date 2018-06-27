@@ -19,6 +19,3 @@ Suggests:
     heartbeatr,
     testthat
 RoxygenNote: 5.0.1
-Remotes:
-    mrc-ide/queuer,
-    richfitz/heartbeatr
