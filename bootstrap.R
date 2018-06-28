@@ -31,7 +31,7 @@
     }
     src <- provisionr::package_sources(data = NULL)
     provisionr::provision_dependencies(".packages", src = src,
-        read_travis = FALSE)
+        read_travis = TRUE)
     if (!file.exists(".Renviron")) {
         writeLines(sprintf("R_LIBS_USER=\"%s\"", ".packages"),
             ".Renviron")
