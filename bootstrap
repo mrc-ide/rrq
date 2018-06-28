@@ -1,0 +1,24 @@
+#!/usr/bin/env Rscript
+# Install the packages we need for this script
+dir.create(file.path("packages"), showWarnings = FALSE)
+install.packages(c("desc", "remotes", "hashmap"))
+
+# Some packages need to be installed from GitHub, we list them here
+resolution <- hashmap::hashmap(
+	c("context",                 "queuer",                 "heartbeatr"),
+	c("mrc-ide/context@develop", "mrc-ide/queuer@develop", "richfitz/heartbeatr")
+)
+
+# Install every dependency in the DESCRIPTION file
+desc <- desc::description$new()
+dependencies <- desc$get_deps()
+package_column_index <- which(colnames(dependencies) == "package")
+dependent_packages <- dependencies[,package_column_index]
+
+for (package in dependent_packages) {
+	if (resolution$has_key(package)) {
+		remotes::install_github(resolution[[package]])
+	} else {
+		install.packages(package)
+	}
+}

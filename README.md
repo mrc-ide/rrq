@@ -18,6 +18,14 @@ drat:::add("mrc-ide")
 install.packages("rrq")
 ```
 
+## Development
+To install all dependencies:
+```
+./bootstrap.R
+```
+
+To make the package installation local, first run `echo "R_LIBS=packages" >> .Renviron`
+
 ## License
 
 MIT © [Rich FitzJohn](https://github.com/richfitz).
