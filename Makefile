@@ -31,7 +31,7 @@ clean:
 	rm -f ${PACKAGE}_*.tar.gz
 	rm -rf ${PACKAGE}.Rcheck
 
-bootstrap.R:
+bootstrap:
 	${RSCRIPT} -e "provisionr::provision_dependencies_bootstrap(read_travis = TRUE)"
 
 vignettes/src/context.Rmd: vignettes/src/context.R
@@ -58,4 +58,4 @@ staticdocs:
 website: staticdocs
 	./update_web.sh
 
-.PHONY: all test document install vignettes bootstrap.R
+.PHONY: all test document install vignettes bootstrap

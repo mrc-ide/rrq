@@ -12,5 +12,5 @@
 ^\.lintr$
 ^TODO\.md$
 ^appveyor\.yml$
-^bootstrap\.R$
+^bootstrap$
 ^\.packages$
