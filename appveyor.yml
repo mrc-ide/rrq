@@ -23,6 +23,9 @@ before_build:
 
 build_script:
   - travis-tool.sh install_deps
+  - travis-tool.sh install_github mrc-ide/context
+  - travis-tool.sh install_github mrc-ide/queuer
+  - travis-tool.sh install_github richfitz/heartbeatr
 
 test_script:
   - travis-tool.sh run_tests
