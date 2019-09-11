@@ -10,7 +10,7 @@ test_that("bulk", {
   on.exit(obj$destroy())
 
   n_workers <- 5
-  wid <- worker_spawn(obj, n_workers, timeout = 5, progress = PROGRESS)
+  wid <- worker_spawn(obj, n_workers, timeout = 20, progress = PROGRESS)
 
   x <- runif(n_workers * 2) / 10
   res <- obj$lapply(x, quote(slowdouble), progress = PROGRESS)

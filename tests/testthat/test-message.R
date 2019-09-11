@@ -18,7 +18,7 @@ test_that("basic", {
   expect_is(id, "character")
   expect_is(redux::redis_time_to_r(id), "POSIXct")
 
-  Sys.sleep(0.1)
+  Sys.sleep(0.5)
   expect_equal(obj$message_has_response(id, wid), setNames(TRUE, wid))
   expect_equal(obj$message_has_response(id), setNames(TRUE, wid))
   expect_equal(obj$message_has_response(id, wid, named = FALSE), TRUE)
