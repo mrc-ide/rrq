@@ -1,38 +1,26 @@
 context("worker_config")
 
 test_that("rrq_default configuration", {
-  path <- tempfile()
-
-  expect_error(rrq_worker_main_args(c()), "At least 4 arguments required")
-  ctx <- context::context_save(path)
-  ctx <- context::context_load(ctx, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(ctx, redux::hiredis())
-  on.exit(obj$destroy())
-
+  obj <- test_rrq()
   expect_equal(obj$db$get("localhost", "worker_config"),
                list(redis_host = obj$con$config()$host,
                     redis_port = obj$con$config()$port))
 })
 
 test_that("rrq_worker_main_args", {
-  path <- tempfile()
-  expect_error(rrq_worker_main_args(c()), "At least 4 arguments required")
-
-  ctx <- context::context_save(path)
-  ctx <- context::context_load(ctx, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(ctx, redux::hiredis())
-  on.exit(obj$destroy())
+  obj <- test_rrq()
 
   host <- "redis_host"
   port <- 8888
   nm <- ids::adjective_animal()
   key <- ids::random_id()
   use <- "myconfig"
-  args <- c(path, ctx$id, use, nm)
+  args <- c(obj$context$root$path, obj$context$id, use, nm)
   args2 <- c(args, key)
 
   ## This can't be easily tested here, but could be done with
   ## rrq_worker_from_config
+  expect_error(rrq_worker_main_args(c()), "At least 4 arguments required")
   expect_error(rrq_worker_main(args),
                "Invalid rrq worker configuration key")
   expect_error(rrq_worker_main(args2),
@@ -40,7 +28,7 @@ test_that("rrq_worker_main_args", {
 
   ## Then save a configuration:
   obj$worker_config_save(use, redis_host = host, redis_port = port)
-  config <- worker_config_read(ctx, use)
+  config <- worker_config_read(obj$context, use)
 
   ## And show that we can load it appropriately
   expect_equal(config$redis_host, host)
@@ -49,7 +37,7 @@ test_that("rrq_worker_main_args", {
   expect_null(
     obj$worker_config_save(use, redis_host = host, redis_port = port,
                            overwrite = FALSE))
-  expect_identical(worker_config_read(ctx, use), config)
+  expect_identical(worker_config_read(obj$context, use), config)
 
   expect_identical(
     obj$worker_config_save(use, redis_host = host, redis_port = port,
@@ -57,24 +45,20 @@ test_that("rrq_worker_main_args", {
 })
 
 test_that("create short-lived worker", {
-  path <- tempfile()
-  ctx <- context::context_save(path)
-  ctx <- context::context_load(ctx, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(ctx, redux::hiredis())
-  on.exit(obj$destroy())
+  obj <- test_rrq()
 
   key <- "stop_immediately"
   cfg <- obj$worker_config_save(key, timeout = 0, time_poll = 1,
                                 copy_redis = TRUE)
 
   ## Local:
-  msg <- capture_messages(w <- rrq_worker_from_config(path, ctx$id, key))
+  msg <- capture_messages(
+    w <- rrq_worker_from_config(obj$context$root$path, obj$context$id, key))
   expect_null(w)
   expect_true(any(grepl("STOP OK (TIMEOUT)", msg, fixed = TRUE)))
 
   ## Remote:
-  wid <- worker_spawn(obj, timeout = 10, worker_config = key,
-                       progress = PROGRESS)
+  wid <- test_worker_spawn(obj, worker_config = key)
   expect_is(wid, "character")
   log <- obj$worker_log_tail(wid, Inf)
   expect_is(log, "data.frame")
@@ -91,7 +75,8 @@ test_that("create short-lived worker", {
   }
   expect_equal(nrow(log), 2L)
   expect_equal(log$command[[2]], "STOP")
-  expect_true(file.exists(file.path(path, "worker_logs", wid)))
+  expect_true(file.exists(
+    file.path(obj$context$root$path, "worker_logs", wid)))
   txt <- obj$worker_process_log(wid, FALSE)
   expect_is(txt, "character")
   expect_true(any(grepl("STOP OK (TIMEOUT)", txt, fixed = TRUE)))
