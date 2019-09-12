@@ -28,6 +28,13 @@ skip_if_no_internet <- function() {
   testthat::skip("no internet")
 }
 
+skip_if_no_redis <- function() {
+  tryCatch(
+    redux::hiredis()$PING(),
+    error = function(e) testthat::skip("redis not available"))
+  invisible(NULL)
+}
+
 wait_status <- function(t, obj, timeout = 2, time_poll = 0.05,
                         status = "PENDING") {
   times_up <- queuer:::time_checker(timeout)
@@ -40,6 +47,33 @@ wait_status <- function(t, obj, timeout = 2, time_poll = 0.05,
   }
   stop(sprintf("Did not change status to %s in time", status))
 }
+
+test_rrq <- function(sources = NULL) {
+  skip_if_no_redis()
+  Sys.setenv(R_TESTS = "")
+  root <- tempfile()
+  dir.create(root)
+  if (length(sources) > 0) {
+    file.copy(sources, root)
+  }
+
+  context <- with_wd(root, {
+    ctx <- context::context_save(root, sources = sources)
+    context::context_load(ctx, new.env(parent = .GlobalEnv))
+  })
+
+  obj <- rrq_controller(context, redux::hiredis())
+  reg.finalizer(obj, function(e) obj$destroy())
+  obj
+}
+
+
+## TODO: I wonder if the path should be set automatically?
+test_worker_spawn <- function(obj, ..., timeout = 5) {
+  worker_spawn(obj, ..., path = obj$context$root$path, progress = PROGRESS,
+               timeout = timeout)
+}
+
 
 PROGRESS <- FALSE # TODO: phase this one out
 options(queuer.progress_suppress = TRUE)
