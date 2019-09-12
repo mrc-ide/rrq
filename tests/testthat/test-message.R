@@ -1,15 +1,10 @@
 context("messaging")
 
 test_that("basic", {
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
+  obj <- test_rrq()
 
   obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
+  wid <- test_worker_spawn(obj)
 
   ## First, let's test the basic messaging approach:
   ##
@@ -71,15 +66,10 @@ test_that("basic", {
 })
 
 test_that("pause", {
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
+  obj <- test_rrq()
 
   obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
+  wid <- test_worker_spawn(obj)
 
   expect_equal(obj$worker_status(),
                setNames(WORKER_IDLE, wid))
@@ -144,15 +134,10 @@ test_that("pause", {
 })
 
 test_that("unknown command", {
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
+  obj <- test_rrq()
 
   obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
+  wid <- test_worker_spawn(obj)
 
   expect_equal(obj$worker_status(),
                setNames(WORKER_IDLE, wid))
@@ -182,15 +167,10 @@ test_that("unknown command", {
 })
 
 test_that("send and wait", {
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
+  obj <- test_rrq()
 
   obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
-  wid <- worker_spawn(obj, 5, timeout = 5, progress = PROGRESS)
+  wid <- test_worker_spawn(obj, 5)
 
   st <- obj$worker_status()
   expect_equal(sort(names(st)), sort(wid))
@@ -220,46 +200,28 @@ test_that("send and wait", {
 })
 
 test_that("refresh", {
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  myfuns <- tempfile("myfuns_", ".", ".R")
-  writeLines("f <- function(x) x * 2", myfuns)
+  obj <- test_rrq("myfuns.R")
+  myfuns <- file.path(obj$context$root$path, "myfuns.R")
+  wid <- test_worker_spawn(obj)
 
-  context <- context::context_save(root, sources = myfuns)
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit({
-    obj$destroy()
-    file.remove(myfuns)
-  })
+  t1 <- obj$enqueue(f1(1))
+  expect_equal(obj$task_wait(t1, 10, progress = FALSE), 2)
 
-  obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
-  wid <- worker_spawn(obj, 1, timeout = 5, progress = PROGRESS)
-
-  t1 <- obj$enqueue(f(10))
-  expect_equal(obj$task_wait(t1, 10, progress = FALSE), 20)
-
-  writeLines("f <- function(x) x * 3", myfuns)
-  t2 <- obj$enqueue(f(20))
-  expect_equal(obj$task_wait(t2, 10, progress = FALSE), 40)
+  writeLines("f1 <- function(x) x + 2", myfuns)
+  t2 <- obj$enqueue(f1(2))
+  expect_equal(obj$task_wait(t2, 10, progress = FALSE), 3)
 
   res <- obj$message_send_and_wait("REFRESH")
   expect_equal(res, setNames(list("OK"), wid))
 
-  t3 <- obj$enqueue(f(30))
-  expect_equal(obj$task_wait(t3, 10, progress = FALSE), 90)
+  t3 <- obj$enqueue(f1(3))
+  expect_equal(obj$task_wait(t3, 10, progress = FALSE), 5)
 })
 
 test_that("timeout", {
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
-
-  obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
+  obj <- test_rrq("myfuns.R")
+  myfuns <- file.path(obj$context$root$path, "myfuns.R")
+  wid <- test_worker_spawn(obj)
 
   expect_equal(obj$message_send_and_wait("TIMEOUT_GET"),
                setNames(list(c(timeout = Inf, remaining = Inf)), wid))
