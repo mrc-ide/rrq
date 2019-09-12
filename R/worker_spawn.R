@@ -54,7 +54,8 @@ worker_spawn <- function(obj, n = 1, logdir = "worker_logs",
     stop(sprintf("worker config '%s' does not exist", worker_config))
   }
   if (!is.null(path)) {
-    stop("FIXME")
+    owd <- setwd(path)
+    on.exit(setwd(owd))
   }
 
   rrq_worker <- file.path(obj$context$root$path, "bin", "rrq_worker")
