@@ -75,5 +75,20 @@ test_worker_spawn <- function(obj, ..., timeout = 5) {
 }
 
 
+with_wd <- function(path, expr) {
+  if (path != ".") {
+    if (!file.exists(path)) {
+      stop(sprintf("Path '%s' does not exist", path))
+    }
+    if (!is_directory(path)) {
+      stop(sprintf("Path '%s' exists, but is not a directory", path))
+    }
+    owd <- setwd(path)
+    on.exit(setwd(owd))
+  }
+  force(expr)
+}
+
+
 PROGRESS <- FALSE # TODO: phase this one out
 options(queuer.progress_suppress = TRUE)

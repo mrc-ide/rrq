@@ -78,14 +78,13 @@ worker_spawn <- function(obj, n = 1, logdir = "worker_logs",
   message(sprintf("Spawning %d %s with prefix %s",
                   n, ngettext(n, "worker", "workers"), worker_name_base))
   code <- integer(n)
-  ## TODO: path is never used in the package
-  ## with_wd(path, {
+
   for (i in seq_len(n)) {
     args <- c(root, context_id, worker_config, worker_names[[i]], key_alive)
     code[[i]] <- system2(rrq_worker, args, env = env, wait = FALSE,
                          stdout = logfile[[i]], stderr = logfile[[i]])
   }
-  ## })
+
   if (any(code != 0L)) {
     warning("Error launching script: worker *probably* does not exist")
   }

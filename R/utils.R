@@ -37,20 +37,6 @@ blank <- function(n) {
   strrep(" ", n)
 }
 
-with_wd <- function(path, expr) {
-  if (path != ".") {
-    if (!file.exists(path)) {
-      stop(sprintf("Path '%s' does not exist", path))
-    }
-    if (!is_directory(path)) {
-      stop(sprintf("Path '%s' exists, but is not a directory", path))
-    }
-    owd <- setwd(path)
-    on.exit(setwd(owd))
-  }
-  force(expr)
-}
-
 `%||%` <- function(a, b) {
   if (is.null(a)) b else a
 }
@@ -70,21 +56,15 @@ Sys_getenv <- function(x) {
 lstrip <- function(x) {
   sub("^\\s+", "", x, perl = TRUE)
 }
+
 rstrip <- function(x) {
   sub("\\s+$", "", x, perl = TRUE)
 }
 
-## NOTE: duplicated from context, and will be replaced by using pathr
-## once it's done.
 is_absolute_path <- function(path) {
   grepl("^(/|[A-Za-z]:[/\\]|//|\\\\\\\\)", path)
 }
+
 is_relative_path <- function(path) {
   !is_absolute_path(path)
-}
-
-rbind_as_df <- function(x) {
-  do.call("rbind",
-          lapply(x, as.data.frame, stringsAsFactors = FALSE),
-          quote = TRUE)
 }
