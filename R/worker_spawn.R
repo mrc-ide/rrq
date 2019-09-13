@@ -51,7 +51,7 @@ worker_spawn <- function(obj, n = 1, logdir = "worker_logs",
                           time_poll = 1, progress = NULL) {
   assert_is(obj, "rrq_controller")
   if (!obj$db$exists(worker_config, "worker_config")) {
-    stop(sprintf("worker config '%s' does not exist", worker_config))
+    stop(sprintf("Invalid rrq worker configuration key '%s'", key))
   }
   if (!is.null(path)) {
     owd <- setwd(path)
@@ -83,10 +83,6 @@ worker_spawn <- function(obj, n = 1, logdir = "worker_logs",
     args <- c(root, context_id, worker_config, worker_names[[i]], key_alive)
     code[[i]] <- system2(rrq_worker, args, env = env, wait = FALSE,
                          stdout = logfile[[i]], stderr = logfile[[i]])
-  }
-
-  if (any(code != 0L)) {
-    warning("Error launching script: worker *probably* does not exist")
   }
 
   if (timeout > 0) {
@@ -165,9 +161,6 @@ worker_read_failed_logs <- function(context, missing) {
     j <- file.exists(log_file)
     logs <- lapply(log_file, readLines)
     setNames(logs, missing[i][j])
-  } else {
-    NULL
-
   }
 }
 

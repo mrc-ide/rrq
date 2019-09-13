@@ -81,3 +81,38 @@ test_that("create short-lived worker", {
   expect_is(txt, "character")
   expect_true(any(grepl("STOP OK (TIMEOUT)", txt, fixed = TRUE)))
 })
+
+
+test_that("Sensible error message on missing config", {
+  obj <- test_rrq()
+
+  key <- "nonexistant"
+
+  expect_error(
+    rrq_worker_from_config(obj$context$root$path, obj$context$id, key),
+    "Invalid rrq worker configuration key 'nonexistant'")
+  expect_error(
+    test_worker_spawn(obj, worker_config = key),
+    "Invalid rrq worker configuration key 'nonexistant'")
+})
+
+
+test_that("Don't wait", {
+  obj <- test_rrq()
+  names <- test_worker_spawn(obj, timeout = 0)
+  expect_is(names, "character")
+  expect_match(names, "_1$")
+  res <- worker_wait(obj, rrq_expect_worker(obj, names),
+                     timeout = 10, time_poll = 1)
+  expect_equal(res, names)
+  res <- worker_wait(obj, rrq_expect_worker(obj, names),
+                     timeout = 10, time_poll = 1)
+  expect_equal(res, names)
+})
+
+
+test_that("Missing log print fallback", {
+  expect_output(
+    worker_print_failed_logs(NULL),
+    "Logging not enabled for these workers")
+})
