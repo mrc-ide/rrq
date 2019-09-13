@@ -69,7 +69,7 @@ test_rrq <- function(sources = NULL) {
 
 
 ## TODO: I wonder if the path should be set automatically?
-test_worker_spawn <- function(obj, ..., timeout = 5) {
+test_worker_spawn <- function(obj, ..., timeout = 10) {
   worker_spawn(obj, ..., path = obj$context$root$path, progress = PROGRESS,
                timeout = timeout)
 }
