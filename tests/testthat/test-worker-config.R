@@ -99,15 +99,24 @@ test_that("Sensible error message on missing config", {
 
 test_that("Don't wait", {
   obj <- test_rrq()
-  names <- test_worker_spawn(obj, timeout = 0)
-  expect_is(names, "character")
-  expect_match(names, "_1$")
-  res <- worker_wait(obj, rrq_expect_worker(obj, names),
-                     timeout = 10, time_poll = 1)
-  expect_equal(res, names)
-  res <- worker_wait(obj, rrq_expect_worker(obj, names),
-                     timeout = 10, time_poll = 1)
-  expect_equal(res, names)
+  res <- test_worker_spawn(obj, 4, timeout = 0)
+  expect_is(res$names, "character")
+  expect_match(res$names, "_[0-9]+$")
+  expect_is(res$key_alive, "character")
+
+  ans <- worker_wait(obj, res$key_alive, timeout = 10, time_poll = 1)
+  expect_setequal(ans, res$names)
+
+  ans <- worker_wait(obj, res$key_alive, timeout = 10, time_poll = 1)
+  expect_equal(ans, res$names)
+})
+
+
+test_that("Sensible error if requesting workers on empty key", {
+  obj <- test_rrq()
+  expect_error(
+    worker_wait(obj, "no workers here", timeout = 10, time_poll = 1),
+    "No workers expected on that key")
 })
 
 
