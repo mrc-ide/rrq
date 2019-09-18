@@ -40,9 +40,10 @@ rrq_worker <- function(context, con, key_alive = NULL, worker_name = NULL,
                        time_poll = NULL, log_path = NULL, timeout = NULL,
                        heartbeat_period = NULL) {
   R6_rrq_worker$new(context, con, key_alive, worker_name, time_poll,
-                     log_path, timeout, heartbeat_period)
+                    log_path, timeout, heartbeat_period)$main_loop()
   invisible()
 }
+
 
 R6_rrq_worker <- R6::R6Class(
   "rrq_worker",
@@ -118,9 +119,6 @@ R6_rrq_worker <- R6::R6Class(
       if (!is.null(timeout)) {
         run_message_TIMEOUT_SET(self, timeout)
       }
-
-      self$main_loop()
-      message(worker_exit_text())
     },
 
     load_context = function() {
@@ -241,6 +239,7 @@ R6_rrq_worker <- R6::R6Class(
             }
           }
         }
+        message(worker_exit_text())
       }
 
       while (continue) {

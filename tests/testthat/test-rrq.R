@@ -7,6 +7,7 @@ test_that("empty", {
 
   expect_equal(obj$worker_list(), character(0))
   expect_equal(obj$task_list(), character(0))
+  expect_equal(obj$worker_len(), 0)
   expect_equal(obj$queue_length(), 0)
   expect_equal(obj$queue_list(), character(0))
 
@@ -17,6 +18,13 @@ test_that("empty", {
 
   expect_true(
     file.exists(file.path(obj$context$root$path, "bin", "rrq_worker")))
+
+  expect_equal(
+    obj$worker_log_tail(),
+    data_frame(worker_id = character(0),
+               time = numeric(0),
+               command = character(0),
+               message = character(0)))
 
   test_queue_clean(obj$context$id)
 })
@@ -83,11 +91,38 @@ test_that("context job", {
 
   r <- rrq_controller(context$id, redux::hiredis())
 
-  r$queue_submit(t$id)
-  expect_equal(t$wait(10, progress = PROGRESS), sin(1))
+  r$context_queue_submit(t$id)
+  expect_equal(t$wait(10, progress = PROGRESS), sin(1), time_poll = 0.1)
   expect_equal(t$status(), "COMPLETE")
   expect_equal(r$queue_length(), 0L)
 })
+
+
+test_that("context job unsubit", {
+  obj <- test_rrq("myfuns.R")
+  context <- obj$context
+
+  id1 <- context::task_save(quote(sin(1)), context)
+  t1 <- queuer:::queuer_task(id1, context$root)
+  id2 <- context::task_save(quote(sin(2)), context)
+  t2 <- queuer:::queuer_task(id2, context$root)
+  id3 <- context::task_save(quote(sin(3)), context)
+  t3 <- queuer:::queuer_task(id3, context$root)
+
+  r <- rrq_controller(context$id, redux::hiredis())
+
+  r$context_queue_submit(id1)
+  r$context_queue_submit(id2)
+  r$context_queue_submit(id3)
+
+  expect_equal(r$context_queue_length(), 3)
+  expect_equal(r$context_queue_list(), c(id1, id2, id3))
+
+  r$context_queue_unsubmit(id2)
+  expect_equal(r$context_queue_length(), 2)
+  expect_equal(r$context_queue_list(), c(id1, id3))
+})
+
 
 test_that("log dir", {
   obj <- test_rrq("myfuns.R")
@@ -107,7 +142,7 @@ test_that("log dir", {
 
   id <- context::task_save(quote(noisydouble(1)), obj$context)
   t <- queuer:::queuer_task(id, obj$context$root)
-  r$queue_submit(t$id)
+  r$context_queue_submit(t$id)
   res <- t$wait(10, time_poll = 0.1, progress = PROGRESS)
 
   expect_true(file.exists(file.path(root, obj$db$get(t$id, "log_path"))))
@@ -175,7 +210,7 @@ test_that("error", {
   expect_match(tail(r1$trace, 2)[[1]], "^warning_then_error")
 
   id <- context::task_save(quote(warning_then_error(2)), context)
-  obj$queue_submit(id)
+  obj$context_queue_submit(id)
   t <- queuer:::queuer_task(id, context$root)
   r2 <- t$wait(10, time_poll = 0.1, progress = PROGRESS)
 
@@ -206,6 +241,23 @@ test_that("task_position", {
 })
 
 
+test_that("task_position", {
+  obj <- test_rrq("myfuns.R")
+
+  expect_equal(
+    obj$task_overview(),
+    list(PENDING = 0, RUNNING = 0, COMPLETE = 0, ERROR = 0))
+
+  t1 <- obj$enqueue(sin(1))
+  t2 <- obj$enqueue(sin(1))
+  t3 <- obj$enqueue(sin(1))
+
+  expect_equal(
+    obj$task_overview(),
+    list(PENDING = 3, RUNNING = 0, COMPLETE = 0, ERROR = 0))
+})
+
+
 test_that("call", {
   obj <- test_rrq("myfuns.R")
 
@@ -221,4 +273,40 @@ test_that("call", {
   expect_equal(obj$task_wait(t1, progress = PROGRESS), 20L)
   expect_equal(obj$task_wait(t2, progress = PROGRESS), 40L)
   expect_equal(obj$task_wait(t3, progress = PROGRESS), 40L)
+})
+
+
+test_that("can't create queue with unloaded context", {
+  root <- tempfile()
+  dir.create(root)
+  context <- context::context_save(root)
+  expect_error(
+    rrq_controller(context),
+    "context must be loaded")
+})
+
+
+test_that("wait for tasks without key", {
+  obj <- test_rrq("myfuns.R")
+  wid <- test_worker_spawn(obj)
+
+  t1 <- obj$enqueue(1 + 1)
+  t2 <- obj$enqueue(2 + 2)
+
+  res <- obj$tasks_wait(c(t1, t2))
+  expect_equal(res, set_names(list(2, 4), c(t1, t2)))
+})
+
+
+test_that("task delete", {
+  obj <- test_rrq("myfuns.R")
+  t1 <- obj$enqueue(1 + 1)
+  t2 <- obj$enqueue(2 + 2)
+  t3 <- obj$enqueue(3 + 3)
+
+  expect_setequal(obj$task_list(), c(t1, t2, t3))
+  obj$task_delete(t1)
+  expect_setequal(obj$task_list(), c(t2, t3))
+  obj$task_delete(c(t2, t3))
+  expect_setequal(obj$task_list(), character(0))
 })

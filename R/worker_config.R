@@ -5,6 +5,9 @@ worker_config_read <- function(root, key) {
     stop(sprintf("Invalid rrq worker configuration key '%s'", key))
   }
   config <- db$get(key, "worker_config")
+  ## TODO: using host/port here differs from REDIS_URL elsewhere?
+  ## What happens when not present?  This is probably used on the
+  ## cluster I imagine.
   config$redis_host <- config$redis_host %||% Sys_getenv("REDIS_HOST")
   config$redis_port <- config$redis_port %||% Sys_getenv("REDIS_PORT")
   config

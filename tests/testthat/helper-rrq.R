@@ -48,9 +48,8 @@ wait_status <- function(t, obj, timeout = 2, time_poll = 0.05,
   stop(sprintf("Did not change status to %s in time", status))
 }
 
-test_rrq <- function(sources = NULL) {
-  skip_if_no_redis()
-  Sys.setenv(R_TESTS = "")
+
+test_context <- function(sources = NULL) {
   root <- tempfile()
   dir.create(root)
   if (length(sources) > 0) {
@@ -58,10 +57,23 @@ test_rrq <- function(sources = NULL) {
   }
 
   context <- with_wd(root, {
+    ## TODO: I think that this should be
+    ##
+    ##   file.path(root, "context")
+    ##
+    ## but that causes a worker load failure
     ctx <- context::context_save(root, sources = sources)
     context::context_load(ctx, new.env(parent = .GlobalEnv))
   })
 
+  context
+}
+
+
+test_rrq <- function(sources = NULL) {
+  skip_if_no_redis()
+  Sys.setenv(R_TESTS = "")
+  context <- test_context(sources)
   obj <- rrq_controller(context, redux::hiredis())
   reg.finalizer(obj, function(e) obj$destroy())
   obj

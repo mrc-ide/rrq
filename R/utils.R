@@ -68,3 +68,19 @@ is_absolute_path <- function(path) {
 is_relative_path <- function(path) {
   !is_absolute_path(path)
 }
+
+
+set_names <- function(x, nms) {
+  names(x) <- nms
+  x
+}
+
+
+list_to_character <- function(x) {
+  vcapply(x, identity)
+}
+
+
+data_frame <- function(...) {
+  data.frame(..., stringsAsFactors = FALSE)
+}

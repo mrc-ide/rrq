@@ -181,39 +181,44 @@ R6_rrq_controller <- R6::R6Class(
       task_delete(self$con, self$keys, task_ids, check)
     },
 
-    ## 2. Queue state
-    ##
-    ## TODO: the latter two (queue_submit, queue_unsubmit) were
-    ## included only in the worker controller and are to control the
-    ## context queue.  This needs harmonising!  I think that the first
-    ## two functions get a flag indicating which queue we're looking
-    ## at, and the latter two probably also need some sort of flag
-    ## too.
+    ## 2. Fast queue
     queue_length = function() {
       self$con$LLEN(self$keys$queue_rrq)
     },
+
     queue_list = function() {
-      as.character(self$con$LRANGE(self$keys$queue_rrq, 0, -1))
+      list_to_character(self$con$LRANGE(self$keys$queue_rrq, 0, -1))
     },
-    ## These ones do the actual submission
-    queue_submit = function(task_ids) {
+
+    ## 3. Context queue
+    context_queue_length = function() {
+      self$con$LLEN(self$keys$queue_ctx)
+    },
+
+    context_queue_list = function() {
+      list_to_character(self$con$LRANGE(self$keys$queue_ctx, 0, -1))
+    },
+
+    context_queue_submit = function(task_ids) {
       self$con$RPUSH(self$keys$queue_ctx, task_ids)
     },
-    queue_unsubmit = function(task_ids) {
+
+    context_queue_unsubmit = function(task_ids) {
       ## NOTE: probable race condition, consider rename, which has bad
       ## properties if the queue is lost of course.  The correct way
       ## would be to do a lua script.
-      ids_queued <- self$queue_list()
-      if (length(ids_queued) > 0L) {
+      ids <- self$context_queue_list()
+      i <- ids %in% task_ids
+      ids_keep <- ids[!i]
+      if (any(i)) {
         self$con$DEL(self$keys$queue_ctx)
-        ids_keep <- setdiff(ids_queued, task_ids)
         if (length(ids_keep) > 0L) {
           self$con$RPUSH(self$keys$queue_ctx, ids_keep)
         }
       }
     },
 
-    ## 3. Workers
+    ## 4. Workers
     worker_len = function() {
       worker_len(self$con, self$keys)
     },
@@ -307,7 +312,7 @@ task_overview <- function(con, keys, task_ids) {
   lvls <- c(TASK_PENDING, TASK_RUNNING, TASK_COMPLETE, TASK_ERROR)
   status <- task_status(con, keys, task_ids)
   lvls <- c(lvls, setdiff(unique(status), lvls))
-  table(factor(status, lvls))
+  as.list(table(factor(status, lvls)))
 }
 
 ## NOTE: This is not crazy efficient; we pull the entire list down
@@ -344,6 +349,7 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
   con$HDEL(keys$task_result,   task_ids)
   con$HDEL(keys$task_complete, task_ids)
   con$HDEL(keys$task_worker,   task_ids)
+  invisible()
 }
 
 task_submit_n <- function(con, keys, dat, key_complete) {
@@ -407,11 +413,10 @@ worker_log_tail <- function(con, keys, worker_ids = NULL, n = 1) {
     rownames(ret) <- NULL
     ret
   } else {
-    data.frame(worker_id = character(0),
-               time = character(0),
+    data_frame(worker_id = character(0),
+               time = numeric(0),
                command = character(0),
-               message = character(0),
-               stringsAsFactors = FALSE)
+               message = character(0))
   }
 }
 
@@ -422,6 +427,11 @@ worker_log_tail_1 <- function(con, keys, worker_id, n = 1) {
   }
   log_key <- rrq_key_worker_log(keys$queue_name, worker_id)
   log <- as.character(con$LRANGE(log_key, -n, -1))
+  worker_log_parse(log, worker_id)
+}
+
+
+worker_log_parse <- function(log, worker_id) {
   re <- "^([0-9.]+) ([^ ]+) ?(.*)$"
   if (!all(grepl(re, log))) {
     stop("Corrupt log")
@@ -432,6 +442,7 @@ worker_log_tail_1 <- function(con, keys, worker_id, n = 1) {
   data.frame(worker_id, time, command, message, stringsAsFactors = FALSE)
 }
 
+
 worker_task_id <- function(con, keys, worker_id) {
   from_redis_hash(con, keys$worker_task, worker_id)
 }
@@ -439,18 +450,18 @@ worker_task_id <- function(con, keys, worker_id) {
 worker_delete_exited <- function(con, keys, worker_ids = NULL) {
   ## This only includes things that have been processed and had task
   ## orphaning completed.
+  exited <- worker_list_exited(con, keys)
   if (is.null(worker_ids)) {
-    worker_ids <- worker_list_exited(con, keys)
-  } else {
-    extra <- setdiff(worker_ids, worker_list_exited(con, keys))
-    if (length(extra)) {
-      stop(sprintf(
-        ## TODO: this function does not exist!  It's in rrqueue and I
-        ## think depends on heartbeat.
-        "Workers %s may not have exited;\n\trun worker_identify_lost first",
-        paste(extra, collapse = ", ")))
-    }
+    worker_ids <- exited
   }
+  extra <- setdiff(worker_ids, exited)
+  if (length(extra)) {
+    ## TODO: this whole thing can be improved because we might want to
+    ## inform the user if the workers are not known.
+    stop(sprintf("Workers %s may not have exited or may not exist",
+                 paste(extra, collapse = ", ")))
+  }
+
   if (length(worker_ids) > 0L) {
     con$HDEL(keys$worker_name,   worker_ids)
     con$HDEL(keys$worker_status, worker_ids)
