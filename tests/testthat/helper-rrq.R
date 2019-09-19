@@ -112,3 +112,4 @@ interrupt <- function() {
 
 PROGRESS <- FALSE # TODO: phase this one out
 options(queuer.progress_suppress = TRUE)
+Sys.unsetenv("CONTEXT_CORES")

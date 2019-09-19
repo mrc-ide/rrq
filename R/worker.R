@@ -87,12 +87,6 @@ R6_rrq_worker <- R6::R6Class(
         error = worker_catch_error(self))
     },
 
-    finalize = function() {
-      if (self$cores > 0) {
-        context::parallel_cluster_stop()
-      }
-    },
-
     info = function() {
       worker_info_collect(self)
     },
@@ -145,6 +139,9 @@ R6_rrq_worker <- R6::R6Class(
         tryCatch(
           self$heartbeat$stop(graceful),
           error = function(e) message("Could not stop heartbeat"))
+      }
+      if (self$cores > 0) {
+        context::parallel_cluster_stop()
       }
       self$con$SREM(self$keys$worker_name,   self$name)
       self$con$HSET(self$keys$worker_status, self$name, WORKER_EXITED)
@@ -222,9 +219,6 @@ rrq_worker_stop <- function(worker, message) {
 
 
 worker_send_signal <- function(con, keys, signal, worker_ids) {
-  if (is.null(worker_ids)) {
-    worker_ids <- worker_list(con, keys)
-  }
   if (length(worker_ids) > 0L) {
     for (key in rrq_key_worker_heartbeat(keys$queue_name, worker_ids)) {
       heartbeatr::heartbeat_send_signal(con, key, signal)

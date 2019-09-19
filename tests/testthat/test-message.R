@@ -139,6 +139,11 @@ test_that("Error on missing response", {
     obj$message_get_response(id, nms, timeout = 0),
     sprintf("Response missing for workers: %s, %s", w1$name, w2$name))
 
+  ## Also sensible if we do poll:
+  expect_error(
+    obj$message_get_response(id, nms, timeout = 0.1, time_poll = 0.1),
+    sprintf("Response missing for workers: %s, %s", w1$name, w2$name))
+
   w1$step(TRUE)
 
   expect_equal(

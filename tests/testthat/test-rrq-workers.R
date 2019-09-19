@@ -136,3 +136,62 @@ test_that("worker catch interrupt with started task", {
   expect_equal(obj$worker_status(w$name), set_names(WORKER_IDLE, w$name))
   expect_equal(obj$queue_list(), character(0))
 })
+
+
+test_that("create worker", {
+  obj <- test_rrq()
+  name <- ids::random_id()
+  w <- rrq_worker(obj$context, obj$con, worker_name = name,
+                  timeout = 1, time_poll = 1)
+  log <- obj$worker_log_tail(name, Inf)
+  expect_equal(log$command, c("ALIVE", "STOP"))
+})
+
+
+test_that("create parallel worker", {
+  Sys.setenv("CONTEXT_CORES" = 1)
+  on.exit(Sys.unsetenv("CONTEXT_CORES"))
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  expect_equal(w$cores, 1)
+  expect_is(context::parallel_cluster(), "cluster")
+  w$shutdown()
+  expect_error(context::parallel_cluster(),
+               "Cluster has not been started yet")
+})
+
+
+test_that("worker names can't be duplicated", {
+  obj <- test_rrq()
+  name <- ids::random_id()
+  w <- test_worker_blocking(obj, worker_name = name)
+  expect_equal(w$name, name)
+  expect_error(
+    test_worker_blocking(obj, worker_name = name),
+    "Looks like this worker exists already...",
+    fixed = TRUE)
+})
+
+
+test_that("log path must be relative", {
+  context <- test_context()
+  expect_error(
+    worker_initialise_logs(context, file.path(context$root$path, "logs")),
+    "Must be a relative path")
+})
+
+
+test_that("Timer is recreated after task run", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  obj$message_send("TIMEOUT_SET", 10)
+  w$step(TRUE)
+  expect_is(w$timer, "function")
+
+  obj$enqueue(sin(1))
+  w$step(TRUE)
+  expect_null(w$timer)
+
+  w$step(TRUE)
+  expect_is(w$timer, "function")
+})
