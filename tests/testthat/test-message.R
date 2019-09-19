@@ -297,7 +297,7 @@ test_that("REFRESH", {
 
   id <- obj$message_send("REFRESH")
   expect_message(
-    withr::with_dir(
+    with_wd(
       obj$context$root$path,
       w$step(TRUE)),
     "REFRESH")
