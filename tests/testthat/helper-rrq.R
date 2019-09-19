@@ -57,11 +57,6 @@ test_context <- function(sources = NULL) {
   }
 
   context <- with_wd(root, {
-    ## TODO: I think that this should be
-    ##
-    ##   file.path(root, "context")
-    ##
-    ## but that causes a worker load failure
     ctx <- context::context_save(root, sources = sources)
     context::context_load(ctx, new.env(parent = .GlobalEnv))
   })
@@ -75,15 +70,23 @@ test_rrq <- function(sources = NULL) {
   Sys.setenv(R_TESTS = "")
   context <- test_context(sources)
   obj <- rrq_controller(context, redux::hiredis())
+  obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
   reg.finalizer(obj, function(e) obj$destroy())
   obj
 }
 
 
-## TODO: I wonder if the path should be set automatically?
 test_worker_spawn <- function(obj, ..., timeout = 10) {
+  testthat::skip_on_appveyor()
   worker_spawn(obj, ..., path = obj$context$root$path, progress = PROGRESS,
                timeout = timeout)
+}
+
+
+test_worker_blocking <- function(obj, worker_config = "localhost", ...) {
+  root <- normalizePath(obj$context$root$path)
+  context_id <- obj$context$id
+  rrq_worker_from_config(root, context_id, worker_config, ...)
 }
 
 
@@ -99,6 +102,11 @@ with_wd <- function(path, expr) {
     on.exit(setwd(owd))
   }
   force(expr)
+}
+
+
+interrupt <- function() {
+  structure(list(), class = c("interrupt", "condition"))
 }
 
 

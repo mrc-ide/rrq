@@ -67,14 +67,17 @@ R6_rrq_controller <- R6::R6Class(
 
     ## This is super destructive; should we require this one to need
     ## the actual context object perhaps?
-    destroy = function(delete = TRUE, type = "message") {
-      rrq_clean(self$con, self$context_id, delete, type)
-      ## render the controller useless:
-      self$con <- NULL
-      self$context_id <- NULL
-      self$keys <- NULL
-      self$context <- NULL
-      self$db <- NULL
+    destroy = function(delete = TRUE, type = "message",
+                       worker_stop_timeout = 0) {
+      if (!is.null(self$con)) {
+        rrq_clean(self$con, self$context_id, delete, type, worker_stop_timeout)
+        ## render the controller useless:
+        self$con <- NULL
+        self$context_id <- NULL
+        self$keys <- NULL
+        self$context <- NULL
+        self$db <- NULL
+      }
     },
 
     ## 0. Queuing
@@ -398,7 +401,7 @@ worker_status <- function(con, keys, worker_ids = NULL) {
 
 worker_info <- function(con, keys, worker_ids = NULL) {
   from_redis_hash(con, keys$worker_info, worker_ids,
-                  f = Vectorize(bin_to_object, SIMPLIFY = FALSE))
+                  f = Vectorize(bin_to_object_safe, SIMPLIFY = FALSE))
 }
 
 worker_log_tail <- function(con, keys, worker_ids = NULL, n = 1) {
@@ -475,7 +478,7 @@ worker_delete_exited <- function(con, keys, worker_ids = NULL) {
 }
 
 worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
-                         timeout = 0, time_poll = 1, progress = NULL) {
+                        timeout = 0, time_poll = 1, progress = NULL) {
   type <- match.arg(type, c("message", "kill", "kill_local"))
   if (is.null(worker_ids)) {
     worker_ids <- worker_list(con, keys)

@@ -1,7 +1,9 @@
 rrq_worker_main <- function(args = commandArgs(TRUE)) {
   dat <- rrq_worker_main_args(args)
-  rrq_worker_from_config(dat$root, dat$context_id, dat$worker_config,
-                         dat$worker_name, dat$key_alive)
+  worker <- rrq_worker_from_config(dat$root, dat$context_id, dat$worker_config,
+                                   dat$worker_name, dat$key_alive)
+  worker$loop()
+  invisible()
 }
 
 rrq_worker_main_args <- function(args) {
@@ -25,19 +27,16 @@ rrq_worker_main_args <- function(args) {
 ## it difficult to know when to save them.
 rrq_worker_from_config <- function(root, context_id, worker_config,
                                    worker_name = NULL, key_alive = NULL) {
-  if (!interactive()) {
-    context::context_log_start()
-  }
   context <- context::context_read(context_id, root)
   config <- worker_config_read(context, worker_config)
   con <- redux::hiredis(host = config$redis_host, port = config$redis_port)
-  rrq_worker(context, con,
-             key_alive = key_alive,
-             worker_name = worker_name,
-             time_poll = config$time_poll,
-             log_path = config$log_path,
-             timeout = config$timeout,
-             heartbeat_period = config$heartbeat_period)
+  R6_rrq_worker$new(context, con,
+                    key_alive = key_alive,
+                    worker_name = worker_name,
+                    time_poll = config$time_poll,
+                    log_path = config$log_path,
+                    timeout = config$timeout,
+                    heartbeat_period = config$heartbeat_period)
 }
 
 write_rrq_worker <- function(root) {

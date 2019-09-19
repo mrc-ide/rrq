@@ -43,3 +43,18 @@ scan_expire <- function(con, pattern, seconds) {
   redux::scan_apply(con, expire, pattern)
   n
 }
+
+
+blpop <- function(con, keys, timeout, immediate) {
+  if (immediate) {
+    for (k in keys) {
+      v <- con$LPOP(k)
+      if (!is.null(v)) {
+        return(list(k, v))
+      }
+    }
+    return(NULL)
+  } else {
+    con$BLPOP(keys, timeout)
+  }
+}

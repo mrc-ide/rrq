@@ -23,3 +23,27 @@ test_that("scan expire", {
 
   con$DEL(keys1)
 })
+
+
+test_that("blpop (immediate)", {
+  con <- redux::hiredis()
+  keys <- sprintf("rrq:%s:%d", ids::random_id(), 1:3)
+  on.exit(con$DEL(keys))
+
+  expect_null(blpop(con, keys, 0, TRUE))
+
+  con$RPUSH(keys[[1]], "1")
+  con$RPUSH(keys[[2]], "2-1")
+  con$RPUSH(keys[[2]], "2-2")
+  con$RPUSH(keys[[3]], "3")
+
+  expect_equal(blpop(con, keys, 0, TRUE),
+               list(keys[[1]], "1"))
+  expect_equal(blpop(con, keys, 0, TRUE),
+               list(keys[[2]], "2-1"))
+  expect_equal(blpop(con, keys, 0, TRUE),
+               list(keys[[2]], "2-2"))
+  expect_equal(blpop(con, keys, 0, TRUE),
+               list(keys[[3]], "3"))
+  expect_null(blpop(con, keys, 0, TRUE))
+})

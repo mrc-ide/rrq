@@ -2,17 +2,17 @@ context("fault tolerance")
 
 test_that("heartbeat", {
   skip_if_not_installed("heartbeatr")
-  obj <- test_rrq("myfuns.R")
+  obj <- test_rrq()
 
   res <- obj$worker_config_save("localhost", heartbeat_period = 3,
                                 copy_redis = TRUE)
   expect_equal(res$heartbeat_period, 3)
 
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
-
-  dat <- obj$worker_info(wid)[[1]]
+  w <- test_worker_blocking(obj)
+  dat <- w$info()
   expect_equal(dat$heartbeat_key,
-               rrq_key_worker_heartbeat(obj$context$id, wid))
+               rrq_key_worker_heartbeat(obj$context$id, w$name))
+
   expect_equal(obj$con$EXISTS(dat$heartbeat_key), 1)
   expect_lte(obj$con$PTTL(dat$heartbeat_key),
              res$heartbeat_period * 3 * 1000)
@@ -22,13 +22,12 @@ test_that("heartbeat", {
   expect_gte(obj$con$PTTL(dat$heartbeat_key),
              res$heartbeat_period * 2 * 1000 - 100)
 
-  res <- obj$worker_stop(wid, timeout = 1)
+  w$shutdown()
   expect_equal(obj$con$EXISTS(dat$heartbeat_key), 0)
   expect_equal(obj$worker_list(), character(0))
 })
 
 test_that("interrupt stuck worker (local)", {
-  skip_if_not_installed("heartbeatr")
   ## This one tests that if a worker is stuck on a long running task
   ## that we can shunt them off it.  It will not work on windows
   ## because there is no concept of interrupt that we can easily use.

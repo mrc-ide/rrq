@@ -1,10 +1,13 @@
 context("bulk")
 
+
+## These check that tasks can be waited on
 test_that("bulk", {
+  prev <- character(0)
   obj <- test_rrq("myfuns.R")
   envir <- obj$context$envir
   n_workers <- 5
-  wid <- worker_spawn(obj, n_workers)
+  wid <- test_worker_spawn(obj, n_workers)
 
   x <- runif(n_workers * 2) / 10
   res <- obj$lapply(x, quote(slowdouble), progress = PROGRESS,
@@ -14,16 +17,14 @@ test_that("bulk", {
 
   con <- obj$con # save a copy
   id <- obj$context$id
-  obj$destroy()
+  obj$destroy(worker_stop_timeout = 0.5)
 
-  expect_equal(redux::scan_find(con, sprintf("rrq:%s*", id)),
-               character(0))
+  expect_equal(
+    redux::scan_find(con, sprintf("rrq:%s*", id)),
+    character(0))
 })
 
-## TODO: in rrqueue, we can register the cluster, and pick up the
-## context automatically from environment variables.  Then provide a
-## rrq_controller() function that takes no args as a place to start
-## from.  That will work pretty well I think.
+
 test_that("exotic functions", {
   obj <- test_rrq("myfuns.R")
   envir <- obj$context$envir
@@ -32,7 +33,7 @@ test_that("exotic functions", {
 
   x <- 1:3
   res <- obj$lapply(x, quote(f1), progress = PROGRESS, envir = envir,
-                    timeout = 10)
+                    timeout = 2)
   expect_equal(res, lapply(x, envir$f1))
 
   res <- local({

@@ -1,9 +1,8 @@
 #!/usr/bin/env Rscript
 dir.create("inst/banner", FALSE, TRUE)
-## rstrip(strsplit(as.character(fig), "\n")[[1]])
-writeLines(
-  as.character(rfiglet::figlet(sprintf("_- %s -_", "rrq!"), "slant")),
-           "inst/banner/start")
-writeLines(
-  as.character(rfiglet::figlet(sprintf("bye bye for now"), "smslant")),
-  "inst/banner/stop")
+figlet <- function(...) {
+  str <- as.character(rfiglet::figlet(...))
+  trimws(strsplit(str, "\n", fixed = TRUE)[[1]], "right")
+}
+writeLines(figlet("_- rrq!-_", "slant"), "inst/banner/start")
+writeLines(figlet("bye bye for now", "smslant"),  "inst/banner/stop")

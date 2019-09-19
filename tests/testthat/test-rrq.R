@@ -29,62 +29,24 @@ test_that("empty", {
   test_queue_clean(obj$context$id)
 })
 
+
 test_that("basic use", {
   obj <- test_rrq("myfuns.R")
-
-  ## For testing, use: worker_command(obj)
-  wid <- test_worker_spawn(obj)
+  w <- test_worker_blocking(obj)
 
   t <- obj$enqueue(slowdouble(0.1))
   expect_is(t, "character")
+  w$step(TRUE)
   expect_equal(obj$task_wait(t, 2, progress = PROGRESS), 0.2)
   expect_equal(obj$task_result(t), 0.2)
-
-  t <- obj$enqueue(normalizePath(getwd()))
-  expect_equal(obj$task_wait(t, 2, progress = PROGRESS),
-               normalizePath(obj$context$root$path))
 })
 
-test_that("worker name", {
-  obj <- test_rrq("myfuns.R")
-  root <- obj$context$root$path
-
-  name <- ids::random_id()
-  wid <- test_worker_spawn(obj, worker_name_base = name)
-  expect_equal(wid, paste0(name, "_1"))
-})
-
-test_that("worker timeout", {
-  obj <- test_rrq("myfuns.R")
-
-  t <- as.integer(runif(1, min = 100, max = 10000))
-  res <- obj$worker_config_save("localhost", timeout = t, copy_redis = TRUE)
-  expect_equal(res$timeout, t)
-
-  wid <- test_worker_spawn(obj)
-
-  id <- obj$message_send("TIMEOUT_GET")
-  res <- obj$message_get_response(id, wid, timeout = 10)[[1]]
-  expect_equal(res[["timeout"]], t)
-  expect_lte(res[["remaining"]], t)
-  obj$message_send("STOP")
-
-  obj$worker_config_save("infinite", timeout = Inf, copy_redis = TRUE)
-
-  wid <- test_worker_spawn(obj, worker_config = "infinite")
-  id <- obj$message_send("TIMEOUT_GET")
-  res <- obj$message_get_response(id, wid, timeout = 10)[[1]]
-  expect_equal(res[["timeout"]], Inf)
-  expect_equal(res[["remaining"]], Inf)
-  obj$message_send("STOP")
-})
 
 test_that("context job", {
   obj <- test_rrq("myfuns.R")
   context <- obj$context
 
-  ## For testing, use: worker_command(obj)
-  wid <- test_worker_spawn(obj)
+  w <- test_worker_blocking(obj)
 
   id <- context::task_save(quote(sin(1)), context)
   t <- queuer:::queuer_task(id, context$root)
@@ -92,13 +54,19 @@ test_that("context job", {
   r <- rrq_controller(context$id, redux::hiredis())
 
   r$context_queue_submit(t$id)
-  expect_equal(t$wait(10, progress = PROGRESS), sin(1), time_poll = 0.1)
-  expect_equal(t$status(), "COMPLETE")
-  expect_equal(r$queue_length(), 0L)
+  expect_equal(t$status(), TASK_PENDING)
+  expect_equal(r$context_queue_length(), 1L)
+
+  w$step(TRUE)
+
+  expect_equal(t$status(), TASK_COMPLETE)
+  expect_equal(t$result(), sin(1))
+
+  expect_equal(r$context_queue_length(), 0L)
 })
 
 
-test_that("context job unsubit", {
+test_that("context job unsubmit", {
   obj <- test_rrq("myfuns.R")
   context <- obj$context
 
@@ -124,6 +92,9 @@ test_that("context job unsubit", {
 })
 
 
+## This test can't be easily done within testthat because the messages
+## seem to be eaten by testthat's message handlers!  So we do it with
+## a spawned worker.
 test_that("log dir", {
   obj <- test_rrq("myfuns.R")
   root <- obj$context$root$path
@@ -132,7 +103,6 @@ test_that("log dir", {
 
   obj$worker_config_save("localhost", log_path = "worker_logs_task",
                          copy_redis = TRUE)
-  worker_command(obj)
   wid <- test_worker_spawn(obj)
 
   info <- obj$worker_info(wid)[[wid]]
@@ -143,8 +113,10 @@ test_that("log dir", {
   id <- context::task_save(quote(noisydouble(1)), obj$context)
   t <- queuer:::queuer_task(id, obj$context$root)
   r$context_queue_submit(t$id)
-  res <- t$wait(10, time_poll = 0.1, progress = PROGRESS)
+  expect_equal(t$wait(2, progress = FALSE, time_poll = 0.1), 2)
 
+  ## This almost works but needs tweaking.  Not sure what the
+  ## top-level-errors here are doing!
   expect_true(file.exists(file.path(root, obj$db$get(t$id, "log_path"))))
   expect_is(t$log(), "context_log")
   x <- t$log()
@@ -152,53 +124,39 @@ test_that("log dir", {
   expect_equal(x$body[[which(x$title == "start")]], "doubling 1")
 })
 
-test_that("failed spawn", {
+
+test_that("task errors are returned", {
   obj <- test_rrq("myfuns.R")
-  root <- obj$context$root$path
-  unlink(file.path(root, "myfuns.R"))
-
-  dat <- evaluate_promise(
-    try(test_worker_spawn(obj, 2, timeout = 2),
-        silent = TRUE))
-
-  expect_is(dat$result, "try-error")
-  expect_match(dat$messages, "2 / 2 workers not identified in time",
-               all = FALSE, fixed = TRUE)
-  expect_match(dat$messages, "Log files recovered for 2 workers",
-               all = FALSE, fixed = TRUE)
-  ## This might be failing occasionally under covr, but I can't
-  ## reproduce
-  expect_match(dat$output, "No such file or directory",
-               all = FALSE, fixed = TRUE)
-})
-
-test_that("error", {
-  obj <- test_rrq("myfuns.R")
-
-  wid <- test_worker_spawn(obj)
+  w <- test_worker_blocking(obj)
 
   t1 <- obj$enqueue(only_positive(1))
-  expect_equal(obj$task_wait(t1, 2, progress = PROGRESS), 1)
+  w$step(TRUE)
+  expect_equal(obj$task_result(t1), 1)
 
   t2 <- obj$enqueue(only_positive(-1))
-  res <- obj$task_wait(t2, 2, progress = PROGRESS)
+  w$step(TRUE)
+  res <- obj$task_result(t2)
   expect_is(res, "rrq_task_error")
   expect_null(res$warnings)
 
   t3 <- obj$enqueue(nonexistant_function(-1))
-  res <- obj$task_wait(t3, 2, progress = PROGRESS)
+  w$step(TRUE)
+  res <- obj$task_result(t3)
   expect_is(res, "rrq_task_error")
   expect_null(res$warnings)
 })
 
-test_that("error", {
-  obj <- test_rrq("myfuns.R")
-  context <- obj$context
 
-  wid <- test_worker_spawn(obj)
+test_that("task warnings are returned", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
 
   t1 <- obj$enqueue(warning_then_error(2))
-  r1 <- obj$task_wait(t1, 2, progress = PROGRESS)
+  expect_warning(
+    w$step(TRUE),
+    "This is warning number \\d")
+
+  r1 <- obj$task_result(t1)
   expect_is(r1, "rrq_task_error")
   expect_is(r1, "try-error")
   expect_is(r1$warnings, "list")
@@ -208,20 +166,31 @@ test_that("error", {
   expect_equal(r1$warnings[[2]]$message, "This is warning number 2")
 
   expect_match(tail(r1$trace, 2)[[1]], "^warning_then_error")
+})
 
-  id <- context::task_save(quote(warning_then_error(2)), context)
+
+test_that("task warnings are returned from context task", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  id <- context::task_save(quote(warning_then_error(2)), obj$context)
   obj$context_queue_submit(id)
-  t <- queuer:::queuer_task(id, context$root)
-  r2 <- t$wait(10, time_poll = 0.1, progress = PROGRESS)
+  t <- queuer:::queuer_task(id, obj$context$root)
 
-  expect_is(r2, "context_task_error")
-  expect_is(r2$warnings, "list")
-  expect_equal(length(r2$warnings), 2)
-  expect_is(r2$warnings[[1]], "simpleWarning")
-  expect_equal(r2$warnings[[1]]$message, "This is warning number 1")
-  expect_equal(r2$warnings[[2]]$message, "This is warning number 2")
+  expect_warning(
+    w$step(),
+    "This is warning number \\d")
 
-  expect_match(tail(r2$trace, 2)[[1]], "^warning_then_error")
+  r <- t$result()
+
+  expect_is(r, "context_task_error")
+  expect_is(r$warnings, "list")
+  expect_equal(length(r$warnings), 2)
+  expect_is(r$warnings[[1]], "simpleWarning")
+  expect_equal(r$warnings[[1]]$message, "This is warning number 1")
+  expect_equal(r$warnings[[2]]$message, "This is warning number 2")
+
+  expect_match(tail(r$trace, 2)[[1]], "^warning_then_error")
 })
 
 
@@ -268,11 +237,14 @@ test_that("call", {
   t2 <- obj$call(quote(noisydouble), a, envir = envir)
   t3 <- obj$call(quote(add), a, a, envir = envir)
 
-  wid <- test_worker_spawn(obj)
+  w <- test_worker_blocking(obj)
+  w$step(TRUE)
+  w$step(TRUE)
+  w$step(TRUE)
 
-  expect_equal(obj$task_wait(t1, progress = PROGRESS), 20L)
-  expect_equal(obj$task_wait(t2, progress = PROGRESS), 40L)
-  expect_equal(obj$task_wait(t3, progress = PROGRESS), 40L)
+  expect_equal(obj$task_result(t1), 20L)
+  expect_equal(obj$task_result(t2), 40L)
+  expect_equal(obj$task_result(t3), 40L)
 })
 
 

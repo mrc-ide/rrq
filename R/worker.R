@@ -1,7 +1,3 @@
-## TODO: decide if workers clean up on exit.
-##
-## TODO: decide if there is an implicit timeout (e.g., an hour)
-
 ##' A rrq queue worker.  These are not for interacting with but will
 ##' sit and poll a queue for jobs.
 ##' @title rrq queue worker
@@ -22,8 +18,7 @@
 ##'   rather than leaving them within the worker logs.  This affects
 ##'   only the context queue and not the rrq queue, which is not
 ##'   logged.  This path will be intepreted as relative to the context
-##'   root (though perhaps later this will be sanitised to support
-##'   absolute paths...).
+##'   root.
 ##'
 ##' @param timeout Optional timeout to set for the worker.  This is
 ##'   (roughly) quivalent to issuing a \code{TIMEOUT_SET} message
@@ -39,14 +34,16 @@
 rrq_worker <- function(context, con, key_alive = NULL, worker_name = NULL,
                        time_poll = NULL, log_path = NULL, timeout = NULL,
                        heartbeat_period = NULL) {
-  R6_rrq_worker$new(context, con, key_alive, worker_name, time_poll,
-                    log_path, timeout, heartbeat_period)$main_loop()
+  w <- R6_rrq_worker$new(context, con, key_alive, worker_name, time_poll,
+                         log_path, timeout, heartbeat_period)
+  w$loop()
   invisible()
 }
 
 
 R6_rrq_worker <- R6::R6Class(
   "rrq_worker",
+
   public = list(
     name = NULL,
     context = NULL,
@@ -60,9 +57,13 @@ R6_rrq_worker <- R6::R6Class(
     timeout = NULL,
     timer = NULL,
     heartbeat = NULL,
+    cores = NULL,
+    loop_task = NULL,
+    loop_continue = NULL,
 
-    initialize = function(context, con, key_alive, worker_name, time_poll,
-                          log_path, timeout, heartbeat_period) {
+    initialize = function(context, con, key_alive = NULL, worker_name = NULL,
+                          time_poll = NULL, log_path = NULL, timeout = NULL,
+                          heartbeat_period = NULL) {
       assert_is(context, "context")
       assert_is(con, "redis_api")
       self$context <- context
@@ -73,52 +74,33 @@ R6_rrq_worker <- R6::R6Class(
       self$keys <- rrq_keys(context$id, self$name)
 
       self$time_poll <- time_poll %||% 60
+      self$cores <- as.integer(Sys.getenv("CONTEXT_CORES", "0"))
 
-      if (!is.null(log_path)) {
-        if (!is_relative_path(log_path)) {
-          stop("Must be a relative path")
-        }
-        self$log_path <- log_path
-        dir.create(file.path(self$context$root$path, self$log_path),
-                   FALSE, TRUE)
-      }
+      self$log_path <- worker_initialise_logs(self$context, log_path)
 
-      self$load_context()
-
-      ## NOTE: This needs to happen *before* running the
-      ## initialize_worker; it checks that we can actually use the
-      ## database and that we will not write anything to an existing
-      ## worker.  An error here will not be caught.
-      ##
-      ## TODO: Provide some guidance as to what to do here!
       if (self$con$SISMEMBER(self$keys$worker_name, self$name) == 1L) {
         stop("Looks like this worker exists already...")
       }
 
-      ## NOTE: this could be moved into the main initialise_worker
-      ## function but I don't really think that it fits there.  This
-      ## function is allowed to throw.
-      self$heartbeat <- heartbeat(self$con, self$keys$worker_heartbeat,
-                                  heartbeat_period)
+      withCallingHandlers(
+        worker_initialise(self, key_alive, timeout, heartbeat_period),
+        error = worker_catch_error(self))
+    },
 
-      withCallingHandlers(self$initialise_worker(key_alive),
-                          error = self$catch_error)
-
-      cores <- Sys.getenv("CONTEXT_CORES")
-      if (nzchar(cores)) {
-        cores <- as.integer(cores)
-        context::context_log("parallel",
-                             sprintf("running as parallel job [%d cores]",
-                                     cores))
-        context::parallel_cluster_start(cores, self$context)
-        on.exit(context::parallel_cluster_stop())
-      } else {
-        context::context_log("parallel", "running as single core job")
+    finalize = function() {
+      if (self$cores > 0) {
+        context::parallel_cluster_stop()
       }
+    },
 
-      if (!is.null(timeout)) {
-        run_message_TIMEOUT_SET(self, timeout)
-      }
+    info = function() {
+      worker_info_collect(self)
+    },
+
+    log = function(label, value = NULL) {
+      res <- worker_log_format(label, value)
+      message(res$screen)
+      self$con$RPUSH(self$keys$worker_log, res$redis)
     },
 
     load_context = function() {
@@ -127,223 +109,34 @@ R6_rrq_worker <- R6::R6Class(
       self$envir <- self$context$envir
     },
 
-    initialise_worker = function(key_alive) {
-      info <- object_to_bin(self$print_info())
+    poll = function(immediate = FALSE) {
       keys <- self$keys
-
-      self$con$pipeline(
-        redis$SADD(keys$worker_name,   self$name),
-        redis$HSET(keys$worker_status, self$name, WORKER_IDLE),
-        redis$HDEL(keys$worker_task,   self$name),
-        redis$DEL(keys$worker_log),
-        redis$HSET(keys$worker_info,   self$name, info))
-      self$log("ALIVE")
-
-      ## This announces that we're up; things may monitor this
-      ## queue, and worker_spawn does a BLPOP to
-      if (!is.null(key_alive)) {
-        self$con$RPUSH(key_alive, self$name)
-      }
-    },
-
-    ## TODO: if we're not running in a terminal, then we should output
-    ## the worker id into the screen message.
-    log = function(label, message = NULL, push = TRUE) {
-      t <- Sys.time()
-      ts <- as.character(t)
-      td <- sprintf("%.04f", t) # to nearest 1/10000 s
-      if (is.null(message)) {
-        msg_log <- sprintf("%s %s", td, label)
-        msg_scr <- sprintf("[%s] %s", ts, label)
+      if (self$paused) {
+        keys <- keys$worker_message
       } else {
-        msg_log <- sprintf("%s %s %s",
-                           td, label, paste(message, collapse = "\n"))
-        ## Try and make nicely printing logs for the case where the
-        ## message length is longer than 1:
-        lab <- c(label, rep_len(blank(nchar(label)), length(message) - 1L))
-        msg_scr <- paste(sprintf("[%s] %s %s", ts, lab, message),
-                         collapse = "\n")
+        keys <- c(keys$worker_message, keys$queue_rrq, keys$queue_ctx)
       }
-      message(msg_scr)
-      if (push) {
-        self$con$RPUSH(self$keys$worker_log, msg_log)
-      }
+      self$loop_task <- blpop(self$con, keys, self$time_poll, immediate)
     },
 
-    main_loop = function() {
-      con <- self$con
-      keys <- self$keys
-      continue <- TRUE
-      task <- NULL # scoped variable
-      listen_message <- keys$worker_message
-      listen <- c(listen_message, keys$queue_rrq, keys$queue_ctx)
-      time_poll <- self$time_poll
+    step = function(immediate = FALSE) {
+      worker_step(self, immediate)
+    },
 
-      catch_worker_stop <- function(e) {
-        self$shutdown(sprintf("OK (%s)", e$message), TRUE)
-        continue <<- FALSE
-      }
-      catch_interrupt <- function(e) {
-        ## NOTE: this won't recursively catch interrupts.  Especially
-        ## on a high-latency connection this might be long enough for
-        ## a second interrupt to arrive.  We don't deal with that and
-        ## it will be about the same as a SIGTERM - we'll just die.
-        ## But that will disable the heartbeat so it should all end up
-        ## OK.
-        self$log("INTERRUPT")
-        ## This condition is not quite enough; I need to know if we're
-        ## working on a job at all.
-        task_running <- self$con$HGET(self$keys$worker_task, self$name)
-        if (!is.null(task_running)) {
-          self$task_cleanup(e, task_running, TASK_INTERRUPTED)
-          con$HSET(keys$task_status, task_running, TASK_INTERRUPTED)
-        }
-
-        ## There are two ways that interrupt happens (ignoring the
-        ## race condition where it comes in neither)
-        ##
-        ## 1. Interrupt a job; in that case, we have a task_running
-        ##    above and everything is all OK; we just mark this as done.
-        ##
-        ## 2. During BLPOP.  In that case we need to re-queue the
-        ##    message or the job or it is lost from the queue
-        ##    entirely.  This would include things like a STOP
-        ##    message, or a new task to run.
-        ##
-        ## NOTE that a SIGTERM signal might result in lost messages.
-        if (!is.null(task[[2]]) && !identical(task[[2]], task_running)) {
-          label <- if (task[[1L]] == listen_message) "<message>" else task[[2L]]
-          self$log("REQUEUE", label)
-          self$con$LPUSH(task[[1]], task[[2]])
-        }
-      }
-      loop <- function() {
-        while (continue) {
-          task <<- con$BLPOP(if (self$paused) listen_message else listen,
-                             time_poll)
-          if (!is.null(task)) {
-            if (task[[1L]] == listen_message) {
-              self$run_message(task[[2L]])
-            } else {
-              self$run_task(task[[2L]], task[[1L]] == keys$queue_rrq)
-              self$timer <- NULL
-              next # don't check timeouts when processing tasks...
-            }
-          }
-          if (!is.null(self$timeout)) {
-            if (is.null(task) && is.null(self$timer)) {
-              self$timer <- queuer::time_checker(self$timeout, TRUE)
-            }
-            if (is.function(self$timer) && self$timer() < 0L) {
-              stop(rrq_worker_stop(self, "TIMEOUT"))
-            }
-          }
-        }
-        message(worker_exit_text())
-      }
-
-      while (continue) {
-        tryCatch(loop(),
-                 interrupt = catch_interrupt,
-                 rrq_worker_stop = catch_worker_stop,
-                 error = self$catch_error)
-      }
+    loop = function() {
+      worker_loop(self)
     },
 
     run_task = function(task_id, rrq) {
-      self$log("TASK_START", task_id)
-      con <- self$con
-      keys <- self$keys
-
-      con$pipeline(
-        redis$HSET(keys$worker_status, self$name, WORKER_BUSY),
-        redis$HSET(keys$worker_task,   self$name, task_id),
-        redis$HSET(keys$task_worker,   task_id,   self$name),
-        redis$HSET(keys$task_status,   task_id,   TASK_RUNNING))
-      ## Run the task:
-      if (rrq) {
-        self$run_task_rrq(task_id)
-      } else {
-        self$run_task_context(task_id)
-      }
-    },
-
-    run_task_rrq = function(task_id) {
-      keys <- self$keys
-      con <- self$con
-
-      dat <- bin_to_object(con$HGET(keys$task_expr, task_id))
-      e <- context::restore_locals(dat, self$envir, self$db)
-
-      cl <- c("rrq_task_error", "try-error")
-      res <- context:::eval_safely(dat$expr, e, cl, 3L)
-      value <- res$value
-
-      task_status <- if (res$success) TASK_COMPLETE else TASK_ERROR
-      con$HSET(keys$task_result, task_id, object_to_bin(value))
-      con$HSET(keys$task_status, task_id, task_status)
-
-      self$task_cleanup(value, task_id, task_status)
-    },
-
-    run_task_context = function(task_id) {
-      if (is.null(self$log_path)) {
-        log_file <- NULL
-      } else {
-        log_path <- file.path(self$log_path, paste0(task_id, ".log"))
-        self$db$set(task_id, log_path, "log_path")
-        log_file <- file.path(self$context$root$path, log_path)
-      }
-      res <- context::task_run(task_id, self$context, log_file)
-      task_status <-
-        if (inherits(res, "context_task_error")) TASK_ERROR else TASK_COMPLETE
-      self$task_cleanup(res, task_id, task_status)
-    },
-
-    task_cleanup = function(res, task_id, task_status) {
-      con <- self$con
-      keys <- self$keys
-      key_complete <- con$HGET(keys$task_complete, task_id)
-
-      ## TODO: I should enforce a max size policy here.  So if the
-      ## return value is too large (say more than a few kb) we can
-      ## refuse to write it to the db but instead route it through the
-      ## context db.  That policy can be set by the db pretty easily
-      ## actually.
-      ##
-      ## TODO: for interrupted tasks, I don't know that we should
-      ## write to the key_complete set; at the same time _not_ doing
-      ## that requires that we can gracefully (and automatically)
-      ## handle the restarts.
-      con$pipeline(
-        redis$HINCRBY(keys$task_status, task_status, 1),
-        redis$HSET(keys$worker_status, self$name, WORKER_IDLE),
-        redis$HDEL(keys$worker_task,   self$name),
-        if (!is.null(key_complete)) { # && task_status != TASK_ORPHAN
-          redis$RPUSH(key_complete, task_id)
-        })
-
-      self$log(paste0("TASK_", task_status), task_id)
+      worker_run_task(self, task_id, rrq)
     },
 
     run_message = function(msg) {
       run_message(self, msg)
     },
 
-    send_response = function(message_id, cmd, result) {
-      self$log("RESPONSE", cmd)
-      self$con$HSET(self$keys$worker_response, message_id,
-                    response_prepare(message_id, cmd, result))
-    },
-
-    print_info = function() {
-      print(worker_info_collect(self), banner = TRUE, styles = self$styles)
-    },
-
-    catch_error = function(e) {
-      self$shutdown("ERROR", FALSE)
-      message("This is an uncaught error in rrq, probably a bug!")
-      stop(e)
+    format = function() {
+      worker_format(self)
     },
 
     shutdown = function(status = "OK", graceful = TRUE) {
@@ -358,6 +151,7 @@ R6_rrq_worker <- R6::R6Class(
       self$log("STOP", status)
     }
   ))
+
 
 worker_info_collect <- function(worker) {
   sys <- sessionInfo()
@@ -378,56 +172,54 @@ worker_info_collect <- function(worker) {
   if (!is.null(worker$heartbeat)) {
     dat$heartbeat_key = worker$keys$worker_heartbeat
   }
-  class(dat) <- "worker_info"
   dat
 }
 
-##' @export
-print.worker_info <- function(x, banner = FALSE, ...) {
-  xx <- unclass(x)
-  xx$log_path <- x$log_path %||% "<not set>"
-  xx$heartbeat_key <- x$heartbeat_key %||% "<not set>"
-  n <- nchar(names(xx))
-  pad <- vcapply(max(n) - n, strrep, x = " ")
-  ret <- sprintf("    %s:%s %s", names(xx), pad, as.character(xx))
-  if (banner) {
-    message(worker_banner_text())
+
+worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
+  worker_info <- object_to_bin(worker$info())
+  keys <- worker$keys
+
+  context::context_log_start()
+  worker$load_context()
+
+  worker$con$pipeline(
+    redis$SADD(keys$worker_name,   worker$name),
+    redis$HSET(keys$worker_status, worker$name, WORKER_IDLE),
+    redis$HDEL(keys$worker_task,   worker$name),
+    redis$DEL(keys$worker_log),
+    redis$HSET(keys$worker_info,   worker$name, worker_info))
+
+  worker$heartbeat <- heartbeat(worker$con, keys$worker_heartbeat,
+                                heartbeat_period)
+
+  if (worker$cores > 0) {
+    context::context_log("parallel",
+                         sprintf("running as parallel job [%d cores]",
+                                 worker$cores))
+    context::parallel_cluster_start(worker$cores, worker$context)
   }
-  message(paste(ret, collapse = "\n"))
-  invisible(x)
+
+  if (!is.null(timeout)) {
+    run_message_TIMEOUT_SET(worker, timeout)
+  }
+
+  worker$log("ALIVE")
+
+  ## This announces that we're up; things may monitor this
+  ## queue, and worker_spawn does a BLPOP to
+  if (!is.null(key_alive)) {
+    worker$con$RPUSH(key_alive, worker$name)
+  }
 }
 
-## To regenerate / change:
-##   fig <- rfiglet::figlet(sprintf("_- %s -_", "rrq!"), "slant")
-##   dput(rstrip(strsplit(as.character(fig), "\n")[[1]]))
-worker_banner_text <- function() {
-  c("                                 __",
-    "                ______________ _/ /",
-    "      ______   / ___/ ___/ __ `/ /  ______",
-    "     /_____/  / /  / /  / /_/ /_/  /_____/",
-    " ______      /_/  /_/   \\__, (_)      ______",
-    "/_____/                   /_/        /_____/") -> txt
-  paste(txt, collapse = "\n")
-}
-
-## To regenerate / change:
-##   fig <- rfiglet::figlet(sprintf("bye bye for now"), "smslant")
-##   dput(sub("\\s+$", "", (strsplit(as.character(fig), "\n")[[1]])))
-worker_exit_text <- function() {
-  c("   __              __              ___",
-    "  / /  __ _____   / /  __ _____   / _/__  ____  ___  ___ _    __",
-    " / _ \\/ // / -_) / _ \\/ // / -_) / _/ _ \\/ __/ / _ \\/ _ \\ |/|/ /",
-    "/_.__/\\_, /\\__/ /_.__/\\_, /\\__/ /_/ \\___/_/   /_//_/\\___/__,__/",
-    "     /___/           /___/") -> txt
-  paste(txt, collapse = "\n")
-}
 
 ## Controlled stop:
 rrq_worker_stop <- function(worker, message) {
-  structure(list(worker = worker,
-                 message = message),
+  structure(list(worker = worker, message = message),
             class = c("rrq_worker_stop", "error", "condition"))
 }
+
 
 worker_send_signal <- function(con, keys, signal, worker_ids) {
   if (is.null(worker_ids)) {
@@ -438,4 +230,165 @@ worker_send_signal <- function(con, keys, signal, worker_ids) {
       heartbeatr::heartbeat_send_signal(con, key, signal)
     }
   }
+}
+
+
+## One step of a worker life cycle; i.e., the least we can
+## interestingly do
+worker_step <- function(worker, immediate) {
+  task <- worker$poll(immediate)
+  keys <- worker$keys
+
+  if (!is.null(task)) {
+    if (task[[1L]] == keys$worker_message) {
+      worker$run_message(task[[2L]])
+    } else {
+      worker$run_task(task[[2L]], task[[1L]] == keys$queue_rrq)
+      worker$timer <- NULL
+    }
+  }
+
+  if (is.null(task) && !is.null(worker$timeout)) {
+    if (is.null(worker$timer)) {
+      worker$timer <- queuer::time_checker(worker$timeout, remaining = TRUE)
+    }
+    if (worker$timer() < 0L) {
+      stop(rrq_worker_stop(worker, "TIMEOUT"))
+    }
+  }
+}
+
+
+worker_loop <- function(worker, verbose = TRUE) {
+  if (verbose) {
+    message(paste0(worker_banner("start"), collapse = "\n"))
+    message(paste0(worker$format(), collapse = "\n"))
+  }
+
+  worker$loop_continue <- TRUE
+  while (worker$loop_continue) {
+    tryCatch({
+      tryCatch(worker$step(),
+               interrupt = worker_catch_interrupt(worker))
+    },
+    rrq_worker_stop = worker_catch_stop(worker),
+    error = worker_catch_error(worker))
+  }
+  if (verbose) {
+    message(paste0(worker_banner("stop"), collapse = "\n"))
+  }
+}
+
+
+worker_banner <- function(name) {
+  path <- system.file(file.path("banner", name), package = "rrq",
+                      mustWork = TRUE)
+  readLines(path)
+}
+
+
+worker_catch_stop <- function(worker) {
+  force(worker)
+  function(e) {
+    worker$loop_continue <- FALSE
+    worker$shutdown(sprintf("OK (%s)", e$message), TRUE)
+  }
+}
+
+
+worker_catch_error <- function(worker) {
+  force(worker)
+  function(e) {
+    worker$loop_continue <- FALSE
+    worker$shutdown("ERROR", FALSE)
+    message("This is an uncaught error in rrq, probably a bug!")
+    stop(e)
+  }
+}
+
+
+worker_catch_interrupt <- function(worker) {
+  force(worker)
+
+  queue_type <- set_names(
+    c("message", "rrq", "context"),
+    c(worker$keys$worker_message,
+      worker$keys$queue_rrq,
+      worker$keys$queue_ctx))
+
+  function(e) {
+    ## NOTE: this won't recursively catch interrupts.  Especially
+    ## on a high-latency connection this might be long enough for
+    ## a second interrupt to arrive.  We don't deal with that and
+    ## it will be about the same as a SIGTERM - we'll just die.
+    ## But that will disable the heartbeat so it should all end up
+    ## OK.
+    worker$log("INTERRUPT")
+
+    task_running <- worker$con$HGET(worker$keys$worker_task, worker$name)
+    if (!is.null(task_running)) {
+      worker_run_task_cleanup(worker, task_running, TASK_INTERRUPTED)
+    }
+
+    ## There are two ways that interrupt happens (ignoring the
+    ## race condition where it comes in neither)
+    ##
+    ## 1. Interrupt a job; in that case, we have a task_running
+    ##    above and everything is all OK; we just mark this as done.
+    ##
+    ## 2. During BLPOP.  In that case we need to re-queue the
+    ##    message or the job or it is lost from the queue
+    ##    entirely.  This would include things like a STOP
+    ##    message, or a new task to run.
+    ##
+    ## NOTE that a SIGTERM signal might result in lost messages.
+    task <- worker$loop_task
+    if (!is.null(task[[2]]) && !identical(task[[2]], task_running)) {
+      label <- sprintf("%s:%s", queue_type[[task[[1]]]], task[[2]])
+      worker$log("REQUEUE", label)
+      worker$con$LPUSH(task[[1]], task[[2]])
+    }
+  }
+}
+
+
+worker_initialise_logs <- function(context, path) {
+  if (!is.null(path)) {
+    if (!is_relative_path(path)) {
+      stop("Must be a relative path")
+    }
+    dir.create(file.path(context$root$path, path), FALSE, TRUE)
+    path
+  }
+}
+
+
+worker_format <- function(worker) {
+  x <- worker$info()
+  x$log_path <- x$log_path %||% "<not set>"
+  x$heartbeat_key <- x$heartbeat_key %||% "<not set>"
+  n <- nchar(names(x))
+  pad <- vcapply(max(n) - n, strrep, x = " ")
+  sprintf("    %s:%s %s", names(x), pad, as.character(x))
+}
+
+
+worker_log_format <- function(label, value) {
+  t <- Sys.time()
+  ts <- as.character(t)
+  td <- sprintf("%.04f", t) # to nearest 1/10000 s
+  if (is.null(value)) {
+    str_redis <- sprintf("%s %s", td, label)
+    str_screen <- sprintf("[%s] %s", ts, label)
+  } else {
+    str_redis <- sprintf("%s %s %s",
+                         td, label, paste(value, collapse = "\n"))
+    ## Try and make nicely printing logs for the case where the
+    ## value length is longer than 1:
+    lab <- c(label, rep_len(blank(nchar(label)), length(value) - 1L))
+    str_screen <- paste(sprintf("[%s] %s %s", ts, lab, value),
+                        collapse = "\n")
+  }
+
+  list(screen = str_screen, redis = str_redis)
 }

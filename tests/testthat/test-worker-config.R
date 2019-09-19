@@ -1,11 +1,15 @@
 context("worker_config")
 
 test_that("rrq_default configuration", {
+  ## (this is actually the *test* default configuration, which is
+  ## possibly not what is wanted)
   obj <- test_rrq()
   expect_equal(obj$db$get("localhost", "worker_config"),
                list(redis_host = obj$con$config()$host,
-                    redis_port = obj$con$config()$port))
+                    redis_port = obj$con$config()$port,
+                    time_poll = 1))
 })
+
 
 test_that("rrq_worker_main_args", {
   obj <- test_rrq()
@@ -44,6 +48,7 @@ test_that("rrq_worker_main_args", {
                            overwrite = TRUE), config)
 })
 
+
 test_that("create short-lived worker", {
   obj <- test_rrq()
 
@@ -52,10 +57,11 @@ test_that("create short-lived worker", {
                                 copy_redis = TRUE)
 
   ## Local:
-  msg <- capture_messages(
+  msg1 <- capture_messages(
     w <- rrq_worker_from_config(obj$context$root$path, obj$context$id, key))
-  expect_null(w)
-  expect_true(any(grepl("STOP OK (TIMEOUT)", msg, fixed = TRUE)))
+  msg2 <- capture_messages(res <- w$loop())
+  expect_null(res)
+  expect_true(any(grepl("STOP OK (TIMEOUT)", msg2, fixed = TRUE)))
 
   ## Remote:
   wid <- test_worker_spawn(obj, worker_config = key)
@@ -97,21 +103,6 @@ test_that("Sensible error message on missing config", {
 })
 
 
-test_that("Don't wait", {
-  obj <- test_rrq()
-  res <- test_worker_spawn(obj, 4, timeout = 0)
-  expect_is(res$names, "character")
-  expect_match(res$names, "_[0-9]+$")
-  expect_is(res$key_alive, "character")
-
-  ans <- worker_wait(obj, res$key_alive, timeout = 10, time_poll = 1)
-  expect_setequal(ans, res$names)
-
-  ans <- worker_wait(obj, res$key_alive, timeout = 10, time_poll = 1)
-  expect_equal(ans, res$names)
-})
-
-
 test_that("Sensible error if requesting workers on empty key", {
   obj <- test_rrq()
   expect_error(
@@ -124,4 +115,38 @@ test_that("Missing log print fallback", {
   expect_output(
     worker_print_failed_logs(NULL),
     "Logging not enabled for these workers")
+})
+
+
+test_that("worker timeout", {
+  obj <- test_rrq("myfuns.R")
+
+  t <- as.integer(runif(1, min = 100, max = 10000))
+  res <- obj$worker_config_save("localhost", timeout = t, copy_redis = TRUE)
+  expect_equal(res$timeout, t)
+
+  w <- test_worker_blocking(obj)
+  expect_equal(w$timeout, t)
+  expect_lte(w$timer(), t)
+
+  id <- obj$message_send("TIMEOUT_GET")
+  w$step(TRUE)
+  res <- obj$message_get_response(id, w$name)[[1]]
+  expect_equal(res[["timeout"]], t)
+  expect_lte(res[["remaining"]], t)
+})
+
+
+test_that("infinite timeout", {
+  obj <- test_rrq("myfuns.R")
+  obj$worker_config_save("infinite", timeout = Inf, copy_redis = TRUE)
+
+  w <- test_worker_blocking(obj, worker_config = "infinite")
+  expect_equal(w$timeout, Inf)
+  expect_equal(w$timer(), Inf)
+
+  id <- obj$message_send("TIMEOUT_GET")
+  w$step(TRUE)
+  res <- obj$message_get_response(id, w$name)[[1]]
+  expect_equal(res, c(timeout = Inf, remaining = Inf))
 })

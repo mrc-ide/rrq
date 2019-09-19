@@ -22,7 +22,7 @@ run_message <- function(worker, msg) {
                 TIMEOUT_GET = run_message_TIMEOUT_GET(worker),
                 run_message_unknown(cmd, args))
 
-  worker$send_response(message_id, cmd, res)
+  message_respond(worker, message_id, cmd, res)
 }
 
 run_message_PING <- function() {
@@ -43,7 +43,7 @@ run_message_EVAL <- function(args) {
 }
 
 run_message_STOP <- function(worker, message_id, args) {
-  worker$send_response(message_id, "STOP", "BYE")
+  message_respond(worker, message_id, "STOP", "BYE")
   if (is.null(args)) {
     args <- "BYE"
   }
@@ -51,9 +51,8 @@ run_message_STOP <- function(worker, message_id, args) {
 }
 
 run_message_INFO <- function(worker) {
-  info <- worker$print_info()
-  worker$con$HSET(worker$keys$worker_info, worker$name,
-                  object_to_bin(info))
+  info <- worker$info()
+  worker$con$HSET(worker$keys$worker_info, worker$name, object_to_bin(info))
   info
 }
 
@@ -202,4 +201,11 @@ message_response_ids <- function(con, keys, worker_id) {
   response_keys <- rrq_key_worker_response(keys$queue_name, worker_id)
   ids <- as.character(con$HKEYS(response_keys))
   ids[order(as.numeric(ids))]
+}
+
+
+message_respond <- function(worker, message_id, cmd, result) {
+  worker$log("RESPONSE", cmd)
+  response <- response_prepare(message_id, cmd, result)
+  worker$con$HSET(worker$keys$worker_response, message_id, response)
 }

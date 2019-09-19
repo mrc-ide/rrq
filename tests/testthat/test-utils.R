@@ -7,6 +7,7 @@ test_that("rstrip", {
   expect_equal(rstrip("  a "), "  a")
 })
 
+
 test_that("assertions", {
   expect_error(assert_scalar(NULL), "must be a scalar")
   expect_error(assert_scalar(1:2), "must be a scalar")
@@ -27,6 +28,7 @@ test_that("assertions", {
   expect_error(assert_is(1, "R6"), "must inherit from R6")
 })
 
+
 test_that("version_string", {
   dat <- version_info("R6")
   expect_match(version_string(dat),
@@ -37,4 +39,13 @@ test_that("version_string", {
   dat$sha <- "aaa"
   expect_match(version_string(dat),
                sprintf("%s \\[aaa\\]$", dat$version))
+})
+
+
+test_that("bin_to_object_safe", {
+  d <- runif(10)
+  x <- object_to_bin(d)
+  expect_equal(bin_to_object_safe(x), d)
+
+  expect_null(bin_to_object_safe(NULL))
 })

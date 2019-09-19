@@ -1,170 +1,264 @@
 context("messaging")
 
-test_that("basic", {
+
+test_that("TIMEOUT_SET causes worker exit on idle worker", {
   obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  obj$message_send("TIMEOUT_SET", 0)
+  w$step(TRUE)
+  expect_equal(w$timeout, 0)
+  expect_is(w$timer, "function")
+  expect_lt(w$timer(), 0)
+  expect_error(w$step(TRUE), "TIMEOUT", class = "rrq_worker_stop")
+})
 
-  obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
-  wid <- test_worker_spawn(obj)
 
-  ## First, let's test the basic messaging approach:
-  ##
-  ## TODO: This needs testing with >1 worker.
+test_that("TIMEOUT_GET returns infinite time if no timeout set", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
+  id <- obj$message_send("TIMEOUT_GET")
+  w$step(TRUE)
+  expect_equal(
+    obj$message_get_response(id, w$name),
+    set_names(list(c(timeout = Inf, remaining = Inf)), w$name))
+})
+
+
+## NOTE: small pauses for windows to deal with the time resolution
+test_that("TIMEOUT_GET returns time remaining", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
+  obj$message_send("TIMEOUT_SET", 100)
+  w$step(TRUE)
+  expect_is(w$timer, "function")
+
+  Sys.sleep(0.1)
+  id <- obj$message_send("TIMEOUT_GET")
+  w$step(TRUE)
+
+  response <- obj$message_get_response(id, w$name)
+  expect_is(response, "list")
+  expect_equal(names(response), w$name)
+  expect_equal(response[[1]][["timeout"]], 100)
+  expect_lt(response[[1]][["remaining"]], 100)
+  Sys.sleep(0.1)
+  expect_gt(response[[1]][["remaining"]], w$timer())
+})
+
+
+test_that("message response getting", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
   id <- obj$message_send("PING")
   expect_is(id, "character")
   expect_is(redux::redis_time_to_r(id), "POSIXct")
 
-  Sys.sleep(0.5)
-  expect_equal(obj$message_has_response(id, wid), setNames(TRUE, wid))
-  expect_equal(obj$message_has_response(id), setNames(TRUE, wid))
-  expect_equal(obj$message_has_response(id, wid, named = FALSE), TRUE)
+  ## Not yet a response:
+  expect_equal(obj$message_has_response(id, w$name), set_names(FALSE, w$name))
+  expect_equal(obj$message_has_response(id), set_names(FALSE, w$name))
+  expect_equal(obj$message_has_response(id, w$name, named = FALSE), FALSE)
+  expect_equal(obj$message_has_response(id, named = FALSE), FALSE)
 
-  expect_equal(obj$message_get_response(id, wid), setNames(list("PONG"), wid))
-  expect_equal(obj$message_get_response(id), setNames(list("PONG"), wid))
-  expect_equal(obj$message_get_response(id, wid, named = FALSE), list("PONG"))
+  ## Move worker through one cycle
+  w$step(TRUE)
 
-  expect_equal(obj$message_response_ids(wid), id)
+  expect_equal(obj$message_has_response(id, w$name), set_names(TRUE, w$name))
+  expect_equal(obj$message_response_ids(w$name), id)
 
-  expect_equal(obj$message_get_response(id, timeout = 10),
-               setNames(list("PONG"), wid))
+  ## Getting a response does not delete it by default
+  expect_equal(obj$message_get_response(id), set_names(list("PONG"), w$name))
+  expect_true(obj$message_has_response(id, w$name))
 
+  ## But once deleted it is gone
   expect_equal(obj$message_get_response(id, delete = TRUE),
-               setNames(list("PONG"), wid))
-  expect_equal(obj$message_response_ids(wid), character(0))
-  expect_equal(obj$message_has_response(id, wid),
-               setNames(FALSE, wid))
-  expect_error(obj$message_get_response(id, wid), "Response missing")
-  expect_error(obj$message_get_response(id), "Response missing")
+               set_names(list("PONG"), w$name))
+  expect_false(obj$message_has_response(id, w$name))
+})
 
-  ## Next, echo:
-  ## TODO: should this not echo it back as the response?
+
+test_that("ECHO", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
   id <- obj$message_send("ECHO", "hello world")
-  expect_equal(obj$message_get_response(id, timeout = 1),
-               setNames(list("OK"), wid))
+  expect_message(w$step(TRUE), "hello world")
 
-  ## Eval
-  id <- obj$message_send("EVAL", "1 + 1")
-  expect_equal(obj$message_get_response(id, wid, timeout = 1, named = FALSE),
-               list(2))
-  expect_equal(obj$message_get_response(id, wid, timeout = 1),
-               setNames(list(2), wid))
+  expect_equal(
+    obj$message_get_response(id, timeout = 1),
+    set_names(list("OK"), w$name))
+})
 
-  id <- obj$message_send("EVAL", quote(1 + 2))
-  expect_equal(obj$message_get_response(id, wid, timeout = 1),
-               setNames(list(3), wid))
+
+test_that("EVAL", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
+  id1 <- obj$message_send("EVAL", "1 + 1")
+  id2 <- obj$message_send("EVAL", quote(2 + 2))
+  expect_output(w$step(TRUE), "2\\s*$")
+  expect_equal(obj$message_get_response(id1, w$name, timeout = 1),
+               set_names(list(2), w$name))
+
+  expect_output(w$step(TRUE), "4\\s*$")
+  expect_equal(obj$message_get_response(id2, w$name, timeout = 1),
+               set_names(list(4), w$name))
+})
+
+
+test_that("INFO", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
 
   id <- obj$message_send("INFO")
-  res <- obj$message_get_response(id, wid, timeout = 1)[[1]]
-  expect_is(res, "worker_info")
-  expect_equal(res$worker, wid)
+  w$step()
+
+  res <- obj$message_get_response(id, w$name, timeout = 1)[[1]]
+  expect_identical(res, w$info())
+  expect_equal(res$worker, w$name)
   expect_equal(res$hostname, hostname())
-
-  id <- obj$message_send("STOP")
-  res <- obj$message_get_response(id, wid, timeout = 1)
-  expect_equal(res, setNames(list("BYE"), wid))
-  expect_equal(obj$worker_list(), character(0))
-  expect_equal(obj$worker_list_exited(), wid)
 })
 
-test_that("pause", {
+
+test_that("STOP", {
   obj <- test_rrq()
+  w <- test_worker_blocking(obj)
 
-  obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
-  wid <- test_worker_spawn(obj)
-
-  expect_equal(obj$worker_status(),
-               setNames(WORKER_IDLE, wid))
-
-  id <- obj$message_send("PAUSE")
-  expect_equal(obj$message_get_response(id, wid, timeout = 1),
-               setNames(list("OK"), wid))
-
-  expect_equal(obj$worker_status(),
-               setNames(WORKER_PAUSED, wid))
-
-  ## Can still ping the worker quite happily:
-  id <- obj$message_send("PING")
-  expect_equal(obj$message_get_response(id, wid, timeout = 1),
-               setNames(list("PONG"), wid))
-
-  ## Pausing again is a noop:
-  id <- obj$message_send("PAUSE")
-  expect_equal(obj$message_get_response(id, wid, timeout = 1),
-               setNames(list("NOOP"), wid))
-
-  t <- obj$enqueue(sin(1))
-  ## should have been queued by now if the worker was interested:
-  Sys.sleep(.5)
-  expect_equal(obj$task_status(t), setNames(TASK_PENDING, t))
-
-  id <- obj$message_send("RESUME")
-  expect_equal(obj$message_get_response(id, wid, timeout = 1),
-               setNames(list("OK"), wid))
-
-  id <- obj$message_send("RESUME")
-  expect_equal(obj$message_get_response(id, wid, timeout = 1),
-               setNames(list("NOOP"), wid))
-
-  res <- obj$task_wait(t, 1)
-  expect_equal(res, sin(1))
-
-  expect_equal(obj$worker_status(),
-               setNames(WORKER_IDLE, wid))
-
-  ## Check the log.
-  log <- obj$worker_log_tail(wid, Inf)
-
-  cmp_cmd <- c("ALIVE",
-               rep(c("MESSAGE", "RESPONSE"), 4),
-               "TASK_START", "TASK_COMPLETE", "MESSAGE", "RESPONSE")
-  cmp_msg <- c("",
-               rep(c("PAUSE", "PING", "PAUSE", "RESUME"), each = 2),
-               t, t, "RESUME", "RESUME")
-  expect_equal(log$command, cmp_cmd)
-  expect_equal(log$message, cmp_msg)
-
-  ## Will stop when paused:
-  id <- obj$message_send("PAUSE")
-  expect_equal(obj$message_get_response(id, wid, timeout = 1),
-               setNames(list("OK"), wid))
   id <- obj$message_send("STOP")
-  expect_equal(obj$message_get_response(id, wid, timeout = 1),
-               setNames(list("BYE"), wid))
-
-  expect_equal(obj$worker_list_exited(), wid)
+  expect_error(w$step(TRUE), "BYE", class = "rrq_worker_stop")
 })
+
+
+test_that("messages take priority over tasks", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
+  id_task <- obj$enqueue(sin(1))
+  id_message <- obj$message_send("PING")
+
+  expect_message(w$step(TRUE), "PONG")
+  expect_true(obj$message_has_response(id_message, w$name))
+  expect_equal(obj$task_status(id_task), set_names(TASK_PENDING, id_task))
+
+  expect_message(w$step(TRUE), "TASK_START")
+  expect_equal(obj$task_status(id_task), set_names(TASK_COMPLETE, id_task))
+})
+
+
+test_that("PAUSE: workers ignore tasks", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
+  id <- obj$message_send("PAUSE")
+  w$step(TRUE)
+
+  expect_equal(obj$worker_status(), set_names(WORKER_PAUSED, w$name))
+
+  task <- obj$enqueue(sin(1))
+  expect_silent(w$step(TRUE))
+
+  expect_equal(obj$task_status(task), set_names(TASK_PENDING, task))
+
+  id <- obj$message_send("RESUME")
+  expect_message(w$step(TRUE), "RESUME")
+  expect_message(w$step(TRUE), "TASK_START")
+
+  expect_equal(obj$task_status(task), set_names(TASK_COMPLETE, task))
+})
+
+
+test_that("PAUSE: workers accept messages", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
+  id <- obj$message_send("PAUSE")
+  w$step(TRUE)
+
+  id <- obj$message_send("PING")
+  expect_message(w$step(TRUE), "PONG")
+
+  id <- obj$message_send("STOP")
+  expect_error(w$step(TRUE), "BYE", class = "rrq_worker_stop")
+})
+
+
+test_that("REFRESH", {
+  obj <- test_rrq("myfuns.R")
+  myfuns <- file.path(obj$context$root$path, "myfuns.R")
+
+  w <- test_worker_blocking(obj)
+
+  t1 <- obj$enqueue(f1(1))
+  w$step(TRUE)
+  expect_equal(obj$task_result(t1), 2)
+
+  writeLines("f1 <- function(x) x + 2", myfuns)
+  t2 <- obj$enqueue(f1(2))
+  w$step(TRUE)
+  expect_equal(obj$task_result(t2), 3)
+
+  id <- obj$message_send("REFRESH")
+  expect_message(
+    withr::with_dir(
+      obj$context$root$path,
+      w$step(TRUE)),
+    "REFRESH")
+  expect_equal(obj$message_get_response(id, w$name, FALSE), list("OK"))
+
+  t3 <- obj$enqueue(f1(3))
+  w$step(TRUE)
+  expect_equal(obj$task_result(t3), 5)
+})
+
 
 test_that("unknown command", {
   obj <- test_rrq()
-
-  obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
-  wid <- test_worker_spawn(obj)
-
-  expect_equal(obj$worker_status(),
-               setNames(WORKER_IDLE, wid))
+  w <- test_worker_blocking(obj)
 
   id <- obj$message_send("XXXX")
-  res <- obj$message_get_response(id, wid, timeout = 1)[[1]]
-  expect_is(res, "condition")
+  expect_message(
+    w$step(TRUE),
+    "Recieved unknown message: [XXXX]", fixed = TRUE)
+
+  res <- obj$message_get_response(id, w$name, timeout = 1)[[1]]
   expect_match(res$message, "Recieved unknown message")
   expect_equal(res$command, "XXXX")
   expect_null(res$args)
-
-  id <- obj$message_send("YYYY", "ZZZZ")
-  res <- obj$message_get_response(id, wid, timeout = 1)[[1]]
-  expect_is(res, "condition")
-  expect_match(res$message, "Recieved unknown message")
-  expect_equal(res$command, "YYYY")
-  expect_equal(res$args, "ZZZZ")
-
-  ## Complex arguments are supported:
-  d <- data.frame(a = 1, b = 2)
-  id <- obj$message_send("YYYY", d)
-  res <- obj$message_get_response(id, wid, timeout = 1)[[1]]
-  expect_is(res, "condition")
-  expect_match(res$message, "Recieved unknown message")
-  expect_equal(res$command, "YYYY")
-  expect_equal(res$args, d)
 })
+
+
+test_that("unknown command with arguments", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
+  id <- obj$message_send("XXXX", "YYYY")
+  expect_message(
+    w$step(TRUE),
+    "Recieved unknown message: [XXXX]", fixed = TRUE)
+
+  res <- obj$message_get_response(id, w$name, timeout = 1)[[1]]
+  expect_match(res$message, "Recieved unknown message")
+  expect_equal(res$command, "XXXX")
+  expect_equal(res$args, "YYYY")
+})
+
+
+test_that("unknown command with complex arguments", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
+  id <- obj$message_send("XXXX", mtcars)
+  expect_message(
+    w$step(TRUE),
+    "Recieved unknown message: [XXXX]", fixed = TRUE)
+
+  res <- obj$message_get_response(id, w$name, timeout = 1)[[1]]
+  expect_match(res$message, "Recieved unknown message")
+  expect_equal(res$command, "XXXX")
+  expect_equal(res$args, mtcars)
+})
+
 
 test_that("send and wait", {
   obj <- test_rrq()
@@ -182,85 +276,20 @@ test_that("send and wait", {
 
   ## Send to just one worker:
   res <- obj$message_send_and_wait("PING", worker_ids = wid[[1]])
-  expect_equal(res, setNames(list("PONG"), wid[[1]]))
+  expect_equal(res, set_names(list("PONG"), wid[[1]]))
 
   ## Don't delete:
   res <- obj$message_send_and_wait("PING", worker_ids = wid[[1]],
                                    delete = FALSE)
+
   expect_equal(res[[1]], "PONG")
   expect_equal(names(res), wid[[1]])
   id <- attr(res, "message_id")
   expect_is(id, "character")
   expect_equal(obj$message_get_response(id, wid[[1]]),
-               setNames(list("PONG"), wid[[1]]))
+               set_names(list("PONG"), wid[[1]]))
 
   res <- obj$message_send_and_wait("STOP")
   expect_equal(sort(names(res)), sort(wid))
   expect_equal(unname(res), rep(list("BYE"), length(wid)))
-})
-
-test_that("refresh", {
-  obj <- test_rrq("myfuns.R")
-  myfuns <- file.path(obj$context$root$path, "myfuns.R")
-  wid <- test_worker_spawn(obj)
-
-  t1 <- obj$enqueue(f1(1))
-  expect_equal(obj$task_wait(t1, 10, progress = FALSE), 2)
-
-  writeLines("f1 <- function(x) x + 2", myfuns)
-  t2 <- obj$enqueue(f1(2))
-  expect_equal(obj$task_wait(t2, 10, progress = FALSE), 3)
-
-  res <- obj$message_send_and_wait("REFRESH")
-  expect_equal(res, setNames(list("OK"), wid))
-
-  t3 <- obj$enqueue(f1(3))
-  expect_equal(obj$task_wait(t3, 10, progress = FALSE), 5)
-})
-
-test_that("timeout", {
-  obj <- test_rrq("myfuns.R")
-  myfuns <- file.path(obj$context$root$path, "myfuns.R")
-  wid <- test_worker_spawn(obj)
-
-  expect_equal(obj$message_send_and_wait("TIMEOUT_GET"),
-               setNames(list(c(timeout = Inf, remaining = Inf)), wid))
-  expect_equal(obj$message_send_and_wait("TIMEOUT_SET", 1000),
-               setNames(list("OK"), wid))
-  res <- obj$message_send_and_wait("TIMEOUT_GET")
-  expect_equal(names(res), wid)
-  expect_equal(res[[1]][["timeout"]], 1000)
-  expect_lte(res[[1]][["remaining"]], 1000)
-
-  Sys.sleep(1)
-
-  ## This just checks that the timeout is reset correctly after a task
-  ## and that the timer deletion on task does not cause problems.
-  t <- obj$enqueue(sin(1))
-  res <- obj$message_send_and_wait("TIMEOUT_GET")[[1]]
-  expect_equal(res[["timeout"]], 1000)
-  expect_gt(res[["remaining"]], 999.5)
-
-  ## Clear the timeout:
-  expect_equal(obj$message_send_and_wait("TIMEOUT_SET", NULL),
-               setNames(list("OK"), wid))
-  expect_equal(obj$message_send_and_wait("TIMEOUT_GET"),
-               setNames(list(c(timeout = Inf, remaining = Inf)), wid))
-  expect_equal(obj$message_send_and_wait("TIMEOUT_SET", Inf),
-               setNames(list("OK"), wid))
-  expect_equal(obj$message_send_and_wait("TIMEOUT_GET"),
-               setNames(list(c(timeout = Inf, remaining = Inf)), wid))
-
-  expect_equal(obj$message_send_and_wait("TIMEOUT_SET", "hello!"),
-               setNames(list("INVALID"), wid))
-  expect_equal(obj$message_send_and_wait("TIMEOUT_GET"),
-               setNames(list(c(timeout = Inf, remaining = Inf)), wid))
-
-  expect_equal(obj$message_send_and_wait("TIMEOUT_SET", 0),
-               setNames(list("OK"), wid))
-
-  Sys.sleep(1.2)
-
-  expect_equal(obj$worker_list(), character(0))
-  expect_equal(obj$worker_list_exited(), wid)
 })

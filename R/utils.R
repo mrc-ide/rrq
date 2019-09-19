@@ -84,3 +84,8 @@ list_to_character <- function(x) {
 data_frame <- function(...) {
   data.frame(..., stringsAsFactors = FALSE)
 }
+
+
+bin_to_object_safe <- function(x) {
+  if (is.null(x)) NULL else bin_to_object(x)
+}
