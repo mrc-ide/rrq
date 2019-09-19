@@ -333,3 +333,16 @@ test_that("Error if results are not ready", {
   id <- obj$enqueue(sin(1))
   expect_error(obj$task_result(id), "Missing some results")
 })
+
+
+test_that("worker load", {
+  obj <- test_rrq()
+  w1 <- test_worker_blocking(obj)
+  w2 <- test_worker_blocking(obj)
+  load <- obj$worker_load()
+  expect_is(load, "worker_load")
+  expect_setequal(load$worker_id, c(w1$name, w2$name))
+  avg <- mean(load)
+  expect_true(all(avg["used", ] == 0))
+  expect_true(all(avg["available", ] == 1))
+})
