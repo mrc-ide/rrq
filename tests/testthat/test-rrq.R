@@ -282,3 +282,54 @@ test_that("task delete", {
   obj$task_delete(c(t2, t3))
   expect_setequal(obj$task_list(), character(0))
 })
+
+
+test_that("wait for tasks on a key", {
+  obj <- test_rrq("myfuns.R")
+  wid <- test_worker_spawn(obj)
+  key <- rrq_key_task_complete(obj$keys$queue_name)
+
+  id <- obj$enqueue(sin(1), key_complete = key)
+  res <- obj$task_wait(id, 1, key_complete = NULL, progress = FALSE)
+  expect_equal(obj$con$EXISTS(key), 1)
+  expect_equal(obj$task_wait(id, key_complete = key), sin(1))
+  expect_equal(obj$con$EXISTS(key), 0)
+})
+
+
+test_that("stop worker", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+  obj$worker_stop()
+  expect_error(
+    w$step(), "BYE", class = "rrq_worker_stop")
+})
+
+
+test_that("Can't read logs without root", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+  rrq <- rrq_controller(obj$context$id, obj$con)
+  expect_error(
+    rrq$worker_process_log(w$name),
+    "To read the worker log, need access to context root")
+})
+
+
+test_that("Can't delete running tasks", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  id <- obj$enqueue(sin(1))
+  w$poll(TRUE)
+  worker_run_task_start(w, id)
+  expect_error(
+    obj$task_delete(id),
+    "Can't delete running tasks")
+})
+
+
+test_that("Error if results are not ready", {
+  obj <- test_rrq()
+  id <- obj$enqueue(sin(1))
+  expect_error(obj$task_result(id), "Missing some results")
+})

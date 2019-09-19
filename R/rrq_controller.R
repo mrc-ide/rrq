@@ -356,9 +356,6 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
 }
 
 task_submit_n <- function(con, keys, dat, key_complete) {
-  if (!(is.list(dat) && all(vlapply(dat, is.raw)))) {
-    stop("dat must be a raw list")
-  }
   n <- length(dat)
   task_ids <- ids::random_id(n)
 

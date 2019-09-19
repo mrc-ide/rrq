@@ -150,3 +150,12 @@ test_that("infinite timeout", {
   res <- obj$message_get_response(id, w$name)[[1]]
   expect_equal(res, c(timeout = Inf, remaining = Inf))
 })
+
+
+test_that("Can't save config without root", {
+  obj <- test_rrq("myfuns.R")
+  rrq <- rrq_controller(obj$context$id, obj$con)
+  expect_error(
+    rrq$worker_config_save(),
+    "To save a worker config, need access to context root")
+})
