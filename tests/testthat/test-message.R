@@ -13,6 +13,33 @@ test_that("TIMEOUT_SET causes worker exit on idle worker", {
 })
 
 
+test_that("TIMEOUT_SET needs numeric input", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  id <- obj$message_send("TIMEOUT_SET", "soon")
+  w$step(TRUE)
+  expect_null(w$timeout)
+  expect_null(w$timer)
+  expect_equal(
+    obj$message_get_response(id, w$name),
+    set_names(list("INVALID"), w$name))
+})
+
+
+test_that("TIMEOUT_SET with null clears a timer", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  obj$message_send("TIMEOUT_SET", 1)
+  w$step(TRUE)
+  expect_equal(w$timeout, 1)
+  expect_is(w$timer, "function")
+  obj$message_send("TIMEOUT_SET", NULL)
+  w$step(TRUE)
+  expect_null(w$timeout)
+  expect_null(w$timer)
+})
+
+
 test_that("TIMEOUT_GET returns infinite time if no timeout set", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
@@ -48,6 +75,26 @@ test_that("TIMEOUT_GET returns time remaining", {
 })
 
 
+test_that("TIMEOUT_GET restores a timer", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
+  obj$message_send("TIMEOUT_SET", 100)
+  w$step(TRUE)
+  obj$enqueue(sin(1))
+  w$step(TRUE)
+  expect_equal(w$timeout, 100)
+  expect_null(w$timer)
+
+  id <- obj$message_send("TIMEOUT_GET")
+  w$step(TRUE)
+  res <- obj$message_get_response(id, w$name)[[1]]
+  expect_equal(res[["timeout"]], 100)
+  expect_lte(res[["remaining"]], 100)
+  expect_is(w$timer, "function")
+})
+
+
 test_that("message response getting", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
@@ -75,6 +122,31 @@ test_that("message response getting", {
   expect_equal(obj$message_get_response(id, delete = TRUE),
                set_names(list("PONG"), w$name))
   expect_false(obj$message_has_response(id, w$name))
+})
+
+
+test_that("Error on missing response", {
+  obj <- test_rrq()
+  w1 <- test_worker_blocking(obj)
+  w2 <- test_worker_blocking(obj)
+  nms <- c(w1$name, w2$name)
+
+  id <- obj$message_send("PING")
+  expect_equal(
+    obj$message_has_response(id, nms),
+    set_names(c(FALSE, FALSE), nms))
+  expect_error(
+    obj$message_get_response(id, nms, timeout = 0),
+    sprintf("Response missing for workers: %s, %s", w1$name, w2$name))
+
+  w1$step(TRUE)
+
+  expect_equal(
+    obj$message_has_response(id, nms),
+    set_names(c(TRUE, FALSE), nms))
+  expect_error(
+    obj$message_get_response(id, nms, timeout = 0),
+    sprintf("Response missing for workers: %s", w2$name))
 })
 
 
@@ -180,6 +252,26 @@ test_that("PAUSE: workers accept messages", {
 
   id <- obj$message_send("STOP")
   expect_error(w$step(TRUE), "BYE", class = "rrq_worker_stop")
+})
+
+
+test_that("PAUSE/RESUME: twice is noop", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
+  id1 <- obj$message_send("RESUME")
+  w$step(TRUE)
+
+  expect_equal(obj$message_get_response(id1, w$name),
+               set_names(list("NOOP"), w$name))
+
+  id2 <- obj$message_send("PAUSE")
+  id3 <- obj$message_send("PAUSE")
+  w$step(TRUE)
+  w$step(TRUE)
+
+  expect_equal(obj$message_get_response(id3, w$name),
+               set_names(list("NOOP"), w$name))
 })
 
 
