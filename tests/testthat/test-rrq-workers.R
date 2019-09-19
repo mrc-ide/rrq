@@ -195,3 +195,57 @@ test_that("Timer is recreated after task run", {
   w$step(TRUE)
   expect_is(w$timer, "function")
 })
+
+
+test_that("kill worker with a signal", {
+  skip_if_not_installed("heartbeatr")
+  skip_on_os("windows")
+
+  obj <- test_rrq()
+  res <- obj$worker_config_save("localhost", heartbeat_period = 3,
+                                copy_redis = TRUE)
+  wid <- test_worker_spawn(obj)
+
+  pid <- obj$worker_info(wid)[[1]]$pid
+  alive_value <- tools::pskill(pid, 0)
+  expect_equal(obj$message_send_and_wait("PING", wid)[[1]], "PONG")
+
+  obj$worker_stop(wid, "kill")
+  Sys.sleep(0.5)
+  expect_false(tools::pskill(pid, 0) == alive_value)
+})
+
+
+test_that("kill worker locally", {
+  skip_on_os("windows")
+
+  obj <- test_rrq()
+  wid <- test_worker_spawn(obj)
+
+  pid <- obj$worker_info(wid)[[1]]$pid
+  alive_value <- tools::pskill(pid, 0)
+  expect_equal(obj$message_send_and_wait("PING", wid)[[1]], "PONG")
+
+  ## Can't kill with heartbeat:
+  expect_error(
+    obj$worker_stop(wid, "kill"),
+    "Worker does not support heatbeat - can't kill with signal:")
+
+  ## But can kill locally:
+  obj$worker_stop(wid, "kill_local")
+  Sys.sleep(0.5)
+  expect_false(tools::pskill(pid, 0) == alive_value)
+})
+
+
+test_that("Can't kill non-local workers", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
+  info <- obj$worker_info(w$name)[[w$name]]
+  info$hostname <- paste0(info$hostname, "_but_on_mars")
+  obj$con$HSET(obj$keys$worker_info, w$name, object_to_bin(info))
+  expect_error(
+    obj$worker_stop(w$name, "kill_local"),
+    "Not all workers are local:")
+})

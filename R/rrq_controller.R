@@ -485,40 +485,32 @@ worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
   }
 
   if (type == "message") {
-    ## First, we send a message saying 'STOP'
     message_id <- message_send(con, keys, "STOP", worker_ids = worker_ids)
-    ## ## TODO: This needs RedisHeartbeat support
-    ##
-    ## if (interrupt) {
-    ##   is_busy <- worker_status(con, keys, worker_ids) == WORKER_BUSY
-    ##   if (any(is_busy)) {
-    ##     queue_send_signal(con, keys, tools::SIGINT, worker_ids[is_busy])
-    ##   }
-    ## }
     if (timeout > 0L) {
-      ok <- try(message_get_response(con, keys, message_id, worker_ids,
-                                     delete = FALSE, timeout = timeout,
-                                     time_poll = time_poll,
-                                     progress = progress),
-                silent = TRUE)
-      ## if (inherits(ok, "try-error")) {
-      ##   done <- message_has_response(con, keys, message_id, worker_ids)
-      ##   worker_stop(con, keys, worker_ids[!done], "kill")
-      ## }
+      message_get_response(con, keys, message_id, worker_ids,
+                           delete = FALSE, timeout = timeout,
+                           time_poll = time_poll,
+                           progress = progress)
     }
-    ## TODO: This requires RedisHeartbeat support
   } else if (type == "kill") {
-    ## queue_send_signal(con, keys, tools::SIGTERM, worker_ids)
-    stop("Needs redis heartbeat support")
-  } else {
-    ## kill_local
-    w_info <- worker_info(con, keys, worker_ids)
-    w_local <- vcapply(w_info, "[[", "hostname") == hostname()
-    if (!all(w_local)) {
-      stop("Not all workers are local: ",
-           paste(worker_ids[!w_local], collapse = ", "))
+    info <- worker_info(con, keys, worker_ids)
+    heartbeat_key <- vcapply(info, function(x)
+      x$heartbeat_key %||% NA_character_)
+    if (any(is.na(heartbeat_key))) {
+      stop("Worker does not support heatbeat - can't kill with signal: ",
+           paste(worker_ids[is.na(heartbeat_key)], collapse = ", "))
     }
-    tools::pskill(vnapply(w_info, "[[", "pid"), tools::SIGTERM)
+    for (key in heartbeat_key) {
+      heartbeatr::heartbeat_send_signal(con, key, tools::SIGTERM)
+    }
+  } else { # kill_local
+    info <- worker_info(con, keys, worker_ids)
+    is_local <- vcapply(info, "[[", "hostname") == hostname()
+    if (!all(is_local)) {
+      stop("Not all workers are local: ",
+           paste(worker_ids[!is_local], collapse = ", "))
+    }
+    tools::pskill(vnapply(info, "[[", "pid"), tools::SIGTERM)
   }
   invisible(worker_ids)
 }

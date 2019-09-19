@@ -167,28 +167,27 @@ worker_info_collect <- function(worker) {
               context_root = worker$context$root$path,
               log_path = worker$log_path)
   if (!is.null(worker$heartbeat)) {
-    dat$heartbeat_key = worker$keys$worker_heartbeat
+    dat$heartbeat_key <- worker$keys$worker_heartbeat
   }
   dat
 }
 
 
 worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
-  worker_info <- object_to_bin(worker$info())
   keys <- worker$keys
 
   context::context_log_start()
   worker$load_context()
+
+  worker$heartbeat <- heartbeat(worker$con, keys$worker_heartbeat,
+                                heartbeat_period)
 
   worker$con$pipeline(
     redis$SADD(keys$worker_name,   worker$name),
     redis$HSET(keys$worker_status, worker$name, WORKER_IDLE),
     redis$HDEL(keys$worker_task,   worker$name),
     redis$DEL(keys$worker_log),
-    redis$HSET(keys$worker_info,   worker$name, worker_info))
-
-  worker$heartbeat <- heartbeat(worker$con, keys$worker_heartbeat,
-                                heartbeat_period)
+    redis$HSET(keys$worker_info,   worker$name, object_to_bin(worker$info())))
 
   if (worker$cores > 0) {
     context::context_log("parallel",
