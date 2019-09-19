@@ -75,3 +75,11 @@ delete_keys <- function(con, pat, delete) {
     redux::scan_del(con, pat)
   }
 }
+
+
+rpush_max_length <- function(con, key, value, max_length) {
+  n <- con$RPUSH(key, value)
+  if (n > max_length) {
+    con$LTRIM(key, -max_length, -1)
+  }
+}

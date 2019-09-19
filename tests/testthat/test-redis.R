@@ -75,3 +75,14 @@ test_that("delete", {
   Sys.sleep(1)
   expect_equal(con$EXISTS(keys2[[1]]), 0)
 })
+
+
+test_that("push max length", {
+  key <- sprintf("rrq:%s", ids::random_id())
+  con <- redux::hiredis()
+  con$RPUSH(key, c(1, 2, 3, 4))
+  rpush_max_length(con, key, 5, 5)
+  expect_equal(con$LRANGE(key, 0, -1), as.list(as.character(1:5)))
+  rpush_max_length(con, key, 6, 5)
+  expect_equal(con$LRANGE(key, 0, -1), as.list(as.character(2:6)))
+})

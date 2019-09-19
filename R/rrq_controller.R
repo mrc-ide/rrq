@@ -61,7 +61,8 @@ R6_rrq_controller <- R6::R6Class(
         ## This is used to create a hint as to who is using the queue.
         ## It's done as a list so will accumulate elements over time,
         ## but cap at the 10 most recent uses.
-        push_controller_info(self$con, self$keys)
+        info <- object_to_bin(controller_info())
+        rpush_max_length(self$con, self$keys$controller, info, 10)
       }
     },
 
@@ -593,13 +594,6 @@ controller_info <- function() {
        pid = process_id(),
        username = username(),
        time = Sys.time())
-}
-
-push_controller_info <- function(con, keys, max_n = 10) {
-  n <- con$RPUSH(keys$controller, object_to_bin(controller_info()))
-  if (n > max_n) {
-    con$LTRIM(keys$controller, -max_n, -1)
-  }
 }
 
 worker_naturalsort <- function(x) {
