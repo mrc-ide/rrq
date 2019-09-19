@@ -45,7 +45,7 @@ is_directory <- function(path) {
   file.exists(path) && file.info(path, extra_cols = FALSE)[["isdir"]]
 }
 
-Sys_getenv <- function(x) {
+sys_getenv <- function(x) {
   ret <- Sys.getenv(x)
   if (!nzchar(ret)) {
     stop(sprintf("Environment variable '%s' not set", x))

@@ -49,3 +49,12 @@ test_that("bin_to_object_safe", {
 
   expect_null(bin_to_object_safe(NULL))
 })
+
+
+test_that("Sys_getenv", {
+  key <- sprintf("RRQ_%s", ids::random_id())
+  do.call("Sys.setenv", set_names(list("true"), key))
+  expect_equal(sys_getenv(key), "true")
+  Sys.unsetenv(key)
+  expect_error(sys_getenv(key), "Environment variable 'RRQ_.*' not set")
+})
