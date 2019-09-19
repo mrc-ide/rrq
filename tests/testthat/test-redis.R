@@ -1,7 +1,8 @@
 context("redis utilities")
 
 test_that("scan expire", {
-  skip_if_no_redis()
+  con <- test_hiredis()
+
   prefix1 <- sprintf("rrq:%s", ids::random_id())
   prefix2 <- sprintf("rrq:%s", ids::random_id())
   keys1 <- sprintf("%s:%s", prefix1, letters)
@@ -9,7 +10,6 @@ test_that("scan expire", {
   pat1 <- sprintf("%s:*", prefix1)
   pat2 <- sprintf("%s:*", prefix2)
 
-  con <- redux::hiredis()
   con$MSET(keys1, letters)
   con$MSET(keys2, letters)
 
@@ -26,7 +26,8 @@ test_that("scan expire", {
 
 
 test_that("blpop (immediate)", {
-  con <- redux::hiredis()
+  con <- test_hiredis()
+
   keys <- sprintf("rrq:%s:%d", ids::random_id(), 1:3)
   on.exit(con$DEL(keys))
 
@@ -50,7 +51,8 @@ test_that("blpop (immediate)", {
 
 
 test_that("delete", {
-  skip_if_no_redis()
+  con <- test_hiredis()
+
   prefix1 <- sprintf("rrq:%s", ids::random_id())
   prefix2 <- sprintf("rrq:%s", ids::random_id())
   keys1 <- sprintf("%s:%s", prefix1, letters)
@@ -58,7 +60,6 @@ test_that("delete", {
   pat1 <- sprintf("%s:*", prefix1)
   pat2 <- sprintf("%s:*", prefix2)
 
-  con <- redux::hiredis()
   con$MSET(keys1, letters)
   con$MSET(keys2, letters)
 
@@ -78,8 +79,9 @@ test_that("delete", {
 
 
 test_that("push max length", {
+  con <- test_hiredis()
+
   key <- sprintf("rrq:%s", ids::random_id())
-  con <- redux::hiredis()
   con$RPUSH(key, c(1, 2, 3, 4))
   rpush_max_length(con, key, 5, 5)
   expect_equal(con$LRANGE(key, 0, -1), as.list(as.character(1:5)))

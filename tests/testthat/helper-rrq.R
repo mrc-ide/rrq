@@ -65,6 +65,12 @@ test_context <- function(sources = NULL) {
 }
 
 
+test_hiredis <- function() {
+  skip_if_no_redis()
+  redux::hiredis()
+}
+
+
 test_rrq <- function(sources = NULL) {
   skip_if_no_redis()
   Sys.setenv(R_TESTS = "")

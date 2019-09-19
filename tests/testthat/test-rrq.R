@@ -249,9 +249,11 @@ test_that("call", {
 
 
 test_that("can't create queue with unloaded context", {
+  skip_if_no_redis()
   root <- tempfile()
   dir.create(root)
   context <- context::context_save(root)
+
   expect_error(
     rrq_controller(context),
     "context must be loaded")
