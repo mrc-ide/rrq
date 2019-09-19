@@ -58,3 +58,20 @@ blpop <- function(con, keys, timeout, immediate) {
     con$BLPOP(keys, timeout)
   }
 }
+
+
+delete_keys <- function(con, pat, delete) {
+  if (isTRUE(delete)) {
+    delete <- 0
+  }
+  assert_scalar_integer_like(delete)
+  if (is.na(delete) || delete < 0) {
+    stop("Invalid value for delete")
+  }
+
+  if (delete > 0) {
+    scan_expire(con, pat, delete)
+  } else {
+    redux::scan_del(con, pat)
+  }
+}
