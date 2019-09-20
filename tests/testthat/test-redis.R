@@ -88,3 +88,25 @@ test_that("push max length", {
   rpush_max_length(con, key, 6, 5)
   expect_equal(con$LRANGE(key, 0, -1), as.list(as.character(2:6)))
 })
+
+
+test_that("hash_exists", {
+  con <- test_hiredis()
+
+  key <- sprintf("rrq:%s", ids::random_id(3))
+  field <- c("a", "b", "c", "d")
+
+  expect_equal(hash_exists(con, character(0), character(0)), logical(0))
+  expect_equal(hash_exists(con, key, character(0)), logical(0))
+  expect_equal(hash_exists(con, character(0), field), logical(0))
+  expect_equal(hash_exists(con, key[[1]], field, TRUE), rep(FALSE, 4))
+  expect_equal(hash_exists(con, key, field[[1]]), rep(FALSE, 3))
+
+  con$HMSET(key[[1]], field[c(2, 4)], c("x", "y"))
+  on.exit(con$DEL(key))
+
+  expect_equal(hash_exists(con, key[[1]], field, TRUE),
+               c(FALSE, TRUE, FALSE, TRUE))
+  expect_equal(hash_exists(con, key, field[[2]]),
+               c(TRUE, FALSE, FALSE))
+})
