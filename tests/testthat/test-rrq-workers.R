@@ -175,9 +175,12 @@ test_that("worker names can't be duplicated", {
 
 test_that("log path must be relative", {
   context <- test_context()
+  path_logs <- file.path(context$root$path, "logs")
   expect_error(
-    worker_initialise_logs(context, file.path(context$root$path, "logs")),
+    worker_initialise_logs(context, path_logs),
     "Must be a relative path")
+  expect_silent(worker_initialise_logs(context, "logs"))
+  expect_true(file.exists(path_logs))
 })
 
 
