@@ -92,39 +92,6 @@ test_that("context job unsubmit", {
 })
 
 
-## This test can't be easily done within testthat because the messages
-## seem to be eaten by testthat's message handlers!  So we do it with
-## a spawned worker.
-test_that("log dir", {
-  obj <- test_rrq("myfuns.R")
-  root <- obj$context$root$path
-
-  r <- rrq_controller(obj$context$id, redux::hiredis())
-
-  obj$worker_config_save("localhost", log_path = "worker_logs_task",
-                         copy_redis = TRUE)
-  wid <- test_worker_spawn(obj)
-
-  info <- obj$worker_info(wid)[[wid]]
-  expect_equal(info$log_path, "worker_logs_task")
-
-  expect_true(file.exists(file.path(root, "worker_logs_task")))
-
-  id <- context::task_save(quote(noisydouble(1)), obj$context)
-  t <- queuer:::queuer_task(id, obj$context$root)
-  r$context_queue_submit(t$id)
-  expect_equal(t$wait(2, progress = FALSE, time_poll = 0.1), 2)
-
-  ## This almost works but needs tweaking.  Not sure what the
-  ## top-level-errors here are doing!
-  expect_true(file.exists(file.path(root, obj$db$get(t$id, "log_path"))))
-  expect_is(t$log(), "context_log")
-  x <- t$log()
-  expect_true("start" %in% x$title)
-  expect_equal(x$body[[which(x$title == "start")]], "doubling 1")
-})
-
-
 test_that("task errors are returned", {
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)

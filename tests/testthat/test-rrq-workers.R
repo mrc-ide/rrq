@@ -252,3 +252,37 @@ test_that("Can't kill non-local workers", {
     obj$worker_stop(w$name, "kill_local"),
     "Not all workers are local:")
 })
+
+
+
+test_that("context tasks are logged", {
+  ## This test relies on working around a behaviour in testthat where
+  ## messages are muffled from within a test_that block, but we have
+  ## diverted the message stream.
+  ##
+  ## https://github.com/r-lib/testthat/issues/460#issuecomment-230267848
+  ##
+  ## This workaround relies on testthat behaviour not changing and so
+  ## should be considered flakey.
+  skip_on_cran()
+  obj <- test_rrq("myfuns.R")
+  root <- obj$context$root$path
+  obj$worker_config_save("localhost", log_path = "worker_logs_task",
+                         copy_redis = TRUE)
+  w <- test_worker_blocking(obj)
+
+  id <- context::task_save(quote(noisydouble(1)), obj$context)
+  t <- queuer:::queuer_task(id, obj$context$root)
+  obj$context_queue_submit(t$id)
+
+  ## This is the hack:
+  withCallingHandlers(
+    worker_run_task_context(w, t$id),
+    message = function(e) cat(conditionMessage(e), file = stderr(), sep = ""))
+
+  expect_true(file.exists(file.path(root, obj$db$get(t$id, "log_path"))))
+  expect_is(t$log(), "context_log")
+  x <- t$log()
+  expect_true("start" %in% x$title)
+  expect_equal(x$body[[which(x$title == "start")]], "doubling 1")
+})
