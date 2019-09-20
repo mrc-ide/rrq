@@ -89,3 +89,45 @@ data_frame <- function(...) {
 bin_to_object_safe <- function(x) {
   if (is.null(x)) NULL else bin_to_object(x)
 }
+
+
+sys_sleep <- function(n) {
+  if (n > 0) {
+    Sys.sleep(n)
+  }
+}
+
+
+## To poll like this we want to know:
+##
+## how many things are currently done, so we need a function that
+## returns a logical vector
+general_poll <- function(fetch, time_poll, timeout, name, error, progress) {
+  done <- fetch()
+
+  if (timeout > 0) {
+    p <- queuer::progress_timeout(length(done), show = progress,
+                                  timeout = timeout, show_after = 0)
+    tot <- sum(done)
+    p(tot)
+
+    while (!all(done)) {
+      sys_sleep(time_poll)
+
+      prev <- tot
+      done <- fetch()
+      tot <- sum(done)
+
+      if (p(tot - prev)) {
+        break
+      }
+    }
+  }
+
+  if (error && !all(done)) {
+    stop(sprintf("Exceeded maximum time (%d / %d %s pending)",
+                 sum(!done), length(done), name))
+  }
+
+  done
+}

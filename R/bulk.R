@@ -48,11 +48,9 @@ rrq_enqueue_bulk_wait <- function(obj, dat, timeout = Inf, time_poll = NULL,
   con <- obj$con
   keys <- obj$keys
   task_ids <- dat$task_ids
-  key_complete <- dat$key_complete
 
-  ret <- collect_wait_n(con, keys, task_ids, key_complete,
-                        timeout = timeout, time_poll = time_poll,
-                        progress = progress)
+  ret <- tasks_wait(con, keys, task_ids, timeout, time_poll, progress,
+                    dat$key_complete)
   task_delete(con, keys, task_ids, FALSE)
-  setNames(ret, names(task_ids))
+  set_names(ret, names(task_ids))
 }

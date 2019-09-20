@@ -178,24 +178,35 @@ message_get_response <- function(con, keys, message_id, worker_ids = NULL,
   if (is.null(worker_ids)) {
     worker_ids <- worker_list(con, keys)
   }
-  response_keys <- rrq_key_worker_response(keys$queue_name, worker_ids)
-  res <- poll_hash_keys(con, response_keys, message_id,
-                        timeout, time_poll, progress)
 
-  msg <- vlapply(res, is.null)
-  if (any(msg)) {
-    stop(paste0("Response missing for workers: ",
-                paste(worker_ids[msg], collapse = ", ")))
+  response_keys <- rrq_key_worker_response(keys$queue_name, worker_ids)
+
+  done <- rep(FALSE, length(response_keys))
+  fetch <- function() {
+    done[!done] <<- hash_exists(con, response_keys[!done], message_id)
+    done
   }
+  done <- general_poll(fetch, time_poll, timeout, "responses", FALSE, progress)
+  if (!all(done)) {
+    stop(paste0("Response missing for workers: ",
+                paste(worker_ids[!done], collapse = ", ")))
+  }
+
+  res <- lapply(response_keys, function(k)
+    bin_to_object(con$HGET(k, message_id))$result)
+
   if (delete) {
     for (k in response_keys) {
       con$HDEL(k, message_id)
     }
   }
 
-  names(res) <- if (named) worker_ids else NULL
-  lapply(res, function(x) bin_to_object(x)$result)
+  if (named) {
+    names(res) <- worker_ids
+  }
+  res
 }
+
 
 message_response_ids <- function(con, keys, worker_id) {
   response_keys <- rrq_key_worker_response(keys$queue_name, worker_id)

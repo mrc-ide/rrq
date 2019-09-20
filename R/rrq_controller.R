@@ -160,6 +160,7 @@ R6_rrq_controller <- R6::R6Class(
       assert_scalar_character(task_id)
       self$tasks_result(task_id)[[1L]]
     },
+
     ## zero, one or more tasks as a list
     tasks_result = function(task_ids) {
       task_results(self$con, self$keys, task_ids)
@@ -171,16 +172,13 @@ R6_rrq_controller <- R6::R6Class(
       self$tasks_wait(task_id, timeout, time_poll,
                       progress, key_complete)[[1L]]
     },
+
     tasks_wait = function(task_ids, timeout = Inf, time_poll = NULL,
                           progress = NULL, key_complete = NULL) {
-      if (is.null(key_complete)) {
-        collect_wait_n_poll(self$con, self$keys, task_ids,
-                            timeout, time_poll, progress)
-      } else {
-        collect_wait_n(self$con, self$keys, task_ids, key_complete,
-                       timeout, time_poll, progress)
-      }
+      tasks_wait(self$con, self$keys, task_ids, timeout, time_poll, progress,
+                 key_complete)
     },
+
     task_delete = function(task_ids, check = TRUE) {
       task_delete(self$con, self$keys, task_ids, check)
     },
@@ -516,78 +514,6 @@ worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
   invisible(worker_ids)
 }
 
-## There are a whole bunch of collection functions here.
-##
-## * collect_wait_n:      sits on a special key, so is quite responsive
-## * collect_wait_n_poll: actively polls the hashes
-collect_wait_n <- function(con, keys, task_ids, key_complete,
-                           timeout, time_poll, progress) {
-  time_poll <- time_poll %||% 1
-  assert_integer_like(time_poll)
-  if (time_poll < 1L) {
-    warning(
-      "time_poll cannot be less than 1 with this function; increasing to 1")
-    time_poll <- 1L
-  }
-
-  status <- from_redis_hash(con, keys$task_status, task_ids)
-
-  done <- status == TASK_COMPLETE | status == TASK_ERROR
-  if (all(done)) {
-    con$DEL(key_complete)
-  } else {
-    p <- queuer::progress_timeout(total = length(status),
-                                  show = progress, timeout = timeout)
-    while (!all(done)) {
-      tmp <- con$BLPOP(key_complete, time_poll)
-      if (is.null(tmp)) {
-        if (p(0)) {
-          p(clear = TRUE)
-          stop(sprintf("Exceeded maximum time (%d / %d tasks pending)",
-                       sum(!done), length(task_ids)))
-        }
-      } else {
-        p(1)
-        id <- tmp[[2L]]
-        done[[id]] <- TRUE
-      }
-    }
-  }
-
-  task_results(con, keys, task_ids)
-}
-
-collect_wait_n_poll <- function(con, keys, task_ids,
-                                timeout, time_poll, progress) {
-  time_poll <- time_poll %||% 0.1
-  status <- from_redis_hash(con, keys$task_status, task_ids)
-  done <- status == TASK_COMPLETE | status == TASK_ERROR
-  if (all(done)) {
-    ## pass
-  } else if (timeout == 0) {
-    stop("Tasks not yet completed; can't be immediately returned")
-  } else {
-    p <- queuer::progress_timeout(length(task_ids),
-                                  show = progress, timeout = timeout)
-    remaining <- task_ids[!done]
-    while (length(remaining) > 0L) {
-      exists <- viapply(remaining, con$HEXISTS, key = keys$task_result) == 1L
-      if (any(exists)) {
-        i <- remaining[exists]
-        p(length(i))
-        remaining <- remaining[!exists]
-      } else {
-        if (p(0)) {
-          p(clear = TRUE)
-          stop(sprintf("Exceeded maximum time (%d / %d tasks pending)",
-                       length(remaining), length(task_ids)))
-        }
-        Sys.sleep(time_poll)
-      }
-    }
-  }
-  task_results(con, keys, task_ids)
-}
 
 controller_info <- function() {
   list(hostname = hostname(),
@@ -651,4 +577,37 @@ mean.worker_load <- function(x, time = c(1, 5, 15, Inf), ...) {
   res <- vapply(time, f, numeric(2))
   colnames(res) <- as.character(time)
   res
+}
+
+
+tasks_wait <- function(con, keys, task_ids, timeout, time_poll = NULL,
+                       progress = NULL, key_complete = NULL) {
+  if (is.null(key_complete)) {
+    done <- rep(FALSE, length(task_ids))
+    fetch <- function() {
+      done[!done] <<- hash_exists(con, keys$task_result, task_ids[!done], TRUE)
+      done
+    }
+    general_poll(fetch, time_poll %||% 0.05, timeout, "tasks", TRUE, progress)
+  } else {
+    time_poll <- time_poll %||% 1
+    assert_integer_like(time_poll)
+    if (time_poll < 1L) {
+      stop("time_poll cannot be less than 1 if using key_complete")
+    }
+    done <- set_names(
+      hash_exists(con, keys$task_result, task_ids, TRUE),
+      task_ids)
+
+    fetch <- function() {
+      tmp <- con$BLPOP(key_complete, time_poll)
+      if (!is.null(tmp)) {
+        done[[tmp[[2L]]]] <<- TRUE
+      }
+      done
+    }
+    general_poll(fetch, 0, timeout, "tasks", TRUE, progress)
+  }
+
+  task_results(con, keys, task_ids)
 }

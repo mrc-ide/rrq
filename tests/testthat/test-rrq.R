@@ -236,6 +236,38 @@ test_that("wait for tasks without key", {
 
   res <- obj$tasks_wait(c(t1, t2))
   expect_equal(res, set_names(list(2, 4), c(t1, t2)))
+
+  ## Slightly slower jobs:
+  t3 <- obj$enqueue(slowdouble(0.1))
+  t4 <- obj$enqueue(slowdouble(0.1))
+  res <- obj$tasks_wait(c(t3, t4))
+  expect_equal(res, set_names(list(0.2, 0.2), c(t3, t4)))
+})
+
+
+test_that("wait for tasks with key", {
+  obj <- test_rrq("myfuns.R")
+  k1 <- rrq_key_task_complete(obj$keys$queue_name)
+  t1 <- obj$enqueue(1 + 1, key_complete = k1)
+  t2 <- obj$enqueue(2 + 2, key_complete = k1)
+
+  wid <- test_worker_spawn(obj)
+
+  expect_error(
+    obj$tasks_wait(c(t1, t2), key_complete = k1, time_poll = 0.1),
+    "time_poll must be integer like")
+  expect_error(
+    obj$tasks_wait(c(t1, t2), key_complete = k1, time_poll = -1),
+    "time_poll cannot be less than 1 if using key_complete")
+  res <- obj$tasks_wait(c(t1, t2), key_complete = k1)
+  expect_equal(res, set_names(list(2, 4), c(t1, t2)))
+
+  ## Slightly slower jobs:
+  k2 <- rrq_key_task_complete(obj$keys$queue_name)
+  t3 <- obj$enqueue(slowdouble(0.1), key_complete = k2)
+  t4 <- obj$enqueue(slowdouble(0.1), key_complete = k2)
+  res <- obj$tasks_wait(c(t3, t4), key_complete = k2)
+  expect_equal(res, set_names(list(0.2, 0.2), c(t3, t4)))
 })
 
 

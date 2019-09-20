@@ -116,6 +116,16 @@ interrupt <- function() {
 }
 
 
+make_counter <- function(start = 0L) {
+  e <- environment()
+  e$n <- start
+  function() {
+    e$n <- e$n + 1L
+    e$n
+  }
+}
+
+
 PROGRESS <- FALSE # TODO: phase this one out
 options(queuer.progress_suppress = TRUE)
 Sys.unsetenv("CONTEXT_CORES")
