@@ -2,22 +2,17 @@ context("fault tolerance")
 
 test_that("heartbeat", {
   skip_if_not_installed("heartbeatr")
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
+  obj <- test_rrq()
 
   res <- obj$worker_config_save("localhost", heartbeat_period = 3,
                                 copy_redis = TRUE)
   expect_equal(res$heartbeat_period, 3)
 
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
-
-  dat <- obj$worker_info(wid)[[1]]
+  w <- test_worker_blocking(obj)
+  dat <- w$info()
   expect_equal(dat$heartbeat_key,
-               rrq_key_worker_heartbeat(context$id, wid))
+               rrq_key_worker_heartbeat(obj$context$id, w$name))
+
   expect_equal(obj$con$EXISTS(dat$heartbeat_key), 1)
   expect_lte(obj$con$PTTL(dat$heartbeat_key),
              res$heartbeat_period * 3 * 1000)
@@ -27,25 +22,18 @@ test_that("heartbeat", {
   expect_gte(obj$con$PTTL(dat$heartbeat_key),
              res$heartbeat_period * 2 * 1000 - 100)
 
-  res <- obj$worker_stop(wid, timeout = 1)
+  w$shutdown()
   expect_equal(obj$con$EXISTS(dat$heartbeat_key), 0)
   expect_equal(obj$worker_list(), character(0))
 })
 
 test_that("interrupt stuck worker (local)", {
-  skip_if_not_installed("heartbeatr")
   ## This one tests that if a worker is stuck on a long running task
   ## that we can shunt them off it.  It will not work on windows
   ## because there is no concept of interrupt that we can easily use.
   skip_on_os("windows")
 
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
+  obj <- test_rrq("myfuns.R")
 
   ## We need to set time_poll to be fairly fast because BLPOP is not
   ## interruptable; the interrupt will only be handled _after_ R gets
@@ -53,7 +41,7 @@ test_that("interrupt stuck worker (local)", {
   res <- obj$worker_config_save("localhost", time_poll = 1,
                                 copy_redis = TRUE)
 
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
+  wid <- test_worker_spawn(obj)
   pid <- obj$worker_info()[[wid]]$pid
 
   expect_equal(obj$message_send_and_wait("PING"),
@@ -90,13 +78,7 @@ test_that("interrupt stuck worker (via heartbeat)", {
   ## heartbeat thread.  These might be worth merging.
   skip_on_os("windows")
 
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
+  obj <- test_rrq("myfuns.R")
 
   ## We need to set time_poll to be fairly fast because BLPOP is not
   ## interruptable; the interrupt will only be handled _after_ R gets
@@ -105,7 +87,7 @@ test_that("interrupt stuck worker (via heartbeat)", {
                                 heartbeat_period = 3,
                                 copy_redis = TRUE)
 
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
+  wid <- test_worker_spawn(obj)
 
   expect_equal(obj$message_send_and_wait("PING"),
                setNames(list("PONG"), wid))
@@ -137,13 +119,7 @@ test_that("interrupt stuck worker (via heartbeat)", {
 
 test_that("detect killed worker (via heartbeat)", {
   skip_if_not_installed("heartbeatr")
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
+  obj <- test_rrq("myfuns.R")
 
   ## We need to set time_poll to be fairly fast because BLPOP is not
   ## interruptable; the interrupt will only be handled _after_ R gets
@@ -152,10 +128,10 @@ test_that("detect killed worker (via heartbeat)", {
                                 heartbeat_period = 1,
                                 copy_redis = TRUE)
 
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
+  wid <- test_worker_spawn(obj)
   pid <- obj$worker_info()[[wid]]$pid
 
-  key <- rrq_key_worker_heartbeat(context$id, wid)
+  key <- rrq_key_worker_heartbeat(obj$context$id, wid)
   expect_equal(obj$con$EXISTS(key), 1)
   expire <- res$heartbeat_period * 3
   expect_equal(obj$con$GET(key), as.character(expire))

@@ -37,20 +37,6 @@ blank <- function(n) {
   strrep(" ", n)
 }
 
-with_wd <- function(path, expr) {
-  if (path != ".") {
-    if (!file.exists(path)) {
-      stop(sprintf("Path '%s' does not exist", path))
-    }
-    if (!is_directory(path)) {
-      stop(sprintf("Path '%s' exists, but is not a directory", path))
-    }
-    owd <- setwd(path)
-    on.exit(setwd(owd))
-  }
-  force(expr)
-}
-
 `%||%` <- function(a, b) {
   if (is.null(a)) b else a
 }
@@ -59,7 +45,7 @@ is_directory <- function(path) {
   file.exists(path) && file.info(path, extra_cols = FALSE)[["isdir"]]
 }
 
-Sys_getenv <- function(x) {
+sys_getenv <- function(x) {
   ret <- Sys.getenv(x)
   if (!nzchar(ret)) {
     stop(sprintf("Environment variable '%s' not set", x))
@@ -70,21 +56,78 @@ Sys_getenv <- function(x) {
 lstrip <- function(x) {
   sub("^\\s+", "", x, perl = TRUE)
 }
+
 rstrip <- function(x) {
   sub("\\s+$", "", x, perl = TRUE)
 }
 
-## NOTE: duplicated from context, and will be replaced by using pathr
-## once it's done.
 is_absolute_path <- function(path) {
   grepl("^(/|[A-Za-z]:[/\\]|//|\\\\\\\\)", path)
 }
+
 is_relative_path <- function(path) {
   !is_absolute_path(path)
 }
 
-rbind_as_df <- function(x) {
-  do.call("rbind",
-          lapply(x, as.data.frame, stringsAsFactors = FALSE),
-          quote = TRUE)
+
+set_names <- function(x, nms) {
+  names(x) <- nms
+  x
+}
+
+
+list_to_character <- function(x) {
+  vcapply(x, identity)
+}
+
+
+data_frame <- function(...) {
+  data.frame(..., stringsAsFactors = FALSE)
+}
+
+
+bin_to_object_safe <- function(x) {
+  if (is.null(x)) NULL else bin_to_object(x)
+}
+
+
+sys_sleep <- function(n) {
+  if (n > 0) {
+    Sys.sleep(n)
+  }
+}
+
+
+## To poll like this we want to know:
+##
+## how many things are currently done, so we need a function that
+## returns a logical vector
+general_poll <- function(fetch, time_poll, timeout, name, error, progress) {
+  done <- fetch()
+
+  if (timeout > 0) {
+    p <- queuer::progress_timeout(length(done), show = progress,
+                                  timeout = timeout, show_after = 0)
+    tot <- sum(done)
+    p(tot)
+
+    while (!all(done)) {
+      sys_sleep(time_poll)
+
+      prev <- tot
+      done <- fetch()
+      tot <- sum(done)
+
+      if (p(tot - prev)) {
+        break
+      }
+    }
+  }
+
+  if (error && !all(done)) {
+    stop(sprintf("Exceeded maximum time (%d / %d %s pending)",
+                 sum(!done), length(done), name))
+  }
+
+  done
 }

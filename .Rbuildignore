@@ -12,3 +12,4 @@
 ^\.lintr$
 ^TODO\.md$
 ^appveyor\.yml$
+^scripts$

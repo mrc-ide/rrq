@@ -51,10 +51,11 @@ worker_spawn <- function(obj, n = 1, logdir = "worker_logs",
                           time_poll = 1, progress = NULL) {
   assert_is(obj, "rrq_controller")
   if (!obj$db$exists(worker_config, "worker_config")) {
-    stop(sprintf("worker config '%s' does not exist", worker_config))
+    stop(sprintf("Invalid rrq worker configuration key '%s'", worker_config))
   }
   if (!is.null(path)) {
-    stop("FIXME")
+    owd <- setwd(path)
+    on.exit(setwd(owd))
   }
 
   rrq_worker <- file.path(obj$context$root$path, "bin", "rrq_worker")
@@ -77,22 +78,18 @@ worker_spawn <- function(obj, n = 1, logdir = "worker_logs",
   message(sprintf("Spawning %d %s with prefix %s",
                   n, ngettext(n, "worker", "workers"), worker_name_base))
   code <- integer(n)
-  ## TODO: path is never used in the package
-  ## with_wd(path, {
+
   for (i in seq_len(n)) {
     args <- c(root, context_id, worker_config, worker_names[[i]], key_alive)
     code[[i]] <- system2(rrq_worker, args, env = env, wait = FALSE,
                          stdout = logfile[[i]], stderr = logfile[[i]])
   }
-  ## })
-  if (any(code != 0L)) {
-    warning("Error launching script: worker *probably* does not exist")
-  }
 
   if (timeout > 0) {
     worker_wait(obj, key_alive, timeout, time_poll, progress)
   } else {
-    worker_names
+    list(key_alive = key_alive,
+         names = worker_names)
   }
 }
 
@@ -104,7 +101,13 @@ worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
                         progress = NULL) {
   con <- obj$con
   keys <- obj$keys
-  expected <- bin_to_object(con$HGET(keys$worker_expect, key_alive))
+
+  bin <- con$HGET(keys$worker_expect, key_alive)
+  if (is.null(bin)) {
+    stop("No workers expected on that key")
+  }
+  expected <- bin_to_object(bin)
+
   n <- length(expected)
   p <- queuer::progress_timeout(total = n, show = progress, timeout = timeout)
   time_poll <- min(time_poll, timeout)
@@ -136,7 +139,6 @@ worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
       p(1)
     }
   }
-  obj$con$HDEL(keys$worker_expect, key_alive)
   ret
 }
 
@@ -165,9 +167,6 @@ worker_read_failed_logs <- function(context, missing) {
     j <- file.exists(log_file)
     logs <- lapply(log_file, readLines)
     setNames(logs, missing[i][j])
-  } else {
-    NULL
-
   }
 }
 

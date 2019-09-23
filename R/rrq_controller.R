@@ -61,20 +61,24 @@ R6_rrq_controller <- R6::R6Class(
         ## This is used to create a hint as to who is using the queue.
         ## It's done as a list so will accumulate elements over time,
         ## but cap at the 10 most recent uses.
-        push_controller_info(self$con, self$keys)
+        info <- object_to_bin(controller_info())
+        rpush_max_length(self$con, self$keys$controller, info, 10)
       }
     },
 
     ## This is super destructive; should we require this one to need
     ## the actual context object perhaps?
-    destroy = function(delete = TRUE, type = "message") {
-      rrq_clean(self$con, self$context_id, delete, type)
-      ## render the controller useless:
-      self$con <- NULL
-      self$context_id <- NULL
-      self$keys <- NULL
-      self$context <- NULL
-      self$db <- NULL
+    destroy = function(delete = TRUE, type = "message",
+                       worker_stop_timeout = 0) {
+      if (!is.null(self$con)) {
+        rrq_clean(self$con, self$context_id, delete, type, worker_stop_timeout)
+        ## render the controller useless:
+        self$con <- NULL
+        self$context_id <- NULL
+        self$keys <- NULL
+        self$context <- NULL
+        self$db <- NULL
+      }
     },
 
     ## 0. Queuing
@@ -156,6 +160,7 @@ R6_rrq_controller <- R6::R6Class(
       assert_scalar_character(task_id)
       self$tasks_result(task_id)[[1L]]
     },
+
     ## zero, one or more tasks as a list
     tasks_result = function(task_ids) {
       task_results(self$con, self$keys, task_ids)
@@ -167,53 +172,55 @@ R6_rrq_controller <- R6::R6Class(
       self$tasks_wait(task_id, timeout, time_poll,
                       progress, key_complete)[[1L]]
     },
+
     tasks_wait = function(task_ids, timeout = Inf, time_poll = NULL,
                           progress = NULL, key_complete = NULL) {
-      if (is.null(key_complete)) {
-        collect_wait_n_poll(self$con, self$keys, task_ids,
-                            timeout, time_poll, progress)
-      } else {
-        collect_wait_n(self$con, self$keys, task_ids, key_complete,
-                       timeout, time_poll, progress)
-      }
+      tasks_wait(self$con, self$keys, task_ids, timeout, time_poll, progress,
+                 key_complete)
     },
+
     task_delete = function(task_ids, check = TRUE) {
       task_delete(self$con, self$keys, task_ids, check)
     },
 
-    ## 2. Queue state
-    ##
-    ## TODO: the latter two (queue_submit, queue_unsubmit) were
-    ## included only in the worker controller and are to control the
-    ## context queue.  This needs harmonising!  I think that the first
-    ## two functions get a flag indicating which queue we're looking
-    ## at, and the latter two probably also need some sort of flag
-    ## too.
+    ## 2. Fast queue
     queue_length = function() {
       self$con$LLEN(self$keys$queue_rrq)
     },
+
     queue_list = function() {
-      as.character(self$con$LRANGE(self$keys$queue_rrq, 0, -1))
+      list_to_character(self$con$LRANGE(self$keys$queue_rrq, 0, -1))
     },
-    ## These ones do the actual submission
-    queue_submit = function(task_ids) {
+
+    ## 3. Context queue
+    context_queue_length = function() {
+      self$con$LLEN(self$keys$queue_ctx)
+    },
+
+    context_queue_list = function() {
+      list_to_character(self$con$LRANGE(self$keys$queue_ctx, 0, -1))
+    },
+
+    context_queue_submit = function(task_ids) {
       self$con$RPUSH(self$keys$queue_ctx, task_ids)
     },
-    queue_unsubmit = function(task_ids) {
+
+    context_queue_unsubmit = function(task_ids) {
       ## NOTE: probable race condition, consider rename, which has bad
       ## properties if the queue is lost of course.  The correct way
       ## would be to do a lua script.
-      ids_queued <- self$queue_list()
-      if (length(ids_queued) > 0L) {
+      ids <- self$context_queue_list()
+      i <- ids %in% task_ids
+      ids_keep <- ids[!i]
+      if (any(i)) {
         self$con$DEL(self$keys$queue_ctx)
-        ids_keep <- setdiff(ids_queued, task_ids)
         if (length(ids_keep) > 0L) {
           self$con$RPUSH(self$keys$queue_ctx, ids_keep)
         }
       }
     },
 
-    ## 3. Workers
+    ## 4. Workers
     worker_len = function() {
       worker_len(self$con, self$keys)
     },
@@ -307,7 +314,7 @@ task_overview <- function(con, keys, task_ids) {
   lvls <- c(TASK_PENDING, TASK_RUNNING, TASK_COMPLETE, TASK_ERROR)
   status <- task_status(con, keys, task_ids)
   lvls <- c(lvls, setdiff(unique(status), lvls))
-  table(factor(status, lvls))
+  as.list(table(factor(status, lvls)))
 }
 
 ## NOTE: This is not crazy efficient; we pull the entire list down
@@ -344,12 +351,10 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
   con$HDEL(keys$task_result,   task_ids)
   con$HDEL(keys$task_complete, task_ids)
   con$HDEL(keys$task_worker,   task_ids)
+  invisible()
 }
 
 task_submit_n <- function(con, keys, dat, key_complete) {
-  if (!(is.list(dat) && all(vlapply(dat, is.raw)))) {
-    stop("dat must be a raw list")
-  }
   n <- length(dat)
   task_ids <- ids::random_id(n)
 
@@ -392,7 +397,7 @@ worker_status <- function(con, keys, worker_ids = NULL) {
 
 worker_info <- function(con, keys, worker_ids = NULL) {
   from_redis_hash(con, keys$worker_info, worker_ids,
-                  f = Vectorize(bin_to_object, SIMPLIFY = FALSE))
+                  f = Vectorize(bin_to_object_safe, SIMPLIFY = FALSE))
 }
 
 worker_log_tail <- function(con, keys, worker_ids = NULL, n = 1) {
@@ -407,11 +412,10 @@ worker_log_tail <- function(con, keys, worker_ids = NULL, n = 1) {
     rownames(ret) <- NULL
     ret
   } else {
-    data.frame(worker_id = character(0),
-               time = character(0),
+    data_frame(worker_id = character(0),
+               time = numeric(0),
                command = character(0),
-               message = character(0),
-               stringsAsFactors = FALSE)
+               message = character(0))
   }
 }
 
@@ -422,6 +426,11 @@ worker_log_tail_1 <- function(con, keys, worker_id, n = 1) {
   }
   log_key <- rrq_key_worker_log(keys$queue_name, worker_id)
   log <- as.character(con$LRANGE(log_key, -n, -1))
+  worker_log_parse(log, worker_id)
+}
+
+
+worker_log_parse <- function(log, worker_id) {
   re <- "^([0-9.]+) ([^ ]+) ?(.*)$"
   if (!all(grepl(re, log))) {
     stop("Corrupt log")
@@ -432,6 +441,7 @@ worker_log_tail_1 <- function(con, keys, worker_id, n = 1) {
   data.frame(worker_id, time, command, message, stringsAsFactors = FALSE)
 }
 
+
 worker_task_id <- function(con, keys, worker_id) {
   from_redis_hash(con, keys$worker_task, worker_id)
 }
@@ -439,18 +449,18 @@ worker_task_id <- function(con, keys, worker_id) {
 worker_delete_exited <- function(con, keys, worker_ids = NULL) {
   ## This only includes things that have been processed and had task
   ## orphaning completed.
+  exited <- worker_list_exited(con, keys)
   if (is.null(worker_ids)) {
-    worker_ids <- worker_list_exited(con, keys)
-  } else {
-    extra <- setdiff(worker_ids, worker_list_exited(con, keys))
-    if (length(extra)) {
-      stop(sprintf(
-        ## TODO: this function does not exist!  It's in rrqueue and I
-        ## think depends on heartbeat.
-        "Workers %s may not have exited;\n\trun worker_identify_lost first",
-        paste(extra, collapse = ", ")))
-    }
+    worker_ids <- exited
   }
+  extra <- setdiff(worker_ids, exited)
+  if (length(extra)) {
+    ## TODO: this whole thing can be improved because we might want to
+    ## inform the user if the workers are not known.
+    stop(sprintf("Workers %s may not have exited or may not exist",
+                 paste(extra, collapse = ", ")))
+  }
+
   if (length(worker_ids) > 0L) {
     con$HDEL(keys$worker_name,   worker_ids)
     con$HDEL(keys$worker_status, worker_ids)
@@ -464,7 +474,7 @@ worker_delete_exited <- function(con, keys, worker_ids = NULL) {
 }
 
 worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
-                         timeout = 0, time_poll = 1, progress = NULL) {
+                        timeout = 0, time_poll = 1, progress = NULL) {
   type <- match.arg(type, c("message", "kill", "kill_local"))
   if (is.null(worker_ids)) {
     worker_ids <- worker_list(con, keys)
@@ -474,129 +484,42 @@ worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
   }
 
   if (type == "message") {
-    ## First, we send a message saying 'STOP'
     message_id <- message_send(con, keys, "STOP", worker_ids = worker_ids)
-    ## ## TODO: This needs RedisHeartbeat support
-    ##
-    ## if (interrupt) {
-    ##   is_busy <- worker_status(con, keys, worker_ids) == WORKER_BUSY
-    ##   if (any(is_busy)) {
-    ##     queue_send_signal(con, keys, tools::SIGINT, worker_ids[is_busy])
-    ##   }
-    ## }
     if (timeout > 0L) {
-      ok <- try(message_get_response(con, keys, message_id, worker_ids,
-                                     delete = FALSE, timeout = timeout,
-                                     time_poll = time_poll,
-                                     progress = progress),
-                silent = TRUE)
-      ## if (inherits(ok, "try-error")) {
-      ##   done <- message_has_response(con, keys, message_id, worker_ids)
-      ##   worker_stop(con, keys, worker_ids[!done], "kill")
-      ## }
+      message_get_response(con, keys, message_id, worker_ids,
+                           delete = FALSE, timeout = timeout,
+                           time_poll = time_poll,
+                           progress = progress)
     }
-    ## TODO: This requires RedisHeartbeat support
   } else if (type == "kill") {
-    ## queue_send_signal(con, keys, tools::SIGTERM, worker_ids)
-    stop("Needs redis heartbeat support")
-  } else {
-    ## kill_local
-    w_info <- worker_info(con, keys, worker_ids)
-    w_local <- vcapply(w_info, "[[", "hostname") == hostname()
-    if (!all(w_local)) {
-      stop("Not all workers are local: ",
-           paste(worker_ids[!w_local], collapse = ", "))
+    info <- worker_info(con, keys, worker_ids)
+    heartbeat_key <- vcapply(info, function(x)
+      x$heartbeat_key %||% NA_character_)
+    if (any(is.na(heartbeat_key))) {
+      stop("Worker does not support heatbeat - can't kill with signal: ",
+           paste(worker_ids[is.na(heartbeat_key)], collapse = ", "))
     }
-    tools::pskill(vnapply(w_info, "[[", "pid"), tools::SIGTERM)
+    for (key in heartbeat_key) {
+      heartbeatr::heartbeat_send_signal(con, key, tools::SIGTERM)
+    }
+  } else { # kill_local
+    info <- worker_info(con, keys, worker_ids)
+    is_local <- vcapply(info, "[[", "hostname") == hostname()
+    if (!all(is_local)) {
+      stop("Not all workers are local: ",
+           paste(worker_ids[!is_local], collapse = ", "))
+    }
+    tools::pskill(vnapply(info, "[[", "pid"), tools::SIGTERM)
   }
   invisible(worker_ids)
 }
 
-## There are a whole bunch of collection functions here.
-##
-## * collect_wait_n:      sits on a special key, so is quite responsive
-## * collect_wait_n_poll: actively polls the hashes
-collect_wait_n <- function(con, keys, task_ids, key_complete,
-                           timeout, time_poll, progress) {
-  time_poll <- time_poll %||% 1
-  assert_integer_like(time_poll)
-  if (time_poll < 1L) {
-    warning(
-      "time_poll cannot be less than 1 with this function; increasing to 1")
-    time_poll <- 1L
-  }
-
-  status <- from_redis_hash(con, keys$task_status, task_ids)
-
-  done <- status == TASK_COMPLETE | status == TASK_ERROR
-  if (all(done)) {
-    con$DEL(key_complete)
-  } else {
-    p <- queuer::progress_timeout(total = length(status),
-                                  show = progress, timeout = timeout)
-    while (!all(done)) {
-      tmp <- con$BLPOP(key_complete, time_poll)
-      if (is.null(tmp)) {
-        if (p(0)) {
-          p(clear = TRUE)
-          stop(sprintf("Exceeded maximum time (%d / %d tasks pending)",
-                       sum(!done), length(task_ids)))
-        }
-      } else {
-        p(1)
-        id <- tmp[[2L]]
-        done[[id]] <- TRUE
-      }
-    }
-  }
-
-  task_results(con, keys, task_ids)
-}
-
-collect_wait_n_poll <- function(con, keys, task_ids,
-                                timeout, time_poll, progress) {
-  time_poll <- time_poll %||% 0.1
-  status <- from_redis_hash(con, keys$task_status, task_ids)
-  done <- status == TASK_COMPLETE | status == TASK_ERROR
-  if (all(done)) {
-    ## pass
-  } else if (timeout == 0) {
-    stop("Tasks not yet completed; can't be immediately returned")
-  } else {
-    p <- queuer::progress_timeout(length(task_ids),
-                                  show = progress, timeout = timeout)
-    remaining <- task_ids[!done]
-    while (length(remaining) > 0L) {
-      exists <- viapply(remaining, con$HEXISTS, key = keys$task_result) == 1L
-      if (any(exists)) {
-        i <- remaining[exists]
-        p(length(i))
-        remaining <- remaining[!exists]
-      } else {
-        if (p(0)) {
-          p(clear = TRUE)
-          stop(sprintf("Exceeded maximum time (%d / %d tasks pending)",
-                       length(remaining), length(task_ids)))
-        }
-        Sys.sleep(time_poll)
-      }
-    }
-  }
-  task_results(con, keys, task_ids)
-}
 
 controller_info <- function() {
   list(hostname = hostname(),
        pid = process_id(),
        username = username(),
        time = Sys.time())
-}
-
-push_controller_info <- function(con, keys, max_n = 10) {
-  n <- con$RPUSH(keys$controller, object_to_bin(controller_info()))
-  if (n > max_n) {
-    con$LTRIM(keys$controller, -max_n, -1)
-  }
 }
 
 worker_naturalsort <- function(x) {
@@ -654,4 +577,37 @@ mean.worker_load <- function(x, time = c(1, 5, 15, Inf), ...) {
   res <- vapply(time, f, numeric(2))
   colnames(res) <- as.character(time)
   res
+}
+
+
+tasks_wait <- function(con, keys, task_ids, timeout, time_poll = NULL,
+                       progress = NULL, key_complete = NULL) {
+  if (is.null(key_complete)) {
+    done <- rep(FALSE, length(task_ids))
+    fetch <- function() {
+      done[!done] <<- hash_exists(con, keys$task_result, task_ids[!done], TRUE)
+      done
+    }
+    general_poll(fetch, time_poll %||% 0.05, timeout, "tasks", TRUE, progress)
+  } else {
+    time_poll <- time_poll %||% 1
+    assert_integer_like(time_poll)
+    if (time_poll < 1L) {
+      stop("time_poll cannot be less than 1 if using key_complete")
+    }
+    done <- set_names(
+      hash_exists(con, keys$task_result, task_ids, TRUE),
+      task_ids)
+
+    fetch <- function() {
+      tmp <- con$BLPOP(key_complete, time_poll)
+      if (!is.null(tmp)) {
+        done[[tmp[[2L]]]] <<- TRUE
+      }
+      done
+    }
+    general_poll(fetch, 0, timeout, "tasks", TRUE, progress)
+  }
+
+  task_results(con, keys, task_ids)
 }

@@ -1,15 +1,13 @@
 context("rrq")
 
 test_that("empty", {
-  root <- tempfile()
-  context <- context::context_save(root)
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
+  obj <- test_rrq()
 
-  obj <- rrq_controller(context, redux::hiredis())
   expect_is(obj, "rrq_controller")
 
   expect_equal(obj$worker_list(), character(0))
   expect_equal(obj$task_list(), character(0))
+  expect_equal(obj$worker_len(), 0)
   expect_equal(obj$queue_length(), 0)
   expect_equal(obj$queue_list(), character(0))
 
@@ -21,210 +19,111 @@ test_that("empty", {
   expect_true(
     file.exists(file.path(obj$context$root$path, "bin", "rrq_worker")))
 
-  test_queue_clean(context$id)
+  expect_equal(
+    obj$worker_log_tail(),
+    data_frame(worker_id = character(0),
+               time = numeric(0),
+               command = character(0),
+               message = character(0)))
+
+  test_queue_clean(obj$context$id)
 })
 
-test_that("basic use", {
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
 
-  ## For testing, use: worker_command(obj)
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
+test_that("basic use", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
 
   t <- obj$enqueue(slowdouble(0.1))
   expect_is(t, "character")
+  w$step(TRUE)
   expect_equal(obj$task_wait(t, 2, progress = PROGRESS), 0.2)
   expect_equal(obj$task_result(t), 0.2)
-
-  t <- obj$enqueue(getwd())
-  expect_equal(obj$task_wait(t, 2, progress = PROGRESS), getwd())
 })
 
-test_that("worker working directory", {
-  other <- tempfile()
-  dir.create(other, FALSE, TRUE)
-  file.copy("myfuns.R", other)
-
-  with_wd(other, {
-    root <- "context"
-    context <- context::context_save(root, sources = "myfuns.R")
-    context <- context::context_load(context, new.env(parent = .GlobalEnv))
-    obj <- rrq_controller(context, redux::hiredis())
-    on.exit(obj$destroy())
-
-    ## For testing, use: worker_command(obj)
-    wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
-
-    t <- obj$enqueue(getwd())
-    res <- obj$task_wait(t, 2)
-    expect_equal(res, getwd())
-    expect_equal(getwd(), normalizePath(other))
-  })
-})
-
-test_that("worker name", {
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
-
-  name <- ids::random_id()
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS,
-                      worker_name_base = name)
-  expect_equal(wid, paste0(name, "_1"))
-})
-
-test_that("worker timeout", {
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
-
-  t <- as.integer(runif(1, min = 100, max = 10000))
-  res <- obj$worker_config_save("localhost", timeout = t, copy_redis = TRUE)
-  expect_equal(res$timeout, t)
-
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
-
-  id <- obj$message_send("TIMEOUT_GET")
-  res <- obj$message_get_response(id, wid, timeout = 10)[[1]]
-  expect_equal(res[["timeout"]], t)
-  expect_lte(res[["remaining"]], t)
-  obj$message_send("STOP")
-
-  obj$worker_config_save("infinite", timeout = Inf, copy_redis = TRUE)
-
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS,
-                       worker_config = "infinite")
-  id <- obj$message_send("TIMEOUT_GET")
-  res <- obj$message_get_response(id, wid, timeout = 10)[[1]]
-  expect_equal(res[["timeout"]], Inf)
-  expect_equal(res[["remaining"]], Inf)
-  obj$message_send("STOP")
-})
 
 test_that("context job", {
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
+  obj <- test_rrq("myfuns.R")
+  context <- obj$context
 
-  ## For testing, use: worker_command(obj)
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
+  w <- test_worker_blocking(obj)
 
   id <- context::task_save(quote(sin(1)), context)
   t <- queuer:::queuer_task(id, context$root)
 
   r <- rrq_controller(context$id, redux::hiredis())
 
-  r$queue_submit(t$id)
-  expect_equal(t$wait(10, progress = PROGRESS), sin(1))
-  expect_equal(t$status(), "COMPLETE")
-  expect_equal(r$queue_length(), 0L)
+  r$context_queue_submit(t$id)
+  expect_equal(t$status(), TASK_PENDING)
+  expect_equal(r$context_queue_length(), 1L)
+
+  w$step(TRUE)
+
+  expect_equal(t$status(), TASK_COMPLETE)
+  expect_equal(t$result(), sin(1))
+
+  expect_equal(r$context_queue_length(), 0L)
 })
 
-test_that("log dir", {
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(context, redux::hiredis())
+
+test_that("context job unsubmit", {
+  obj <- test_rrq("myfuns.R")
+  context <- obj$context
+
+  id1 <- context::task_save(quote(sin(1)), context)
+  t1 <- queuer:::queuer_task(id1, context$root)
+  id2 <- context::task_save(quote(sin(2)), context)
+  t2 <- queuer:::queuer_task(id2, context$root)
+  id3 <- context::task_save(quote(sin(3)), context)
+  t3 <- queuer:::queuer_task(id3, context$root)
+
   r <- rrq_controller(context$id, redux::hiredis())
 
-  on.exit(obj$destroy())
+  r$context_queue_submit(id1)
+  r$context_queue_submit(id2)
+  r$context_queue_submit(id3)
 
-  obj$worker_config_save("localhost", log_path = "worker_logs_task",
-                         copy_redis = TRUE)
-  worker_command(obj)
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
+  expect_equal(r$context_queue_length(), 3)
+  expect_equal(r$context_queue_list(), c(id1, id2, id3))
 
-  info <- obj$worker_info(wid)[[wid]]
-  expect_equal(info$log_path, "worker_logs_task")
-
-  expect_true(file.exists(file.path(root, "worker_logs_task")))
-
-  id <- context::task_save(quote(noisydouble(1)), context)
-  t <- queuer:::queuer_task(id, context$root)
-  r$queue_submit(t$id)
-  res <- t$wait(10, time_poll = 0.1, progress = PROGRESS)
-
-  expect_true(file.exists(file.path(root, obj$db$get(t$id, "log_path"))))
-  expect_is(t$log(), "context_log")
-  x <- t$log()
-  expect_true("start" %in% x$title)
-  expect_equal(x$body[[which(x$title == "start")]], "doubling 1")
+  r$context_queue_unsubmit(id2)
+  expect_equal(r$context_queue_length(), 2)
+  expect_equal(r$context_queue_list(), c(id1, id3))
 })
 
-test_that("failed spawn", {
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  tmp <- basename(tempfile("myfuns_", fileext = ".R"))
-  file.copy("myfuns.R", tmp)
-  context <- context::context_save(root, sources = tmp)
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-  file.remove(tmp)
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
 
-  dat <- evaluate_promise(
-    try(worker_spawn(obj, 2, timeout = 2, progress = PROGRESS),
-        silent = TRUE))
-
-  expect_is(dat$result, "try-error")
-  expect_match(dat$messages, "2 / 2 workers not identified in time",
-               all = FALSE, fixed = TRUE)
-  expect_match(dat$messages, "Log files recovered for 2 workers",
-               all = FALSE, fixed = TRUE)
-  expect_match(dat$output, "No such file or directory",
-               all = FALSE, fixed = TRUE)
-})
-
-test_that("error", {
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
-
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
+test_that("task errors are returned", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
 
   t1 <- obj$enqueue(only_positive(1))
-  expect_equal(obj$task_wait(t1, 2, progress = PROGRESS), 1)
+  w$step(TRUE)
+  expect_equal(obj$task_result(t1), 1)
 
   t2 <- obj$enqueue(only_positive(-1))
-  res <- obj$task_wait(t2, 2, progress = PROGRESS)
+  w$step(TRUE)
+  res <- obj$task_result(t2)
   expect_is(res, "rrq_task_error")
   expect_null(res$warnings)
 
   t3 <- obj$enqueue(nonexistant_function(-1))
-  res <- obj$task_wait(t3, 2, progress = PROGRESS)
+  w$step(TRUE)
+  res <- obj$task_result(t3)
   expect_is(res, "rrq_task_error")
   expect_null(res$warnings)
 })
 
-test_that("error", {
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
 
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
+test_that("task warnings are returned", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
 
   t1 <- obj$enqueue(warning_then_error(2))
-  r1 <- obj$task_wait(t1, 2, progress = PROGRESS)
+  expect_warning(
+    w$step(TRUE),
+    "This is warning number \\d")
+
+  r1 <- obj$task_result(t1)
   expect_is(r1, "rrq_task_error")
   expect_is(r1, "try-error")
   expect_is(r1$warnings, "list")
@@ -234,30 +133,36 @@ test_that("error", {
   expect_equal(r1$warnings[[2]]$message, "This is warning number 2")
 
   expect_match(tail(r1$trace, 2)[[1]], "^warning_then_error")
+})
 
-  id <- context::task_save(quote(warning_then_error(2)), context)
-  obj$queue_submit(id)
-  t <- queuer:::queuer_task(id, context$root)
-  r2 <- t$wait(10, time_poll = 0.1, progress = PROGRESS)
 
-  expect_is(r2, "context_task_error")
-  expect_is(r2$warnings, "list")
-  expect_equal(length(r2$warnings), 2)
-  expect_is(r2$warnings[[1]], "simpleWarning")
-  expect_equal(r2$warnings[[1]]$message, "This is warning number 1")
-  expect_equal(r2$warnings[[2]]$message, "This is warning number 2")
+test_that("task warnings are returned from context task", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
 
-  expect_match(tail(r2$trace, 2)[[1]], "^warning_then_error")
+  id <- context::task_save(quote(warning_then_error(2)), obj$context)
+  obj$context_queue_submit(id)
+  t <- queuer:::queuer_task(id, obj$context$root)
+
+  expect_warning(
+    w$step(),
+    "This is warning number \\d")
+
+  r <- t$result()
+
+  expect_is(r, "context_task_error")
+  expect_is(r$warnings, "list")
+  expect_equal(length(r$warnings), 2)
+  expect_is(r$warnings[[1]], "simpleWarning")
+  expect_equal(r$warnings[[1]]$message, "This is warning number 1")
+  expect_equal(r$warnings[[2]]$message, "This is warning number 2")
+
+  expect_match(tail(r$trace, 2)[[1]], "^warning_then_error")
 })
 
 
 test_that("task_position", {
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  context <- context::context_load(context, new.env(parent = .GlobalEnv))
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
+  obj <- test_rrq("myfuns.R")
 
   t1 <- obj$enqueue(sin(1))
   t2 <- obj$enqueue(sin(1))
@@ -272,23 +177,173 @@ test_that("task_position", {
 })
 
 
+test_that("task_position", {
+  obj <- test_rrq("myfuns.R")
+
+  expect_equal(
+    obj$task_overview(),
+    list(PENDING = 0, RUNNING = 0, COMPLETE = 0, ERROR = 0))
+
+  t1 <- obj$enqueue(sin(1))
+  t2 <- obj$enqueue(sin(1))
+  t3 <- obj$enqueue(sin(1))
+
+  expect_equal(
+    obj$task_overview(),
+    list(PENDING = 3, RUNNING = 0, COMPLETE = 0, ERROR = 0))
+})
+
+
 test_that("call", {
-  Sys.setenv(R_TESTS = "")
-  root <- tempfile()
-  context <- context::context_save(root, sources = "myfuns.R")
-  envir <- new.env(parent = .GlobalEnv)
-  context <- context::context_load(context, envir)
-  obj <- rrq_controller(context, redux::hiredis())
-  on.exit(obj$destroy())
+  obj <- test_rrq("myfuns.R")
+
+  envir <- obj$context$envir
   a <- 20L
 
   t1 <- obj$call(quote(noisydouble), 10, envir = envir)
   t2 <- obj$call(quote(noisydouble), a, envir = envir)
   t3 <- obj$call(quote(add), a, a, envir = envir)
 
-  wid <- worker_spawn(obj, timeout = 5, progress = PROGRESS)
+  w <- test_worker_blocking(obj)
+  w$step(TRUE)
+  w$step(TRUE)
+  w$step(TRUE)
 
-  expect_equal(obj$task_wait(t1, progress = PROGRESS), 20L)
-  expect_equal(obj$task_wait(t2, progress = PROGRESS), 40L)
-  expect_equal(obj$task_wait(t3, progress = PROGRESS), 40L)
+  expect_equal(obj$task_result(t1), 20L)
+  expect_equal(obj$task_result(t2), 40L)
+  expect_equal(obj$task_result(t3), 40L)
+})
+
+
+test_that("can't create queue with unloaded context", {
+  skip_if_no_redis()
+  root <- tempfile()
+  dir.create(root)
+  context <- context::context_save(root)
+
+  expect_error(
+    rrq_controller(context),
+    "context must be loaded")
+})
+
+
+test_that("wait for tasks without key", {
+  obj <- test_rrq("myfuns.R")
+  wid <- test_worker_spawn(obj)
+
+  t1 <- obj$enqueue(1 + 1)
+  t2 <- obj$enqueue(2 + 2)
+
+  res <- obj$tasks_wait(c(t1, t2))
+  expect_equal(res, set_names(list(2, 4), c(t1, t2)))
+
+  ## Slightly slower jobs:
+  t3 <- obj$enqueue(slowdouble(0.1))
+  t4 <- obj$enqueue(slowdouble(0.1))
+  res <- obj$tasks_wait(c(t3, t4))
+  expect_equal(res, set_names(list(0.2, 0.2), c(t3, t4)))
+})
+
+
+test_that("wait for tasks with key", {
+  obj <- test_rrq("myfuns.R")
+  k1 <- rrq_key_task_complete(obj$keys$queue_name)
+  t1 <- obj$enqueue(1 + 1, key_complete = k1)
+  t2 <- obj$enqueue(2 + 2, key_complete = k1)
+
+  wid <- test_worker_spawn(obj)
+
+  expect_error(
+    obj$tasks_wait(c(t1, t2), key_complete = k1, time_poll = 0.1),
+    "time_poll must be integer like")
+  expect_error(
+    obj$tasks_wait(c(t1, t2), key_complete = k1, time_poll = -1),
+    "time_poll cannot be less than 1 if using key_complete")
+  res <- obj$tasks_wait(c(t1, t2), key_complete = k1)
+  expect_equal(res, set_names(list(2, 4), c(t1, t2)))
+
+  ## Slightly slower jobs:
+  k2 <- rrq_key_task_complete(obj$keys$queue_name)
+  t3 <- obj$enqueue(slowdouble(0.1), key_complete = k2)
+  t4 <- obj$enqueue(slowdouble(0.1), key_complete = k2)
+  res <- obj$tasks_wait(c(t3, t4), key_complete = k2)
+  expect_equal(res, set_names(list(0.2, 0.2), c(t3, t4)))
+})
+
+
+test_that("task delete", {
+  obj <- test_rrq("myfuns.R")
+  t1 <- obj$enqueue(1 + 1)
+  t2 <- obj$enqueue(2 + 2)
+  t3 <- obj$enqueue(3 + 3)
+
+  expect_setequal(obj$task_list(), c(t1, t2, t3))
+  obj$task_delete(t1)
+  expect_setequal(obj$task_list(), c(t2, t3))
+  obj$task_delete(c(t2, t3))
+  expect_setequal(obj$task_list(), character(0))
+})
+
+
+test_that("wait for tasks on a key", {
+  obj <- test_rrq("myfuns.R")
+  wid <- test_worker_spawn(obj)
+  key <- rrq_key_task_complete(obj$keys$queue_name)
+
+  id <- obj$enqueue(sin(1), key_complete = key)
+  res <- obj$task_wait(id, 1, key_complete = NULL, progress = FALSE)
+  expect_equal(obj$con$EXISTS(key), 1)
+  expect_equal(obj$task_wait(id, key_complete = key), sin(1))
+  expect_equal(obj$con$EXISTS(key), 0)
+})
+
+
+test_that("stop worker", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+  obj$worker_stop()
+  expect_error(
+    w$step(), "BYE", class = "rrq_worker_stop")
+})
+
+
+test_that("Can't read logs without root", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+  rrq <- rrq_controller(obj$context$id, obj$con)
+  expect_error(
+    rrq$worker_process_log(w$name),
+    "To read the worker log, need access to context root")
+})
+
+
+test_that("Can't delete running tasks", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  id <- obj$enqueue(sin(1))
+  w$poll(TRUE)
+  worker_run_task_start(w, id)
+  expect_error(
+    obj$task_delete(id),
+    "Can't delete running tasks")
+})
+
+
+test_that("Error if results are not ready", {
+  obj <- test_rrq()
+  id <- obj$enqueue(sin(1))
+  expect_error(obj$task_result(id), "Missing some results")
+})
+
+
+test_that("worker load", {
+  obj <- test_rrq()
+  w1 <- test_worker_blocking(obj)
+  w2 <- test_worker_blocking(obj)
+  load <- obj$worker_load()
+  expect_is(load, "worker_load")
+  expect_setequal(load$worker_id, c(w1$name, w2$name))
+  avg <- mean(load)
+  expect_true(all(avg["used", ] == 0))
+  expect_true(all(avg["available", ] == 1))
 })

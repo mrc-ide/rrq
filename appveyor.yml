@@ -17,10 +17,12 @@ install:
 
 # Adapt as necessary starting from here
 
-before_build:
-  - choco install redis-64
-  - redis-server --service-install
-  - redis-server --service-start
+# NOTE: redis currently disabled as worker spawn does not work on windows.
+#
+# before_build:
+#   - choco install redis-64
+#   - redis-server --service-install
+#   - redis-server --service-start
 
 build_script:
   - travis-tool.sh install_deps
