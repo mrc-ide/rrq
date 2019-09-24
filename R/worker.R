@@ -46,7 +46,6 @@ R6_rrq_worker <- R6::R6Class(
 
   public = list(
     name = NULL,
-    context = NULL,
     envir = NULL,
     keys = NULL,
     con = NULL,
@@ -57,30 +56,25 @@ R6_rrq_worker <- R6::R6Class(
     timeout = NULL,
     timer = NULL,
     heartbeat = NULL,
-    cores = NULL,
     loop_task = NULL,
     loop_continue = NULL,
 
-    initialize = function(context, con, key_alive = NULL, worker_name = NULL,
+    initialize = function(con, queue_id, key_alive = NULL, worker_name = NULL,
                           time_poll = NULL, log_path = NULL, timeout = NULL,
                           heartbeat_period = NULL) {
-      assert_is(context, "context")
       assert_is(con, "redis_api")
-      self$context <- context
+
       self$con <- con
-      self$db <- context$db
-
       self$name <- worker_name %||% ids::adjective_animal()
-      self$keys <- rrq_keys(context$id, self$name)
-
-      self$time_poll <- time_poll %||% 60
-      self$cores <- as.integer(Sys.getenv("CONTEXT_CORES", "0"))
-
-      self$log_path <- worker_initialise_logs(self$context, log_path)
+      self$keys <- rrq_keys(queue_id, self$name)
 
       if (self$con$SISMEMBER(self$keys$worker_name, self$name) == 1L) {
         stop("Looks like this worker exists already...")
       }
+
+      self$db <- rrq_db(self$con, self$keys)
+      self$time_poll <- time_poll %||% 60
+      self$log_path <- worker_initialise_logs(NULL, log_path)
 
       withCallingHandlers(
         worker_initialise(self, key_alive, timeout, heartbeat_period),
@@ -98,9 +92,14 @@ R6_rrq_worker <- R6::R6Class(
     },
 
     load_context = function() {
-      e <- new.env(parent = .GlobalEnv)
-      self$context <- context::context_load(self$context, e, refresh = TRUE)
-      self$envir <- self$context$envir
+      ## This is where we should run a hook function, saved alongside
+      ## the worker config.  That would allow directly running context
+      ## jobs as a hook and setting us up for dependency injection.
+      self$envir <- new.env(parent = .GlobalEnv)
+      ## stop("think about this")
+      ## e <- new.env(parent = .GlobalEnv)
+      ## self$context <- context::context_load(self$context, e, refresh = TRUE)
+      ## self$envir <- self$context$envir
     },
 
     poll = function(immediate = FALSE) {
@@ -108,7 +107,7 @@ R6_rrq_worker <- R6::R6Class(
       if (self$paused) {
         keys <- keys$worker_message
       } else {
-        keys <- c(keys$worker_message, keys$queue_rrq, keys$queue_ctx)
+        keys <- c(keys$worker_message, keys$queue)
       }
       self$loop_task <- blpop(self$con, keys, self$time_poll, immediate)
     },
@@ -121,8 +120,8 @@ R6_rrq_worker <- R6::R6Class(
       worker_loop(self)
     },
 
-    run_task = function(task_id, rrq) {
-      worker_run_task(self, task_id, rrq)
+    run_task = function(task_id) {
+      worker_run_task(self, task_id)
     },
 
     run_message = function(msg) {
@@ -139,9 +138,6 @@ R6_rrq_worker <- R6::R6Class(
         tryCatch(
           self$heartbeat$stop(graceful),
           error = function(e) message("Could not stop heartbeat"))
-      }
-      if (self$cores > 0) {
-        context::parallel_cluster_stop()
       }
       self$con$SREM(self$keys$worker_name,   self$name)
       self$con$HSET(self$keys$worker_status, self$name, WORKER_EXITED)
@@ -163,8 +159,6 @@ worker_info_collect <- function(worker) {
               pid = process_id(),
               redis_host = redis_config$host,
               redis_port = redis_config$port,
-              context_id = worker$context$id,
-              context_root = worker$context$root$path,
               log_path = worker$log_path)
   if (!is.null(worker$heartbeat)) {
     dat$heartbeat_key <- worker$keys$worker_heartbeat
@@ -189,12 +183,12 @@ worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
     redis$DEL(keys$worker_log),
     redis$HSET(keys$worker_info,   worker$name, object_to_bin(worker$info())))
 
-  if (worker$cores > 0) {
-    context::context_log("parallel",
-                         sprintf("running as parallel job [%d cores]",
-                                 worker$cores))
-    context::parallel_cluster_start(worker$cores, worker$context)
-  }
+  ## if (worker$cores > 0) {
+  ##   context::context_log("parallel",
+  ##                        sprintf("running as parallel job [%d cores]",
+  ##                                worker$cores))
+  ##   context::parallel_cluster_start(worker$cores, worker$context)
+  ## }
 
   if (!is.null(timeout)) {
     run_message_TIMEOUT_SET(worker, timeout)
@@ -236,7 +230,7 @@ worker_step <- function(worker, immediate) {
     if (task[[1L]] == keys$worker_message) {
       worker$run_message(task[[2L]])
     } else {
-      worker$run_task(task[[2L]], task[[1L]] == keys$queue_rrq)
+      worker$run_task(task[[2L]])
       worker$timer <- NULL
     }
   }
@@ -304,10 +298,9 @@ worker_catch_interrupt <- function(worker) {
   force(worker)
 
   queue_type <- set_names(
-    c("message", "rrq", "context"),
-    c(worker$keys$worker_message,
-      worker$keys$queue_rrq,
-      worker$keys$queue_ctx))
+    c("message", "queue"),
+    c(worker$keys$worker_message, worker$keys$queue))
+
 
   function(e) {
     ## NOTE: this won't recursively catch interrupts.  Especially
@@ -347,6 +340,7 @@ worker_catch_interrupt <- function(worker) {
 
 worker_initialise_logs <- function(context, path) {
   if (!is.null(path)) {
+    browser()
     if (!is_relative_path(path)) {
       stop("Must be a relative path")
     }

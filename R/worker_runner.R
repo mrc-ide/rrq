@@ -17,20 +17,13 @@ rrq_worker_main_args <- function(args) {
        key_alive = if (dat$n == 4L) dat$args[[4L]] else NULL)
 }
 
-## TODO: This might become the primary way of launching workers?
-## Rework things using it and see what it's like that way.  We can
-## always tweak the rrq_worker functions a bit further to test if need
-## be.
-##
-## TODO: is it ever useful to save the context_id into the config?  It
-## seems that would lead to a proliferation of configurations and make
-## it difficult to know when to save them.
-rrq_worker_from_config <- function(root, context_id, worker_config,
+rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
                                    worker_name = NULL, key_alive = NULL) {
-  context <- context::context_read(context_id, root)
-  config <- worker_config_read(context, worker_config)
-  con <- redux::hiredis(host = config$redis_host, port = config$redis_port)
-  R6_rrq_worker$new(context, con,
+  con <- redux::hiredis()
+  keys <- rrq_keys(queue_id)
+  config <- worker_config_read(con, keys, worker_config)
+
+  R6_rrq_worker$new(con, queue_id,
                     key_alive = key_alive,
                     worker_name = worker_name,
                     time_poll = config$time_poll,

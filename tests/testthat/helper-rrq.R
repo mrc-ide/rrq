@@ -49,7 +49,7 @@ wait_status <- function(t, obj, timeout = 2, time_poll = 0.05,
 }
 
 
-test_context <- function(sources = NULL) {
+test_context <- function(sources = NULL, ...) {
   root <- tempfile()
   dir.create(root)
   if (length(sources) > 0) {
@@ -57,7 +57,7 @@ test_context <- function(sources = NULL) {
   }
 
   context <- with_wd(root, {
-    ctx <- context::context_save(root, sources = sources)
+    ctx <- context::context_save(root, sources = sources, ...)
     context::context_load(ctx, new.env(parent = .GlobalEnv))
   })
 
