@@ -57,7 +57,7 @@ run_message_INFO <- function(worker) {
 }
 
 run_message_REFRESH <- function(worker) {
-  worker$load_context()
+  worker$load_envir()
   "OK"
 }
 

@@ -51,6 +51,14 @@ R6_rrq_controller <- R6::R6Class(
       }
     },
 
+    envir = function(create, notify = TRUE) {
+      assert_is(create, "function")
+      self$con$SET(self$keys$envir, object_to_bin(create))
+      if (notify) {
+        self$message_send("REFRESH")
+      }
+    },
+
     ## 0. Queuing
     enqueue = function(expr, envir = parent.frame(), key_complete = NULL) {
       self$enqueue_(substitute(expr), envir, key_complete)

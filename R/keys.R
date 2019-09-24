@@ -18,6 +18,7 @@ rrq_keys_queue <- function(queue) {
        controller    = sprintf("%s:controller",     queue),
 
        db_prefix     = sprintf("%s:db:",            queue),
+       envir         = sprintf("%s:envir",          queue),
 
        worker_config = sprintf("%s:worker:config",  queue),
        worker_name   = sprintf("%s:worker:name",    queue),

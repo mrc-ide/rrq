@@ -91,11 +91,14 @@ R6_rrq_worker <- R6::R6Class(
       self$con$RPUSH(self$keys$worker_log, res$redis)
     },
 
-    load_context = function() {
-      ## This is where we should run a hook function, saved alongside
-      ## the worker config.  That would allow directly running context
-      ## jobs as a hook and setting us up for dependency injection.
+    load_envir = function() {
+      rrq_log("envir", "creating environment")
       self$envir <- new.env(parent = .GlobalEnv)
+      create <- self$con$GET(self$keys$envir)
+      if (!is.null(create)) {
+        rrq_log("envir", "running hook")
+        bin_to_object(create)(self$envir)
+      }
     },
 
     poll = function(immediate = FALSE) {
@@ -166,7 +169,7 @@ worker_info_collect <- function(worker) {
 worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
   keys <- worker$keys
 
-  worker$load_context()
+  worker$load_envir()
 
   worker$heartbeat <- heartbeat(worker$con, keys$worker_heartbeat,
                                 heartbeat_period)
