@@ -74,9 +74,25 @@ test_hiredis <- function() {
 test_rrq <- function(sources = NULL) {
   skip_if_no_redis()
   Sys.setenv(R_TESTS = "")
-  context <- test_context(sources)
-  obj <- rrq_controller(context, redux::hiredis())
-  obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
+
+  root <- tempfile()
+  dir.create(root)
+  if (length(sources) > 0) {
+    file.copy(sources, root)
+    sources <- file.path(root, sources)
+  }
+
+  name <- sprintf("rrq:%s", ids::random_id())
+
+  create <- function(envir) {
+    for (s in sources) {
+      sys.source(s, envir)
+    }
+  }
+
+  obj <- rrq_controller(name)
+  obj$worker_config_save("localhost", time_poll = 1)
+  obj$envir(create)
   reg.finalizer(obj, function(e) obj$destroy())
   obj
 }
@@ -90,9 +106,7 @@ test_worker_spawn <- function(obj, ..., timeout = 10) {
 
 
 test_worker_blocking <- function(obj, worker_config = "localhost", ...) {
-  root <- normalizePath(obj$context$root$path)
-  context_id <- obj$context$id
-  rrq_worker_from_config(root, context_id, worker_config, ...)
+  rrq_worker_from_config(obj$keys$queue_name, worker_config, ...)
 }
 
 
