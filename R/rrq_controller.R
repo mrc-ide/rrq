@@ -52,8 +52,12 @@ R6_rrq_controller <- R6::R6Class(
     },
 
     envir = function(create, notify = TRUE) {
-      assert_is(create, "function")
-      self$con$SET(self$keys$envir, object_to_bin(create))
+      if (is.null(create)) {
+        self$con$DEL(self$keys$envir)
+      } else {
+        assert_is(create, "function")
+        self$con$SET(self$keys$envir, object_to_bin(create))
+      }
       if (notify) {
         self$message_send("REFRESH")
       }
