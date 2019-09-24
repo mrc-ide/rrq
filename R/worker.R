@@ -96,10 +96,6 @@ R6_rrq_worker <- R6::R6Class(
       ## the worker config.  That would allow directly running context
       ## jobs as a hook and setting us up for dependency injection.
       self$envir <- new.env(parent = .GlobalEnv)
-      ## stop("think about this")
-      ## e <- new.env(parent = .GlobalEnv)
-      ## self$context <- context::context_load(self$context, e, refresh = TRUE)
-      ## self$envir <- self$context$envir
     },
 
     poll = function(immediate = FALSE) {
@@ -134,7 +130,7 @@ R6_rrq_worker <- R6::R6Class(
 
     shutdown = function(status = "OK", graceful = TRUE) {
       if (!is.null(self$heartbeat)) {
-        context::context_log("heartbeat", "stopping")
+        rrq_log("heartbeat", "stopping")
         tryCatch(
           self$heartbeat$stop(graceful),
           error = function(e) message("Could not stop heartbeat"))
@@ -170,7 +166,6 @@ worker_info_collect <- function(worker) {
 worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
   keys <- worker$keys
 
-  context::context_log_start()
   worker$load_context()
 
   worker$heartbeat <- heartbeat(worker$con, keys$worker_heartbeat,
@@ -182,13 +177,6 @@ worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
     redis$HDEL(keys$worker_task,   worker$name),
     redis$DEL(keys$worker_log),
     redis$HSET(keys$worker_info,   worker$name, object_to_bin(worker$info())))
-
-  ## if (worker$cores > 0) {
-  ##   context::context_log("parallel",
-  ##                        sprintf("running as parallel job [%d cores]",
-  ##                                worker$cores))
-  ##   context::parallel_cluster_start(worker$cores, worker$context)
-  ## }
 
   if (!is.null(timeout)) {
     run_message_TIMEOUT_SET(worker, timeout)

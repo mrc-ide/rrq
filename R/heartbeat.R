@@ -1,10 +1,10 @@
 heartbeat <- function(con, key, period) {
   if (!is.null(period)) {
-    context::context_log("heartbeat", key)
+    rrq_log("heartbeat", key)
     loadNamespace("heartbeatr")
     config <- con$config()
     ret <- heartbeatr::heartbeat(key, period, config = config)
-    context::context_log("heartbeat", "OK")
+    rrq_log("heartbeat", "OK")
     ret
   }
 }
