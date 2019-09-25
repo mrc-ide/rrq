@@ -14,12 +14,6 @@
 ##'   killed with an interrupt.  The default should be good for most
 ##'   uses, but shorter values are used for debugging.
 ##'
-##' @param log_path Optional log path, used for storing per-task logs,
-##'   rather than leaving them within the worker logs.  This affects
-##'   only the context queue and not the rrq queue, which is not
-##'   logged.  This path will be intepreted as relative to the context
-##'   root.
-##'
 ##' @param timeout Optional timeout to set for the worker.  This is
 ##'   (roughly) quivalent to issuing a \code{TIMEOUT_SET} message
 ##'   after initialising the worker, except that it's guaranteed to be
@@ -33,10 +27,10 @@
 ##' @export
 rrq_worker <- function(queue_id, con = redux::hiredis(), key_alive = NULL,
                        worker_name = NULL, time_poll = NULL,
-                       log_path = NULL, timeout = NULL,
+                       timeout = NULL,
                        heartbeat_period = NULL) {
   w <- R6_rrq_worker$new(con, queue_id, key_alive, worker_name, time_poll,
-                         log_path, timeout, heartbeat_period)
+                         timeout, heartbeat_period)
   w$loop()
   invisible()
 }
@@ -52,7 +46,6 @@ R6_rrq_worker <- R6::R6Class(
     con = NULL,
     db = NULL,
     paused = FALSE,
-    log_path = NULL,
     time_poll = NULL,
     timeout = NULL,
     timer = NULL,
@@ -61,7 +54,7 @@ R6_rrq_worker <- R6::R6Class(
     loop_continue = NULL,
 
     initialize = function(con, queue_id, key_alive = NULL, worker_name = NULL,
-                          time_poll = NULL, log_path = NULL, timeout = NULL,
+                          time_poll = NULL, timeout = NULL,
                           heartbeat_period = NULL) {
       assert_is(con, "redis_api")
 
@@ -75,7 +68,6 @@ R6_rrq_worker <- R6::R6Class(
 
       self$db <- rrq_db(self$con, self$keys)
       self$time_poll <- time_poll %||% 60
-      self$log_path <- worker_initialise_logs(NULL, log_path)
 
       withCallingHandlers(
         worker_initialise(self, key_alive, timeout, heartbeat_period),
@@ -158,8 +150,7 @@ worker_info_collect <- function(worker) {
               wd = getwd(),
               pid = process_id(),
               redis_host = redis_config$host,
-              redis_port = redis_config$port,
-              log_path = worker$log_path)
+              redis_port = redis_config$port)
   if (!is.null(worker$heartbeat)) {
     dat$heartbeat_key <- worker$keys$worker_heartbeat
   }
@@ -330,21 +321,8 @@ worker_catch_interrupt <- function(worker) {
 }
 
 
-worker_initialise_logs <- function(context, path) {
-  if (!is.null(path)) {
-    browser()
-    if (!is_relative_path(path)) {
-      stop("Must be a relative path")
-    }
-    dir.create(file.path(context$root$path, path), FALSE, TRUE)
-    path
-  }
-}
-
-
 worker_format <- function(worker) {
   x <- worker$info()
-  x$log_path <- x$log_path %||% "<not set>"
   x$heartbeat_key <- x$heartbeat_key %||% "<not set>"
   n <- nchar(names(x))
   pad <- vcapply(max(n) - n, strrep, x = " ")

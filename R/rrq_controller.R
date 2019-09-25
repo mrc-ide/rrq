@@ -215,10 +215,10 @@ R6_rrq_controller <- R6::R6Class(
     },
 
     worker_config_save = function(name, time_poll = NULL, timeout = NULL,
-                                  log_path = NULL, heartbeat_period = NULL,
+                                  heartbeat_period = NULL,
                                   overwrite = TRUE) {
       worker_config_save(self$con, self$keys, name, time_poll, timeout,
-                         log_path, heartbeat_period, overwrite)
+                         heartbeat_period, overwrite)
     },
 
     worker_config_list = function() {

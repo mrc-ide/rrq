@@ -1,11 +1,11 @@
 worker_config_save <- function(con, keys, name,
                                time_poll = NULL, timeout = NULL,
-                               log_path = NULL, heartbeat_period = NULL,
+                               heartbeat_period = NULL,
                                overwrite = TRUE) {
   key <- keys$worker_config
   write <- overwrite || con$HEXISTS(key, name) == 0
   if (write) {
-    config <- worker_config_make(time_poll, timeout, log_path, heartbeat_period)
+    config <- worker_config_make(time_poll, timeout, heartbeat_period)
     con$HSET(key, name, object_to_bin(config))
     invisible(config)
   } else {
@@ -24,22 +24,18 @@ worker_config_read <- function(con, keys, name) {
 
 
 worker_config_make <- function(time_poll = NULL, timeout = NULL,
-                               log_path = NULL, heartbeat_period = NULL) {
+                               heartbeat_period = NULL) {
   if (!is.null(time_poll)) {
     assert_scalar_integer_like(time_poll)
   }
   if (!(is.null(timeout) || identical(timeout, Inf))) {
     assert_scalar_integer_like(timeout)
   }
-  if (!is.null(log_path)) {
-    assert_scalar_character(log_path)
-  }
   if (!is.null(heartbeat_period)) {
     assert_scalar_integer_like(heartbeat_period)
   }
   config <- list(time_poll = time_poll,
                  timeout = timeout,
-                 log_path = log_path,
                  heartbeat_period = heartbeat_period)
   config[!vlapply(config, is.null)]
 }

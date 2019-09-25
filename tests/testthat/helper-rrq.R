@@ -67,9 +67,8 @@ test_rrq <- function(sources = NULL, root = tempfile()) {
 
 
 test_worker_spawn <- function(obj, ..., timeout = 10) {
-  testthat::skip_on_appveyor()
-  worker_spawn(obj, ..., path = obj$context$root$path, progress = PROGRESS,
-               timeout = timeout)
+  skip_on_cran()
+  worker_spawn(obj, ..., progress = PROGRESS, timeout = timeout)
 }
 
 

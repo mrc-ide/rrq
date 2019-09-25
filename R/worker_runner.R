@@ -33,7 +33,6 @@ rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
                     key_alive = key_alive,
                     worker_name = worker_name,
                     time_poll = config$time_poll,
-                    log_path = config$log_path,
                     timeout = config$timeout,
                     heartbeat_period = config$heartbeat_period)
 }

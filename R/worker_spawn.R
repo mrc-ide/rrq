@@ -41,9 +41,9 @@
 ##'
 ##' @export
 worker_spawn <- function(obj, n = 1, logdir = NULL,
-                          timeout = 600, worker_config = "localhost",
-                          worker_name_base = NULL, path = NULL,
-                          time_poll = 1, progress = NULL) {
+                         timeout = 600, worker_config = "localhost",
+                         worker_name_base = NULL, path = NULL,
+                         time_poll = 1, progress = NULL) {
   assert_is(obj, "rrq_controller")
   if (!(worker_config %in% obj$worker_config_list())) {
     stop(sprintf("Invalid rrq worker configuration key '%s'", worker_config))
