@@ -6,6 +6,6 @@ rrq_clean <- function(con, queue_name, delete = 0, worker_stop = FALSE,
     worker_stop(con, keys, type = type, timeout = worker_stop_timeout,
                 progress = FALSE)
   }
-  pat <- sprintf("rrq:%s:*", queue_name)
+  pat <- sprintf("%s:*", queue_name)
   delete_keys(con, pat, delete)
 }
