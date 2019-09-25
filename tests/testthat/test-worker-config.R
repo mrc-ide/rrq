@@ -4,10 +4,9 @@ test_that("rrq_default configuration", {
   ## (this is actually the *test* default configuration, which is
   ## possibly not what is wanted)
   obj <- test_rrq()
-  expect_equal(obj$db$get("localhost", "worker_config"),
-               list(redis_host = obj$con$config()$host,
-                    redis_port = obj$con$config()$port,
-                    time_poll = 1))
+  expect_equal(obj$worker_config_list(), "localhost")
+  expect_equal(obj$worker_config_read("localhost"),
+               list(time_poll = 1))
 })
 
 
@@ -19,13 +18,14 @@ test_that("create short-lived worker", {
 
   ## Local:
   msg1 <- capture_messages(
-    w <- rrq_worker_from_config(obj$context$root$path, obj$context$id, key))
+    w <- rrq_worker_from_config(obj$keys$queue_name, key))
   msg2 <- capture_messages(res <- w$loop())
   expect_null(res)
   expect_true(any(grepl("STOP OK (TIMEOUT)", msg2, fixed = TRUE)))
 
   ## Remote:
-  wid <- test_worker_spawn(obj, worker_config = key)
+  logs <- tempfile()
+  wid <- test_worker_spawn(obj, worker_config = key, logdir = logs)
   expect_is(wid, "character")
   log <- obj$worker_log_tail(wid, Inf)
   expect_is(log, "data.frame")
@@ -42,10 +42,10 @@ test_that("create short-lived worker", {
   }
   expect_equal(nrow(log), 2L)
   expect_equal(log$command[[2]], "STOP")
-  expect_true(file.exists(
-    file.path(obj$context$root$path, "worker_logs", wid)))
-  txt <- obj$worker_process_log(wid, FALSE)
-  expect_is(txt, "character")
+
+  logfile <- file.path(logs, wid)
+  expect_true(file.exists(logfile))
+  txt <- readLines(logfile)
   expect_true(any(grepl("STOP OK (TIMEOUT)", txt, fixed = TRUE)))
 })
 
@@ -56,7 +56,7 @@ test_that("Sensible error message on missing config", {
   key <- "nonexistant"
 
   expect_error(
-    rrq_worker_from_config(obj$context$root$path, obj$context$id, key),
+    rrq_worker_from_config(obj$keys$queue_name, key),
     "Invalid rrq worker configuration key 'nonexistant'")
   expect_error(
     test_worker_spawn(obj, worker_config = key),
@@ -110,13 +110,4 @@ test_that("infinite timeout", {
   w$step(TRUE)
   res <- obj$message_get_response(id, w$name)[[1]]
   expect_equal(res, c(timeout = Inf, remaining = Inf))
-})
-
-
-test_that("Can't save config without root", {
-  obj <- test_rrq("myfuns.R")
-  rrq <- rrq_controller(obj$context$id, obj$con)
-  expect_error(
-    rrq$worker_config_save(),
-    "To save a worker config, need access to context root")
 })

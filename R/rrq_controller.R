@@ -43,7 +43,8 @@ R6_rrq_controller <- R6::R6Class(
     destroy = function(delete = TRUE, type = "message",
                        worker_stop_timeout = 0) {
       if (!is.null(self$con)) {
-        rrq_clean(self$con, self$name, delete, type, worker_stop_timeout)
+        rrq_clean(self$con, self$keys$queue_name, delete, type,
+                  worker_stop_timeout)
         ## render the controller useless:
         self$con <- NULL
         self$name <- NULL
@@ -223,6 +224,10 @@ R6_rrq_controller <- R6::R6Class(
 
     worker_config_list = function() {
       list_to_character(self$con$HKEYS(self$keys$worker_config))
+    },
+
+    worker_config_read = function(name) {
+      worker_config_read(self$con, self$keys, name)
     },
 
     worker_load = function(worker_ids = NULL, ...) {
