@@ -286,3 +286,34 @@ test_that("context tasks are logged", {
   expect_true("start" %in% x$title)
   expect_equal(x$body[[which(x$title == "start")]], "doubling 1")
 })
+
+
+test_that("rrq_worker_main_args parse", {
+  expect_equal(
+    rrq_worker_main_args("name"),
+    list(queue_id = "name",
+         config = "localhost",
+         name = NULL,
+         key_alive = NULL))
+
+  expect_equal(
+    rrq_worker_main_args(c("name", "--name=bob")),
+    list(queue_id = "name",
+         config = "localhost",
+         name = "bob",
+         key_alive = NULL))
+
+  expect_equal(
+    rrq_worker_main_args(c("name", "--key-alive=key")),
+    list(queue_id = "name",
+         config = "localhost",
+         name = NULL,
+         key_alive = "key"))
+
+  expect_equal(
+    rrq_worker_main_args(c("name", "--config=config")),
+    list(queue_id = "name",
+         config = "config",
+         name = NULL,
+         key_alive = NULL))
+})

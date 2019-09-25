@@ -11,6 +11,7 @@ BugReports: https://github.com/mrc-ide/rrq/issues
 Imports:
     R6,
     context (>= 0.1.4),
+    docopt,
     ids,
     lazyeval,
     queuer (>= 0.1.0),

@@ -221,6 +221,10 @@ R6_rrq_controller <- R6::R6Class(
                          log_path, heartbeat_period, overwrite)
     },
 
+    worker_config_list = function() {
+      list_to_character(self$con$HKEYS(self$keys$worker_config))
+    },
+
     worker_load = function(worker_ids = NULL, ...) {
       worker_load(self$con, self$keys, worker_ids, ...)
     },

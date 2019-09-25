@@ -11,44 +11,6 @@ test_that("rrq_default configuration", {
 })
 
 
-test_that("rrq_worker_main_args", {
-  obj <- test_rrq()
-
-  host <- "redis_host"
-  port <- 8888
-  nm <- ids::adjective_animal()
-  key <- ids::random_id()
-  use <- "myconfig"
-  args <- c(obj$context$root$path, obj$context$id, use, nm)
-  args2 <- c(args, key)
-
-  ## This can't be easily tested here, but could be done with
-  ## rrq_worker_from_config
-  expect_error(rrq_worker_main_args(c()), "At least 4 arguments required")
-  expect_error(rrq_worker_main(args),
-               "Invalid rrq worker configuration key")
-  expect_error(rrq_worker_main(args2),
-               "Invalid rrq worker configuration key")
-
-  ## Then save a configuration:
-  obj$worker_config_save(use, redis_host = host, redis_port = port)
-  config <- worker_config_read(obj$context, use)
-
-  ## And show that we can load it appropriately
-  expect_equal(config$redis_host, host)
-  expect_equal(config$redis_port, port)
-
-  expect_null(
-    obj$worker_config_save(use, redis_host = host, redis_port = port,
-                           overwrite = FALSE))
-  expect_identical(worker_config_read(obj$context, use), config)
-
-  expect_identical(
-    obj$worker_config_save(use, redis_host = host, redis_port = port,
-                           overwrite = TRUE), config)
-})
-
-
 test_that("create short-lived worker", {
   obj <- test_rrq()
 
