@@ -112,7 +112,7 @@ test_that("worker catch interrupt with collected, but unstarted, task", {
 
   expect_message(
     worker_catch_interrupt(w)(interrupt()),
-    "REQUEUE rrq:")
+    "REQUEUE queue:")
 
   expect_equal(obj$queue_list(), c(id1, id2, id3))
 })

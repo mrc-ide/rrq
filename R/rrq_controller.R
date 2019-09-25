@@ -151,11 +151,11 @@ R6_rrq_controller <- R6::R6Class(
 
     ## 2. Fast queue
     queue_length = function() {
-      self$con$LLEN(self$keys$queue_rrq)
+      self$con$LLEN(self$keys$queue)
     },
 
     queue_list = function() {
-      list_to_character(self$con$LRANGE(self$keys$queue_rrq, 0, -1))
+      list_to_character(self$con$LRANGE(self$keys$queue, 0, -1))
     },
 
     ## 4. Workers
@@ -284,7 +284,7 @@ task_overview <- function(con, keys, task_ids) {
 ## A better way would possibly be to use a LUA script; especially for
 ## the case where there is a single job that'd be fairly easy to do.
 task_position <- function(con, keys, task_ids, missing) {
-  queue <- vcapply(con$LRANGE(keys$queue_rrq, 0, -1L), identity)
+  queue <- vcapply(con$LRANGE(keys$queue, 0, -1L), identity)
   match(task_ids, queue, missing)
 }
 
