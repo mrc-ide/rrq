@@ -4,8 +4,7 @@ test_that("heartbeat", {
   skip_if_not_installed("heartbeatr")
   obj <- test_rrq()
 
-  res <- obj$worker_config_save("localhost", heartbeat_period = 3,
-                                copy_redis = TRUE)
+  res <- obj$worker_config_save("localhost", heartbeat_period = 3)
   expect_equal(res$heartbeat_period, 3)
 
   w <- test_worker_blocking(obj)
@@ -38,8 +37,7 @@ test_that("interrupt stuck worker (local)", {
   ## We need to set time_poll to be fairly fast because BLPOP is not
   ## interruptable; the interrupt will only be handled _after_ R gets
   ## control back.
-  res <- obj$worker_config_save("localhost", time_poll = 1,
-                                copy_redis = TRUE)
+  res <- obj$worker_config_save("localhost", time_poll = 1)
 
   wid <- test_worker_spawn(obj)
   pid <- obj$worker_info()[[wid]]$pid
@@ -84,8 +82,7 @@ test_that("interrupt stuck worker (via heartbeat)", {
   ## interruptable; the interrupt will only be handled _after_ R gets
   ## control back.
   res <- obj$worker_config_save("localhost", time_poll = 1,
-                                heartbeat_period = 3,
-                                copy_redis = TRUE)
+                                heartbeat_period = 3)
 
   wid <- test_worker_spawn(obj)
 
@@ -125,8 +122,7 @@ test_that("detect killed worker (via heartbeat)", {
   ## interruptable; the interrupt will only be handled _after_ R gets
   ## control back.
   res <- obj$worker_config_save("localhost", time_poll = 1,
-                                heartbeat_period = 1,
-                                copy_redis = TRUE)
+                                heartbeat_period = 1)
 
   wid <- test_worker_spawn(obj)
   pid <- obj$worker_info()[[wid]]$pid

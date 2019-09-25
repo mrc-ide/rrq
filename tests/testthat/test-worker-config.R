@@ -15,8 +15,7 @@ test_that("create short-lived worker", {
   obj <- test_rrq()
 
   key <- "stop_immediately"
-  cfg <- obj$worker_config_save(key, timeout = 0, time_poll = 1,
-                                copy_redis = TRUE)
+  cfg <- obj$worker_config_save(key, timeout = 0, time_poll = 1)
 
   ## Local:
   msg1 <- capture_messages(
@@ -84,7 +83,7 @@ test_that("worker timeout", {
   obj <- test_rrq("myfuns.R")
 
   t <- as.integer(runif(1, min = 100, max = 10000))
-  res <- obj$worker_config_save("localhost", timeout = t, copy_redis = TRUE)
+  res <- obj$worker_config_save("localhost", timeout = t)
   expect_equal(res$timeout, t)
 
   w <- test_worker_blocking(obj)
@@ -101,7 +100,7 @@ test_that("worker timeout", {
 
 test_that("infinite timeout", {
   obj <- test_rrq("myfuns.R")
-  obj$worker_config_save("infinite", timeout = Inf, copy_redis = TRUE)
+  obj$worker_config_save("infinite", timeout = Inf)
 
   w <- test_worker_blocking(obj, worker_config = "infinite")
   expect_equal(w$timeout, Inf)

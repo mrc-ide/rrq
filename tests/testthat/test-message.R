@@ -356,7 +356,7 @@ test_that("unknown command with complex arguments", {
 test_that("send and wait", {
   obj <- test_rrq()
 
-  obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
+  obj$worker_config_save("localhost", time_poll = 1)
   wid <- test_worker_spawn(obj, 5)
 
   st <- obj$worker_status()

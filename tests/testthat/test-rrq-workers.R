@@ -205,8 +205,7 @@ test_that("kill worker with a signal", {
   skip_on_os("windows")
 
   obj <- test_rrq()
-  res <- obj$worker_config_save("localhost", heartbeat_period = 3,
-                                copy_redis = TRUE)
+  res <- obj$worker_config_save("localhost", heartbeat_period = 3)
   wid <- test_worker_spawn(obj)
 
   pid <- obj$worker_info(wid)[[1]]$pid
