@@ -4,24 +4,15 @@
 \alias{rrq_controller}
 \title{rrq queue controller}
 \usage{
-rrq_controller(context, con = redux::hiredis())
+rrq_controller(name, con = redux::hiredis())
 }
 \arguments{
-\item{context}{A context handle object.  The context needs to be
-loaded.  Alternatively, just the context id can be passed
-through here (not the context object itself).  In that case,
-some communication is disabled (we will not have access to
-context's internal database, nor the filesystem (of course it
-does sort of have access via the workers if there are any).
-Currently this impacts \code{worker_process_log} (which needs
-access to the filesystem), \code{worker_config_save} (which
-needs access to both the filesystem and the context database),
-and \code{lapply} and \code{enqueue_bulk} which both need access
-to the \emph{loaded} context, at least for now.}
+\item{name}{An identifier for the queue.  This will prefix all
+keys in redis, so a prefix might be useful here depending on
+your use case (e.g. \code{rrq:<user>:<id>})}
 
-\item{con}{A redis connection (redux object).}
+\item{con}{A redis connection}
 }
 \description{
 A queue controller.  Use this to interact with a queue/cluster.
 }
-

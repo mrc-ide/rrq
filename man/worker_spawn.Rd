@@ -5,39 +5,28 @@
 \alias{worker_wait}
 \title{Spawn a worker}
 \usage{
-worker_spawn(obj, n = 1, logdir = "worker_logs", timeout = 600,
-  worker_config = "localhost", worker_name_base = NULL, path = NULL,
+worker_spawn(obj, n = 1, logdir = NULL, timeout = 600,
+  worker_config = "localhost", worker_name_base = NULL,
   time_poll = 1, progress = NULL)
 
-worker_wait(obj, key_alive, timeout = 600, time_poll = 1, progress = NULL)
+worker_wait(obj, key_alive, timeout = 600, time_poll = 1,
+  progress = NULL)
 }
 \arguments{
 \item{obj}{An \code{rrq_controller} object}
 
 \item{n}{Number of workers to spawn}
 
-\item{logdir}{Path of a log directory to write to.  This will be
-interpreted relative to the context root.}
+\item{logdir}{Path of a log directory to write the worker process
+log to, interpreted relative to the current working directory}
 
 \item{timeout}{Time to wait for workers to appear}
 
 \item{worker_config}{Name of the configuration to use.  By default
-the \code{"localhost"} configuration is used, which duplicates
-the redis information from the local configuration but otherwise
-uses the defaults.}
+the \code{"localhost"} configuration is used}
 
 \item{worker_name_base}{Optional base to construct the worker
 names from.  If omitted a random name will be used.}
-
-\item{path}{Path to start the worker in.  By default workers will
-start in the current working directory, but you can start them
-elsewhere by providing a path here.  If the path does not exist,
-an error will be thrown.  If \code{n} is greater than 1, all
-workers will start in the same working directory.  The
-\code{logfile} argument will be interpreted relative to current
-working directory (not the worker working directory); use
-\code{\link{normalizePath}} to convert into an absolute path
-name to prevent this.}
 
 \item{time_poll}{Polling period (in seconds) while waiting for
 workers to come up.  Must be an integer, at least 1.}
@@ -61,4 +50,3 @@ can still propagate to the child processes and can result in them
 dying unexpectedly.  It is probably safer to start processes in a
 completely separate session.
 }
-

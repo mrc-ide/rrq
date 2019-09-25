@@ -4,24 +4,12 @@
 \alias{rrq_worker}
 \title{rrq queue worker}
 \usage{
-rrq_worker(context, con, key_alive = NULL, worker_name = NULL,
-  time_poll = NULL, log_path = NULL, timeout = NULL,
+rrq_worker(queue_id, con = redux::hiredis(), key_alive = NULL,
+  worker_name = NULL, time_poll = NULL, timeout = NULL,
   heartbeat_period = NULL)
 }
 \arguments{
-\item{context}{A context handle object.  The context needs to be
-loaded.  Alternatively, just the context id can be passed
-through here (not the context object itself).  In that case,
-some communication is disabled (we will not have access to
-context's internal database, nor the filesystem (of course it
-does sort of have access via the workers if there are any).
-Currently this impacts \code{worker_process_log} (which needs
-access to the filesystem), \code{worker_config_save} (which
-needs access to both the filesystem and the context database),
-and \code{lapply} and \code{enqueue_bulk} which both need access
-to the \emph{loaded} context, at least for now.}
-
-\item{con}{A redis connection (redux object).}
+\item{con}{A redis connection}
 
 \item{key_alive}{Optional key that will be written once the
 worker is alive.}
@@ -33,13 +21,6 @@ name will be created.}
 impact on the database but make workers less responsive to being
 killed with an interrupt.  The default should be good for most
 uses, but shorter values are used for debugging.}
-
-\item{log_path}{Optional log path, used for storing per-task logs,
-rather than leaving them within the worker logs.  This affects
-only the context queue and not the rrq queue, which is not
-logged.  This path will be intepreted as relative to the context
-root (though perhaps later this will be sanitised to support
-absolute paths...).}
 
 \item{timeout}{Optional timeout to set for the worker.  This is
 (roughly) quivalent to issuing a \code{TIMEOUT_SET} message
@@ -55,4 +36,3 @@ tolerant queues.}
 A rrq queue worker.  These are not for interacting with but will
 sit and poll a queue for jobs.
 }
-

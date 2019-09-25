@@ -16,4 +16,3 @@ Register that workers are expected.  This generates a key that one
 or more workers will write to when they start up (as used by
 \code{worker_spawn}).
 }
-
