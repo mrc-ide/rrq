@@ -43,3 +43,17 @@ test_that("read worker process log", {
   expect_is(txt, "character")
   expect_match(txt, "ALIVE", all = FALSE)
 })
+
+
+test_that("wait for worker exit", {
+  obj <- test_rrq("myfuns.R")
+  wid <- test_worker_spawn(obj)
+
+  con <- obj$con # save a copy
+  queue_id <- obj$keys$queue_name
+  obj$destroy(worker_stop_timeout = 0.5)
+
+  expect_equal(
+    redux::scan_find(con, paste0(queue_id, ":*")),
+    character(0))
+})
