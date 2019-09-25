@@ -16,8 +16,8 @@ test_that("Don't wait", {
 
 
 test_that("failed spawn", {
-  obj <- test_rrq("myfuns.R")
-  root <- obj$context$root$path
+  root <- tempfile()
+  obj <- test_rrq("myfuns.R", root)
   unlink(file.path(root, "myfuns.R"))
 
   dat <- evaluate_promise(

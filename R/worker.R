@@ -31,10 +31,11 @@
 ##'   tolerant queues.
 ##'
 ##' @export
-rrq_worker <- function(context, con, key_alive = NULL, worker_name = NULL,
-                       time_poll = NULL, log_path = NULL, timeout = NULL,
+rrq_worker <- function(queue_id, con = redux::hiredis(), key_alive = NULL,
+                       worker_name = NULL, time_poll = NULL,
+                       log_path = NULL, timeout = NULL,
                        heartbeat_period = NULL) {
-  w <- R6_rrq_worker$new(context, con, key_alive, worker_name, time_poll,
+  w <- R6_rrq_worker$new(con, queue_id, key_alive, worker_name, time_poll,
                          log_path, timeout, heartbeat_period)
   w$loop()
   invisible()

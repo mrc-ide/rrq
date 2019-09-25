@@ -1,20 +1,5 @@
-test_queue_clean <- function(context_id, delete=TRUE) {
-  invisible(rrq_clean(redux::hiredis(), context_id, delete, "message"))
-}
-
-temp_context <- function(sources=NULL, ...) {
-  root <- tempfile()
-  dir.create(root, TRUE, FALSE)
-  if (length(sources) > 0L) {
-    file.copy(sources, root)
-  }
-  context::context_save(root, sources=sources, ...)
-}
-
-worker_command <- function(obj) {
-  root <- obj$context$root$path
-  context_id <- obj$context$id
-  bquote(rrq_worker_from_config(.(root), .(context_id), "localhost"))
+test_queue_clean <- function(queue_name, delete = TRUE) {
+  invisible(rrq_clean(redux::hiredis(), queue_name, delete, "message"))
 }
 
 has_internet <- function() {
@@ -49,33 +34,16 @@ wait_status <- function(t, obj, timeout = 2, time_poll = 0.05,
 }
 
 
-test_context <- function(sources = NULL, ...) {
-  root <- tempfile()
-  dir.create(root)
-  if (length(sources) > 0) {
-    file.copy(sources, root)
-  }
-
-  context <- with_wd(root, {
-    ctx <- context::context_save(root, sources = sources, ...)
-    context::context_load(ctx, new.env(parent = .GlobalEnv))
-  })
-
-  context
-}
-
-
 test_hiredis <- function() {
   skip_if_no_redis()
   redux::hiredis()
 }
 
 
-test_rrq <- function(sources = NULL) {
+test_rrq <- function(sources = NULL, root = tempfile()) {
   skip_if_no_redis()
   Sys.setenv(R_TESTS = "")
 
-  root <- tempfile()
   dir.create(root)
   if (length(sources) > 0) {
     file.copy(sources, root)

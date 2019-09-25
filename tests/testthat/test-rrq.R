@@ -16,9 +16,6 @@ test_that("empty", {
   expect_equal(obj$queue_list(), id)
   expect_equal(obj$task_status(id), setNames(TASK_PENDING, id))
 
-  expect_true(
-    file.exists(file.path(obj$context$root$path, "bin", "rrq_worker")))
-
   expect_equal(
     obj$worker_log_tail(),
     data_frame(worker_id = character(0),
@@ -26,7 +23,7 @@ test_that("empty", {
                command = character(0),
                message = character(0)))
 
-  test_queue_clean(obj$context$id)
+  test_queue_clean(obj$keys$queue_name)
 })
 
 
@@ -212,18 +209,6 @@ test_that("call", {
   expect_equal(obj$task_result(t1), 20L)
   expect_equal(obj$task_result(t2), 40L)
   expect_equal(obj$task_result(t3), 40L)
-})
-
-
-test_that("can't create queue with unloaded context", {
-  skip_if_no_redis()
-  root <- tempfile()
-  dir.create(root)
-  context <- context::context_save(root)
-
-  expect_error(
-    rrq_controller(context),
-    "context must be loaded")
 })
 
 
