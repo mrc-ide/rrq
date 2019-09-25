@@ -33,3 +33,13 @@ test_that("failed spawn", {
   ## expect_match(dat$output, "No such file or directory",
   ##              all = FALSE, fixed = TRUE)
 })
+
+
+test_that("read worker process log", {
+  obj <- test_rrq()
+  wid <- test_worker_spawn(obj, 1)
+  obj$message_send_and_wait("STOP")
+  txt <- obj$worker_process_log(wid)
+  expect_is(txt, "character")
+  expect_match(txt, "ALIVE", all = FALSE)
+})

@@ -26,6 +26,8 @@ rrq_keys_queue <- function(queue) {
        worker_task   = sprintf("%s:worker:task",    queue),
        worker_info   = sprintf("%s:worker:info",    queue),
        worker_expect = sprintf("%s:worker:expect",  queue),
+       ## The process log, not the worker log - possibly empty
+       worker_process = sprintf("%s:worker:process", queue),
 
        queue         = sprintf("%s:queue",          queue),
 

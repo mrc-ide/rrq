@@ -1,10 +1,11 @@
-heartbeat <- function(con, key, period) {
+heartbeat <- function(con, keys, period) {
   if (!is.null(period)) {
-    rrq_log("heartbeat", key)
+    key <- keys$worker_heartbeat
+    worker_log(con, keys, "HEARTBEAT", key)
     loadNamespace("heartbeatr")
     config <- con$config()
     ret <- heartbeatr::heartbeat(key, period, config = config)
-    rrq_log("heartbeat", "OK")
+    worker_log(con, keys, "HEARTBEAT", "OK")
     ret
   }
 }

@@ -59,6 +59,8 @@ worker_spawn <- function(obj, n = 1, logdir = NULL,
   message(sprintf("Spawning %d %s with prefix %s",
                   n, ngettext(n, "worker", "workers"), worker_name_base))
 
+  obj$con$HMSET(obj$keys$worker_process, worker_names, logfile)
+
   for (i in seq_len(n)) {
     args <- c(queue_id,
               "--config", worker_config,
@@ -69,7 +71,7 @@ worker_spawn <- function(obj, n = 1, logdir = NULL,
   }
 
   if (timeout > 0) {
-    worker_wait(obj, key_alive, timeout, time_poll, progress, logdir)
+    worker_wait(obj, key_alive, timeout, time_poll, progress)
   } else {
     list(key_alive = key_alive,
          names = worker_names)
@@ -81,7 +83,7 @@ worker_spawn <- function(obj, n = 1, logdir = NULL,
 ##' @param key_alive A key name (generated from
 ##'   \code{\link{rrq_expect_worker}} or \code{worker_spawn})
 worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
-                        progress = NULL, logdir = NULL) {
+                        progress = NULL) {
   con <- obj$con
   keys <- obj$keys
 
@@ -112,7 +114,7 @@ worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
         n_msg <- sum(is.na(ret))
         message(sprintf("%d / %d workers not identified in time", n_msg, n))
         missing <- setdiff(expected, ret[!is.na(ret)])
-        logs <- worker_read_failed_logs(logdir, missing)
+        logs <- worker_read_failed_logs(con, keys, missing)
         worker_print_failed_logs(logs)
         stop(sprintf("Not all workers recovered (key_alive: %s)", key_alive))
       }
@@ -141,9 +143,9 @@ rrq_expect_worker <- function(obj, names) {
 ## These bits exist in separate functions to keep the bits above
 ## relatively straightforward and to help with (eventual) unit
 ## testing.
-worker_read_failed_logs <- function(logdir, missing) {
-  log_file <- file.path(logdir, missing)
-  i <- file.exists(log_file)
+worker_read_failed_logs <- function(con, keys, missing) {
+  log_file <- from_redis_hash(con, keys$worker_process, missing)
+  i <- !is.na(log_file) & file.exists(log_file)
   set_names(lapply(log_file[i], readLines), missing[i])
 }
 

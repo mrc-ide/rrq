@@ -197,22 +197,16 @@ R6_rrq_controller <- R6::R6Class(
                    timeout, time_poll, progress)
     },
 
-    ## This one is a bit unfortunately named, but should do for now.
-    ## It only works if the worker has appropriately saved logging
-    ## information.  Given the existance of things like
-    ## worker_log_tail this should be renamed something like
-    ## worker_text_log perhaps?
+    ## This is likely only to work with workers started by
+    ## worker_spawn, and will basically only work when we're on the
+    ## same physical storage.
     worker_process_log = function(worker_id, parse = TRUE) {
-      stop("not implemented")
-      ## This is going to require access to the same physical storage
-      ## on workers as on the controller and working that out will be
-      ## a trick.
-      root <- self$context$root
-      if (is.null(root)) {
-        stop("To read the worker log, need access to context root")
-      }
       assert_scalar(worker_id)
-      context::task_log(worker_id, root, parse = parse)
+      path <- self$con$HGET(self$keys$worker_process, worker_id)
+      if (is.null(path)) {
+        stop("Process log not enabled for this worker")
+      }
+      readLines(path)
     },
 
     worker_config_save = function(name, time_poll = NULL, timeout = NULL,

@@ -292,13 +292,12 @@ test_that("stop worker", {
 })
 
 
-test_that("Can't read logs without root", {
+test_that("Can't read logs unless enabled", {
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
-  rrq <- rrq_controller(obj$context$id, obj$con)
   expect_error(
-    rrq$worker_process_log(w$name),
-    "To read the worker log, need access to context root")
+    obj$worker_process_log(w$name),
+    "Process log not enabled for this worker")
 })
 
 
@@ -331,4 +330,23 @@ test_that("worker load", {
   avg <- mean(load)
   expect_true(all(avg["used", ] == 0))
   expect_true(all(avg["available", ] == 1))
+})
+
+
+test_that("change environment", {
+  create <- function(value) {
+    force(value)
+    function(envir) {
+      envir$x <- value
+    }
+  }
+
+  obj <- test_rrq()
+  obj$envir(create(1))
+  w <- test_worker_blocking(obj)
+  expect_equal(w$envir$x, 1)
+
+  obj$envir(NULL)
+  expect_message(w$step(TRUE), "REFRESH")
+  expect_equal(ls(w$envir), character(0))
 })

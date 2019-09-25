@@ -79,17 +79,15 @@ R6_rrq_worker <- R6::R6Class(
     },
 
     log = function(label, value = NULL) {
-      res <- worker_log_format(label, value)
-      message(res$screen)
-      self$con$RPUSH(self$keys$worker_log, res$redis)
+      worker_log(self$con, self$keys, label, value)
     },
 
     load_envir = function() {
-      rrq_log("envir", "creating environment")
+      self$log("ENVIR", "new")
       self$envir <- new.env(parent = .GlobalEnv)
       create <- self$con$GET(self$keys$envir)
       if (!is.null(create)) {
-        rrq_log("envir", "running hook")
+        self$log("ENVIR", "create")
         bin_to_object(create)(self$envir)
       }
     },
@@ -126,7 +124,7 @@ R6_rrq_worker <- R6::R6Class(
 
     shutdown = function(status = "OK", graceful = TRUE) {
       if (!is.null(self$heartbeat)) {
-        rrq_log("heartbeat", "stopping")
+        self$log("HEARTBEAT", "stopping")
         tryCatch(
           self$heartbeat$stop(graceful),
           error = function(e) message("Could not stop heartbeat"))
@@ -163,8 +161,7 @@ worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
 
   worker$load_envir()
 
-  worker$heartbeat <- heartbeat(worker$con, keys$worker_heartbeat,
-                                heartbeat_period)
+  worker$heartbeat <- heartbeat(worker$con, keys, heartbeat_period)
 
   worker$con$pipeline(
     redis$SADD(keys$worker_name,   worker$name),
@@ -348,4 +345,11 @@ worker_log_format <- function(label, value) {
   }
 
   list(screen = str_screen, redis = str_redis)
+}
+
+
+worker_log <- function(con, keys, label, value) {
+  res <- worker_log_format(label, value)
+  message(res$screen)
+  con$RPUSH(keys$worker_log, res$redis)
 }

@@ -282,3 +282,18 @@ test_that("rrq_worker_main_args parse", {
          name = NULL,
          key_alive = NULL))
 })
+
+
+test_that("write worker script", {
+  p <- tempfile()
+  res <- write_rrq_worker(p)
+  expect_equal(dirname(res), p)
+  expect_equal(basename(res), "rrq_worker")
+  expect_equal(readLines(res)[[1]], "#!/usr/bin/env Rscript")
+})
+
+
+test_that("write versioned worker script", {
+  res <- write_rrq_worker(versioned = TRUE)
+  expect_match(readLines(res)[[1]], R.home(), fixed = TRUE)
+})

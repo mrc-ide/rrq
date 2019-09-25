@@ -111,3 +111,16 @@ test_that("infinite timeout", {
   res <- obj$message_get_response(id, w$name)[[1]]
   expect_equal(res, c(timeout = Inf, remaining = Inf))
 })
+
+
+
+test_that("rrq_default configuration", {
+  ## (this is actually the *test* default configuration, which is
+  ## possibly not what is wanted)
+  obj <- test_rrq()
+  res1 <- obj$worker_config_save("new", timeout = 1, overwrite = FALSE)
+  expect_equal(res1, list(timeout = 1))
+  res2 <- obj$worker_config_save("new", timeout = 2, overwrite = FALSE)
+  expect_null(res2)
+  expect_equal(obj$worker_config_read("new"), res1)
+})
