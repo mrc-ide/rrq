@@ -24,9 +24,6 @@ vlapply <- function(X, FUN, ...) {
   vapply(X, FUN, logical(1), ...)
 }
 
-l2c <- function(x) {
-  vcapply(x, identity)
-}
 
 ## TODO: After requiring 3.3.0, this can be dropped.
 strrep <- function(x, times) {
@@ -41,9 +38,6 @@ blank <- function(n) {
   if (is.null(a)) b else a
 }
 
-is_directory <- function(path) {
-  file.exists(path) && file.info(path, extra_cols = FALSE)[["isdir"]]
-}
 
 sys_getenv <- function(x) {
   ret <- Sys.getenv(x)
@@ -59,14 +53,6 @@ lstrip <- function(x) {
 
 rstrip <- function(x) {
   sub("\\s+$", "", x, perl = TRUE)
-}
-
-is_absolute_path <- function(path) {
-  grepl("^(/|[A-Za-z]:[/\\]|//|\\\\\\\\)", path)
-}
-
-is_relative_path <- function(path) {
-  !is_absolute_path(path)
 }
 
 
