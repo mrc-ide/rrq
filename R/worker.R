@@ -3,6 +3,9 @@
 ##' @title rrq queue worker
 ##' @inheritParams rrq_controller
 ##'
+##' @param queue_id Name of the queue to connect to.  This will be the
+##'   prefix to all the keys in the redis database
+##'
 ##' @param key_alive Optional key that will be written once the
 ##'   worker is alive.
 ##'

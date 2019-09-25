@@ -9,6 +9,9 @@ rrq_worker(queue_id, con = redux::hiredis(), key_alive = NULL,
   heartbeat_period = NULL)
 }
 \arguments{
+\item{queue_id}{Name of the queue to connect to.  This will be the
+prefix to all the keys in the redis database}
+
 \item{con}{A redis connection}
 
 \item{key_alive}{Optional key that will be written once the
