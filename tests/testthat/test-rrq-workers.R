@@ -263,7 +263,7 @@ test_that("rrq_worker_main_args parse", {
 test_that("write worker script", {
   p <- tempfile()
   res <- write_rrq_worker(p)
-  expect_equal(dirname(res), p)
+  expect_equal(normalizePath(dirname(res)), normalizePath(p))
   expect_equal(basename(res), "rrq_worker")
   expect_equal(readLines(res)[[1]], "#!/usr/bin/env Rscript")
 })
