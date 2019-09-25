@@ -148,19 +148,6 @@ test_that("create worker", {
 })
 
 
-test_that("create parallel worker", {
-  Sys.setenv("CONTEXT_CORES" = 1)
-  on.exit(Sys.unsetenv("CONTEXT_CORES"))
-  obj <- test_rrq()
-  w <- test_worker_blocking(obj)
-  expect_equal(w$cores, 1)
-  expect_is(context::parallel_cluster(), "cluster")
-  w$shutdown()
-  expect_error(context::parallel_cluster(),
-               "Cluster has not been started yet")
-})
-
-
 test_that("worker names can't be duplicated", {
   obj <- test_rrq()
   name <- ids::random_id()
@@ -170,17 +157,6 @@ test_that("worker names can't be duplicated", {
     test_worker_blocking(obj, worker_name = name),
     "Looks like this worker exists already...",
     fixed = TRUE)
-})
-
-
-test_that("log path must be relative", {
-  context <- test_context()
-  path_logs <- file.path(context$root$path, "logs")
-  expect_error(
-    worker_initialise_logs(context, path_logs),
-    "Must be a relative path")
-  expect_silent(worker_initialise_logs(context, "logs"))
-  expect_true(file.exists(path_logs))
 })
 
 

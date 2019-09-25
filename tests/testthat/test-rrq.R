@@ -39,56 +39,6 @@ test_that("basic use", {
 })
 
 
-test_that("context job", {
-  obj <- test_rrq("myfuns.R")
-  context <- obj$context
-
-  w <- test_worker_blocking(obj)
-
-  id <- context::task_save(quote(sin(1)), context)
-  t <- queuer:::queuer_task(id, context$root)
-
-  r <- rrq_controller(context$id, redux::hiredis())
-
-  r$context_queue_submit(t$id)
-  expect_equal(t$status(), TASK_PENDING)
-  expect_equal(r$context_queue_length(), 1L)
-
-  w$step(TRUE)
-
-  expect_equal(t$status(), TASK_COMPLETE)
-  expect_equal(t$result(), sin(1))
-
-  expect_equal(r$context_queue_length(), 0L)
-})
-
-
-test_that("context job unsubmit", {
-  obj <- test_rrq("myfuns.R")
-  context <- obj$context
-
-  id1 <- context::task_save(quote(sin(1)), context)
-  t1 <- queuer:::queuer_task(id1, context$root)
-  id2 <- context::task_save(quote(sin(2)), context)
-  t2 <- queuer:::queuer_task(id2, context$root)
-  id3 <- context::task_save(quote(sin(3)), context)
-  t3 <- queuer:::queuer_task(id3, context$root)
-
-  r <- rrq_controller(context$id, redux::hiredis())
-
-  r$context_queue_submit(id1)
-  r$context_queue_submit(id2)
-  r$context_queue_submit(id3)
-
-  expect_equal(r$context_queue_length(), 3)
-  expect_equal(r$context_queue_list(), c(id1, id2, id3))
-
-  r$context_queue_unsubmit(id2)
-  expect_equal(r$context_queue_length(), 2)
-  expect_equal(r$context_queue_list(), c(id1, id3))
-})
-
-
 test_that("task errors are returned", {
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
@@ -133,31 +83,6 @@ test_that("task warnings are returned", {
 })
 
 
-test_that("task warnings are returned from context task", {
-  obj <- test_rrq("myfuns.R")
-  w <- test_worker_blocking(obj)
-
-  id <- context::task_save(quote(warning_then_error(2)), obj$context)
-  obj$context_queue_submit(id)
-  t <- queuer:::queuer_task(id, obj$context$root)
-
-  expect_warning(
-    w$step(),
-    "This is warning number \\d")
-
-  r <- t$result()
-
-  expect_is(r, "context_task_error")
-  expect_is(r$warnings, "list")
-  expect_equal(length(r$warnings), 2)
-  expect_is(r$warnings[[1]], "simpleWarning")
-  expect_equal(r$warnings[[1]]$message, "This is warning number 1")
-  expect_equal(r$warnings[[2]]$message, "This is warning number 2")
-
-  expect_match(tail(r$trace, 2)[[1]], "^warning_then_error")
-})
-
-
 test_that("task_position", {
   obj <- test_rrq("myfuns.R")
 
@@ -188,27 +113,6 @@ test_that("task_position", {
   expect_equal(
     obj$task_overview(),
     list(PENDING = 3, RUNNING = 0, COMPLETE = 0, ERROR = 0))
-})
-
-
-test_that("call", {
-  obj <- test_rrq("myfuns.R")
-
-  envir <- obj$context$envir
-  a <- 20L
-
-  t1 <- obj$call(quote(noisydouble), 10, envir = envir)
-  t2 <- obj$call(quote(noisydouble), a, envir = envir)
-  t3 <- obj$call(quote(add), a, a, envir = envir)
-
-  w <- test_worker_blocking(obj)
-  w$step(TRUE)
-  w$step(TRUE)
-  w$step(TRUE)
-
-  expect_equal(obj$task_result(t1), 20L)
-  expect_equal(obj$task_result(t2), 40L)
-  expect_equal(obj$task_result(t3), 40L)
 })
 
 

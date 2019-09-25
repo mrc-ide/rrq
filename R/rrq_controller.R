@@ -74,28 +74,6 @@ R6_rrq_controller <- R6::R6Class(
       task_submit(self$con, self$keys, dat, key_complete)
     },
 
-    call = function(FUN, ..., envir = parent.frame(), key_complete = NULL) {
-      rrq_enqueue_bulk_submit(self, list(list(...)), FUN,
-                              envir = envir, do_call = TRUE,
-                              key_complete = key_complete)$task_ids
-    },
-
-    lapply = function(X, FUN, ..., DOTS = NULL,
-                      envir = parent.frame(),
-                      timeout = Inf, time_poll = 1, progress = NULL) {
-      rrq_lapply(self, X, FUN, ..., DOTS = NULL, envir = envir,
-                 timeout = timeout, time_poll = time_poll,
-                 progress = progress)
-    },
-
-    enqueue_bulk = function(X, FUN, ..., DOTS = NULL, do_call = TRUE,
-                            envir = parent.frame(),
-                            timeout = Inf, time_poll = 1, progress = NULL) {
-      rrq_enqueue_bulk(self, X, FUN, ..., DOTS = DOTS, do_call = do_call,
-                       envir = envir, timeout = timeout, time_poll = time_poll,
-                       progress = progress)
-    },
-
     ## 1. Tasks
     ##
     ## TODO: decide if the tasks/task split here is ideal.  It does
