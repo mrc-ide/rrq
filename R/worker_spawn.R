@@ -17,7 +17,6 @@
 ##'
 ##' @param logdir Path of a log directory to write the worker process
 ##'   log to, interpreted relative to the current working directory
-##'   (not affected by \code{path} below).
 ##'
 ##' @param timeout Time to wait for workers to appear
 ##'
@@ -26,12 +25,6 @@
 ##'
 ##' @param worker_name_base Optional base to construct the worker
 ##'   names from.  If omitted a random name will be used.
-##'
-##' @param path Path to start the worker in.  By default workers will
-##'   start in the current working directory, but you can start them
-##'   elsewhere by providing a path here.  If the path does not exist,
-##'   an error will be thrown (all workers will start in the same
-##'   working directory).
 ##'
 ##' @param time_poll Polling period (in seconds) while waiting for
 ##'   workers to come up.  Must be an integer, at least 1.
@@ -42,15 +35,11 @@
 ##' @export
 worker_spawn <- function(obj, n = 1, logdir = NULL,
                          timeout = 600, worker_config = "localhost",
-                         worker_name_base = NULL, path = NULL,
+                         worker_name_base = NULL,
                          time_poll = 1, progress = NULL) {
   assert_is(obj, "rrq_controller")
   if (!(worker_config %in% obj$worker_config_list())) {
     stop(sprintf("Invalid rrq worker configuration key '%s'", worker_config))
-  }
-  if (!is.null(path)) {
-    owd <- setwd(path)
-    on.exit(setwd(owd))
   }
 
   rrq_worker <- write_rrq_worker(versioned = TRUE)
