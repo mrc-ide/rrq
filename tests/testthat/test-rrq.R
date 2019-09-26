@@ -254,3 +254,19 @@ test_that("change environment", {
   expect_message(w$step(TRUE), "REFRESH")
   expect_equal(ls(w$envir), character(0))
 })
+
+
+test_that("queue remove", {
+  obj <- test_rrq()
+  t1 <- obj$enqueue(sin(1))
+  t2 <- obj$enqueue(sin(1))
+  t3 <- obj$enqueue(sin(1))
+
+  expect_equal(obj$queue_length(), 3)
+  expect_equal(obj$queue_remove(t2), TRUE)
+  expect_equal(obj$queue_length(), 2)
+  expect_equal(obj$queue_list(), c(t1, t3))
+
+  expect_equal(obj$queue_remove(c(t1, t2, t3)), c(TRUE, FALSE, TRUE))
+  expect_equal(obj$queue_remove(character(0)), logical(0))
+})

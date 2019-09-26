@@ -137,6 +137,27 @@ R6_rrq_controller <- R6::R6Class(
       list_to_character(self$con$LRANGE(self$keys$queue, 0, -1))
     },
 
+    ## NOTE: uses a pipeline to avoid a race condition - nothing may
+    ## interere with the queue between the LRANGE and the DEL or we
+    ## might lose tasks or double-queue them. If a job is queued
+    ## between the DEL and the RPUSH the newly submitted job gets
+    ## bounced ahead in the queue, which seems tolerable but might not
+    ## always be ideal.  To solve this we should use a lua script.
+    queue_remove = function(task_ids) {
+      if (length(task_ids) == 0) {
+        return(invisible(logical(0)))
+      }
+      res <- self$con$pipeline(
+        redux::redis$LRANGE(self$keys$queue, 0, -1),
+        redux::redis$DEL(self$keys$queue))
+      ids <- list_to_character(res[[1L]])
+      keep <- !(ids %in% task_ids)
+      if (any(keep)) {
+        self$con$RPUSH(self$keys$queue, ids[keep])
+      }
+      invisible(task_ids %in% ids)
+    },
+
     ## 4. Workers
     worker_len = function() {
       worker_len(self$con, self$keys)
