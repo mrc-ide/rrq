@@ -10,7 +10,7 @@ test_that("heartbeat", {
   w <- test_worker_blocking(obj)
   dat <- w$info()
   expect_equal(dat$heartbeat_key,
-               rrq_key_worker_heartbeat(obj$keys$queue_name, w$name))
+               rrq_key_worker_heartbeat(obj$queue_id, w$name))
 
   expect_equal(obj$con$EXISTS(dat$heartbeat_key), 1)
   expect_lte(obj$con$PTTL(dat$heartbeat_key),
@@ -127,7 +127,7 @@ test_that("detect killed worker (via heartbeat)", {
   wid <- test_worker_spawn(obj)
   pid <- obj$worker_info()[[wid]]$pid
 
-  key <- rrq_key_worker_heartbeat(obj$keys$queue_name, wid)
+  key <- rrq_key_worker_heartbeat(obj$queue_id, wid)
   expect_equal(obj$con$EXISTS(key), 1)
   expire <- res$heartbeat_period * 3
   expect_equal(obj$con$GET(key), as.character(expire))

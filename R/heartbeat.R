@@ -13,7 +13,7 @@ heartbeat <- function(con, keys, period) {
 heartbeat_time_remaining <- function(obj) {
   worker_id <- obj$worker_list()
   if (length(worker_id) > 0L) {
-    key <- rrq_key_worker_heartbeat(obj$keys$queue_name, worker_id)
+    key <- rrq_key_worker_heartbeat(obj$queue_id, worker_id)
 
     ## Do _all_ this in one block for consistency I think
     status <- obj$worker_status()

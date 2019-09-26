@@ -131,7 +131,7 @@ message_send <- function(con, keys, command, args = NULL, worker_ids = NULL) {
   if (is.null(worker_ids)) {
     worker_ids <- worker_list(con, keys)
   }
-  key <- rrq_key_worker_message(keys$queue_name, worker_ids)
+  key <- rrq_key_worker_message(keys$queue_id, worker_ids)
   message_id <- redis_time(con)
   content <- message_prepare(message_id, command, args)
   for (k in key) {
@@ -160,7 +160,7 @@ message_has_response <- function(con, keys, message_id, worker_ids, named) {
   if (is.null(worker_ids)) {
     worker_ids <- worker_list(con, keys)
   }
-  res <- vnapply(rrq_key_worker_response(keys$queue_name, worker_ids),
+  res <- vnapply(rrq_key_worker_response(keys$queue_id, worker_ids),
                  con$HEXISTS, message_id, USE.NAMES = FALSE)
   res <- as.logical(res)
   if (named) {
@@ -179,7 +179,7 @@ message_get_response <- function(con, keys, message_id, worker_ids = NULL,
     worker_ids <- worker_list(con, keys)
   }
 
-  response_keys <- rrq_key_worker_response(keys$queue_name, worker_ids)
+  response_keys <- rrq_key_worker_response(keys$queue_id, worker_ids)
 
   done <- rep(FALSE, length(response_keys))
   fetch <- function() {
@@ -209,7 +209,7 @@ message_get_response <- function(con, keys, message_id, worker_ids = NULL,
 
 
 message_response_ids <- function(con, keys, worker_id) {
-  response_keys <- rrq_key_worker_response(keys$queue_name, worker_id)
+  response_keys <- rrq_key_worker_response(keys$queue_id, worker_id)
   ids <- as.character(con$HKEYS(response_keys))
   ids[order(as.numeric(ids))]
 }

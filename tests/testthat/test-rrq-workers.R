@@ -141,7 +141,7 @@ test_that("worker catch interrupt with started task", {
 test_that("create worker", {
   obj <- test_rrq()
   name <- ids::random_id()
-  w <- rrq_worker(obj$keys$queue_name, worker_name = name,
+  w <- rrq_worker(obj$queue_id, worker_name = name,
                   timeout = 1, time_poll = 1)
   log <- obj$worker_log_tail(name, Inf)
   expect_equal(log$command, c("ALIVE", "STOP"))

@@ -50,7 +50,7 @@ test_that("wait for worker exit", {
   wid <- test_worker_spawn(obj)
 
   con <- obj$con # save a copy
-  queue_id <- obj$keys$queue_name
+  queue_id <- obj$queue_id
   obj$destroy(worker_stop_timeout = 0.5)
 
   expect_equal(

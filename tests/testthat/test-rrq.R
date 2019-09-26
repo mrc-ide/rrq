@@ -23,7 +23,7 @@ test_that("empty", {
                command = character(0),
                message = character(0)))
 
-  test_queue_clean(obj$keys$queue_name)
+  test_queue_clean(obj$queue_id)
 })
 
 
@@ -136,7 +136,7 @@ test_that("wait for tasks without key", {
 
 test_that("wait for tasks with key", {
   obj <- test_rrq("myfuns.R")
-  k1 <- rrq_key_task_complete(obj$keys$queue_name)
+  k1 <- rrq_key_task_complete(obj$queue_id)
   t1 <- obj$enqueue(1 + 1, key_complete = k1)
   t2 <- obj$enqueue(2 + 2, key_complete = k1)
 
@@ -152,7 +152,7 @@ test_that("wait for tasks with key", {
   expect_equal(res, set_names(list(2, 4), c(t1, t2)))
 
   ## Slightly slower jobs:
-  k2 <- rrq_key_task_complete(obj$keys$queue_name)
+  k2 <- rrq_key_task_complete(obj$queue_id)
   t3 <- obj$enqueue(slowdouble(0.1), key_complete = k2)
   t4 <- obj$enqueue(slowdouble(0.1), key_complete = k2)
   res <- obj$tasks_wait(c(t3, t4), key_complete = k2)
@@ -177,7 +177,7 @@ test_that("task delete", {
 test_that("wait for tasks on a key", {
   obj <- test_rrq("myfuns.R")
   wid <- test_worker_spawn(obj)
-  key <- rrq_key_task_complete(obj$keys$queue_name)
+  key <- rrq_key_task_complete(obj$queue_id)
 
   id <- obj$enqueue(sin(1), key_complete = key)
   res <- obj$task_wait(id, 1, key_complete = NULL, progress = FALSE)

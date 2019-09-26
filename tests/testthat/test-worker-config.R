@@ -18,7 +18,7 @@ test_that("create short-lived worker", {
 
   ## Local:
   msg1 <- capture_messages(
-    w <- rrq_worker_from_config(obj$keys$queue_name, key))
+    w <- rrq_worker_from_config(obj$queue_id, key))
   msg2 <- capture_messages(res <- w$loop())
   expect_null(res)
   expect_true(any(grepl("STOP OK (TIMEOUT)", msg2, fixed = TRUE)))
@@ -56,7 +56,7 @@ test_that("Sensible error message on missing config", {
   key <- "nonexistant"
 
   expect_error(
-    rrq_worker_from_config(obj$keys$queue_name, key),
+    rrq_worker_from_config(obj$queue_id, key),
     "Invalid rrq worker configuration key 'nonexistant'")
   expect_error(
     test_worker_spawn(obj, worker_config = key),

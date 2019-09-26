@@ -4,10 +4,10 @@
 \alias{rrq_controller}
 \title{rrq queue controller}
 \usage{
-rrq_controller(name, con = redux::hiredis())
+rrq_controller(queue_id, con = redux::hiredis())
 }
 \arguments{
-\item{name}{An identifier for the queue.  This will prefix all
+\item{queue_id}{An identifier for the queue.  This will prefix all
 keys in redis, so a prefix might be useful here depending on
 your use case (e.g. \code{rrq:<user>:<id>})}
 

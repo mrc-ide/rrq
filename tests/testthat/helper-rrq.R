@@ -1,5 +1,5 @@
-test_queue_clean <- function(queue_name, delete = TRUE) {
-  invisible(rrq_clean(redux::hiredis(), queue_name, delete, "message"))
+test_queue_clean <- function(queue_id, delete = TRUE) {
+  invisible(rrq_clean(redux::hiredis(), queue_id, delete, "message"))
 }
 
 has_internet <- function() {
@@ -73,7 +73,7 @@ test_worker_spawn <- function(obj, ..., timeout = 10) {
 
 
 test_worker_blocking <- function(obj, worker_config = "localhost", ...) {
-  rrq_worker_from_config(obj$keys$queue_name, worker_config, ...)
+  rrq_worker_from_config(obj$queue_id, worker_config, ...)
 }
 
 

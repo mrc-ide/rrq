@@ -54,15 +54,13 @@ worker_spawn <- function(obj, n = 1, logdir = NULL,
   dir.create(logdir, FALSE, TRUE)
   logfile <- file.path(logdir, worker_names)
 
-  queue_id <- obj$keys$queue_name
-
   message(sprintf("Spawning %d %s with prefix %s",
                   n, ngettext(n, "worker", "workers"), worker_name_base))
 
   obj$con$HMSET(obj$keys$worker_process, worker_names, logfile)
 
   for (i in seq_len(n)) {
-    args <- c(queue_id,
+    args <- c(obj$queue_id,
               "--config", worker_config,
               "--name", worker_names[[i]],
               "--key-alive", key_alive)
@@ -135,7 +133,7 @@ worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
 ##' @param names Names of expected workers
 ##' @export
 rrq_expect_worker <- function(obj, names) {
-  key_alive <- rrq_key_worker_alive(obj$keys$queue_name)
+  key_alive <- rrq_key_worker_alive(obj$queue_id)
   obj$con$HSET(obj$keys$worker_expect, key_alive, object_to_bin(names))
   key_alive
 }

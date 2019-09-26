@@ -2,17 +2,17 @@
 ##'
 ##' @title rrq queue controller
 ##'
-##' @param name An identifier for the queue.  This will prefix all
+##' @param queue_id An identifier for the queue.  This will prefix all
 ##'   keys in redis, so a prefix might be useful here depending on
 ##'   your use case (e.g. \code{rrq:<user>:<id>})
 ##'
 ##' @param con A redis connection
 ##'
 ##' @export
-rrq_controller <- function(name, con = redux::hiredis()) {
-  assert_scalar_character(name)
+rrq_controller <- function(queue_id, con = redux::hiredis()) {
+  assert_scalar_character(queue_id)
   assert_is(con, "redis_api")
-  R6_rrq_controller$new(con, name)
+  R6_rrq_controller$new(con, queue_id)
 }
 
 R6_rrq_controller <- R6::R6Class(
@@ -20,13 +20,14 @@ R6_rrq_controller <- R6::R6Class(
 
   public = list(
     con = NULL,
-    name = NULL,
+    queue_id = NULL,
     keys = NULL,
     db = NULL,
 
-    initialize = function(con, name) {
+    initialize = function(con, queue_id) {
       self$con <- con
-      self$keys <- rrq_keys(name)
+      self$queue_id <- queue_id
+      self$keys <- rrq_keys(self$queue_id)
       self$worker_config_save("localhost", overwrite = FALSE)
       ## it is possible that it will be userful to have a storr db
       ## here in the object to store things like locals.  In which
@@ -43,11 +44,11 @@ R6_rrq_controller <- R6::R6Class(
     destroy = function(delete = TRUE, type = "message",
                        worker_stop_timeout = 0) {
       if (!is.null(self$con)) {
-        rrq_clean(self$con, self$keys$queue_name, delete, type,
+        rrq_clean(self$con, self$queue_id, delete, type,
                   worker_stop_timeout)
         ## render the controller useless:
         self$con <- NULL
-        self$name <- NULL
+        self$queue_id <- NULL
         self$keys <- NULL
       }
     },
@@ -352,7 +353,7 @@ worker_log_tail_1 <- function(con, keys, worker_id, n = 1) {
   if (identical(n, Inf)) {
     n <- 0
   }
-  log_key <- rrq_key_worker_log(keys$queue_name, worker_id)
+  log_key <- rrq_key_worker_log(keys$queue_id, worker_id)
   log <- as.character(con$LRANGE(log_key, -n, -1))
   worker_log_parse(log, worker_id)
 }
@@ -394,9 +395,9 @@ worker_delete_exited <- function(con, keys, worker_ids = NULL) {
     con$HDEL(keys$worker_status, worker_ids)
     con$HDEL(keys$worker_task,   worker_ids)
     con$HDEL(keys$worker_info,   worker_ids)
-    con$DEL(c(rrq_key_worker_log(keys$queue_name, worker_ids),
-              rrq_key_worker_message(keys$queue_name, worker_ids),
-              rrq_key_worker_response(keys$queue_name, worker_ids)))
+    con$DEL(c(rrq_key_worker_log(keys$queue_id, worker_ids),
+              rrq_key_worker_message(keys$queue_id, worker_ids),
+              rrq_key_worker_response(keys$queue_id, worker_ids)))
   }
   worker_ids
 }

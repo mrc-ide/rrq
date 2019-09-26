@@ -1,41 +1,38 @@
 ## TODO: The prefix will need some work to avoid collisions with other
 ## people.  Avoid the system RNG too - might need to go with openssl
 ## for real RNGs, or with uuids.
-rrq_keys <- function(queue_name, worker_name = NULL) {
+rrq_keys <- function(queue_id, worker_name = NULL) {
   if (is.null(worker_name)) {
-    rrq_keys_queue(queue_name)
+    rrq_keys_queue(queue_id)
   } else {
-    c(rrq_keys_queue(queue_name),
-      rrq_keys_worker(queue_name, worker_name))
+    c(rrq_keys_queue(queue_id),
+      rrq_keys_worker(queue_id, worker_name))
   }
 }
 
-rrq_keys_queue <- function(queue) {
-  ## TODO: queue_name should not be used like this because it's not a
-  ## key itself.
-  list(queue_name    = queue,
+rrq_keys_queue <- function(queue_id) {
+  list(queue_id       = queue_id,
 
-       controller    = sprintf("%s:controller",     queue),
+       controller     = sprintf("%s:controller",     queue_id),
 
-       db_prefix     = sprintf("%s:db:",            queue),
-       envir         = sprintf("%s:envir",          queue),
+       db_prefix      = sprintf("%s:db:",            queue_id),
+       envir          = sprintf("%s:envir",          queue_id),
 
-       worker_config = sprintf("%s:worker:config",  queue),
-       worker_name   = sprintf("%s:worker:name",    queue),
-       worker_status = sprintf("%s:worker:status",  queue),
-       worker_task   = sprintf("%s:worker:task",    queue),
-       worker_info   = sprintf("%s:worker:info",    queue),
-       worker_expect = sprintf("%s:worker:expect",  queue),
-       ## The process log, not the worker log - possibly empty
-       worker_process = sprintf("%s:worker:process", queue),
+       worker_config  = sprintf("%s:worker:config",  queue_id),
+       worker_name    = sprintf("%s:worker:name",    queue_id),
+       worker_status  = sprintf("%s:worker:status",  queue_id),
+       worker_task    = sprintf("%s:worker:task",    queue_id),
+       worker_info    = sprintf("%s:worker:info",    queue_id),
+       worker_expect  = sprintf("%s:worker:expect",  queue_id),
+       worker_process = sprintf("%s:worker:process", queue_id),
 
-       queue         = sprintf("%s:queue",          queue),
+       queue          = sprintf("%s:queue",          queue_id),
 
-       task_expr     = sprintf("%s:task:expr",      queue),
-       task_status   = sprintf("%s:task:status",    queue),
-       task_worker   = sprintf("%s:task:worker",    queue),
-       task_result   = sprintf("%s:task:result",    queue),
-       task_complete = sprintf("%s:task:complete",  queue))
+       task_expr      = sprintf("%s:task:expr",      queue_id),
+       task_status    = sprintf("%s:task:status",    queue_id),
+       task_worker    = sprintf("%s:task:worker",    queue_id),
+       task_result    = sprintf("%s:task:result",    queue_id),
+       task_complete  = sprintf("%s:task:complete",  queue_id))
 }
 
 rrq_keys_worker <- function(queue, worker) {
@@ -64,6 +61,6 @@ rrq_key_task_complete <- function(queue) {
   sprintf("%s:tasks:complete:%s", queue, ids::random_id())
 }
 
-rrq_key_worker_alive <- function(queue_name) {
-  sprintf("%s:worker:alive:%s", queue_name, ids::random_id())
+rrq_key_worker_alive <- function(queue_id) {
+  sprintf("%s:worker:alive:%s", queue_id, ids::random_id())
 }

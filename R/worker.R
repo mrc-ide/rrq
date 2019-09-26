@@ -196,7 +196,7 @@ rrq_worker_stop <- function(worker, message) {
 
 worker_send_signal <- function(con, keys, signal, worker_ids) {
   if (length(worker_ids) > 0L) {
-    for (key in rrq_key_worker_heartbeat(keys$queue_name, worker_ids)) {
+    for (key in rrq_key_worker_heartbeat(keys$queue_id, worker_ids)) {
       heartbeatr::heartbeat_send_signal(con, key, signal)
     }
   }
