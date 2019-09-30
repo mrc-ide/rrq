@@ -87,7 +87,7 @@ run_message_TIMEOUT_SET <- function(worker, args) {
     if (is.null(args)) {
       worker$timer <- NULL
     } else {
-      worker$timer <- queuer::time_checker(args, remaining = TRUE)
+      worker$timer <- time_checker(args, remaining = TRUE)
     }
     "OK"
   } else {
@@ -107,7 +107,7 @@ run_message_TIMEOUT_GET <- function(worker) {
       ## through one BLPOP cycle.  So, if a TIMEOUT_GET message is
       ## issued _immediately_ after running a task then there will be
       ## no timer here, but there should be.
-      worker$timer <- queuer::time_checker(worker$timeout, TRUE)
+      worker$timer <- time_checker(worker$timeout, TRUE)
     }
     c(timeout = worker$timeout, remaining = worker$timer())
   }

@@ -220,7 +220,7 @@ worker_step <- function(worker, immediate) {
 
   if (is.null(task) && !is.null(worker$timeout)) {
     if (is.null(worker$timer)) {
-      worker$timer <- queuer::time_checker(worker$timeout, remaining = TRUE)
+      worker$timer <- time_checker(worker$timeout, remaining = TRUE)
     }
     if (worker$timer() < 0L) {
       stop(rrq_worker_stop(worker, "TIMEOUT"))
