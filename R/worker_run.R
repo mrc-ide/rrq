@@ -1,10 +1,6 @@
-worker_run_task <- function(worker, task_id, rrq) {
+worker_run_task <- function(worker, task_id) {
   worker_run_task_start(worker, task_id)
-  if (rrq) {
-    task_status <- worker_run_task_rrq(worker, task_id)
-  } else {
-    task_status <- worker_run_task_context(worker, task_id)
-  }
+  task_status <- worker_run_task_rrq(worker, task_id)
   worker_run_task_cleanup(worker, task_id, task_status)
 }
 
@@ -37,21 +33,6 @@ worker_run_task_rrq <- function(worker, task_id) {
     redis$HSET(keys$task_result, task_id, object_to_bin(value)),
     redis$HSET(keys$task_status, task_id, task_status))
 
-  task_status
-}
-
-
-worker_run_task_context <- function(worker, task_id) {
-  if (is.null(worker$log_path)) {
-    log_file <- NULL
-  } else {
-    log_path <- file.path(worker$log_path, paste0(task_id, ".log"))
-    worker$db$set(task_id, log_path, "log_path")
-    log_file <- file.path(worker$context$root$path, log_path)
-  }
-  value <- context::task_run(task_id, worker$context, log_file)
-  task_status <- if (inherits(value, "context_task_error"))
-              TASK_ERROR else TASK_COMPLETE
   task_status
 }
 

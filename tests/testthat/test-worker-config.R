@@ -4,48 +4,9 @@ test_that("rrq_default configuration", {
   ## (this is actually the *test* default configuration, which is
   ## possibly not what is wanted)
   obj <- test_rrq()
-  expect_equal(obj$db$get("localhost", "worker_config"),
-               list(redis_host = obj$con$config()$host,
-                    redis_port = obj$con$config()$port,
-                    time_poll = 1))
-})
-
-
-test_that("rrq_worker_main_args", {
-  obj <- test_rrq()
-
-  host <- "redis_host"
-  port <- 8888
-  nm <- ids::adjective_animal()
-  key <- ids::random_id()
-  use <- "myconfig"
-  args <- c(obj$context$root$path, obj$context$id, use, nm)
-  args2 <- c(args, key)
-
-  ## This can't be easily tested here, but could be done with
-  ## rrq_worker_from_config
-  expect_error(rrq_worker_main_args(c()), "At least 4 arguments required")
-  expect_error(rrq_worker_main(args),
-               "Invalid rrq worker configuration key")
-  expect_error(rrq_worker_main(args2),
-               "Invalid rrq worker configuration key")
-
-  ## Then save a configuration:
-  obj$worker_config_save(use, redis_host = host, redis_port = port)
-  config <- worker_config_read(obj$context, use)
-
-  ## And show that we can load it appropriately
-  expect_equal(config$redis_host, host)
-  expect_equal(config$redis_port, port)
-
-  expect_null(
-    obj$worker_config_save(use, redis_host = host, redis_port = port,
-                           overwrite = FALSE))
-  expect_identical(worker_config_read(obj$context, use), config)
-
-  expect_identical(
-    obj$worker_config_save(use, redis_host = host, redis_port = port,
-                           overwrite = TRUE), config)
+  expect_equal(obj$worker_config_list(), "localhost")
+  expect_equal(obj$worker_config_read("localhost"),
+               list(time_poll = 1))
 })
 
 
@@ -53,18 +14,18 @@ test_that("create short-lived worker", {
   obj <- test_rrq()
 
   key <- "stop_immediately"
-  cfg <- obj$worker_config_save(key, timeout = 0, time_poll = 1,
-                                copy_redis = TRUE)
+  cfg <- obj$worker_config_save(key, timeout = 0, time_poll = 1)
 
   ## Local:
   msg1 <- capture_messages(
-    w <- rrq_worker_from_config(obj$context$root$path, obj$context$id, key))
+    w <- rrq_worker_from_config(obj$queue_id, key))
   msg2 <- capture_messages(res <- w$loop())
   expect_null(res)
   expect_true(any(grepl("STOP OK (TIMEOUT)", msg2, fixed = TRUE)))
 
   ## Remote:
-  wid <- test_worker_spawn(obj, worker_config = key)
+  logs <- tempfile()
+  wid <- test_worker_spawn(obj, worker_config = key, logdir = logs)
   expect_is(wid, "character")
   log <- obj$worker_log_tail(wid, Inf)
   expect_is(log, "data.frame")
@@ -81,10 +42,10 @@ test_that("create short-lived worker", {
   }
   expect_equal(nrow(log), 2L)
   expect_equal(log$command[[2]], "STOP")
-  expect_true(file.exists(
-    file.path(obj$context$root$path, "worker_logs", wid)))
-  txt <- obj$worker_process_log(wid, FALSE)
-  expect_is(txt, "character")
+
+  logfile <- file.path(logs, wid)
+  expect_true(file.exists(logfile))
+  txt <- readLines(logfile)
   expect_true(any(grepl("STOP OK (TIMEOUT)", txt, fixed = TRUE)))
 })
 
@@ -95,7 +56,7 @@ test_that("Sensible error message on missing config", {
   key <- "nonexistant"
 
   expect_error(
-    rrq_worker_from_config(obj$context$root$path, obj$context$id, key),
+    rrq_worker_from_config(obj$queue_id, key),
     "Invalid rrq worker configuration key 'nonexistant'")
   expect_error(
     test_worker_spawn(obj, worker_config = key),
@@ -122,7 +83,7 @@ test_that("worker timeout", {
   obj <- test_rrq("myfuns.R")
 
   t <- as.integer(runif(1, min = 100, max = 10000))
-  res <- obj$worker_config_save("localhost", timeout = t, copy_redis = TRUE)
+  res <- obj$worker_config_save("localhost", timeout = t)
   expect_equal(res$timeout, t)
 
   w <- test_worker_blocking(obj)
@@ -139,7 +100,7 @@ test_that("worker timeout", {
 
 test_that("infinite timeout", {
   obj <- test_rrq("myfuns.R")
-  obj$worker_config_save("infinite", timeout = Inf, copy_redis = TRUE)
+  obj$worker_config_save("infinite", timeout = Inf)
 
   w <- test_worker_blocking(obj, worker_config = "infinite")
   expect_equal(w$timeout, Inf)
@@ -152,10 +113,14 @@ test_that("infinite timeout", {
 })
 
 
-test_that("Can't save config without root", {
-  obj <- test_rrq("myfuns.R")
-  rrq <- rrq_controller(obj$context$id, obj$con)
-  expect_error(
-    rrq$worker_config_save(),
-    "To save a worker config, need access to context root")
+
+test_that("rrq_default configuration", {
+  ## (this is actually the *test* default configuration, which is
+  ## possibly not what is wanted)
+  obj <- test_rrq()
+  res1 <- obj$worker_config_save("new", timeout = 1, overwrite = FALSE)
+  expect_equal(res1, list(timeout = 1))
+  res2 <- obj$worker_config_save("new", timeout = 2, overwrite = FALSE)
+  expect_null(res2)
+  expect_equal(obj$worker_config_read("new"), res1)
 })

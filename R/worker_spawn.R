@@ -15,28 +15,16 @@
 ##'
 ##' @param n Number of workers to spawn
 ##'
-##' @param logdir Path of a log directory to write to.  This will be
-##'   interpreted relative to the context root.
+##' @param logdir Path of a log directory to write the worker process
+##'   log to, interpreted relative to the current working directory
 ##'
 ##' @param timeout Time to wait for workers to appear
 ##'
 ##' @param worker_config Name of the configuration to use.  By default
-##'   the \code{"localhost"} configuration is used, which duplicates
-##'   the redis information from the local configuration but otherwise
-##'   uses the defaults.
+##'   the \code{"localhost"} configuration is used
 ##'
 ##' @param worker_name_base Optional base to construct the worker
 ##'   names from.  If omitted a random name will be used.
-##'
-##' @param path Path to start the worker in.  By default workers will
-##'   start in the current working directory, but you can start them
-##'   elsewhere by providing a path here.  If the path does not exist,
-##'   an error will be thrown.  If \code{n} is greater than 1, all
-##'   workers will start in the same working directory.  The
-##'   \code{logfile} argument will be interpreted relative to current
-##'   working directory (not the worker working directory); use
-##'   \code{\link{normalizePath}} to convert into an absolute path
-##'   name to prevent this.
 ##'
 ##' @param time_poll Polling period (in seconds) while waiting for
 ##'   workers to come up.  Must be an integer, at least 1.
@@ -45,44 +33,39 @@
 ##'   (when \code{timeout} is at least 0)
 ##'
 ##' @export
-worker_spawn <- function(obj, n = 1, logdir = "worker_logs",
-                          timeout = 600, worker_config = "localhost",
-                          worker_name_base = NULL, path = NULL,
-                          time_poll = 1, progress = NULL) {
+worker_spawn <- function(obj, n = 1, logdir = NULL,
+                         timeout = 600, worker_config = "localhost",
+                         worker_name_base = NULL,
+                         time_poll = 1, progress = NULL) {
   assert_is(obj, "rrq_controller")
-  if (!obj$db$exists(worker_config, "worker_config")) {
+  if (!(worker_config %in% obj$worker_config_list())) {
     stop(sprintf("Invalid rrq worker configuration key '%s'", worker_config))
   }
-  if (!is.null(path)) {
-    owd <- setwd(path)
-    on.exit(setwd(owd))
-  }
 
-  rrq_worker <- file.path(obj$context$root$path, "bin", "rrq_worker")
+  rrq_worker <- write_rrq_worker(versioned = TRUE)
   env <- paste0("RLIBS=", paste(.libPaths(), collapse = ":"),
                 ' R_TESTS=""')
   worker_name_base <- worker_name_base %||% ids::adjective_animal()
   worker_names <- sprintf("%s_%d", worker_name_base, seq_len(n))
   key_alive <- rrq_expect_worker(obj, worker_names)
 
-  logdir_abs <- file.path(obj$context$root$path, logdir)
-  if (!file.exists(logdir_abs)) {
-    dir.create(logdir_abs, FALSE, TRUE)
-  }
-  obj$context$db$mset(worker_names, file.path(logdir, worker_names), "log_path")
-  logfile <- file.path(logdir_abs, worker_names)
-
-  root <- normalizePath(obj$context$root$path)
-  context_id <- obj$context$id
+  ## log files for the process
+  logdir <- logdir %||% tempfile()
+  dir.create(logdir, FALSE, TRUE)
+  logfile <- file.path(logdir, worker_names)
 
   message(sprintf("Spawning %d %s with prefix %s",
                   n, ngettext(n, "worker", "workers"), worker_name_base))
-  code <- integer(n)
+
+  obj$con$HMSET(obj$keys$worker_process, worker_names, logfile)
 
   for (i in seq_len(n)) {
-    args <- c(root, context_id, worker_config, worker_names[[i]], key_alive)
-    code[[i]] <- system2(rrq_worker, args, env = env, wait = FALSE,
-                         stdout = logfile[[i]], stderr = logfile[[i]])
+    args <- c(obj$queue_id,
+              "--config", worker_config,
+              "--name", worker_names[[i]],
+              "--key-alive", key_alive)
+    system2(rrq_worker, args, env = env, wait = FALSE,
+            stdout = logfile[[i]], stderr = logfile[[i]])
   }
 
   if (timeout > 0) {
@@ -129,7 +112,7 @@ worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
         n_msg <- sum(is.na(ret))
         message(sprintf("%d / %d workers not identified in time", n_msg, n))
         missing <- setdiff(expected, ret[!is.na(ret)])
-        logs <- worker_read_failed_logs(obj$context, missing)
+        logs <- worker_read_failed_logs(con, keys, missing)
         worker_print_failed_logs(logs)
         stop(sprintf("Not all workers recovered (key_alive: %s)", key_alive))
       }
@@ -150,7 +133,7 @@ worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
 ##' @param names Names of expected workers
 ##' @export
 rrq_expect_worker <- function(obj, names) {
-  key_alive <- rrq_key_worker_alive(obj$keys$queue_name)
+  key_alive <- rrq_key_worker_alive(obj$queue_id)
   obj$con$HSET(obj$keys$worker_expect, key_alive, object_to_bin(names))
   key_alive
 }
@@ -158,16 +141,10 @@ rrq_expect_worker <- function(obj, names) {
 ## These bits exist in separate functions to keep the bits above
 ## relatively straightforward and to help with (eventual) unit
 ## testing.
-worker_read_failed_logs <- function(context, missing) {
-  log_path <-
-    l2c(context$db$mget(missing, "log_path", missing = NA_character_))
-  i <- !is.na(log_path)
-  if (any(i)) {
-    log_file <- file.path(context$root$path, log_path[i])
-    j <- file.exists(log_file)
-    logs <- lapply(log_file, readLines)
-    setNames(logs, missing[i][j])
-  }
+worker_read_failed_logs <- function(con, keys, missing) {
+  log_file <- from_redis_hash(con, keys$worker_process, missing)
+  i <- !is.na(log_file) & file.exists(log_file)
+  set_names(lapply(log_file[i], readLines), missing[i])
 }
 
 worker_print_failed_logs <- function(logs) {

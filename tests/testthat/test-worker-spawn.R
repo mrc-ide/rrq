@@ -16,8 +16,8 @@ test_that("Don't wait", {
 
 
 test_that("failed spawn", {
-  obj <- test_rrq("myfuns.R")
-  root <- obj$context$root$path
+  root <- tempfile()
+  obj <- test_rrq("myfuns.R", root)
   unlink(file.path(root, "myfuns.R"))
 
   dat <- evaluate_promise(
@@ -32,4 +32,28 @@ test_that("failed spawn", {
   ## This fails occasionally under covr, but I can't reproduce
   ## expect_match(dat$output, "No such file or directory",
   ##              all = FALSE, fixed = TRUE)
+})
+
+
+test_that("read worker process log", {
+  obj <- test_rrq()
+  wid <- test_worker_spawn(obj, 1)
+  obj$message_send_and_wait("STOP")
+  txt <- obj$worker_process_log(wid)
+  expect_is(txt, "character")
+  expect_match(txt, "ALIVE", all = FALSE)
+})
+
+
+test_that("wait for worker exit", {
+  obj <- test_rrq("myfuns.R")
+  wid <- test_worker_spawn(obj)
+
+  con <- obj$con # save a copy
+  queue_id <- obj$queue_id
+  obj$destroy(worker_stop_timeout = 0.5)
+
+  expect_equal(
+    redux::scan_find(con, paste0(queue_id, ":*")),
+    character(0))
 })

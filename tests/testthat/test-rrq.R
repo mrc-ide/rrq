@@ -16,9 +16,6 @@ test_that("empty", {
   expect_equal(obj$queue_list(), id)
   expect_equal(obj$task_status(id), setNames(TASK_PENDING, id))
 
-  expect_true(
-    file.exists(file.path(obj$context$root$path, "bin", "rrq_worker")))
-
   expect_equal(
     obj$worker_log_tail(),
     data_frame(worker_id = character(0),
@@ -26,7 +23,7 @@ test_that("empty", {
                command = character(0),
                message = character(0)))
 
-  test_queue_clean(obj$context$id)
+  test_queue_clean(obj$queue_id)
 })
 
 
@@ -39,56 +36,6 @@ test_that("basic use", {
   w$step(TRUE)
   expect_equal(obj$task_wait(t, 2, progress = PROGRESS), 0.2)
   expect_equal(obj$task_result(t), 0.2)
-})
-
-
-test_that("context job", {
-  obj <- test_rrq("myfuns.R")
-  context <- obj$context
-
-  w <- test_worker_blocking(obj)
-
-  id <- context::task_save(quote(sin(1)), context)
-  t <- queuer:::queuer_task(id, context$root)
-
-  r <- rrq_controller(context$id, redux::hiredis())
-
-  r$context_queue_submit(t$id)
-  expect_equal(t$status(), TASK_PENDING)
-  expect_equal(r$context_queue_length(), 1L)
-
-  w$step(TRUE)
-
-  expect_equal(t$status(), TASK_COMPLETE)
-  expect_equal(t$result(), sin(1))
-
-  expect_equal(r$context_queue_length(), 0L)
-})
-
-
-test_that("context job unsubmit", {
-  obj <- test_rrq("myfuns.R")
-  context <- obj$context
-
-  id1 <- context::task_save(quote(sin(1)), context)
-  t1 <- queuer:::queuer_task(id1, context$root)
-  id2 <- context::task_save(quote(sin(2)), context)
-  t2 <- queuer:::queuer_task(id2, context$root)
-  id3 <- context::task_save(quote(sin(3)), context)
-  t3 <- queuer:::queuer_task(id3, context$root)
-
-  r <- rrq_controller(context$id, redux::hiredis())
-
-  r$context_queue_submit(id1)
-  r$context_queue_submit(id2)
-  r$context_queue_submit(id3)
-
-  expect_equal(r$context_queue_length(), 3)
-  expect_equal(r$context_queue_list(), c(id1, id2, id3))
-
-  r$context_queue_unsubmit(id2)
-  expect_equal(r$context_queue_length(), 2)
-  expect_equal(r$context_queue_list(), c(id1, id3))
 })
 
 
@@ -136,31 +83,6 @@ test_that("task warnings are returned", {
 })
 
 
-test_that("task warnings are returned from context task", {
-  obj <- test_rrq("myfuns.R")
-  w <- test_worker_blocking(obj)
-
-  id <- context::task_save(quote(warning_then_error(2)), obj$context)
-  obj$context_queue_submit(id)
-  t <- queuer:::queuer_task(id, obj$context$root)
-
-  expect_warning(
-    w$step(),
-    "This is warning number \\d")
-
-  r <- t$result()
-
-  expect_is(r, "context_task_error")
-  expect_is(r$warnings, "list")
-  expect_equal(length(r$warnings), 2)
-  expect_is(r$warnings[[1]], "simpleWarning")
-  expect_equal(r$warnings[[1]]$message, "This is warning number 1")
-  expect_equal(r$warnings[[2]]$message, "This is warning number 2")
-
-  expect_match(tail(r$trace, 2)[[1]], "^warning_then_error")
-})
-
-
 test_that("task_position", {
   obj <- test_rrq("myfuns.R")
 
@@ -194,39 +116,6 @@ test_that("task_position", {
 })
 
 
-test_that("call", {
-  obj <- test_rrq("myfuns.R")
-
-  envir <- obj$context$envir
-  a <- 20L
-
-  t1 <- obj$call(quote(noisydouble), 10, envir = envir)
-  t2 <- obj$call(quote(noisydouble), a, envir = envir)
-  t3 <- obj$call(quote(add), a, a, envir = envir)
-
-  w <- test_worker_blocking(obj)
-  w$step(TRUE)
-  w$step(TRUE)
-  w$step(TRUE)
-
-  expect_equal(obj$task_result(t1), 20L)
-  expect_equal(obj$task_result(t2), 40L)
-  expect_equal(obj$task_result(t3), 40L)
-})
-
-
-test_that("can't create queue with unloaded context", {
-  skip_if_no_redis()
-  root <- tempfile()
-  dir.create(root)
-  context <- context::context_save(root)
-
-  expect_error(
-    rrq_controller(context),
-    "context must be loaded")
-})
-
-
 test_that("wait for tasks without key", {
   obj <- test_rrq("myfuns.R")
   wid <- test_worker_spawn(obj)
@@ -247,7 +136,7 @@ test_that("wait for tasks without key", {
 
 test_that("wait for tasks with key", {
   obj <- test_rrq("myfuns.R")
-  k1 <- rrq_key_task_complete(obj$keys$queue_name)
+  k1 <- rrq_key_task_complete(obj$queue_id)
   t1 <- obj$enqueue(1 + 1, key_complete = k1)
   t2 <- obj$enqueue(2 + 2, key_complete = k1)
 
@@ -263,7 +152,7 @@ test_that("wait for tasks with key", {
   expect_equal(res, set_names(list(2, 4), c(t1, t2)))
 
   ## Slightly slower jobs:
-  k2 <- rrq_key_task_complete(obj$keys$queue_name)
+  k2 <- rrq_key_task_complete(obj$queue_id)
   t3 <- obj$enqueue(slowdouble(0.1), key_complete = k2)
   t4 <- obj$enqueue(slowdouble(0.1), key_complete = k2)
   res <- obj$tasks_wait(c(t3, t4), key_complete = k2)
@@ -288,7 +177,7 @@ test_that("task delete", {
 test_that("wait for tasks on a key", {
   obj <- test_rrq("myfuns.R")
   wid <- test_worker_spawn(obj)
-  key <- rrq_key_task_complete(obj$keys$queue_name)
+  key <- rrq_key_task_complete(obj$queue_id)
 
   id <- obj$enqueue(sin(1), key_complete = key)
   res <- obj$task_wait(id, 1, key_complete = NULL, progress = FALSE)
@@ -307,13 +196,12 @@ test_that("stop worker", {
 })
 
 
-test_that("Can't read logs without root", {
+test_that("Can't read logs unless enabled", {
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
-  rrq <- rrq_controller(obj$context$id, obj$con)
   expect_error(
-    rrq$worker_process_log(w$name),
-    "To read the worker log, need access to context root")
+    obj$worker_process_log(w$name),
+    "Process log not enabled for this worker")
 })
 
 
@@ -346,4 +234,39 @@ test_that("worker load", {
   avg <- mean(load)
   expect_true(all(avg["used", ] == 0))
   expect_true(all(avg["available", ] == 1))
+})
+
+
+test_that("change environment", {
+  create <- function(value) {
+    force(value)
+    function(envir) {
+      envir$x <- value
+    }
+  }
+
+  obj <- test_rrq()
+  obj$envir(create(1))
+  w <- test_worker_blocking(obj)
+  expect_equal(w$envir$x, 1)
+
+  obj$envir(NULL)
+  expect_message(w$step(TRUE), "REFRESH")
+  expect_equal(ls(w$envir), character(0))
+})
+
+
+test_that("queue remove", {
+  obj <- test_rrq()
+  t1 <- obj$enqueue(sin(1))
+  t2 <- obj$enqueue(sin(1))
+  t3 <- obj$enqueue(sin(1))
+
+  expect_equal(obj$queue_length(), 3)
+  expect_equal(obj$queue_remove(t2), TRUE)
+  expect_equal(obj$queue_length(), 2)
+  expect_equal(obj$queue_list(), c(t1, t3))
+
+  expect_equal(obj$queue_remove(c(t1, t2, t3)), c(TRUE, FALSE, TRUE))
+  expect_equal(obj$queue_remove(character(0)), logical(0))
 })

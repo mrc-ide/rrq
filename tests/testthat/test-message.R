@@ -280,8 +280,9 @@ test_that("PAUSE/RESUME: twice is noop", {
 
 
 test_that("REFRESH", {
-  obj <- test_rrq("myfuns.R")
-  myfuns <- file.path(obj$context$root$path, "myfuns.R")
+  root <- tempfile()
+  obj <- test_rrq("myfuns.R", root)
+  myfuns <- file.path(root, "myfuns.R")
 
   w <- test_worker_blocking(obj)
 
@@ -295,11 +296,7 @@ test_that("REFRESH", {
   expect_equal(obj$task_result(t2), 3)
 
   id <- obj$message_send("REFRESH")
-  expect_message(
-    with_wd(
-      obj$context$root$path,
-      w$step(TRUE)),
-    "REFRESH")
+  expect_message(w$step(TRUE), "REFRESH")
   expect_equal(obj$message_get_response(id, w$name, FALSE), list("OK"))
 
   t3 <- obj$enqueue(f1(3))
@@ -359,7 +356,7 @@ test_that("unknown command with complex arguments", {
 test_that("send and wait", {
   obj <- test_rrq()
 
-  obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
+  obj$worker_config_save("localhost", time_poll = 1)
   wid <- test_worker_spawn(obj, 5)
 
   st <- obj$worker_status()

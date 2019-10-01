@@ -1,10 +1,11 @@
-heartbeat <- function(con, key, period) {
+heartbeat <- function(con, keys, period) {
   if (!is.null(period)) {
-    context::context_log("heartbeat", key)
+    key <- keys$worker_heartbeat
+    worker_log(con, keys, "HEARTBEAT", key)
     loadNamespace("heartbeatr")
     config <- con$config()
     ret <- heartbeatr::heartbeat(key, period, config = config)
-    context::context_log("heartbeat", "OK")
+    worker_log(con, keys, "HEARTBEAT", "OK")
     ret
   }
 }
@@ -12,7 +13,7 @@ heartbeat <- function(con, key, period) {
 heartbeat_time_remaining <- function(obj) {
   worker_id <- obj$worker_list()
   if (length(worker_id) > 0L) {
-    key <- rrq_key_worker_heartbeat(obj$keys$queue_name, worker_id)
+    key <- rrq_key_worker_heartbeat(obj$queue_id, worker_id)
 
     ## Do _all_ this in one block for consistency I think
     status <- obj$worker_status()

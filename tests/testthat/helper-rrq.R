@@ -1,20 +1,5 @@
-test_queue_clean <- function(context_id, delete=TRUE) {
-  invisible(rrq_clean(redux::hiredis(), context_id, delete, "message"))
-}
-
-temp_context <- function(sources=NULL, ...) {
-  root <- tempfile()
-  dir.create(root, TRUE, FALSE)
-  if (length(sources) > 0L) {
-    file.copy(sources, root)
-  }
-  context::context_save(root, sources=sources, ...)
-}
-
-worker_command <- function(obj) {
-  root <- obj$context$root$path
-  context_id <- obj$context$id
-  bquote(rrq_worker_from_config(.(root), .(context_id), "localhost"))
+test_queue_clean <- function(queue_id, delete = TRUE) {
+  invisible(rrq_clean(redux::hiredis(), queue_id, delete, "message"))
 }
 
 has_internet <- function() {
@@ -49,65 +34,46 @@ wait_status <- function(t, obj, timeout = 2, time_poll = 0.05,
 }
 
 
-test_context <- function(sources = NULL) {
-  root <- tempfile()
-  dir.create(root)
-  if (length(sources) > 0) {
-    file.copy(sources, root)
-  }
-
-  context <- with_wd(root, {
-    ctx <- context::context_save(root, sources = sources)
-    context::context_load(ctx, new.env(parent = .GlobalEnv))
-  })
-
-  context
-}
-
-
 test_hiredis <- function() {
   skip_if_no_redis()
   redux::hiredis()
 }
 
 
-test_rrq <- function(sources = NULL) {
+test_rrq <- function(sources = NULL, root = tempfile()) {
   skip_if_no_redis()
   Sys.setenv(R_TESTS = "")
-  context <- test_context(sources)
-  obj <- rrq_controller(context, redux::hiredis())
-  obj$worker_config_save("localhost", time_poll = 1, copy_redis = TRUE)
+
+  dir.create(root)
+  if (length(sources) > 0) {
+    file.copy(sources, root)
+    sources <- file.path(root, sources)
+  }
+
+  name <- sprintf("rrq:%s", ids::random_id())
+
+  create <- function(envir) {
+    for (s in sources) {
+      sys.source(s, envir)
+    }
+  }
+
+  obj <- rrq_controller(name)
+  obj$worker_config_save("localhost", time_poll = 1)
+  obj$envir(create)
   reg.finalizer(obj, function(e) obj$destroy())
   obj
 }
 
 
 test_worker_spawn <- function(obj, ..., timeout = 10) {
-  testthat::skip_on_appveyor()
-  worker_spawn(obj, ..., path = obj$context$root$path, progress = PROGRESS,
-               timeout = timeout)
+  skip_on_cran()
+  worker_spawn(obj, ..., progress = PROGRESS, timeout = timeout)
 }
 
 
 test_worker_blocking <- function(obj, worker_config = "localhost", ...) {
-  root <- normalizePath(obj$context$root$path)
-  context_id <- obj$context$id
-  rrq_worker_from_config(root, context_id, worker_config, ...)
-}
-
-
-with_wd <- function(path, expr) {
-  if (path != ".") {
-    if (!file.exists(path)) {
-      stop(sprintf("Path '%s' does not exist", path))
-    }
-    if (!is_directory(path)) {
-      stop(sprintf("Path '%s' exists, but is not a directory", path))
-    }
-    owd <- setwd(path)
-    on.exit(setwd(owd))
-  }
-  force(expr)
+  rrq_worker_from_config(obj$queue_id, worker_config, ...)
 }
 
 

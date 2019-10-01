@@ -4,14 +4,13 @@ test_that("heartbeat", {
   skip_if_not_installed("heartbeatr")
   obj <- test_rrq()
 
-  res <- obj$worker_config_save("localhost", heartbeat_period = 3,
-                                copy_redis = TRUE)
+  res <- obj$worker_config_save("localhost", heartbeat_period = 3)
   expect_equal(res$heartbeat_period, 3)
 
   w <- test_worker_blocking(obj)
   dat <- w$info()
   expect_equal(dat$heartbeat_key,
-               rrq_key_worker_heartbeat(obj$context$id, w$name))
+               rrq_key_worker_heartbeat(obj$queue_id, w$name))
 
   expect_equal(obj$con$EXISTS(dat$heartbeat_key), 1)
   expect_lte(obj$con$PTTL(dat$heartbeat_key),
@@ -38,8 +37,7 @@ test_that("interrupt stuck worker (local)", {
   ## We need to set time_poll to be fairly fast because BLPOP is not
   ## interruptable; the interrupt will only be handled _after_ R gets
   ## control back.
-  res <- obj$worker_config_save("localhost", time_poll = 1,
-                                copy_redis = TRUE)
+  res <- obj$worker_config_save("localhost", time_poll = 1)
 
   wid <- test_worker_spawn(obj)
   pid <- obj$worker_info()[[wid]]$pid
@@ -84,8 +82,7 @@ test_that("interrupt stuck worker (via heartbeat)", {
   ## interruptable; the interrupt will only be handled _after_ R gets
   ## control back.
   res <- obj$worker_config_save("localhost", time_poll = 1,
-                                heartbeat_period = 3,
-                                copy_redis = TRUE)
+                                heartbeat_period = 3)
 
   wid <- test_worker_spawn(obj)
 
@@ -125,13 +122,12 @@ test_that("detect killed worker (via heartbeat)", {
   ## interruptable; the interrupt will only be handled _after_ R gets
   ## control back.
   res <- obj$worker_config_save("localhost", time_poll = 1,
-                                heartbeat_period = 1,
-                                copy_redis = TRUE)
+                                heartbeat_period = 1)
 
   wid <- test_worker_spawn(obj)
   pid <- obj$worker_info()[[wid]]$pid
 
-  key <- rrq_key_worker_heartbeat(obj$context$id, wid)
+  key <- rrq_key_worker_heartbeat(obj$queue_id, wid)
   expect_equal(obj$con$EXISTS(key), 1)
   expire <- res$heartbeat_period * 3
   expect_equal(obj$con$GET(key), as.character(expire))

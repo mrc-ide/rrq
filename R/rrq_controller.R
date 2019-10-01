@@ -1,33 +1,18 @@
 ##' A queue controller.  Use this to interact with a queue/cluster.
+##'
 ##' @title rrq queue controller
 ##'
-##' @param context A context handle object.  The context needs to be
-##'   loaded.  Alternatively, just the context id can be passed
-##'   through here (not the context object itself).  In that case,
-##'   some communication is disabled (we will not have access to
-##'   context's internal database, nor the filesystem (of course it
-##'   does sort of have access via the workers if there are any).
-##'   Currently this impacts \code{worker_process_log} (which needs
-##'   access to the filesystem), \code{worker_config_save} (which
-##'   needs access to both the filesystem and the context database),
-##'   and \code{lapply} and \code{enqueue_bulk} which both need access
-##'   to the \emph{loaded} context, at least for now.
+##' @param queue_id An identifier for the queue.  This will prefix all
+##'   keys in redis, so a prefix might be useful here depending on
+##'   your use case (e.g. \code{rrq:<user>:<id>})
 ##'
-##' @param con A redis connection (redux object).
+##' @param con A redis connection
 ##'
 ##' @export
-rrq_controller <- function(context, con = redux::hiredis()) {
-  if (is.character(context)) {
-    ## TODO: we could probably lift the context out of the loaded set
-    ## in some cases, once context exposes that.
-    context_id <- context
-    context <- NULL
-  } else {
-    assert_is(context, "context")
-    context_id <- context$id
-  }
-
-  R6_rrq_controller$new(con, context_id, context)
+rrq_controller <- function(queue_id, con = redux::hiredis()) {
+  assert_scalar_character(queue_id)
+  assert_is(con, "redis_api")
+  R6_rrq_controller$new(con, queue_id)
 }
 
 R6_rrq_controller <- R6::R6Class(
@@ -35,49 +20,42 @@ R6_rrq_controller <- R6::R6Class(
 
   public = list(
     con = NULL,
-    context_id = NULL,
+    queue_id = NULL,
     keys = NULL,
-
-    ## Only present if we have a full context:
-    context = NULL,
     db = NULL,
 
-    initialize = function(con, context_id, context) {
+    initialize = function(con, queue_id) {
       self$con <- con
-      self$context_id <- context_id
-      self$keys <- rrq_keys(context_id)
-      if (!is.null(context)) {
-        if (!is.environment(context$envir)) {
-          stop("context must be loaded")
-        }
-        self$context <- context
-        self$db <- context$db
-        ## NOTE: This is required to save the running script.  This
-        ## means that we can't easily spawn new workers without having
-        ## set a context up _with_ queue support.
-        write_rrq_worker(self$context)
-        self$worker_config_save("localhost", copy_redis = TRUE,
-                                overwrite = FALSE)
-        ## This is used to create a hint as to who is using the queue.
-        ## It's done as a list so will accumulate elements over time,
-        ## but cap at the 10 most recent uses.
-        info <- object_to_bin(controller_info())
-        rpush_max_length(self$con, self$keys$controller, info, 10)
-      }
+      self$queue_id <- queue_id
+      self$keys <- rrq_keys(self$queue_id)
+      self$worker_config_save("localhost", overwrite = FALSE)
+      self$db <- rrq_db(self$con, self$keys)
+      info <- object_to_bin(controller_info())
+      rpush_max_length(self$con, self$keys$controller, info, 10)
     },
 
-    ## This is super destructive; should we require this one to need
-    ## the actual context object perhaps?
+    ## This is super destructive
     destroy = function(delete = TRUE, type = "message",
                        worker_stop_timeout = 0) {
       if (!is.null(self$con)) {
-        rrq_clean(self$con, self$context_id, delete, type, worker_stop_timeout)
+        rrq_clean(self$con, self$queue_id, delete, type,
+                  worker_stop_timeout)
         ## render the controller useless:
         self$con <- NULL
-        self$context_id <- NULL
+        self$queue_id <- NULL
         self$keys <- NULL
-        self$context <- NULL
-        self$db <- NULL
+      }
+    },
+
+    envir = function(create, notify = TRUE) {
+      if (is.null(create)) {
+        self$con$DEL(self$keys$envir)
+      } else {
+        assert_is(create, "function")
+        self$con$SET(self$keys$envir, object_to_bin(create))
+      }
+      if (notify) {
+        self$message_send("REFRESH")
       }
     },
 
@@ -85,52 +63,10 @@ R6_rrq_controller <- R6::R6Class(
     enqueue = function(expr, envir = parent.frame(), key_complete = NULL) {
       self$enqueue_(substitute(expr), envir, key_complete)
     },
+
     enqueue_ = function(expr, envir = parent.frame(), key_complete = NULL) {
       dat <- context::prepare_expression(expr, envir, self$db)
       task_submit(self$con, self$keys, dat, key_complete)
-    },
-    ## This can probably done more nicely but this should work for
-    ## now.  This could be routed through either of the bulk or
-    ## expression submission systems but this way seems the least
-    ## work.  This needs to be ported over to queuer too.
-    ##
-    ## TODO: this should operate with locals and promises but that
-    ## seems not to work correctly - I can't get the local variable
-    ## lookup to be triggered and locally stored variables are not
-    ## found correctly!
-    call = function(FUN, ..., envir = parent.frame(), key_complete = NULL) {
-      rrq_enqueue_bulk_submit(self, list(list(...)), FUN,
-                              envir = envir, do_call = TRUE,
-                              key_complete = key_complete)$task_ids
-    },
-
-    ## TODO: These all need to have similar names, semantics,
-    ## arguments as queuer if I will ever merge these and not go mad.
-    ## Go through and check.
-    ##
-    ## NOTE: These require a loaded context, at least for now.  This
-    ## is because we need to do some analysis on the bulk call against
-    ## the context environment to set things up correctly.  It could
-    ## probably be relaxed though.
-    lapply = function(X, FUN, ..., DOTS = NULL,
-                      envir = parent.frame(),
-                      timeout = Inf, time_poll = 1, progress = NULL) {
-      if (is.null(self$context)) {
-        stop("lapply requires a loaded context")
-      }
-      rrq_lapply(self, X, FUN, ..., DOTS = NULL, envir = envir,
-                 timeout = timeout, time_poll = time_poll,
-                 progress = progress)
-    },
-    enqueue_bulk = function(X, FUN, ..., DOTS = NULL, do_call = TRUE,
-                            envir = parent.frame(),
-                            timeout = Inf, time_poll = 1, progress = NULL) {
-      if (is.null(self$context)) {
-        stop("enqueue_bulk requires a loaded context")
-      }
-      rrq_enqueue_bulk(self, X, FUN, ..., DOTS = DOTS, do_call = do_call,
-                       envir = envir, timeout = timeout, time_poll = time_poll,
-                       progress = progress)
     },
 
     ## 1. Tasks
@@ -145,12 +81,15 @@ R6_rrq_controller <- R6::R6Class(
     task_list = function() {
       as.character(self$con$HKEYS(self$keys$task_expr))
     },
+
     task_status = function(task_ids = NULL) {
       task_status(self$con, self$keys, task_ids)
     },
+
     task_overview = function(task_ids = NULL) {
       task_overview(self$con, self$keys, task_ids)
     },
+
     task_position = function(task_ids, missing = 0L) {
       task_position(self$con, self$keys, task_ids, missing)
     },
@@ -185,96 +124,99 @@ R6_rrq_controller <- R6::R6Class(
 
     ## 2. Fast queue
     queue_length = function() {
-      self$con$LLEN(self$keys$queue_rrq)
+      self$con$LLEN(self$keys$queue)
     },
 
     queue_list = function() {
-      list_to_character(self$con$LRANGE(self$keys$queue_rrq, 0, -1))
+      list_to_character(self$con$LRANGE(self$keys$queue, 0, -1))
     },
 
-    ## 3. Context queue
-    context_queue_length = function() {
-      self$con$LLEN(self$keys$queue_ctx)
-    },
-
-    context_queue_list = function() {
-      list_to_character(self$con$LRANGE(self$keys$queue_ctx, 0, -1))
-    },
-
-    context_queue_submit = function(task_ids) {
-      self$con$RPUSH(self$keys$queue_ctx, task_ids)
-    },
-
-    context_queue_unsubmit = function(task_ids) {
-      ## NOTE: probable race condition, consider rename, which has bad
-      ## properties if the queue is lost of course.  The correct way
-      ## would be to do a lua script.
-      ids <- self$context_queue_list()
-      i <- ids %in% task_ids
-      ids_keep <- ids[!i]
-      if (any(i)) {
-        self$con$DEL(self$keys$queue_ctx)
-        if (length(ids_keep) > 0L) {
-          self$con$RPUSH(self$keys$queue_ctx, ids_keep)
-        }
+    ## NOTE: uses a pipeline to avoid a race condition - nothing may
+    ## interere with the queue between the LRANGE and the DEL or we
+    ## might lose tasks or double-queue them. If a job is queued
+    ## between the DEL and the RPUSH the newly submitted job gets
+    ## bounced ahead in the queue, which seems tolerable but might not
+    ## always be ideal.  To solve this we should use a lua script.
+    queue_remove = function(task_ids) {
+      if (length(task_ids) == 0) {
+        return(invisible(logical(0)))
       }
+      res <- self$con$pipeline(
+        redux::redis$LRANGE(self$keys$queue, 0, -1),
+        redux::redis$DEL(self$keys$queue))
+      ids <- list_to_character(res[[1L]])
+      keep <- !(ids %in% task_ids)
+      if (any(keep)) {
+        self$con$RPUSH(self$keys$queue, ids[keep])
+      }
+      invisible(task_ids %in% ids)
     },
 
     ## 4. Workers
     worker_len = function() {
       worker_len(self$con, self$keys)
     },
+
     worker_list = function() {
       worker_list(self$con, self$keys)
     },
+
     worker_list_exited = function() {
       worker_list_exited(self$con, self$keys)
     },
+
     worker_info = function(worker_ids = NULL) {
       worker_info(self$con, self$keys, worker_ids)
     },
+
     worker_status = function(worker_ids = NULL) {
       worker_status(self$con, self$keys, worker_ids)
     },
+
     worker_log_tail = function(worker_ids = NULL, n = 1) {
       worker_log_tail(self$con, self$keys, worker_ids, n)
     },
+
     worker_task_id = function(worker_ids = NULL) {
       worker_task_id(self$con, self$keys, worker_ids)
     },
+
     worker_delete_exited = function(worker_ids = NULL) {
       worker_delete_exited(self$con, self$keys, worker_ids)
     },
+
     worker_stop = function(worker_ids = NULL, type = "message",
                             timeout = 0, time_poll = 1, progress = NULL) {
       worker_stop(self$con, self$keys, worker_ids, type,
                    timeout, time_poll, progress)
     },
-    ## This one is a bit unfortunately named, but should do for now.
-    ## It only works if the worker has appropriately saved logging
-    ## information.  Given the existance of things like
-    ## worker_log_tail this should be renamed something like
-    ## worker_text_log perhaps?
+
+    ## This is likely only to work with workers started by
+    ## worker_spawn, and will basically only work when we're on the
+    ## same physical storage.
     worker_process_log = function(worker_id, parse = TRUE) {
-      root <- self$context$root
-      if (is.null(root)) {
-        stop("To read the worker log, need access to context root")
-      }
       assert_scalar(worker_id)
-      context::task_log(worker_id, root, parse = parse)
-    },
-    worker_config_save = function(name, redis_host = NULL, redis_port = NULL,
-                                  time_poll = NULL, timeout = NULL,
-                                  log_path = NULL, heartbeat_period = NULL,
-                                  copy_redis = FALSE, overwrite = TRUE) {
-      root <- self$context$root
-      if (is.null(root)) {
-        stop("To save a worker config, need access to context root")
+      path <- self$con$HGET(self$keys$worker_process, worker_id)
+      if (is.null(path)) {
+        stop("Process log not enabled for this worker")
       }
-      rrq_worker_config_save(root, self$con, name, redis_host, redis_port,
-                             time_poll, timeout, log_path, heartbeat_period,
-                             copy_redis, overwrite)
+      readLines(path)
     },
+
+    worker_config_save = function(name, time_poll = NULL, timeout = NULL,
+                                  heartbeat_period = NULL, overwrite = TRUE) {
+      worker_config_save(self$con, self$keys, name, time_poll, timeout,
+                         heartbeat_period, overwrite)
+    },
+
+    worker_config_list = function() {
+      list_to_character(self$con$HKEYS(self$keys$worker_config))
+    },
+
+    worker_config_read = function(name) {
+      worker_config_read(self$con, self$keys, name)
+    },
+
     worker_load = function(worker_ids = NULL, ...) {
       worker_load(self$con, self$keys, worker_ids, ...)
     },
@@ -283,19 +225,23 @@ R6_rrq_controller <- R6::R6Class(
     message_send = function(command, args = NULL, worker_ids = NULL) {
       message_send(self$con, self$keys, command, args, worker_ids)
     },
+
     message_has_response = function(message_id, worker_ids = NULL,
                                     named = TRUE) {
       message_has_response(self$con, self$keys, message_id, worker_ids, named)
     },
+
     message_get_response = function(message_id, worker_ids = NULL, named = TRUE,
                                      delete = FALSE, timeout = 0,
                                      time_poll = 1, progress = NULL) {
       message_get_response(self$con, self$keys, message_id, worker_ids, named,
                            delete, timeout, time_poll, progress)
     },
+
     message_response_ids = function(worker_id) {
       message_response_ids(self$con, self$keys, worker_id)
     },
+
     ## All in one; this gets merged into the send function, just like
     ## the bulk submissing thing (TODO)
     message_send_and_wait = function(command, args = NULL, worker_ids = NULL,
@@ -325,7 +271,7 @@ task_overview <- function(con, keys, task_ids) {
 ## A better way would possibly be to use a LUA script; especially for
 ## the case where there is a single job that'd be fairly easy to do.
 task_position <- function(con, keys, task_ids, missing) {
-  queue <- vcapply(con$LRANGE(keys$queue_rrq, 0, -1L), identity)
+  queue <- vcapply(con$LRANGE(keys$queue, 0, -1L), identity)
   match(task_ids, queue, missing)
 }
 
@@ -364,9 +310,7 @@ task_submit_n <- function(con, keys, dat, key_complete) {
     },
     redis$HMSET(keys$task_expr, task_ids, dat),
     redis$HMSET(keys$task_status, task_ids, rep_len(TASK_PENDING, n)),
-    redis$RPUSH(keys$queue_rrq, task_ids),
-    redis$HINCRBY(keys$task_count, TASK_PENDING, n)
-  )
+    redis$RPUSH(keys$queue, task_ids))
 
   task_ids
 }
@@ -424,7 +368,7 @@ worker_log_tail_1 <- function(con, keys, worker_id, n = 1) {
   if (identical(n, Inf)) {
     n <- 0
   }
-  log_key <- rrq_key_worker_log(keys$queue_name, worker_id)
+  log_key <- rrq_key_worker_log(keys$queue_id, worker_id)
   log <- as.character(con$LRANGE(log_key, -n, -1))
   worker_log_parse(log, worker_id)
 }
@@ -466,9 +410,9 @@ worker_delete_exited <- function(con, keys, worker_ids = NULL) {
     con$HDEL(keys$worker_status, worker_ids)
     con$HDEL(keys$worker_task,   worker_ids)
     con$HDEL(keys$worker_info,   worker_ids)
-    con$DEL(c(rrq_key_worker_log(keys$queue_name, worker_ids),
-              rrq_key_worker_message(keys$queue_name, worker_ids),
-              rrq_key_worker_response(keys$queue_name, worker_ids)))
+    con$DEL(c(rrq_key_worker_log(keys$queue_id, worker_ids),
+              rrq_key_worker_message(keys$queue_id, worker_ids),
+              rrq_key_worker_response(keys$queue_id, worker_ids)))
   }
   worker_ids
 }
@@ -610,4 +554,9 @@ tasks_wait <- function(con, keys, task_ids, timeout, time_poll = NULL,
   }
 
   task_results(con, keys, task_ids)
+}
+
+
+rrq_db <- function(con, keys) {
+  redux::storr_redis_api(keys$db_prefix, con)
 }

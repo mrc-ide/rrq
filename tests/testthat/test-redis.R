@@ -18,7 +18,7 @@ test_that("scan expire", {
   expect_lte(con$TTL(keys1[[1]]), 100)
 
   expect_equal(scan_expire(con, pat2, 1), 26)
-  Sys.sleep(1)
+  Sys.sleep(1.5)
   expect_null(con$GET(keys2[[1]]))
 
   con$DEL(keys1)

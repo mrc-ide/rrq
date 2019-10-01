@@ -3,6 +3,9 @@
 ##' @title rrq queue worker
 ##' @inheritParams rrq_controller
 ##'
+##' @param queue_id Name of the queue to connect to.  This will be the
+##'   prefix to all the keys in the redis database
+##'
 ##' @param key_alive Optional key that will be written once the
 ##'   worker is alive.
 ##'
@@ -13,12 +16,6 @@
 ##'   impact on the database but make workers less responsive to being
 ##'   killed with an interrupt.  The default should be good for most
 ##'   uses, but shorter values are used for debugging.
-##'
-##' @param log_path Optional log path, used for storing per-task logs,
-##'   rather than leaving them within the worker logs.  This affects
-##'   only the context queue and not the rrq queue, which is not
-##'   logged.  This path will be intepreted as relative to the context
-##'   root.
 ##'
 ##' @param timeout Optional timeout to set for the worker.  This is
 ##'   (roughly) quivalent to issuing a \code{TIMEOUT_SET} message
@@ -31,11 +28,12 @@
 ##'   tolerant queues.
 ##'
 ##' @export
-rrq_worker <- function(context, con, key_alive = NULL, worker_name = NULL,
-                       time_poll = NULL, log_path = NULL, timeout = NULL,
+rrq_worker <- function(queue_id, con = redux::hiredis(), key_alive = NULL,
+                       worker_name = NULL, time_poll = NULL,
+                       timeout = NULL,
                        heartbeat_period = NULL) {
-  w <- R6_rrq_worker$new(context, con, key_alive, worker_name, time_poll,
-                         log_path, timeout, heartbeat_period)
+  w <- R6_rrq_worker$new(con, queue_id, key_alive, worker_name, time_poll,
+                         timeout, heartbeat_period)
   w$loop()
   invisible()
 }
@@ -46,41 +44,33 @@ R6_rrq_worker <- R6::R6Class(
 
   public = list(
     name = NULL,
-    context = NULL,
     envir = NULL,
     keys = NULL,
     con = NULL,
     db = NULL,
     paused = FALSE,
-    log_path = NULL,
     time_poll = NULL,
     timeout = NULL,
     timer = NULL,
     heartbeat = NULL,
-    cores = NULL,
     loop_task = NULL,
     loop_continue = NULL,
 
-    initialize = function(context, con, key_alive = NULL, worker_name = NULL,
-                          time_poll = NULL, log_path = NULL, timeout = NULL,
+    initialize = function(con, queue_id, key_alive = NULL, worker_name = NULL,
+                          time_poll = NULL, timeout = NULL,
                           heartbeat_period = NULL) {
-      assert_is(context, "context")
       assert_is(con, "redis_api")
-      self$context <- context
+
       self$con <- con
-      self$db <- context$db
-
       self$name <- worker_name %||% ids::adjective_animal()
-      self$keys <- rrq_keys(context$id, self$name)
-
-      self$time_poll <- time_poll %||% 60
-      self$cores <- as.integer(Sys.getenv("CONTEXT_CORES", "0"))
-
-      self$log_path <- worker_initialise_logs(self$context, log_path)
+      self$keys <- rrq_keys(queue_id, self$name)
 
       if (self$con$SISMEMBER(self$keys$worker_name, self$name) == 1L) {
         stop("Looks like this worker exists already...")
       }
+
+      self$db <- rrq_db(self$con, self$keys)
+      self$time_poll <- time_poll %||% 60
 
       withCallingHandlers(
         worker_initialise(self, key_alive, timeout, heartbeat_period),
@@ -92,15 +82,17 @@ R6_rrq_worker <- R6::R6Class(
     },
 
     log = function(label, value = NULL) {
-      res <- worker_log_format(label, value)
-      message(res$screen)
-      self$con$RPUSH(self$keys$worker_log, res$redis)
+      worker_log(self$con, self$keys, label, value)
     },
 
-    load_context = function() {
-      e <- new.env(parent = .GlobalEnv)
-      self$context <- context::context_load(self$context, e, refresh = TRUE)
-      self$envir <- self$context$envir
+    load_envir = function() {
+      self$log("ENVIR", "new")
+      self$envir <- new.env(parent = .GlobalEnv)
+      create <- self$con$GET(self$keys$envir)
+      if (!is.null(create)) {
+        self$log("ENVIR", "create")
+        bin_to_object(create)(self$envir)
+      }
     },
 
     poll = function(immediate = FALSE) {
@@ -108,7 +100,7 @@ R6_rrq_worker <- R6::R6Class(
       if (self$paused) {
         keys <- keys$worker_message
       } else {
-        keys <- c(keys$worker_message, keys$queue_rrq, keys$queue_ctx)
+        keys <- c(keys$worker_message, keys$queue)
       }
       self$loop_task <- blpop(self$con, keys, self$time_poll, immediate)
     },
@@ -121,8 +113,8 @@ R6_rrq_worker <- R6::R6Class(
       worker_loop(self)
     },
 
-    run_task = function(task_id, rrq) {
-      worker_run_task(self, task_id, rrq)
+    run_task = function(task_id) {
+      worker_run_task(self, task_id)
     },
 
     run_message = function(msg) {
@@ -135,13 +127,10 @@ R6_rrq_worker <- R6::R6Class(
 
     shutdown = function(status = "OK", graceful = TRUE) {
       if (!is.null(self$heartbeat)) {
-        context::context_log("heartbeat", "stopping")
+        self$log("HEARTBEAT", "stopping")
         tryCatch(
           self$heartbeat$stop(graceful),
           error = function(e) message("Could not stop heartbeat"))
-      }
-      if (self$cores > 0) {
-        context::parallel_cluster_stop()
       }
       self$con$SREM(self$keys$worker_name,   self$name)
       self$con$HSET(self$keys$worker_status, self$name, WORKER_EXITED)
@@ -162,10 +151,7 @@ worker_info_collect <- function(worker) {
               wd = getwd(),
               pid = process_id(),
               redis_host = redis_config$host,
-              redis_port = redis_config$port,
-              context_id = worker$context$id,
-              context_root = worker$context$root$path,
-              log_path = worker$log_path)
+              redis_port = redis_config$port)
   if (!is.null(worker$heartbeat)) {
     dat$heartbeat_key <- worker$keys$worker_heartbeat
   }
@@ -176,11 +162,9 @@ worker_info_collect <- function(worker) {
 worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
   keys <- worker$keys
 
-  context::context_log_start()
-  worker$load_context()
+  worker$load_envir()
 
-  worker$heartbeat <- heartbeat(worker$con, keys$worker_heartbeat,
-                                heartbeat_period)
+  worker$heartbeat <- heartbeat(worker$con, keys, heartbeat_period)
 
   worker$con$pipeline(
     redis$SADD(keys$worker_name,   worker$name),
@@ -188,13 +172,6 @@ worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
     redis$HDEL(keys$worker_task,   worker$name),
     redis$DEL(keys$worker_log),
     redis$HSET(keys$worker_info,   worker$name, object_to_bin(worker$info())))
-
-  if (worker$cores > 0) {
-    context::context_log("parallel",
-                         sprintf("running as parallel job [%d cores]",
-                                 worker$cores))
-    context::parallel_cluster_start(worker$cores, worker$context)
-  }
 
   if (!is.null(timeout)) {
     run_message_TIMEOUT_SET(worker, timeout)
@@ -219,7 +196,7 @@ rrq_worker_stop <- function(worker, message) {
 
 worker_send_signal <- function(con, keys, signal, worker_ids) {
   if (length(worker_ids) > 0L) {
-    for (key in rrq_key_worker_heartbeat(keys$queue_name, worker_ids)) {
+    for (key in rrq_key_worker_heartbeat(keys$queue_id, worker_ids)) {
       heartbeatr::heartbeat_send_signal(con, key, signal)
     }
   }
@@ -236,7 +213,7 @@ worker_step <- function(worker, immediate) {
     if (task[[1L]] == keys$worker_message) {
       worker$run_message(task[[2L]])
     } else {
-      worker$run_task(task[[2L]], task[[1L]] == keys$queue_rrq)
+      worker$run_task(task[[2L]])
       worker$timer <- NULL
     }
   }
@@ -304,10 +281,9 @@ worker_catch_interrupt <- function(worker) {
   force(worker)
 
   queue_type <- set_names(
-    c("message", "rrq", "context"),
-    c(worker$keys$worker_message,
-      worker$keys$queue_rrq,
-      worker$keys$queue_ctx))
+    c("message", "queue"),
+    c(worker$keys$worker_message, worker$keys$queue))
+
 
   function(e) {
     ## NOTE: this won't recursively catch interrupts.  Especially
@@ -345,20 +321,8 @@ worker_catch_interrupt <- function(worker) {
 }
 
 
-worker_initialise_logs <- function(context, path) {
-  if (!is.null(path)) {
-    if (!is_relative_path(path)) {
-      stop("Must be a relative path")
-    }
-    dir.create(file.path(context$root$path, path), FALSE, TRUE)
-    path
-  }
-}
-
-
 worker_format <- function(worker) {
   x <- worker$info()
-  x$log_path <- x$log_path %||% "<not set>"
   x$heartbeat_key <- x$heartbeat_key %||% "<not set>"
   n <- nchar(names(x))
   pad <- vcapply(max(n) - n, strrep, x = " ")
@@ -384,4 +348,11 @@ worker_log_format <- function(label, value) {
   }
 
   list(screen = str_screen, redis = str_redis)
+}
+
+
+worker_log <- function(con, keys, label, value) {
+  res <- worker_log_format(label, value)
+  message(res$screen)
+  con$RPUSH(keys$worker_log, res$redis)
 }

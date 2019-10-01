@@ -112,7 +112,7 @@ test_that("worker catch interrupt with collected, but unstarted, task", {
 
   expect_message(
     worker_catch_interrupt(w)(interrupt()),
-    "REQUEUE rrq:")
+    "REQUEUE queue:")
 
   expect_equal(obj$queue_list(), c(id1, id2, id3))
 })
@@ -141,23 +141,10 @@ test_that("worker catch interrupt with started task", {
 test_that("create worker", {
   obj <- test_rrq()
   name <- ids::random_id()
-  w <- rrq_worker(obj$context, obj$con, worker_name = name,
+  w <- rrq_worker(obj$queue_id, worker_name = name,
                   timeout = 1, time_poll = 1)
   log <- obj$worker_log_tail(name, Inf)
   expect_equal(log$command, c("ALIVE", "STOP"))
-})
-
-
-test_that("create parallel worker", {
-  Sys.setenv("CONTEXT_CORES" = 1)
-  on.exit(Sys.unsetenv("CONTEXT_CORES"))
-  obj <- test_rrq()
-  w <- test_worker_blocking(obj)
-  expect_equal(w$cores, 1)
-  expect_is(context::parallel_cluster(), "cluster")
-  w$shutdown()
-  expect_error(context::parallel_cluster(),
-               "Cluster has not been started yet")
 })
 
 
@@ -170,17 +157,6 @@ test_that("worker names can't be duplicated", {
     test_worker_blocking(obj, worker_name = name),
     "Looks like this worker exists already...",
     fixed = TRUE)
-})
-
-
-test_that("log path must be relative", {
-  context <- test_context()
-  path_logs <- file.path(context$root$path, "logs")
-  expect_error(
-    worker_initialise_logs(context, path_logs),
-    "Must be a relative path")
-  expect_silent(worker_initialise_logs(context, "logs"))
-  expect_true(file.exists(path_logs))
 })
 
 
@@ -205,8 +181,7 @@ test_that("kill worker with a signal", {
   skip_on_os("windows")
 
   obj <- test_rrq()
-  res <- obj$worker_config_save("localhost", heartbeat_period = 3,
-                                copy_redis = TRUE)
+  res <- obj$worker_config_save("localhost", heartbeat_period = 3)
   wid <- test_worker_spawn(obj)
 
   pid <- obj$worker_info(wid)[[1]]$pid
@@ -254,35 +229,47 @@ test_that("Can't kill non-local workers", {
 })
 
 
+test_that("rrq_worker_main_args parse", {
+  expect_equal(
+    rrq_worker_main_args("name"),
+    list(queue_id = "name",
+         config = "localhost",
+         name = NULL,
+         key_alive = NULL))
 
-test_that("context tasks are logged", {
-  ## This test relies on working around a behaviour in testthat where
-  ## messages are muffled from within a test_that block, but we have
-  ## diverted the message stream.
-  ##
-  ## https://github.com/r-lib/testthat/issues/460#issuecomment-230267848
-  ##
-  ## This workaround relies on testthat behaviour not changing and so
-  ## should be considered flakey.
-  skip_on_cran()
-  obj <- test_rrq("myfuns.R")
-  root <- obj$context$root$path
-  obj$worker_config_save("localhost", log_path = "worker_logs_task",
-                         copy_redis = TRUE)
-  w <- test_worker_blocking(obj)
+  expect_equal(
+    rrq_worker_main_args(c("name", "--name=bob")),
+    list(queue_id = "name",
+         config = "localhost",
+         name = "bob",
+         key_alive = NULL))
 
-  id <- context::task_save(quote(noisydouble(1)), obj$context)
-  t <- queuer:::queuer_task(id, obj$context$root)
-  obj$context_queue_submit(t$id)
+  expect_equal(
+    rrq_worker_main_args(c("name", "--key-alive=key")),
+    list(queue_id = "name",
+         config = "localhost",
+         name = NULL,
+         key_alive = "key"))
 
-  ## This is the hack:
-  withCallingHandlers(
-    worker_run_task_context(w, t$id),
-    message = function(e) cat(conditionMessage(e), file = stderr(), sep = ""))
+  expect_equal(
+    rrq_worker_main_args(c("name", "--config=config")),
+    list(queue_id = "name",
+         config = "config",
+         name = NULL,
+         key_alive = NULL))
+})
 
-  expect_true(file.exists(file.path(root, obj$db$get(t$id, "log_path"))))
-  expect_is(t$log(), "context_log")
-  x <- t$log()
-  expect_true("start" %in% x$title)
-  expect_equal(x$body[[which(x$title == "start")]], "doubling 1")
+
+test_that("write worker script", {
+  p <- tempfile()
+  res <- write_rrq_worker(p)
+  expect_equal(normalizePath(dirname(res)), normalizePath(p))
+  expect_equal(basename(res), "rrq_worker")
+  expect_equal(readLines(res)[[1]], "#!/usr/bin/env Rscript")
+})
+
+
+test_that("write versioned worker script", {
+  res <- write_rrq_worker(versioned = TRUE)
+  expect_match(readLines(res)[[1]], R.home(), fixed = TRUE)
 })
