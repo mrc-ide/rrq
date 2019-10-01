@@ -22,7 +22,7 @@ worker_run_task_rrq <- function(worker, task_id) {
   con <- worker$con
 
   dat <- bin_to_object(con$HGET(keys$task_expr, task_id))
-  e <- context::restore_locals(dat, worker$envir, worker$db)
+  e <- expression_restore_locals(dat, worker$envir, worker$db)
 
   res <- expression_eval_safely(dat$expr, e)
   value <- res$value

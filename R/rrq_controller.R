@@ -65,7 +65,7 @@ R6_rrq_controller <- R6::R6Class(
     },
 
     enqueue_ = function(expr, envir = parent.frame(), key_complete = NULL) {
-      dat <- context::prepare_expression(expr, envir, self$db)
+      dat <- expression_prepare(expr, envir, NULL, self$db)
       task_submit(self$con, self$keys, dat, key_complete)
     },
 

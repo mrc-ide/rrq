@@ -18,6 +18,7 @@ Imports:
     redux (>= 1.0.0)
 Suggests:
     heartbeatr,
+    storr,
     testthat
 RoxygenNote: 6.1.1
 Encoding: UTF-8

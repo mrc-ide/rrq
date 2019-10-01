@@ -128,3 +128,8 @@ collector <- function(init = character(0)) {
   list(add = add,
        get = function() env$res)
 }
+
+
+is_call <- function(expr, what) {
+  is.call(expr) && any(vlapply(what, identical, expr[[1L]]))
+}
