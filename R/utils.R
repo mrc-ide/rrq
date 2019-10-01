@@ -117,3 +117,14 @@ general_poll <- function(fetch, time_poll, timeout, name, error, progress) {
 
   done
 }
+
+
+collector <- function(init = character(0)) {
+  env <- new.env(parent = emptyenv())
+  env$res <- init
+  add <- function(x) {
+    env$res <- c(env$res, x)
+  }
+  list(add = add,
+       get = function() env$res)
+}

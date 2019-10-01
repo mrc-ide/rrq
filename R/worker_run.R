@@ -24,8 +24,7 @@ worker_run_task_rrq <- function(worker, task_id) {
   dat <- bin_to_object(con$HGET(keys$task_expr, task_id))
   e <- context::restore_locals(dat, worker$envir, worker$db)
 
-  cl <- c("rrq_task_error", "try-error")
-  res <- context:::eval_safely(dat$expr, e, cl, 3L)
+  res <- expression_eval_safely(dat$expr, e)
   value <- res$value
 
   task_status <- if (res$success) TASK_COMPLETE else TASK_ERROR
