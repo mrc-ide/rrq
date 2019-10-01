@@ -29,13 +29,7 @@ R6_rrq_controller <- R6::R6Class(
       self$queue_id <- queue_id
       self$keys <- rrq_keys(self$queue_id)
       self$worker_config_save("localhost", overwrite = FALSE)
-      ## it is possible that it will be userful to have a storr db
-      ## here in the object to store things like locals.  In which
-      ## case we'll want to do
-      ##
-      self$db <- redux::storr_redis_api(self$keys$db_prefix, self$con)
-      ##
-      ## or similar.
+      self$db <- rrq_db(self$con, self$keys)
       info <- object_to_bin(controller_info())
       rpush_max_length(self$con, self$keys$controller, info, 10)
     },
