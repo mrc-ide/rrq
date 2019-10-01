@@ -1,22 +1,21 @@
 expression_eval_safely <- function(expr, envir) {
   warnings <- collector()
-  error <- NULL
+  trace <- collector()
 
   handler <- function(e) {
-    e$trace <- utils::limitedLabels(sys.calls())
+    e$trace <- trace$get()
     class(e) <- c("rrq_task_error", class(e))
-    error <<- e
-    NULL
+    e
   }
 
   value <- tryCatch(
     withCallingHandlers(
       eval(expr, envir),
       warning = function(e) warnings$add(e$message),
-      error = function(e) handler(e)),
-    error = function(e) error)
+      error = function(e) trace$add(utils::limitedLabels(sys.calls()))),
+    error = handler)
 
   list(value = value,
-       success = is.null(error),
+       success = !inherits(value, "rrq_task_error"),
        warnings = warnings$get())
 }
