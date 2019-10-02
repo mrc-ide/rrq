@@ -31,8 +31,8 @@ test_that("create short-lived worker", {
   expect_is(log, "data.frame")
   expect_true(nrow(log) >= 1)
 
-  times_up <- time_checker(3)
-  while (!times_up()) {
+  remaining <- time_checker(3)
+  while (remaining() > 0) {
     log <- obj$worker_log_tail(wid, Inf)
     if (nrow(log) >= 2L) {
       break

@@ -22,8 +22,8 @@ skip_if_no_redis <- function() {
 
 wait_status <- function(t, obj, timeout = 2, time_poll = 0.05,
                         status = "PENDING") {
-  times_up <- time_checker(timeout)
-  while (!times_up()) {
+  remaining <- time_checker(timeout)
+  while (remaining() > 0) {
     if (all(obj$task_status(t) != status)) {
       return()
     }

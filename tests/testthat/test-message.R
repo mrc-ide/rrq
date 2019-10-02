@@ -90,7 +90,10 @@ test_that("TIMEOUT_GET restores a timer", {
   w$step(TRUE)
   res <- obj$message_get_response(id, w$name)[[1]]
   expect_equal(res[["timeout"]], 100)
-  expect_lte(res[["remaining"]], 100)
+  expect_equal(res[["remaining"]], 100)
+  expect_null(w$timer)
+
+  w$step(TRUE)
   expect_is(w$timer, "function")
 })
 

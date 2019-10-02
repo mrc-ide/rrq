@@ -125,6 +125,14 @@ R6_rrq_worker <- R6::R6Class(
       worker_format(self)
     },
 
+    timer_start = function() {
+      if (is.null(self$timeout)) {
+        self$timer <- NULL
+      } else {
+        self$timer <- time_checker(self$timeout)
+      }
+    },
+
     shutdown = function(status = "OK", graceful = TRUE) {
       if (!is.null(self$heartbeat)) {
         self$log("HEARTBEAT", "stopping")
@@ -220,7 +228,7 @@ worker_step <- function(worker, immediate) {
 
   if (is.null(task) && !is.null(worker$timeout)) {
     if (is.null(worker$timer)) {
-      worker$timer <- time_checker(worker$timeout, remaining = TRUE)
+      worker$timer_start()
     }
     if (worker$timer() < 0L) {
       stop(rrq_worker_stop(worker, "TIMEOUT"))
