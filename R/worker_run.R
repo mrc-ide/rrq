@@ -42,12 +42,6 @@ worker_run_task_cleanup <- function(worker, task_id, task_status) {
   key_complete <- con$HGET(keys$task_complete, task_id)
   name <- worker$name
 
-  ## TODO: I should enforce a max size policy here.  So if the
-  ## return value is too large (say more than a few kb) we can
-  ## refuse to write it to the db but instead route it through the
-  ## context db.  That policy can be set by the db pretty easily
-  ## actually.
-  ##
   ## TODO: for interrupted tasks, I don't know that we should
   ## write to the key_complete set; at the same time _not_ doing
   ## that requires that we can gracefully (and automatically)

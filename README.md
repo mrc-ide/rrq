@@ -7,9 +7,7 @@
 [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/u8e9nulhk7ryo5jd?svg=true)](https://ci.appveyor.com/project/richfitz/rrq-xkvo8)
 [![codecov.io](https://codecov.io/github/mrc-ide/rrq/coverage.svg?branch=master)](https://codecov.io/github/mrc-ide/rrq?branch=master)
 
-Simple Redis queue in R.  This is like the bigger package `rrqueue`, but using `context` for most of the heavy lifting and aiming to be more like the lightweight parallelisation packages out there.
-
-Once this works I'll rework `rrqueue` off of this codebase probably.
+Simple Redis queue in R.
 
 ## Installation
 

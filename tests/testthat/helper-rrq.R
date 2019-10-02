@@ -100,4 +100,3 @@ with_options <- function(opts, code) {
 
 
 options(rrq.progress = FALSE)
-Sys.unsetenv("CONTEXT_CORES")
