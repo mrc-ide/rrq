@@ -27,7 +27,7 @@ test_that("failed spawn", {
   expect_is(dat$result, "try-error")
   expect_match(dat$messages, "2 / 2 workers not identified in time",
                all = FALSE, fixed = TRUE)
-  expect_match(dat$messages, "Log files recovered for 2 workers",
+  expect_match(dat$output, "Log files recovered for 2 workers",
                all = FALSE, fixed = TRUE)
   ## This fails occasionally under covr, but I can't reproduce
   ## expect_match(dat$output, "No such file or directory",
