@@ -68,7 +68,7 @@ test_rrq <- function(sources = NULL, root = tempfile()) {
 
 test_worker_spawn <- function(obj, ..., timeout = 10) {
   skip_on_cran()
-  worker_spawn(obj, ..., progress = PROGRESS, timeout = timeout)
+  worker_spawn(obj, ..., timeout = timeout)
 }
 
 
@@ -92,6 +92,12 @@ make_counter <- function(start = 0L) {
 }
 
 
-PROGRESS <- FALSE # TODO: phase this one out
-options(queuer.progress_suppress = TRUE)
+with_options <- function(opts, code) {
+  oo <- options(opts)
+  on.exit(options(oo))
+  force(code)
+}
+
+
+options(rrq.progress = FALSE)
 Sys.unsetenv("CONTEXT_CORES")

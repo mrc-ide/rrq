@@ -34,7 +34,7 @@ test_that("basic use", {
   t <- obj$enqueue(slowdouble(0.1))
   expect_is(t, "character")
   w$step(TRUE)
-  expect_equal(obj$task_wait(t, 2, progress = PROGRESS), 0.2)
+  expect_equal(obj$task_wait(t, 2), 0.2)
   expect_equal(obj$task_result(t), 0.2)
 })
 

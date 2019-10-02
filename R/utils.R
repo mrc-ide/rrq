@@ -92,8 +92,7 @@ general_poll <- function(fetch, time_poll, timeout, name, error, progress) {
   done <- fetch()
 
   if (timeout > 0) {
-    p <- queuer::progress_timeout(length(done), show = progress,
-                                  timeout = timeout, show_after = 0)
+    p <- progress_timeout(length(done), progress, name, timeout)
     tot <- sum(done)
     p(tot)
 
