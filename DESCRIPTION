@@ -13,6 +13,7 @@ Imports:
     docopt,
     ids,
     lazyeval,
+    progress,
     redux (>= 1.0.0)
 Suggests:
     heartbeatr,
