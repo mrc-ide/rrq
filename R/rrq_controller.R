@@ -201,6 +201,15 @@ rrq_controller_ <- R6::R6Class(
       task_submit(self$con, self$keys, dat, key_complete)
     },
 
+    lapply = function(X, FUN, ..., DOTS = NULL, envir = parent.frame(),
+                      timeout = Inf, time_poll = NULL, progress = NULL) {
+      if (is.null(DOTS)) {
+        DOTS <- lapply(lazyeval::lazy_dots(...), "[[", "expr")
+      }
+      rrq_lapply(self$con, self$keys, self$db,
+                 X, FUN, DOTS, envir, envir_base,
+                 timeout, time_poll, progress)
+    },
 
     ##' @description List ids of all tasks known to this rrq controller
     task_list = function() {

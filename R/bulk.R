@@ -1,3 +1,44 @@
+rrq_lapply_prepare <- function(db, X, FUN, DOTS, envir, envir_base = NULL) {
+  ## for the moment, require the function to be language and we won't
+  ## check for it at all!
+  stopifnot(is.language(FUN))
+  function_name <- FUN
+
+  template <- as.call(c(list(function_name, NULL), DOTS))
+  dat <- expression_prepare(template, envir, envir_base, db)
+
+  rewrite <- function(x) {
+    dat$expr[[2]] <- x
+    object_to_bin(dat)
+  }
+
+  lapply(X, rewrite)
+}
+
+
+rrq_lapply_submit <- function(con, keys, db, X, FUN, DOTS, envir, envir_base) {
+  dat <- rrq_lapply_prepare(db, X, FUN, DOTS, envir)
+  key_complete <- rrq_key_task_complete(keys$queue)
+  task_ids <- task_submit_n(con, keys, dat, key_complete)
+  list(task_ids = task_ids, key_complete = key_complete, names = names(X))
+}
+
+
+rrq_lapply_collect <- function(con, keys, dat, timeout, time_poll, progress) {
+  ret <- tasks_wait(con, keys, dat$task_ids, timeout, time_poll, progress,
+                    dat$key_complete)
+  task_delete(con, keys, dat$task_ids, FALSE)
+  set_names(ret, dat$names)
+}
+
+
+rrq_lapply <- function(con, keys, db, X, FUN, DOTS, envir, envir_base,
+                   timeout, time_poll, progress) {
+  dat <- rrq_lapply_submit(con, keys, db, X, FUN, DOTS, envir, envir_base)
+  rrq_lapply_collect(con, keys, dat, timeout, time_poll, progress)
+}
+
+
 ## Try to work out what version of a function we are likely to have
 ## remotely.  Some of this could nodoubt be done with rlang, but with
 ## ~400 functions in that package and the crazy rate at which they
