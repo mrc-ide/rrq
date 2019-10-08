@@ -117,8 +117,8 @@ R6_rrq_worker <- R6::R6Class(
       worker_step(self, immediate)
     },
 
-    loop = function() {
-      worker_loop(self)
+    loop = function(immediate = FALSE) {
+      worker_loop(self, immediate)
     },
 
     run_task = function(task_id) {
@@ -222,8 +222,8 @@ worker_send_signal <- function(con, keys, signal, worker_ids) {
 
 ## One step of a worker life cycle; i.e., the least we can
 ## interestingly do
-worker_step <- function(worker) {
-  task <- worker$poll()
+worker_step <- function(worker, immediate) {
+  task <- worker$poll(immediate)
   keys <- worker$keys
 
   if (!is.null(task)) {
