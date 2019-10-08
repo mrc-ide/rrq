@@ -29,6 +29,13 @@ test_that("assertions", {
 })
 
 
+test_that("assert_scalar_logical", {
+  expect_error(assert_scalar_logical(1), "must be logical")
+  expect_error(assert_scalar_logical(c(TRUE, FALSE)), "must be a scalar")
+  expect_silent(assert_scalar_logical(TRUE))
+})
+
+
 test_that("version_string", {
   dat <- version_info("R6")
   expect_match(version_string(dat),
