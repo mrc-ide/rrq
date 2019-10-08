@@ -34,7 +34,8 @@ rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
                     worker_name = worker_name,
                     time_poll = config$time_poll,
                     timeout = config$timeout,
-                    heartbeat_period = config$heartbeat_period)
+                    heartbeat_period = config$heartbeat_period,
+                    verbose = config$verbose)
 }
 
 

@@ -27,13 +27,19 @@
 ##'   \code{heartbeatr} package) which can be used to build fault
 ##'   tolerant queues.
 ##'
+##' @param verbose Logical, indicating if the worker should print
+##'   logging output to the screen.  Logging to screen has a small but
+##'   measurable performance cost, and if you will not collect system
+##'   logs from the worker then it is wasted time.  Logging to the
+##'   redis server is always enabled.
+##'
 ##' @export
 rrq_worker <- function(queue_id, con = redux::hiredis(), key_alive = NULL,
                        worker_name = NULL, time_poll = NULL,
                        timeout = NULL,
-                       heartbeat_period = NULL) {
+                       heartbeat_period = NULL, verbose = TRUE) {
   w <- R6_rrq_worker$new(con, queue_id, key_alive, worker_name, time_poll,
-                         timeout, heartbeat_period)
+                         timeout, heartbeat_period, verbose)
   w$loop()
   invisible()
 }
@@ -55,15 +61,17 @@ R6_rrq_worker <- R6::R6Class(
     heartbeat = NULL,
     loop_task = NULL,
     loop_continue = NULL,
+    verbose = NULL,
 
     initialize = function(con, queue_id, key_alive = NULL, worker_name = NULL,
                           time_poll = NULL, timeout = NULL,
-                          heartbeat_period = NULL) {
+                          heartbeat_period = NULL, verbose = NULL) {
       assert_is(con, "redis_api")
 
       self$con <- con
       self$name <- worker_name %||% ids::adjective_animal()
       self$keys <- rrq_keys(queue_id, self$name)
+      self$verbose <- verbose
 
       if (self$con$SISMEMBER(self$keys$worker_name, self$name) == 1L) {
         stop("Looks like this worker exists already...")
@@ -82,7 +90,7 @@ R6_rrq_worker <- R6::R6Class(
     },
 
     log = function(label, value = NULL) {
-      worker_log(self$con, self$keys, label, value)
+      worker_log(self$con, self$keys, label, value, self$verbose)
     },
 
     load_envir = function() {
@@ -168,11 +176,12 @@ worker_info_collect <- function(worker) {
 
 
 worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
+  con <- worker$con
   keys <- worker$keys
 
   worker$load_envir()
 
-  worker$heartbeat <- heartbeat(worker$con, keys, heartbeat_period)
+  worker$heartbeat <- heartbeat(con, keys, heartbeat_period, worker$verbose)
 
   worker$con$pipeline(
     redis$SADD(keys$worker_name,   worker$name),
@@ -213,8 +222,8 @@ worker_send_signal <- function(con, keys, signal, worker_ids) {
 
 ## One step of a worker life cycle; i.e., the least we can
 ## interestingly do
-worker_step <- function(worker, immediate) {
-  task <- worker$poll(immediate)
+worker_step <- function(worker) {
+  task <- worker$poll()
   keys <- worker$keys
 
   if (!is.null(task)) {
@@ -230,15 +239,15 @@ worker_step <- function(worker, immediate) {
     if (is.null(worker$timer)) {
       worker$timer_start()
     }
-    if (worker$timer() < 0L) {
+    if (worker$timer() <= 0L) {
       stop(rrq_worker_stop(worker, "TIMEOUT"))
     }
   }
 }
 
 
-worker_loop <- function(worker, verbose = TRUE) {
-  if (verbose) {
+worker_loop <- function(worker, immediate = FALSE) {
+  if (worker$verbose) {
     message(paste0(worker_banner("start"), collapse = "\n"))
     message(paste0(worker$format(), collapse = "\n"))
   }
@@ -246,13 +255,13 @@ worker_loop <- function(worker, verbose = TRUE) {
   worker$loop_continue <- TRUE
   while (worker$loop_continue) {
     tryCatch({
-      tryCatch(worker$step(),
+      tryCatch(worker$step(immediate),
                interrupt = worker_catch_interrupt(worker))
     },
     rrq_worker_stop = worker_catch_stop(worker),
     error = worker_catch_error(worker))
   }
-  if (verbose) {
+  if (worker$verbose) {
     message(paste0(worker_banner("stop"), collapse = "\n"))
   }
 }
@@ -361,8 +370,10 @@ worker_log_format <- function(label, value) {
 }
 
 
-worker_log <- function(con, keys, label, value) {
+worker_log <- function(con, keys, label, value, verbose) {
   res <- worker_log_format(label, value)
-  message(res$screen)
+  if (verbose) {
+    message(res$screen)
+  }
   con$RPUSH(keys$worker_log, res$redis)
 }
