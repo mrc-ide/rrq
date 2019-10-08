@@ -293,11 +293,12 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
       stop("Can't delete running tasks")
     }
   }
-  con$HDEL(keys$task_expr,     task_ids)
-  con$HDEL(keys$task_status,   task_ids)
-  con$HDEL(keys$task_result,   task_ids)
-  con$HDEL(keys$task_complete, task_ids)
-  con$HDEL(keys$task_worker,   task_ids)
+  con$pipeline(
+    redis$HDEL(keys$task_expr,     task_ids),
+    redis$HDEL(keys$task_status,   task_ids),
+    redis$HDEL(keys$task_result,   task_ids),
+    redis$HDEL(keys$task_complete, task_ids),
+    redis$HDEL(keys$task_worker,   task_ids))
   invisible()
 }
 
