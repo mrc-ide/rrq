@@ -3,7 +3,6 @@ context("bulk support")
 test_that("match_fun_envir can find functions by name", {
   add <- function(a, b) a + b
   expected <- list(value = add, type = "value")
-  expect_equal(match_fun_envir(add), expected)
   expect_equal(match_fun_envir("add"), expected)
   expect_equal(match_fun_envir(quote(add)), expected)
 })
@@ -13,7 +12,6 @@ test_that("match_fun_envir can detect shared functions", {
   add <- function(a, b) a + b
   base <- list2env(list(add = add), parent = emptyenv())
   expected <- list(value = quote(add), type = "name")
-  expect_equal(match_fun_envir(add, envir_base = base), expected)
   expect_equal(match_fun_envir("add", envir_base = base), expected)
   expect_equal(match_fun_envir(quote(add), envir_base = base), expected)
 })
@@ -21,14 +19,12 @@ test_that("match_fun_envir can detect shared functions", {
 
 test_that("match_fun_envir can deal with namespaced functions", {
   expected <- list(value = quote(ids::random_id), type = "name")
-  expect_equal(match_fun_envir(ids::random_id), expected)
   expect_equal(match_fun_envir(quote(ids::random_id)), expected)
 })
 
 
 test_that("match_fun_envir can deal with hidden functions", {
   expected <- list(value = quote(ids:::as_integer_bignum), type = "name")
-  expect_equal(match_fun_envir(ids:::as_integer_bignum), expected)
   expect_equal(match_fun_envir(quote(ids:::as_integer_bignum)), expected)
 })
 
