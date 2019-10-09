@@ -6,7 +6,7 @@ test_that("lapply simple case", {
                          time_poll = 1, overwrite = TRUE)
   w <- test_worker_blocking(obj)
 
-  grp <- obj$lapply(1:10, quote(log), DOTS = list(base = 2), timeout = 0)
+  grp <- obj$lapply_(1:10, quote(log), DOTS = list(base = 2), timeout = 0)
   expect_is(grp, "rrq_bulk")
   expect_setequal(names(grp), c("task_ids", "key_complete", "names"))
 

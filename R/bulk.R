@@ -8,12 +8,25 @@ rrq_lapply <- function(con, keys, db, X, FUN, DOTS, envir, envir_base,
 }
 
 
-rrq_lapply_prepare <- function(db, X, FUN, DOTS, envir, envir_base = NULL) {
-  ## for the moment, require the function to be language and we won't
-  ## check for it at all!
-  stopifnot(is.language(FUN))
-  function_name <- FUN
+rrq_lapply_submit <- function(con, keys, db, X, FUN, DOTS, envir, envir_base) {
+  dat <- rrq_lapply_prepare(db, X, FUN, DOTS, envir, envir_base)
+  key_complete <- rrq_key_task_complete(keys$queue)
+  task_ids <- task_submit_n(con, keys, dat, key_complete)
+  ret <- list(task_ids = task_ids, key_complete = key_complete,
+              names = names(X))
+  class(ret) <- "rrq_bulk"
+  ret
+}
 
+
+rrq_lapply_prepare <- function(db, X, FUN, DOTS, envir, envir_base) {
+  fun <- match_fun_envir(FUN, envir, envir_base)
+
+  if (fun$type != "name") {
+    browser()
+  }
+
+  function_name <- fun$value
   template <- as.call(c(list(function_name, NULL), DOTS))
   dat <- expression_prepare(template, envir, envir_base, db)
 
@@ -23,17 +36,6 @@ rrq_lapply_prepare <- function(db, X, FUN, DOTS, envir, envir_base = NULL) {
   }
 
   lapply(X, rewrite)
-}
-
-
-rrq_lapply_submit <- function(con, keys, db, X, FUN, DOTS, envir, envir_base) {
-  dat <- rrq_lapply_prepare(db, X, FUN, DOTS, envir)
-  key_complete <- rrq_key_task_complete(keys$queue)
-  task_ids <- task_submit_n(con, keys, dat, key_complete)
-  ret <- list(task_ids = task_ids, key_complete = key_complete,
-              names = names(X))
-  class(ret) <- "rrq_bulk"
-  ret
 }
 
 
@@ -57,30 +59,31 @@ rrq_bulk_wait <- function(con, keys, dat, timeout, time_poll, progress,
 ## changed behaviour and is itself basically deprecated in favour of
 ## rlang.
 match_fun_envir <- function(fun, envir = parent.frame(), envir_base = NULL) {
-  fun_lazy <- substitute(fun)
-  if (is_call(fun_lazy, quote(quote))) {
-    fun_lazy <- fun_lazy[[2L]]
-  }
-
-  if (is.symbol(fun_lazy)) {
-    fun_forced <- deparse(fun_lazy)
-  } else {
-    fun_forced <- force(fun)
+  if (is_call(fun, quote(quote))) {
+    fun <- fun[[2L]]
   }
 
   ## This ensures that we actually have a function that we can use in
   ## all cases, though the the value found here is not used in all
   ## branches below
-  fun_value <- match_fun(fun_forced, envir)
+  fun_search <- if (is.symbol(fun)) deparse(fun) else fun
+  fun_value <- match_fun(fun_search, envir)
 
-  if (is_namespaced_call(fun_lazy)) {
-    return(list(value = fun_lazy, type = "name"))
+  if (is_namespaced_call(fun)) {
+    return(list(value = fun, type = "name"))
   }
 
-  if (is.character(fun_forced)) {
-    name <- fun_forced
-    if (!is.null(envir_base) && identical(get(name, envir_base), fun_value)) {
-      return(list(value = as.name(name), type = "name"))
+  if (is.character(fun_search)) {
+    name <- fun_search
+    name_ok <-
+      identical(envir, envir_base) ||
+      (!is.null(envir_base) && identical(get(name, envir_base), fun_value)) ||
+      (is.primitive(fun_value) && identical(get(name, baseenv()), fun_value))
+    if (name_ok) {
+      if (is.character(fun)) {
+        fun <- as.name(fun)
+      }
+      return(list(value = fun, type = "name"))
     } else {
       return(list(value = fun_value, type = "value"))
     }

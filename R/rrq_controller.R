@@ -201,10 +201,26 @@ rrq_controller_ <- R6::R6Class(
       task_submit(self$con, self$keys, dat, key_complete)
     },
 
-    lapply = function(X, FUN, ..., DOTS = NULL, envir = parent.frame(),
+    ## One option for envir_base would be to use search()[2] (~=
+    ## parent.env(.GlobalEnv)) as that's going to be relatively likely
+    ## to be ok because that's where the packages end.
+    lapply = function(X, FUN, ..., DOTS = NULL,
+                      envir = parent.frame(), envir_base = NULL,
                       timeout = Inf, time_poll = NULL, progress = NULL) {
       if (is.null(DOTS)) {
-        DOTS <- lapply(lazyeval::lazy_dots(...), "[[", "expr")
+        DOTS <- substitute(list(...))
+        browser()
+      }
+      self$lapply(X, substitite(FUN), DOTS = DOTS,
+                  envir = envir, envir_base = envir_base,
+                  timeout = timeout, time_poll = time_poll, progress = NULL)
+    },
+
+    lapply_ = function(X, FUN, ..., DOTS = NULL,
+                         envir = parent.frame(), envir_base = envir,
+                         timeout = Inf, time_poll = NULL, progress = NULL) {
+      if (is.null(DOTS)) {
+        DOTS <- list(...)
       }
       rrq_lapply(self$con, self$keys, self$db,
                  X, FUN, DOTS, envir, envir_base,
