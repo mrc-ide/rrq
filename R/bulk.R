@@ -1,3 +1,13 @@
+rrq_lapply <- function(con, keys, db, X, FUN, DOTS, envir, envir_base,
+                       timeout, time_poll, progress) {
+  dat <- rrq_lapply_submit(con, keys, db, X, FUN, DOTS, envir, envir_base)
+  if (timeout == 0) {
+    return(dat)
+  }
+  rrq_bulk_wait(con, keys, dat, timeout, time_poll, progress)
+}
+
+
 rrq_lapply_prepare <- function(db, X, FUN, DOTS, envir, envir_base = NULL) {
   ## for the moment, require the function to be language and we won't
   ## check for it at all!
@@ -20,22 +30,22 @@ rrq_lapply_submit <- function(con, keys, db, X, FUN, DOTS, envir, envir_base) {
   dat <- rrq_lapply_prepare(db, X, FUN, DOTS, envir)
   key_complete <- rrq_key_task_complete(keys$queue)
   task_ids <- task_submit_n(con, keys, dat, key_complete)
-  list(task_ids = task_ids, key_complete = key_complete, names = names(X))
+  ret <- list(task_ids = task_ids, key_complete = key_complete,
+              names = names(X))
+  class(ret) <- "rrq_bulk"
+  ret
 }
 
 
-rrq_lapply_collect <- function(con, keys, dat, timeout, time_poll, progress) {
+rrq_bulk_wait <- function(con, keys, dat, timeout, time_poll, progress,
+                          delete = TRUE) {
+  assert_is(dat, "rrq_bulk")
   ret <- tasks_wait(con, keys, dat$task_ids, timeout, time_poll, progress,
                     dat$key_complete)
-  task_delete(con, keys, dat$task_ids, FALSE)
+  if (delete) {
+    task_delete(con, keys, dat$task_ids, FALSE)
+  }
   set_names(ret, dat$names)
-}
-
-
-rrq_lapply <- function(con, keys, db, X, FUN, DOTS, envir, envir_base,
-                   timeout, time_poll, progress) {
-  dat <- rrq_lapply_submit(con, keys, db, X, FUN, DOTS, envir, envir_base)
-  rrq_lapply_collect(con, keys, dat, timeout, time_poll, progress)
 }
 
 

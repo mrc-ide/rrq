@@ -211,6 +211,11 @@ rrq_controller_ <- R6::R6Class(
                  timeout, time_poll, progress)
     },
 
+    bulk_wait = function(x, timeout = Inf, time_poll = NULL,
+                           progress = NULL) {
+      rrq_bulk_wait(self$con, self$keys, x, timeout, time_poll, progress)
+    },
+
     ##' @description List ids of all tasks known to this rrq controller
     task_list = function() {
       as.character(self$con$HKEYS(self$keys$task_expr))
