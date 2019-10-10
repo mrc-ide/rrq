@@ -139,7 +139,7 @@ expression_restore_locals <- function(dat, parent, db) {
   if (!is.null(dat$function_hash)) {
     objects <- c(objects, set_names(dat$function_hash, dat$function_hash))
   }
-  if (length(dat$objects) > 0L) {
+  if (length(objects) > 0L) {
     db$export(e, objects, "objects")
   }
   e

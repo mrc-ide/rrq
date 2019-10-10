@@ -152,6 +152,20 @@ test_that("can store special function values", {
 })
 
 
+test_that("can restore function even with no variables", {
+  db <- storr::storr_environment()
+  e <- emptyenv()
+  f <- function(a, b) f(a + b)
+  res <- expression_prepare(quote(.(1, 2)), e, NULL, db,
+                            function_value = f)
+  expect_match(res$function_hash, "^[[:xdigit:]]+$")
+  e2 <- expression_restore_locals(res, emptyenv(), db)
+  expect_equal(names(e2), res$function_hash)
+  expect_equal(e2[[res$function_hash]], f)
+  expect_equal(deparse(res$expr[[1]]), res$function_hash)
+})
+
+
 test_that("require a call to prepre", {
   db <- storr::storr_environment()
   expect_error(expression_prepare(quote(a), emptyenv(), NULL, db),
