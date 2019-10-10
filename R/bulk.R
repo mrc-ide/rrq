@@ -63,33 +63,27 @@ match_fun_envir <- function(fun, envir = parent.frame(), envir_base = NULL) {
     fun <- fun[[2L]]
   }
 
-  ## This ensures that we actually have a function that we can use in
-  ## all cases, though the the value found here is not used in all
-  ## branches below
   fun_search <- if (is.symbol(fun)) deparse(fun) else fun
-  fun_value <- match_fun(fun_search, envir)
+  value <- match_fun(fun_search, envir)
 
+  ## We can potentially do better here if the function belongs to a
+  ## package namespace.
+  name <- NULL
   if (is_namespaced_call(fun)) {
-    return(list(value = fun, type = "name"))
-  }
-
-  if (is.character(fun_search)) {
-    name <- fun_search
+    name <- fun
+  } else if (is.character(fun_search)) {
     name_ok <-
       identical(envir, envir_base) ||
-      (!is.null(envir_base) && identical(get(name, envir_base), fun_value)) ||
-      (is.primitive(fun_value) && identical(get(name, baseenv()), fun_value))
+      (!is.null(envir_base) &&
+        identical(get(name_search, envir_base), value)) ||
+      (is.primitive(value) &&
+       identical(get(name_search, baseenv()), value))
     if (name_ok) {
-      if (is.character(fun)) {
-        fun <- as.name(fun)
-      }
-      return(list(value = fun, type = "name"))
-    } else {
-      return(list(value = fun_value, type = "value"))
+      name <- if (is.character(fun)) as.name(fun) else fun
     }
   }
 
-  return(list(value = fun_value, type = "value"))
+  return(list(name = name, value = value))
 }
 
 
