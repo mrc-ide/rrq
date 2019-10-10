@@ -25,3 +25,52 @@ test_that("lapply simple case", {
                  rep(c("TASK_START", "TASK_COMPLETE"), 10),
                  "STOP"))
 })
+
+
+test_that("lapply with anonymous function", {
+  obj <- test_rrq()
+  obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
+                         time_poll = 1, overwrite = TRUE)
+  w <- test_worker_blocking(obj)
+  grp <- obj$lapply_(1:10, function(x) x + 1, timeout = 0)
+  w$loop(immediate = TRUE)
+  res <- obj$bulk_wait(grp)
+  expect_equal(res, as.list(2:11))
+})
+
+
+test_that("NSE - use namespaced function", {
+  obj <- test_rrq()
+  obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
+                         time_poll = 1, overwrite = TRUE)
+  w <- test_worker_blocking(obj)
+  grp <- obj$lapply(1:10, ids::adjective_animal, timeout = 0)
+
+  dat <- bin_to_object(obj$con$HGET(obj$keys$task_expr, grp$task_ids[[1]]))
+  expect_equal(dat, list(expr = quote(ids::adjective_animal(1L))))
+
+  w$loop(immediate = TRUE)
+  res <- obj$bulk_wait(grp)
+  expect_equal(lengths(res), 1:10)
+  expect_match(unlist(res), "^[a-z]+_[a-z]+$")
+})
+
+
+test_that("NSE - use namespaced function with lazy dots", {
+  obj <- test_rrq()
+  obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
+                         time_poll = 1, overwrite = TRUE)
+  w <- test_worker_blocking(obj)
+  mystyle <- "camel"
+  grp <- obj$lapply(1:10, ids::adjective_animal, style = mystyle, timeout = 0)
+
+  dat <- bin_to_object(obj$con$HGET(obj$keys$task_expr, grp$task_ids[[1]]))
+  expect_equal(dat,
+               list(expr = quote(ids::adjective_animal(1L, style = mystyle)),
+                    objects = c(mystyle = obj$db$hash_object(mystyle))))
+
+  w$loop(immediate = TRUE)
+  res <- obj$bulk_wait(grp)
+  expect_equal(lengths(res), 1:10)
+  expect_match(unlist(res), "^[a-z]+[A-Z][a-z]+$")
+})

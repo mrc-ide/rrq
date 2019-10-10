@@ -208,12 +208,11 @@ rrq_controller_ <- R6::R6Class(
                       envir = parent.frame(), envir_base = NULL,
                       timeout = Inf, time_poll = NULL, progress = NULL) {
       if (is.null(DOTS)) {
-        DOTS <- substitute(list(...))
-        browser()
+        DOTS <- as.list(substitute(list(...)))[-1L]
       }
-      self$lapply(X, substitite(FUN), DOTS = DOTS,
-                  envir = envir, envir_base = envir_base,
-                  timeout = timeout, time_poll = time_poll, progress = NULL)
+      self$lapply_(X, substitute(FUN), DOTS = DOTS,
+                   envir = envir, envir_base = envir_base,
+                   timeout = timeout, time_poll = time_poll, progress = NULL)
     },
 
     lapply_ = function(X, FUN, ..., DOTS = NULL,

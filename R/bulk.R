@@ -22,16 +22,12 @@ rrq_lapply_submit <- function(con, keys, db, X, FUN, DOTS, envir, envir_base) {
 rrq_lapply_prepare <- function(db, X, FUN, DOTS, envir, envir_base) {
   fun <- match_fun_envir(FUN, envir, envir_base)
 
-  if (fun$type != "name") {
-    browser()
-  }
-
-  function_name <- fun$value
-  template <- as.call(c(list(function_name, NULL), DOTS))
-  dat <- expression_prepare(template, envir, envir_base, db)
+  template <- as.call(c(list(fun$name, NULL), DOTS))
+  dat <- expression_prepare(template, envir, envir_base, db,
+                            function_value = if (is.null(fun$name)) fun$value)
 
   rewrite <- function(x) {
-    dat$expr[[2]] <- x
+    dat$expr[[2L]] <- x
     object_to_bin(dat)
   }
 
