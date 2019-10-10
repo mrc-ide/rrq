@@ -304,7 +304,9 @@ worker_catch_interrupt <- function(worker) {
 
     task_running <- worker$con$HGET(worker$keys$worker_task, worker$name)
     if (!is.null(task_running)) {
-      worker_run_task_cleanup(worker, task_running, TASK_INTERRUPTED)
+      key_complete <- worker$con$HGET(worker$keys$task_complete, task_running)
+      worker_run_task_cleanup(worker, task_running, TASK_INTERRUPTED, NULL,
+                              key_complete)
     }
 
     ## There are two ways that interrupt happens (ignoring the
