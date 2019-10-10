@@ -8,7 +8,7 @@ test_that("match_fun_envir can find functions by name", {
   expect_equal(match_fun_envir(quote(add)), expected1)
   expect_equal(match_fun_envir("add", envir_base = environment()),
                expected2)
-  expect_equal(match_fun_envir(quote(add), envir_base = environment()),
+  expect_equal(match_fun_envir(quote(quote(add)), envir_base = environment()),
                expected2)
 })
 
