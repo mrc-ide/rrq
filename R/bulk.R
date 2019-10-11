@@ -68,12 +68,21 @@ match_fun_envir <- function(fun, envir = parent.frame(), envir_base = NULL) {
   if (is_namespaced_call(fun)) {
     name <- fun
   } else if (is.character(fun_search)) {
-    name_ok <-
-      identical(envir, envir_base) ||
-      (!is.null(envir_base) &&
-        identical(get(name_search, envir_base), value)) ||
-      (is.primitive(value) &&
-       identical(get(name_search, baseenv()), value))
+    ## NOTE: This can be done as a big set of X || Y || Z clauses but
+    ## it's easier for bugs to hide there because it's not so obvious
+    ## that each branch has been run.  So this is done as an if/else
+    ## ladder here at least for now.
+    if (identical(envir, envir_base)) {
+      name_ok <- TRUE
+    } else if (!is.null(envir_base) &&
+                identical(get(fun_search, envir_base), value)) {
+      name_ok <- TRUE
+    } else if (is.primitive(value) &&
+               identical(get(fun_search, baseenv()), value)) {
+      name_ok <- TRUE
+    } else {
+      name_ok <- FALSE
+    }
     if (name_ok) {
       name <- if (is.character(fun)) as.name(fun) else fun
     }

@@ -33,6 +33,18 @@ test_that("match_fun_envir can deal with anonymous functions", {
 })
 
 
+test_that("match_fun_envir can find functions in nested environments", {
+  add <- function(a, b) a + b
+  e1 <- list2env(list(add = add), new.env(parent = .GlobalEnv))
+  e2 <- list2env(list(sum = add), new.env(parent = e1))
+
+  expect_equal(match_fun_envir(quote(add), e2, e1),
+               list(name = quote(add), value = add))
+  expect_equal(match_fun_envir(quote(sum), e2, e1),
+               list(name = NULL, value = add))
+})
+
+
 test_that("match_fun", {
   e <- new.env(parent = emptyenv())
   e$add <- function(a, b) a + b
