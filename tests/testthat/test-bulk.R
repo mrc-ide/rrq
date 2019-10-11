@@ -74,3 +74,11 @@ test_that("NSE - use namespaced function with lazy dots", {
   expect_equal(lengths(res), 1:10)
   expect_match(unlist(res), "^[a-z]+[A-Z][a-z]+$")
 })
+
+
+test_that("lapply blocking", {
+  obj <- test_rrq()
+  w <- test_worker_spawn(obj)
+  res <- obj$lapply(1:10, sqrt)
+  expect_equal(res, as.list(sqrt(1:10)))
+})
