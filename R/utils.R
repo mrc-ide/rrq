@@ -92,8 +92,7 @@ general_poll <- function(fetch, time_poll, timeout, name, error, progress) {
   done <- fetch()
 
   if (timeout > 0) {
-    p <- queuer::progress_timeout(length(done), show = progress,
-                                  timeout = timeout, show_after = 0)
+    p <- progress_timeout(length(done), progress, name, timeout)
     tot <- sum(done)
     p(tot)
 
@@ -116,4 +115,20 @@ general_poll <- function(fetch, time_poll, timeout, name, error, progress) {
   }
 
   done
+}
+
+
+collector <- function(init = character(0)) {
+  env <- new.env(parent = emptyenv())
+  env$res <- init
+  add <- function(x) {
+    env$res <- c(env$res, x)
+  }
+  list(add = add,
+       get = function() env$res)
+}
+
+
+is_call <- function(expr, what) {
+  is.call(expr) && any(vlapply(what, identical, expr[[1L]]))
 }

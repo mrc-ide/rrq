@@ -89,40 +89,30 @@ worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
   if (is.null(bin)) {
     stop("No workers expected on that key")
   }
+
   expected <- bin_to_object(bin)
-
-  n <- length(expected)
-  p <- queuer::progress_timeout(total = n, show = progress, timeout = timeout)
-  time_poll <- min(time_poll, timeout)
-  ret <- rep.int(NA_character_, n)
-
-  ## Previously found workers:
-  previous <- intersect(expected, worker_list(con, keys))
-  if (length(previous) > 0L) {
-    ret[seq_along(previous)] <- previous
-    p(length(previous))
-    con$LTRIM(key_alive, length(previous), -1)
-  }
-
-  i <- sum(!is.na(ret)) + 1L
-  while (any(is.na(ret))) {
-    x <- con$BLPOP(key_alive, time_poll)
-    if (is.null(x)) {
-      if (p(0)) {
-        n_msg <- sum(is.na(ret))
-        message(sprintf("%d / %d workers not identified in time", n_msg, n))
-        missing <- setdiff(expected, ret[!is.na(ret)])
-        logs <- worker_read_failed_logs(con, keys, missing)
-        worker_print_failed_logs(logs)
-        stop(sprintf("Not all workers recovered (key_alive: %s)", key_alive))
+  previous <- worker_list(con, keys)
+  done <- set_names(expected %in% previous, expected)
+  if (!all(done)) {
+    fetch <- function() {
+      tmp <- con$BLPOP(key_alive, time_poll)
+      if (!is.null(tmp)) {
+        done[[tmp[[2L]]]] <<- TRUE
       }
-    } else {
-      ret[[i]] <- x[[2]]
-      i <- i + 1L
-      p(1)
+      done
+    }
+    general_poll(fetch, 0, timeout, "workers", FALSE, progress)
+
+    if (!all(done)) {
+      message(sprintf("%d / %d workers not identified in time",
+                      sum(!done), length(done)))
+      logs <- worker_read_failed_logs(con, keys, names(done)[!done])
+      worker_print_failed_logs(logs)
+      stop("Not all workers recovered")
     }
   }
-  ret
+
+  expected
 }
 
 ##' Register that workers are expected.  This generates a key that one
@@ -151,11 +141,11 @@ worker_print_failed_logs <- function(logs) {
   if (is.null(logs)) {
     cat("Logging not enabled for these workers\n")
   } else {
-    ## A bit cheeky, but simplifies getting a nice bit of printing done:
-    message(sprintf("Log files recovered for %d %s",
-                    length(logs), ngettext(length(logs), "worker", "workers")))
-    dat <- list(str = names(logs), body = unname(logs))
-    class(dat) <- "context_log"
-    print(dat)
+    header <- sprintf("Log files recovered for %d %s\n",
+                      length(logs), ngettext(length(logs), "worker", "workers"))
+    log_str <- vcapply(logs, function(x)
+      paste(sprintf("  %s\n", x), collapse = ""))
+    txt <- c(header, sprintf("%s\n%s", names(logs), log_str))
+    cat(paste(txt, collapse = "\n"))
   }
 }

@@ -16,6 +16,4 @@ services:
   - redis-server
 
 r_github_packages:
-  - mrc-ide/context
-  - mrc-ide/queuer
   - richfitz/heartbeatr

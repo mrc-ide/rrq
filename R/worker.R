@@ -125,6 +125,14 @@ R6_rrq_worker <- R6::R6Class(
       worker_format(self)
     },
 
+    timer_start = function() {
+      if (is.null(self$timeout)) {
+        self$timer <- NULL
+      } else {
+        self$timer <- time_checker(self$timeout)
+      }
+    },
+
     shutdown = function(status = "OK", graceful = TRUE) {
       if (!is.null(self$heartbeat)) {
         self$log("HEARTBEAT", "stopping")
@@ -220,7 +228,7 @@ worker_step <- function(worker, immediate) {
 
   if (is.null(task) && !is.null(worker$timeout)) {
     if (is.null(worker$timer)) {
-      worker$timer <- queuer::time_checker(worker$timeout, remaining = TRUE)
+      worker$timer_start()
     }
     if (worker$timer() < 0L) {
       stop(rrq_worker_stop(worker, "TIMEOUT"))
@@ -296,7 +304,9 @@ worker_catch_interrupt <- function(worker) {
 
     task_running <- worker$con$HGET(worker$keys$worker_task, worker$name)
     if (!is.null(task_running)) {
-      worker_run_task_cleanup(worker, task_running, TASK_INTERRUPTED)
+      key_complete <- worker$con$HGET(worker$keys$task_complete, task_running)
+      worker_run_task_cleanup(worker, task_running, TASK_INTERRUPTED, NULL,
+                              key_complete)
     }
 
     ## There are two ways that interrupt happens (ignoring the

@@ -34,7 +34,7 @@ test_that("basic use", {
   t <- obj$enqueue(slowdouble(0.1))
   expect_is(t, "character")
   w$step(TRUE)
-  expect_equal(obj$task_wait(t, 2, progress = PROGRESS), 0.2)
+  expect_equal(obj$task_wait(t, 2), 0.2)
   expect_equal(obj$task_result(t), 0.2)
 })
 
@@ -72,14 +72,11 @@ test_that("task warnings are returned", {
 
   r1 <- obj$task_result(t1)
   expect_is(r1, "rrq_task_error")
-  expect_is(r1, "try-error")
-  expect_is(r1$warnings, "list")
+  expect_is(r1$warnings, "character")
   expect_equal(length(r1$warnings), 2)
-  expect_is(r1$warnings[[1]], "simpleWarning")
-  expect_equal(r1$warnings[[1]]$message, "This is warning number 1")
-  expect_equal(r1$warnings[[2]]$message, "This is warning number 2")
+  expect_equal(r1$warnings, sprintf("This is warning number %d", 1:2))
 
-  expect_match(tail(r1$trace, 2)[[1]], "^warning_then_error")
+  expect_match(r1$trace, "^warning_then_error", all = FALSE)
 })
 
 

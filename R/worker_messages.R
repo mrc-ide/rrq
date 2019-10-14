@@ -84,11 +84,7 @@ run_message_RESUME <- function(worker, args) {
 run_message_TIMEOUT_SET <- function(worker, args) {
   if (is.numeric(args) || is.null(args)) {
     worker$timeout <- args
-    if (is.null(args)) {
-      worker$timer <- NULL
-    } else {
-      worker$timer <- queuer::time_checker(args, remaining = TRUE)
-    }
+    worker$timer_start()
     "OK"
   } else {
     "INVALID"
@@ -99,17 +95,19 @@ run_message_TIMEOUT_GET <- function(worker) {
   if (is.null(worker$timeout)) {
     c(timeout = Inf, remaining = Inf)
   } else {
+    ## NOTE: This is a slightly odd construction; it arises because
+    ## the timer is not just suspended between tasks; it is removed
+    ## entirely.  So the worker runs a task (deleting the timer),
+    ## and the timer will not be restored until after it makes it
+    ## through one BLPOP cycle.  So, if a TIMEOUT_GET message is
+    ## issued _immediately_ after running a task then there will be
+    ## no timer here.
     if (is.null(worker$timer)) {
-      ## NOTE: This is a slightly odd construction; it arises because
-      ## the timer is not just suspended between tasks; it is removed
-      ## entirely.  So the worker runs a task (deleting the timer),
-      ## and the timer will not be restored until after it makes it
-      ## through one BLPOP cycle.  So, if a TIMEOUT_GET message is
-      ## issued _immediately_ after running a task then there will be
-      ## no timer here, but there should be.
-      worker$timer <- queuer::time_checker(worker$timeout, TRUE)
+      remaining <- worker$timeout
+    } else {
+      remaining <- worker$timer()
     }
-    c(timeout = worker$timeout, remaining = worker$timer())
+    c(timeout = worker$timeout, remaining = remaining)
   }
 }
 

@@ -22,8 +22,8 @@ skip_if_no_redis <- function() {
 
 wait_status <- function(t, obj, timeout = 2, time_poll = 0.05,
                         status = "PENDING") {
-  times_up <- queuer:::time_checker(timeout)
-  while (!times_up()) {
+  remaining <- time_checker(timeout)
+  while (remaining() > 0) {
     if (all(obj$task_status(t) != status)) {
       return()
     }
@@ -68,7 +68,7 @@ test_rrq <- function(sources = NULL, root = tempfile()) {
 
 test_worker_spawn <- function(obj, ..., timeout = 10) {
   skip_on_cran()
-  worker_spawn(obj, ..., progress = PROGRESS, timeout = timeout)
+  worker_spawn(obj, ..., timeout = timeout)
 }
 
 
@@ -92,6 +92,11 @@ make_counter <- function(start = 0L) {
 }
 
 
-PROGRESS <- FALSE # TODO: phase this one out
-options(queuer.progress_suppress = TRUE)
-Sys.unsetenv("CONTEXT_CORES")
+with_options <- function(opts, code) {
+  oo <- options(opts)
+  on.exit(options(oo))
+  force(code)
+}
+
+
+options(rrq.progress = FALSE)
