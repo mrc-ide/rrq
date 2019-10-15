@@ -315,8 +315,7 @@ worker_catch_interrupt <- function(worker) {
 
     active <- worker$active_task
     if (!is.null(active)) {
-      worker_run_task_cleanup(worker, active$task_id, TASK_INTERRUPTED, NULL,
-                              active$key_complete)
+      worker_run_task_cleanup(worker, TASK_INTERRUPTED, NULL)
     }
 
     ## There are two ways that interrupt happens (ignoring the
