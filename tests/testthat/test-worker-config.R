@@ -124,3 +124,13 @@ test_that("rrq_default configuration", {
   expect_null(res2)
   expect_equal(obj$worker_config_read("new"), res1)
 })
+
+
+test_that("verbose is validated", {
+  obj <- test_rrq()
+  expect_error(
+    obj$worker_config_save("quiet", verbose = "no thank you"),
+    "verbose must be logical")
+  obj$worker_config_save("quiet", verbose = FALSE)
+  expect_equal(obj$worker_config_read("quiet"), list(verbose = FALSE))
+})
