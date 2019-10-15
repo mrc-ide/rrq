@@ -249,6 +249,9 @@ worker_step <- function(worker, immediate) {
 
 
 worker_loop <- function(worker, immediate = FALSE) {
+  cache$active_worker <- worker
+  on.exit(cache$active_worker <- NULL)
+
   if (worker$verbose) {
     message(paste0(worker_banner("start"), collapse = "\n"))
     message(paste0(worker$format(), collapse = "\n"))
