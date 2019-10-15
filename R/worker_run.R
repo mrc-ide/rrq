@@ -1,5 +1,5 @@
 worker_run_task <- function(worker, task_id) {
-  dat <- worker_run_task_start(worker, task_id)$task
+  task <- worker_run_task_start(worker, task_id)
   e <- expression_restore_locals(task, worker$envir, worker$db)
   res <- expression_eval_safely(task$expr, e)
   task_status <- if (res$success) TASK_COMPLETE else TASK_ERROR
@@ -19,16 +19,13 @@ worker_run_task_start <- function(worker, task_id) {
     redis$HGET(keys$task_complete, task_id),
     redis$HGET(keys$task_expr,     task_id))
 
-  ## Pull this out of the mess above
-  key_complete <- dat[[6]]
-
   ## This holds the bits of worker state we might need to refer to
   ## later for a running task:
-  worker$active_task <- list(task_id = task_id, key_complete = key_complete)
+  worker$active_task <- list(task_id = task_id, key_complete = dat[[6]])
 
   ## And this holds the data used in worker_run_task_to actually run
   ## the task
-  list(task = bin_to_object(dat[[7]]), key_complete = key_complete)
+  bin_to_object(dat[[7]])
 }
 
 worker_run_task_cleanup <- function(worker, status, value) {
