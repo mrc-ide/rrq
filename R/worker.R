@@ -59,9 +59,11 @@ R6_rrq_worker <- R6::R6Class(
     timeout = NULL,
     timer = NULL,
     heartbeat = NULL,
-    loop_task = NULL,
     loop_continue = NULL,
     verbose = NULL,
+
+    loop_task = NULL,
+    active_task = NULL,
 
     initialize = function(con, queue_id, key_alive = NULL, worker_name = NULL,
                           time_poll = NULL, timeout = NULL,
@@ -311,17 +313,16 @@ worker_catch_interrupt <- function(worker) {
     ## OK.
     worker$log("INTERRUPT")
 
-    task_running <- worker$con$HGET(worker$keys$worker_task, worker$name)
-    if (!is.null(task_running)) {
-      key_complete <- worker$con$HGET(worker$keys$task_complete, task_running)
-      worker_run_task_cleanup(worker, task_running, TASK_INTERRUPTED, NULL,
-                              key_complete)
+    active <- worker$active_task
+    if (!is.null(active)) {
+      worker_run_task_cleanup(worker, active$task_id, TASK_INTERRUPTED, NULL,
+                              active$key_complete)
     }
 
     ## There are two ways that interrupt happens (ignoring the
     ## race condition where it comes in neither)
     ##
-    ## 1. Interrupt a job; in that case, we have a task_running
+    ## 1. Interrupt a job; in that case, we have task data in 'active'
     ##    above and everything is all OK; we just mark this as done.
     ##
     ## 2. During BLPOP.  In that case we need to re-queue the
@@ -331,7 +332,7 @@ worker_catch_interrupt <- function(worker) {
     ##
     ## NOTE that a SIGTERM signal might result in lost messages.
     task <- worker$loop_task
-    if (!is.null(task[[2]]) && !identical(task[[2]], task_running)) {
+    if (!is.null(task[[2]]) && !identical(task[[2]], active$task_id)) {
       label <- sprintf("%s:%s", queue_type[[task[[1]]]], task[[2]])
       worker$log("REQUEUE", label)
       worker$con$LPUSH(task[[1]], task[[2]])

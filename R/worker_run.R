@@ -20,15 +20,29 @@ worker_run_task_start <- function(worker, task_id) {
     redis$HSET(keys$task_status,   task_id,   TASK_RUNNING),
     redis$HGET(keys$task_complete, task_id),
     redis$HGET(keys$task_expr,     task_id))
-  list(task = bin_to_object(dat[[7]]), key_complete = dat[[6]])
+
+  ## Pull this out of the mess above
+  key_complete <- dat[[6]]
+
+  ## This holds the bits of worker state we might need to refer to
+  ## later for a running task:
+  worker$active_task <- list(task_id = task_id, key_complete = key_complete)
+
+  ## And this holds the data used in worker_run_task_to actually run
+  ## the task
+  list(task = bin_to_object(dat[[7]]), key_complete = key_complete)
 }
 
-
+## There is a bit of a tension here in passing arond task_id and
+## key_complete and working with active_task which holds that same
+## information.  This is only used here and in the interrupt cleanup,
+## so is easy enough to refactor to tidy up.
 worker_run_task_cleanup <- function(worker, task_id, status, value,
                                     key_complete) {
   keys <- worker$keys
   name <- worker$name
   log_status <- paste0("TASK_", status)
+  worker$active_task <- NULL
   worker$con$pipeline(
     redis$HSET(keys$task_result,    task_id,  object_to_bin(value)),
     redis$HSET(keys$task_status,    task_id,  status),
