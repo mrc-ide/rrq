@@ -6,7 +6,7 @@
 \usage{
 rrq_worker(queue_id, con = redux::hiredis(), key_alive = NULL,
   worker_name = NULL, time_poll = NULL, timeout = NULL,
-  heartbeat_period = NULL)
+  heartbeat_period = NULL, verbose = TRUE)
 }
 \arguments{
 \item{queue_id}{Name of the queue to connect to.  This will be the
@@ -34,6 +34,12 @@ run by all workers.}
 non-NULL then a heartbeat process will be started (using the
 \code{heartbeatr} package) which can be used to build fault
 tolerant queues.}
+
+\item{verbose}{Logical, indicating if the worker should print
+logging output to the screen.  Logging to screen has a small but
+measurable performance cost, and if you will not collect system
+logs from the worker then it is wasted time.  Logging to the
+redis server is always enabled.}
 }
 \description{
 A rrq queue worker.  These are not for interacting with but will

@@ -6,7 +6,7 @@ test_that("rrq_default configuration", {
   obj <- test_rrq()
   expect_equal(obj$worker_config_list(), "localhost")
   expect_equal(obj$worker_config_read("localhost"),
-               list(time_poll = 1))
+               list(time_poll = 1, verbose = TRUE))
 })
 
 
@@ -119,8 +119,18 @@ test_that("rrq_default configuration", {
   ## possibly not what is wanted)
   obj <- test_rrq()
   res1 <- obj$worker_config_save("new", timeout = 1, overwrite = FALSE)
-  expect_equal(res1, list(timeout = 1))
+  expect_equal(res1, list(timeout = 1, verbose = TRUE))
   res2 <- obj$worker_config_save("new", timeout = 2, overwrite = FALSE)
   expect_null(res2)
   expect_equal(obj$worker_config_read("new"), res1)
+})
+
+
+test_that("verbose is validated", {
+  obj <- test_rrq()
+  expect_error(
+    obj$worker_config_save("quiet", verbose = "no thank you"),
+    "verbose must be logical")
+  obj$worker_config_save("quiet", verbose = FALSE)
+  expect_equal(obj$worker_config_read("quiet"), list(verbose = FALSE))
 })
