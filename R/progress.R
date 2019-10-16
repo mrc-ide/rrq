@@ -37,7 +37,7 @@ progress_update <- function(value, worker) {
   assert_is(worker, "rrq_worker")
   task_id <- worker$active_task$task_id
   if (is.null(task_id)) {
-    stop("Can't register rrq progress as no task running")
+    stop("rrq_progress_update can be called only when a task is running")
   }
   assert_scalar_character(value)
   worker$con$HSET(worker$keys$task_progress, task_id, value)

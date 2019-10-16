@@ -65,3 +65,20 @@ test_that("update progress multiple times in task", {
   expect_equal(obj$task_progress(t),
                "Finishing")
 })
+
+
+test_that("can't register progress with no active worker", {
+  cache$active_worker <- NULL
+  expect_error(
+    rrq_progress_update("value"),
+    "rrq_progress_update can be called only when a worker is active")
+})
+
+
+test_that("can't register progress with no active task", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  expect_error(
+    progress_update("value", w),
+    "rrq_progress_update can be called only when a task is running")
+})
