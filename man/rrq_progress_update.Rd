@@ -4,13 +4,19 @@
 \alias{rrq_progress_update}
 \title{Post task update}
 \usage{
-rrq_progress_update(value)
+rrq_progress_update(value, error = FALSE)
 }
 \arguments{
 \item{value}{A string with the contents of the update. This will
 overwrite any previous progress value, and can be retrieved from
 a \code{\link{rrq_controller}} with the \code{task_progress}
 method.}
+
+\item{error}{Logical, indicating if we should throw an error if
+not running as an \code{rrq} task. Set this to \code{FALSE} if
+you want code to work without modification within and outside of
+an `rrq` job, or to \code{TRUE} if you want to be sure that
+progress messages have made it to the server.}
 }
 \description{
 Post a task progress update.  The progress system in \code{rrq} is

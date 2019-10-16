@@ -23,21 +23,35 @@
 ##'   a \code{\link{rrq_controller}} with the \code{task_progress}
 ##'   method.
 ##'
+##' @param error Logical, indicating if we should throw an error if
+##'   not running as an \code{rrq} task. Set this to \code{FALSE} if
+##'   you want code to work without modification within and outside of
+##'   an `rrq` job, or to \code{TRUE} if you want to be sure that
+##'   progress messages have made it to the server.
+##'
 ##' @export
-rrq_progress_update <- function(value) {
+rrq_progress_update <- function(value, error = FALSE) {
   worker <- cache$active_worker
   if (is.null(worker)) {
-    stop("rrq_progress_update can be called only when a worker is active")
+    if (error) {
+      stop("rrq_progress_update can be called only when a worker is active")
+    } else {
+      return(invisible())
+    }
   }
-  progress_update(value, worker)
+  progress_update(value, worker, error)
 }
 
 
-progress_update <- function(value, worker) {
+progress_update <- function(value, worker, error) {
   assert_is(worker, "rrq_worker")
   task_id <- worker$active_task$task_id
   if (is.null(task_id)) {
-    stop("rrq_progress_update can be called only when a task is running")
+    if (error) {
+      stop("rrq_progress_update can be called only when a task is running")
+    } else {
+      return(invisible())
+    }
   }
   assert_scalar_character(value)
   worker$con$HSET(worker$keys$task_progress, task_id, value)
