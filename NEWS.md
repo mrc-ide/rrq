@@ -1,6 +1,6 @@
 # rrq 0.2.1
 
-* Add support for within-task progress updates, using the `rrq::rrq_progress_update` function, which can be called from any task run from `rrq` (mrc-600)
+* Add support for within-task progress updates, using the `rrq::rrq_task_progress_update` function, which can be called from any task run from `rrq` and queried with `$task_progress` from a `rrq_controller` (mrc-600)
 
 # rrq 0.2.0
 

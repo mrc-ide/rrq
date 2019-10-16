@@ -5,7 +5,7 @@
 ##' In order to report on progress, a task may, in it's code, write
 ##'
 ##' \preformatted{
-##' rrq::rrq_progress_update("task is 90% done")
+##' rrq::rrq_task_progress_update("task is 90% done")
 ##' }
 ##'
 ##' and this information will be fetchable from \code{rrq_controller}
@@ -30,25 +30,25 @@
 ##'   progress messages have made it to the server.
 ##'
 ##' @export
-rrq_progress_update <- function(value, error = FALSE) {
+rrq_task_progress_update <- function(value, error = FALSE) {
   worker <- cache$active_worker
   if (is.null(worker)) {
     if (error) {
-      stop("rrq_progress_update can be called only when a worker is active")
+      stop("rrq_task_progress_update called with no active worker")
     } else {
       return(invisible())
     }
   }
-  progress_update(value, worker, error)
+  task_progress_update(value, worker, error)
 }
 
 
-progress_update <- function(value, worker, error) {
+task_progress_update <- function(value, worker, error) {
   assert_is(worker, "rrq_worker")
   task_id <- worker$active_task$task_id
   if (is.null(task_id)) {
     if (error) {
-      stop("rrq_progress_update can be called only when a task is running")
+      stop("rrq_task_progress_update called with no active task")
     } else {
       return(invisible())
     }

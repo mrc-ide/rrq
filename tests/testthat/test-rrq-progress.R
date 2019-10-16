@@ -11,11 +11,11 @@ test_that("basic use", {
   expect_null(obj$task_progress(t))
 
   ## Status can be set
-  expect_null(progress_update("status1", w, TRUE))
+  expect_null(task_progress_update("status1", w, TRUE))
   expect_equal(obj$task_progress(t), "status1")
 
   ## Status can be updated
-  expect_null(progress_update("status2", w, TRUE))
+  expect_null(task_progress_update("status2", w, TRUE))
   expect_equal(obj$task_progress(t), "status2")
 
   ## Completing a task retains its status
@@ -70,10 +70,10 @@ test_that("update progress multiple times in task", {
 test_that("can't register progress with no active worker", {
   cache$active_worker <- NULL
   expect_error(
-    rrq_progress_update("value", TRUE),
-    "rrq_progress_update can be called only when a worker is active")
+    rrq_task_progress_update("value", TRUE),
+    "rrq_task_progress_update called with no active worker")
   expect_silent(
-    rrq_progress_update("value", FALSE))
+    rrq_task_progress_update("value", FALSE))
 })
 
 
@@ -81,8 +81,8 @@ test_that("can't register progress with no active task", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
   expect_error(
-    progress_update("value", w, TRUE),
-    "rrq_progress_update can be called only when a task is running")
+    task_progress_update("value", w, TRUE),
+    "rrq_task_progress_update called with no active task")
   expect_silent(
-    progress_update("value", w, FALSE))
+    task_progress_update("value", w, FALSE))
 })
