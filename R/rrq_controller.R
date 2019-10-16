@@ -86,6 +86,10 @@ R6_rrq_controller <- R6::R6Class(
       task_status(self$con, self$keys, task_ids)
     },
 
+    task_progress = function(task_id = NULL) {
+      task_progress(self$con, self$keys, task_id)
+    },
+
     task_overview = function(task_ids = NULL) {
       task_overview(self$con, self$keys, task_ids)
     },
@@ -257,6 +261,13 @@ task_status <- function(con, keys, task_ids) {
   from_redis_hash(con, keys$task_status, task_ids, missing = TASK_MISSING)
 }
 
+
+task_progress <- function(con, keys, task_id) {
+  assert_scalar_character(task_id)
+  con$HGET(keys$task_progress, task_id)
+}
+
+
 task_overview <- function(con, keys, task_ids) {
   lvls <- c(TASK_PENDING, TASK_RUNNING, TASK_COMPLETE, TASK_ERROR)
   status <- task_status(con, keys, task_ids)
@@ -298,6 +309,7 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
     redis$HDEL(keys$task_status,   task_ids),
     redis$HDEL(keys$task_result,   task_ids),
     redis$HDEL(keys$task_complete, task_ids),
+    redis$HDEL(keys$task_progress, task_ids),
     redis$HDEL(keys$task_worker,   task_ids))
   invisible()
 }

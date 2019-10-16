@@ -3,6 +3,7 @@
 S3method(mean,worker_load)
 export(rrq_controller)
 export(rrq_expect_worker)
+export(rrq_progress_update)
 export(rrq_worker)
 export(worker_spawn)
 export(worker_wait)
