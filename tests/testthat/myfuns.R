@@ -56,3 +56,16 @@ run_with_progress_interactive <- function(path, poll = 0.01) {
   }
   rrq::rrq_task_progress_update("Finishing")
 }
+
+
+run_with_progress_signal <- function(n, wait) {
+  progress <- function(message) {
+    signalCondition(structure(list(message = message),
+                              class = c("progress", "condition")))
+  }
+  for (i in seq_len(n)) {
+    progress(sprintf("iteration %d", i))
+    Sys.sleep(wait)
+  }
+  n
+}

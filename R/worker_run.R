@@ -1,7 +1,9 @@
 worker_run_task <- function(worker, task_id) {
   task <- worker_run_task_start(worker, task_id)
   e <- expression_restore_locals(task, worker$envir, worker$db)
-  res <- expression_eval_safely(task$expr, e)
+  res <- withCallingHandlers(
+    expression_eval_safely(task$expr, e),
+    progress = function(e) task_progress_update(e$message, worker, FALSE))
   task_status <- if (res$success) TASK_COMPLETE else TASK_ERROR
   worker_run_task_cleanup(worker, task_status, res$value)
 }

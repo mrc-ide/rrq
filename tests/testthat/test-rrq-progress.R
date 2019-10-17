@@ -86,3 +86,13 @@ test_that("can't register progress with no active task", {
   expect_silent(
     task_progress_update("value", w, FALSE))
 })
+
+
+test_that("collect progress from signal", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+  t <- obj$enqueue(run_with_progress_signal(5, 0))
+  w$step(TRUE)
+  expect_equal(obj$task_result(t), 5)
+  expect_equal(obj$task_progress(t), "iteration 5")
+})

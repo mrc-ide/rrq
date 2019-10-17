@@ -16,6 +16,26 @@
 ##' a future version to allow serialising an arbitrary R object,
 ##' though this adds complication in reading the status later.
 ##'
+##' It is also possible to register progress \emph{without} acquiring
+##' a dependency on \code{rrq}.  If your package/script includes code
+##' like:
+##'
+##' \preformatted{
+##' progress <- function(message) {
+##'   signalCondition(structure(list(message = message),
+##'                             class = c("progress", "condition")))
+##' }
+##' }
+##'
+##' (this function can be called anything - the important bit is the
+##' body function body - you must return an object with a
+##' \code{message} element and the two class attributes
+##' \code{progress} and \code{condition}).
+##'
+##' then you can use this in the same way as
+##' \code{rrq::rrq_task_progress_update} above in your code.  When run
+##' without using rrq, this function will appear to do nothing.
+##'
 ##' @title Post task update
 ##'
 ##' @param value A string with the contents of the update. This will
