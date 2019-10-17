@@ -264,7 +264,11 @@ task_status <- function(con, keys, task_ids) {
 
 task_progress <- function(con, keys, task_id) {
   assert_scalar_character(task_id)
-  con$HGET(keys$task_progress, task_id)
+  ret <- con$HGET(keys$task_progress, task_id)
+  if (!is.null(ret)) {
+    ret <- bin_to_object(ret)
+  }
+  ret
 }
 
 

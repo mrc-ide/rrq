@@ -7,10 +7,12 @@
 rrq_task_progress_update(value, error = FALSE)
 }
 \arguments{
-\item{value}{A string with the contents of the update. This will
-overwrite any previous progress value, and can be retrieved from
-a \code{\link{rrq_controller}} with the \code{task_progress}
-method.}
+\item{value}{An R object with the contents of the update. This
+will overwrite any previous progress value, and can be retrieved
+from a \code{\link{rrq_controller}} with the
+\code{task_progress} method.  A value of \code{NULL} will appear
+to clear the status, as \code{NULL} will also be returned if no
+status is found for a task.}
 
 \item{error}{Logical, indicating if we should throw an error if
 not running as an \code{rrq} task. Set this to \code{FALSE} if
@@ -21,7 +23,8 @@ progress messages have made it to the server.}
 \description{
 Post a task progress update.  The progress system in \code{rrq} is
 agnostic about how you are going to render your progress, and so
-it just a convention - see Details below.
+it just a convention - see Details below.  Any R object can be
+sent as a progress value (e.g., a string, a list, etc).
 }
 \details{
 In order to report on progress, a task may, in it's code, write
@@ -33,10 +36,6 @@ rrq::rrq_task_progress_update("task is 90% done")
 and this information will be fetchable from \code{rrq_controller}
 using the \code{task_progress} method and providing the
 \code{task_id}.
-
-The progress value must be a single string.  We may extend this in
-a future version to allow serialising an arbitrary R object,
-though this adds complication in reading the status later.
 
 It is also possible to register progress \emph{without} acquiring
 a dependency on \code{rrq}.  If your package/script includes code
@@ -56,5 +55,5 @@ body function body - you must return an object with a
 
 then you can use this in the same way as
 \code{rrq::rrq_task_progress_update} above in your code.  When run
-without using rrq, this function will
+without using rrq, this function will appear to do nothing.
 }

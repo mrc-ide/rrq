@@ -1,6 +1,7 @@
 ##' Post a task progress update.  The progress system in \code{rrq} is
 ##' agnostic about how you are going to render your progress, and so
-##' it just a convention - see Details below.
+##' it just a convention - see Details below.  Any R object can be
+##' sent as a progress value (e.g., a string, a list, etc).
 ##'
 ##' In order to report on progress, a task may, in it's code, write
 ##'
@@ -11,10 +12,6 @@
 ##' and this information will be fetchable from \code{rrq_controller}
 ##' using the \code{task_progress} method and providing the
 ##' \code{task_id}.
-##'
-##' The progress value must be a single string.  We may extend this in
-##' a future version to allow serialising an arbitrary R object,
-##' though this adds complication in reading the status later.
 ##'
 ##' It is also possible to register progress \emph{without} acquiring
 ##' a dependency on \code{rrq}.  If your package/script includes code
@@ -38,10 +35,12 @@
 ##'
 ##' @title Post task update
 ##'
-##' @param value A string with the contents of the update. This will
-##'   overwrite any previous progress value, and can be retrieved from
-##'   a \code{\link{rrq_controller}} with the \code{task_progress}
-##'   method.
+##' @param value An R object with the contents of the update. This
+##'   will overwrite any previous progress value, and can be retrieved
+##'   from a \code{\link{rrq_controller}} with the
+##'   \code{task_progress} method.  A value of \code{NULL} will appear
+##'   to clear the status, as \code{NULL} will also be returned if no
+##'   status is found for a task.
 ##'
 ##' @param error Logical, indicating if we should throw an error if
 ##'   not running as an \code{rrq} task. Set this to \code{FALSE} if
@@ -73,7 +72,6 @@ task_progress_update <- function(value, worker, error) {
       return(invisible())
     }
   }
-  assert_scalar_character(value)
-  worker$con$HSET(worker$keys$task_progress, task_id, value)
+  worker$con$HSET(worker$keys$task_progress, task_id, object_to_bin(value))
   invisible()
 }
