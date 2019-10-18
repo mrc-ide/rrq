@@ -42,7 +42,7 @@ test_that("interrupt stuck worker (local)", {
   wid <- test_worker_spawn(obj)
   pid <- obj$worker_info()[[wid]]$pid
 
-  expect_equal(obj$message_send_and_wait("PING"),
+  expect_equal(obj$message_send_and_wait("PING", timeout = 10),
                setNames(list("PONG"), wid))
 
   t <- obj$enqueue(slowdouble(10000))
@@ -56,13 +56,13 @@ test_that("interrupt stuck worker (local)", {
   expect_equal(obj$task_status(t), setNames(TASK_INTERRUPTED, t))
   expect_equal(obj$worker_status(wid), setNames(WORKER_IDLE, wid))
 
-  expect_equal(obj$message_send_and_wait("PING"),
+  expect_equal(obj$message_send_and_wait("PING", timeout = 10),
                setNames(list("PONG"), wid))
 
   ## Then try the interrupt _during_ a string of messages and be sure
   ## that the messages get requeued correctly.
   tools::pskill(pid, tools::SIGINT)
-  expect_equal(obj$message_send_and_wait("PING"),
+  expect_equal(obj$message_send_and_wait("PING", timeout = 10),
                setNames(list("PONG"), wid))
 
   tmp <- obj$worker_log_tail(wid, 3L)
@@ -88,7 +88,7 @@ test_that("interrupt stuck worker (via heartbeat)", {
 
   wid <- test_worker_spawn(obj)
 
-  expect_equal(obj$message_send_and_wait("PING"),
+  expect_equal(obj$message_send_and_wait("PING", timeout = 10),
                setNames(list("PONG"), wid))
 
   t <- obj$enqueue(slowdouble(10000))
@@ -102,13 +102,13 @@ test_that("interrupt stuck worker (via heartbeat)", {
   expect_equal(obj$task_status(t), setNames(TASK_INTERRUPTED, t))
   expect_equal(obj$worker_status(wid), setNames(WORKER_IDLE, wid))
 
-  expect_equal(obj$message_send_and_wait("PING"),
+  expect_equal(obj$message_send_and_wait("PING", timeout = 10),
                setNames(list("PONG"), wid))
 
   ## Then try the interrupt _during_ a string of messages and be sure
   ## that the messages get requeued correctly.
   worker_send_signal(obj$con, obj$keys, tools::SIGINT, wid)
-  expect_equal(obj$message_send_and_wait("PING"),
+  expect_equal(obj$message_send_and_wait("PING", timeout = 10),
                setNames(list("PONG"), wid))
 
   tmp <- obj$worker_log_tail(wid, 3L)
