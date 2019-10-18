@@ -31,6 +31,7 @@ rrq_keys_queue <- function(queue_id) {
        task_expr      = sprintf("%s:task:expr",      queue_id),
        task_status    = sprintf("%s:task:status",    queue_id),
        task_worker    = sprintf("%s:task:worker",    queue_id),
+       task_progress  = sprintf("%s:task:progress",  queue_id),
        task_result    = sprintf("%s:task:result",    queue_id),
        task_complete  = sprintf("%s:task:complete",  queue_id))
 }
