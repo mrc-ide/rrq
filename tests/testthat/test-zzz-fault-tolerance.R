@@ -31,6 +31,8 @@ test_that("interrupt stuck worker (local)", {
   ## that we can shunt them off it.  It will not work on windows
   ## because there is no concept of interrupt that we can easily use.
   skip_on_os("windows")
+  ## This fails on covr with the worker disappearing
+  skip_on_covr()
 
   obj <- test_rrq("myfuns.R")
 
