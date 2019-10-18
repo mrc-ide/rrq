@@ -267,3 +267,23 @@ test_that("queue remove", {
   expect_equal(obj$queue_remove(c(t1, t2, t3)), c(TRUE, FALSE, TRUE))
   expect_equal(obj$queue_remove(character(0)), logical(0))
 })
+
+
+## This is not ideal, but should do for now. The worker_send_signal
+## function is not yet widely used from the controller, but will be at
+## some point. We depend on a implementation detail of heartbeatr, but
+## it's one that I think I have documented. The alternative would be
+## to mock this and ensure that heartbeatr::heartbeat_send_signal is
+## called as expected but given how simple the function is it seems
+## like the test really just implements the function like that.
+test_that("worker_send_signal", {
+  obj <- test_rrq()
+  w1 <- test_worker_blocking(obj)
+  w2 <- test_worker_blocking(obj)
+  wid <- c(w1$name, w2$name)
+  worker_send_signal(obj$con, obj$keys, tools::SIGINT, c(w1$name, w2$name))
+
+  k <- paste0(rrq_key_worker_heartbeat(obj$keys$queue_id, wid), ":signal")
+  expect_equal(obj$con$LINDEX(k[[1]], 0), as.character(tools::SIGINT))
+  expect_equal(obj$con$LINDEX(k[[2]], 0), as.character(tools::SIGINT))
+})
