@@ -75,6 +75,8 @@ test_that("interrupt stuck worker (via heartbeat)", {
   ## Basically the same test as above, but we'll do it via the
   ## heartbeat thread.  These might be worth merging.
   skip_on_os("windows")
+  ## This fails on covr with the worker disappearing
+  skip_on_covr()
 
   obj <- test_rrq("myfuns.R")
 
