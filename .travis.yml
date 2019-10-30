@@ -6,8 +6,9 @@ r_packages:
 after_success:
   - Rscript -e 'covr::codecov()'
 
-after_script:
-  - ./docker/travis
+deploy:
+  provider: script
+  script: ./docker/travis
 
 addons:
   apt:
