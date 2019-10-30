@@ -22,4 +22,4 @@ services:
   - redis-server
 
 r_github_packages:
-  - richfitz/heartbeatr
+  - mrc-ide/heartbeatr
