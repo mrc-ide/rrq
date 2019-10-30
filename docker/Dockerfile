@@ -1,7 +1,8 @@
 FROM rocker/r-ver:3.6.1
 
 RUN apt-get update && apt-get -y install \
-        libhiredis-dev
+        libhiredis-dev \
+        libssl-dev
 
 COPY docker/bin /usr/local/bin/
 RUN sed  -i'' '/mran.microsoft.com/d' /usr/local/lib/R/etc/Rprofile.site
@@ -9,11 +10,13 @@ RUN sed  -i'' '/mran.microsoft.com/d' /usr/local/lib/R/etc/Rprofile.site
 RUN install_packages \
         R6 \
         docopt \
+        lazyeval \
         ids \
         progress \
+        remotes \
         redux
 
-RUN install_remotes \
+RUN install_remote \
         mrc-ide/heartbeatr
 
 COPY . /src
