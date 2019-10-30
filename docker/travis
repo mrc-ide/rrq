@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -e
+
+HERE=$(dirname $0)
+
+echo "Building images"
+$HERE/build
+
+# Do not run if this is a pull request build
+if [ $TRAVIS_PULL_REQUEST != "false" ]; then
+    echo "Not building pushing for a pull request"
+    exit 0
+fi
+
+if [ -z $DOCKER_USERNAME ]; then
+    echo "DOCKER_USERNAME not found"
+    exit 0
+fi
+
+if [ -z $DOCKER_PASSWORD ]; then
+    echo "DOCKER_PASSWORD not found"
+    exit 0
+fi
+
+# Get the password from the vimc vault as
+#
+#     vault read /secret/vimc-robot/dockerhub
+#
+# and add both username and password to the travis build
+#
+#     https://travis-ci.org/mrc-ide/rrq/settings
+#
+# as DOCKER_USERNAME and DOCKER_PASSWORD
+echo "Logging into docker hub"
+echo $DOCKER_PASSWORD | \
+    docker login -u $DOCKER_USERNAME --password-stdin
+
+echo "Pushing images"
+$HERE/push
