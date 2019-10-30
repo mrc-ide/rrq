@@ -12,3 +12,4 @@
 ^TODO\.md$
 ^appveyor\.yml$
 ^scripts$
+^docker$
