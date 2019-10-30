@@ -1,0 +1,3 @@
+ARG RRQ_BASE
+FROM $RRQ_BASE
+ENTRYPOINT ["/usr/local/bin/rrq_worker"]

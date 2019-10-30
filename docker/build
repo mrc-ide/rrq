@@ -3,11 +3,6 @@ set -e
 HERE=$(dirname $0)
 . $HERE/common
 
-cat <<EOF > Dockerfile.worker
-FROM $TAG_SHA
-ENTRYPOINT ["/usr/local/bin/rrq_worker"]
-EOF
-
 docker build --pull \
        -t $TAG_SHA \
        -t $TAG_BRANCH \
@@ -15,11 +10,10 @@ docker build --pull \
        -f docker/Dockerfile \
        .
 
-docker build
+docker build \
+       --build-arg RRQ_BASE=$TAG_SHA \
        -t $TAG_WORKER_SHA \
        -t $TAG_WORKER_BRANCH \
        -t $TAG_WORKER_VERSION \
        -f docker/Dockerfile.worker \
        .
-
-rm -f Dockerfile.worker
