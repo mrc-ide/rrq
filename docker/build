@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -e
+HERE=$(dirname $0)
+. $HERE/common
+
+docker build --pull \
+       -t $TAG_SHA \
+       -t $TAG_BRANCH \
+       -t $TAG_VERSION \
+       -f docker/Dockerfile \
+       .
+
+docker build \
+       --build-arg RRQ_BASE=$TAG_SHA \
+       -t $TAG_WORKER_SHA \
+       -t $TAG_WORKER_BRANCH \
+       -t $TAG_WORKER_VERSION \
+       -f docker/Dockerfile.worker \
+       .

@@ -12,7 +12,6 @@ Imports:
     R6,
     docopt,
     ids,
-    lazyeval,
     progress,
     redux (>= 1.0.0)
 Suggests:
