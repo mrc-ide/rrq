@@ -10,7 +10,6 @@ RUN sed  -i'' '/mran.microsoft.com/d' /usr/local/lib/R/etc/Rprofile.site
 RUN install_packages \
         R6 \
         docopt \
-        lazyeval \
         ids \
         progress \
         remotes \
