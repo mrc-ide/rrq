@@ -126,6 +126,10 @@ R6_rrq_controller <- R6::R6Class(
       task_delete(self$con, self$keys, task_ids, check)
     },
 
+    task_cancel = function(task_id) {
+      task_cancel(self$con, self$keys, task_id)
+    },
+
     ## 2. Fast queue
     queue_length = function() {
       self$con$LLEN(self$keys$queue)
@@ -142,18 +146,7 @@ R6_rrq_controller <- R6::R6Class(
     ## bounced ahead in the queue, which seems tolerable but might not
     ## always be ideal.  To solve this we should use a lua script.
     queue_remove = function(task_ids) {
-      if (length(task_ids) == 0) {
-        return(invisible(logical(0)))
-      }
-      res <- self$con$pipeline(
-        redux::redis$LRANGE(self$keys$queue, 0, -1),
-        redux::redis$DEL(self$keys$queue))
-      ids <- list_to_character(res[[1L]])
-      keep <- !(ids %in% task_ids)
-      if (any(keep)) {
-        self$con$RPUSH(self$keys$queue, ids[keep])
-      }
-      invisible(task_ids %in% ids)
+      queue_remove(self$con, self$keys, task_ids)
     },
 
     ## 4. Workers
@@ -297,14 +290,9 @@ task_submit <- function(con, keys, dat, key_complete) {
 
 task_delete <- function(con, keys, task_ids, check = TRUE) {
   if (check) {
-    ## TODO: filter from the running list if not running, but be
-    ## aware of race conditions. This is really only for doing
-    ## things that have finished so could just check that the
-    ## status is one of the finished ones.  Write a small lua
-    ## script that can take the setdiff of these perhaps...
     st <- from_redis_hash(con, keys$task_status, task_ids,
                           missing = TASK_MISSING)
-    if (any(st == "RUNNING")) {
+    if (any(st == TASK_RUNNING)) {
       stop("Can't delete running tasks")
     }
   }
@@ -315,7 +303,72 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
     redis$HDEL(keys$task_complete, task_ids),
     redis$HDEL(keys$task_progress, task_ids),
     redis$HDEL(keys$task_worker,   task_ids))
+  queue_remove(con, keys, task_ids)
   invisible()
+}
+
+## This is tricky because we need to ensure that the workers involved
+## do not pick up any extra work, so we'll pause them, then check.  We
+## need to assume that due to the possibility of a race condition that
+## at any point between adjacent redis operations the state of the
+## worker might change (it could finish the task for example).
+##
+## The steps are
+##
+## 1. identify the worker that the task is being run on and its state
+##    - confirming that the task is actually running
+##
+## 2. pause the worker so that it won't pick up any extra tasks (that
+##    stops us accidentally interrupting the next job in the queue if
+##    the worker finishes immediately after step 1
+##
+## 3. confirm that the worker is actually busy and that it is working
+##    on the expected task
+##
+## 4. find the heartbeat key, confirming that worker actually supports
+##    heartbeat
+##
+## 5. send an interrupt signal
+##
+## 6. resume the worker so that it can start with new tasks
+task_cancel <- function(con, keys, task_id) {
+  dat <- con$pipeline(
+    worker = redis$HGET(keys$task_worker, task_id),
+    status = redis$HGET(keys$task_status, task_id))
+
+  if (dat$status == TASK_PENDING) {
+    task_delete(con, keys, task_id, FALSE)
+    dat <- con$pipeline(
+      worker = redis$HGET(keys$task_worker, task_id),
+      status = redis$HGET(keys$task_status, task_id))
+    if (is.null(dat$status)) {
+      return(TRUE)
+    }
+  }
+
+  if (dat$status != TASK_RUNNING) {
+    stop(sprintf("Task %s is not running (%s)", task_id, dat$status))
+  }
+
+  worker_id <- dat$worker
+  message_send(con, keys, "PAUSE", worker_ids = worker_id)
+  on.exit(message_send(con, keys, "RESUME", worker_ids = worker_id))
+  dat <- con$pipeline(
+    task = redis$HGET(keys$worker_task, worker_id),
+    status = redis$HGET(keys$worker_status, worker_id),
+    info = redis$HGET(keys$worker_info, worker_id))
+
+  if (dat$status != WORKER_BUSY || dat$task != task_id) {
+    stop("Task finished during check")
+  }
+
+  heartbeat_key <- bin_to_object_safe(dat$info)$heartbeat_key
+  if (is.null(heartbeat_key)) {
+    stop("Worker does not have heartbeat enabled")
+  }
+
+  heartbeatr::heartbeat_send_signal(con, heartbeat_key, tools::SIGINT)
+  invisible(TRUE)
 }
 
 task_submit_n <- function(con, keys, dat, key_complete) {
@@ -577,4 +630,20 @@ tasks_wait <- function(con, keys, task_ids, timeout, time_poll = NULL,
 
 rrq_db <- function(con, keys) {
   redux::storr_redis_api(keys$db_prefix, con)
+}
+
+
+queue_remove <- function(con, keys, task_ids) {
+  if (length(task_ids) == 0) {
+    return(invisible(logical(0)))
+  }
+  res <- con$pipeline(
+    redux::redis$LRANGE(keys$queue, 0, -1),
+    redux::redis$DEL(keys$queue))
+  ids <- list_to_character(res[[1L]])
+  keep <- !(ids %in% task_ids)
+  if (any(keep)) {
+    con$RPUSH(keys$queue, ids[keep])
+  }
+  invisible(task_ids %in% ids)
 }

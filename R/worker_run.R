@@ -13,7 +13,7 @@ worker_run_task_start <- function(worker, task_id) {
   keys <- worker$keys
   name <- worker$name
   dat <- worker$con$pipeline(
-    worker_log(redis, keys, "TASK_START", "task_id", worker$verbose),
+    worker_log(redis, keys, "TASK_START", task_id, worker$verbose),
     redis$HSET(keys$worker_status, name,      WORKER_BUSY),
     redis$HSET(keys$worker_task,   name,      task_id),
     redis$HSET(keys$task_worker,   task_id,   name),
