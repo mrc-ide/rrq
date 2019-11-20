@@ -99,4 +99,9 @@ with_options <- function(opts, code) {
 }
 
 
+skip_on_windows <- function() {
+  testthat::skip_on_os("windows")
+}
+
+
 options(rrq.progress = FALSE)

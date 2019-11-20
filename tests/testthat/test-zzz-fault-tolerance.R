@@ -168,3 +168,68 @@ test_that("detect killed worker (via heartbeat)", {
   expect_message(cleanup_orphans(obj, dat1), "Lost 1 worker:")
   expect_message(cleanup_orphans(obj, dat1), "Orphaning 1 task:")
 })
+
+test_that("Stop task with interrupt", {
+  skip_if_not_installed("heartbeatr")
+  skip_on_os("windows")
+  obj <- test_rrq("myfuns.R")
+
+  ## We need to set time_poll to be fairly fast because BLPOP is not
+  ## interruptable; the interrupt will only be handled _after_ R gets
+  ## control back.
+  res <- obj$worker_config_save("localhost", time_poll = 1,
+                                heartbeat_period = 1)
+
+  wid <- test_worker_spawn(obj)
+  pid <- obj$worker_info()[[wid]]$pid
+
+  t <- obj$enqueue(slowdouble(10000))
+  wait_status(t, obj, status = TASK_PENDING)
+  expect_equal(obj$task_status(t), setNames(TASK_RUNNING, t))
+  expect_equal(obj$worker_status(wid), setNames(WORKER_BUSY, wid))
+
+  res <- obj$task_cancel(t)
+  expect_equal(res, list(success = TRUE))
+  wait_status(t, obj, status = TASK_RUNNING)
+
+  expect_equal(obj$task_status(t), setNames(TASK_INTERRUPTED, t))
+  expect_equal(obj$worker_status(wid), setNames(WORKER_IDLE, wid))
+
+  log <- obj$worker_log_tail(wid, Inf)
+  expect_equal(log$command, c("ALIVE",
+                              "TASK_START", "INTERRUPT", "TASK_INTERRUPTED",
+                              "MESSAGE", "RESPONSE", "MESSAGE", "RESPONSE"))
+  expect_equal(log$message, c("",
+                              t, "", "",
+                              "PAUSE", "PAUSE", "RESUME", "RESUME"))
+})
+
+
+test_that("race conditioning handling when cancelling tasks", {
+  skip_if_not_installed("heartbeatr")
+  skip_on_os("windows")
+
+  obj <- test_rrq("myfuns.R")
+
+  ## We need to set time_poll to be fairly fast because BLPOP is not
+  ## interruptable; the interrupt will only be handled _after_ R gets
+  ## control back.
+  res <- obj$worker_config_save("localhost", time_poll = 1,
+                                heartbeat_period = 1)
+  w <- test_worker_blocking(obj)
+  w$heartbeat$stop() # don't *actually* do the interrupt!
+
+  t <- obj$enqueue(slowdouble(10))
+  w$poll(TRUE)
+  worker_run_task_start(w, t)
+
+  info <- w$info()
+  info$heartbeat_key <- NULL
+  w$con$HSET(w$keys$worker_info, w$name, object_to_bin(info))
+
+  ## We can do this test too while we're here.
+  expect_error(obj$task_cancel(t), "Worker does not have heartbeat enabled")
+
+  obj$con$HSET(obj$keys$worker_status, w$name, WORKER_IDLE)
+  expect_error(obj$task_cancel(t), "Task finished during check")
+})
