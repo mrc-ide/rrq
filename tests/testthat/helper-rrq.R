@@ -30,7 +30,21 @@ wait_status <- function(t, obj, timeout = 2, time_poll = 0.05,
     message(".")
     Sys.sleep(time_poll)
   }
-  stop(sprintf("Did not change status to %s in time", status))
+  stop(sprintf("Did not change status from %s in time", status))
+}
+
+
+wait_worker_status <- function(w, obj, status, timeout = 2,
+                               time_poll = 0.05) {
+  remaining <- time_checker(timeout)
+  while (remaining() > 0) {
+    if (all(obj$worker_status(w) != status)) {
+      return()
+    }
+    message(".")
+    Sys.sleep(time_poll)
+  }
+  stop(sprintf("Did not change status from %s in time", status))
 }
 
 

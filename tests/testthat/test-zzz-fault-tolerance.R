@@ -189,8 +189,10 @@ test_that("Stop task with interrupt", {
   expect_equal(obj$worker_status(wid), setNames(WORKER_BUSY, wid))
 
   res <- obj$task_cancel(t)
-  expect_equal(res, list(success = TRUE))
+  expect_true(res)
   wait_status(t, obj, status = TASK_RUNNING)
+  wait_worker_status(wid, obj, status = WORKER_BUSY)
+  wait_worker_status(wid, obj, status = WORKER_PAUSED)
 
   expect_equal(obj$task_status(t), setNames(TASK_INTERRUPTED, t))
   expect_equal(obj$worker_status(wid), setNames(WORKER_IDLE, wid))
@@ -199,8 +201,7 @@ test_that("Stop task with interrupt", {
   expect_equal(log$command, c("ALIVE",
                               "TASK_START", "INTERRUPT", "TASK_INTERRUPTED",
                               "MESSAGE", "RESPONSE", "MESSAGE", "RESPONSE"))
-  expect_equal(log$message, c("",
-                              t, "", "",
+  expect_equal(log$message, c("", t, "", t,
                               "PAUSE", "PAUSE", "RESUME", "RESUME"))
 })
 
