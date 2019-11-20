@@ -287,3 +287,22 @@ test_that("worker_send_signal", {
   expect_equal(obj$con$LINDEX(k[[1]], 0), as.character(tools::SIGINT))
   expect_equal(obj$con$LINDEX(k[[2]], 0), as.character(tools::SIGINT))
 })
+
+
+test_that("cancel queued task", {
+  obj <- test_rrq()
+  t <- obj$enqueue(sqrt(1))
+  expect_true(obj$task_cancel(t))
+  expect_equal(obj$task_status(t), setNames(TASK_MISSING, t))
+})
+
+
+test_that("can't cancel completed task", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  t <- obj$enqueue(sqrt(1))
+  w$step(TRUE)
+  expect_error(
+    obj$task_cancel(t),
+    "Task [[:xdigit:]]{32} is not running \\(COMPLETE\\)")
+})

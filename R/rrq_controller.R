@@ -126,6 +126,10 @@ R6_rrq_controller <- R6::R6Class(
       task_delete(self$con, self$keys, task_ids, check)
     },
 
+    task_cancel = function(task_id) {
+      task_cancel(self$con, self$keys, task_id)
+    },
+
     ## 2. Fast queue
     queue_length = function() {
       self$con$LLEN(self$keys$queue)
@@ -301,6 +305,70 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
     redis$HDEL(keys$task_worker,   task_ids))
   queue_remove(con, keys, task_ids)
   invisible()
+}
+
+## This is tricky because we need to ensure that the workers involved
+## do not pick up any extra work, so we'll pause them, then check.  We
+## need to assume that due to the possibility of a race condition that
+## at any point between adjacent redis operations the state of the
+## worker might change (it could finish the task for example).
+##
+## The steps are
+##
+## 1. identify the worker that the task is being run on and its state
+##    - confirming that the task is actually running
+##
+## 2. pause the worker so that it won't pick up any extra tasks (that
+##    stops us accidentally interrupting the next job in the queue if
+##    the worker finishes immediately after step 1
+##
+## 3. confirm that the worker is actually busy and that it is working
+##    on the expected task
+##
+## 4. find the heartbeat key, confirming that worker actually supports
+##    heartbeat
+##
+## 5. send an interrupt signal
+##
+## 6. resume the worker so that it can start with new tasks
+task_cancel <- function(con, keys, task_id) {
+  dat <- con$pipeline(
+    worker = redis$HGET(keys$task_worker, task_id),
+    status = redis$HGET(keys$task_status, task_id))
+
+  if (dat$status == TASK_PENDING) {
+    task_delete(con, keys, task_id, FALSE)
+    dat <- con$pipeline(
+      worker = redis$HGET(keys$task_worker, task_id),
+      status = redis$HGET(keys$task_status, task_id))
+    if (is.null(dat$status)) {
+      return(TRUE)
+    }
+  }
+
+  if (dat$status != TASK_RUNNING) {
+    stop(sprintf("Task %s is not running (%s)", task_id, dat$status))
+  }
+
+  worker_id <- dat$worker
+  message_send(con, keys, "PAUSE", worker_ids = worker_id)
+  on.exit(message_send(con, keys, "RESUME", worker_ids = worker_id))
+  dat <- con$pipeline(
+    task = redis$HGET(keys$worker_task, worker_id),
+    status = redis$HGET(keys$worker_status, worker_id),
+    info = redis$HGET(keys$worker_info, worker_id))
+
+  if (dat$status != WORKER_BUSY || dat$task != task_id) {
+    stop("Task finished during check")
+  }
+
+  heartbeat_key <- bin_to_object_safe(dat$info)$heartbeat_key
+  if (is.null(heartbeat_key)) {
+    stop("Worker does not have heartbeat enabled")
+  }
+
+  heartbeatr::heartbeat_send_signal(con, heartbeat_key, tools::SIGINT)
+  invisible(TRUE)
 }
 
 task_submit_n <- function(con, keys, dat, key_complete) {
