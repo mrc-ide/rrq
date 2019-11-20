@@ -197,6 +197,9 @@ test_that("Stop task with interrupt", {
   expect_equal(obj$task_status(t), setNames(TASK_INTERRUPTED, t))
   expect_equal(obj$worker_status(wid), setNames(WORKER_IDLE, wid))
 
+  ## These checks don't work for covr for unknown reasons, probably to
+  ## do with signal handling.
+  skip_on_covr()
   log <- obj$worker_log_tail(wid, Inf)
   expect_equal(log$command, c("ALIVE",
                               "TASK_START", "INTERRUPT", "TASK_INTERRUPTED",
