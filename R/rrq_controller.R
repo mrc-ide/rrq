@@ -142,18 +142,7 @@ R6_rrq_controller <- R6::R6Class(
     ## bounced ahead in the queue, which seems tolerable but might not
     ## always be ideal.  To solve this we should use a lua script.
     queue_remove = function(task_ids) {
-      if (length(task_ids) == 0) {
-        return(invisible(logical(0)))
-      }
-      res <- self$con$pipeline(
-        redux::redis$LRANGE(self$keys$queue, 0, -1),
-        redux::redis$DEL(self$keys$queue))
-      ids <- list_to_character(res[[1L]])
-      keep <- !(ids %in% task_ids)
-      if (any(keep)) {
-        self$con$RPUSH(self$keys$queue, ids[keep])
-      }
-      invisible(task_ids %in% ids)
+      queue_remove(self$con, self$keys, task_ids)
     },
 
     ## 4. Workers
@@ -297,14 +286,9 @@ task_submit <- function(con, keys, dat, key_complete) {
 
 task_delete <- function(con, keys, task_ids, check = TRUE) {
   if (check) {
-    ## TODO: filter from the running list if not running, but be
-    ## aware of race conditions. This is really only for doing
-    ## things that have finished so could just check that the
-    ## status is one of the finished ones.  Write a small lua
-    ## script that can take the setdiff of these perhaps...
     st <- from_redis_hash(con, keys$task_status, task_ids,
                           missing = TASK_MISSING)
-    if (any(st == "RUNNING")) {
+    if (any(st == TASK_RUNNING)) {
       stop("Can't delete running tasks")
     }
   }
@@ -315,6 +299,7 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
     redis$HDEL(keys$task_complete, task_ids),
     redis$HDEL(keys$task_progress, task_ids),
     redis$HDEL(keys$task_worker,   task_ids))
+  queue_remove(con, keys, task_ids)
   invisible()
 }
 
@@ -577,4 +562,20 @@ tasks_wait <- function(con, keys, task_ids, timeout, time_poll = NULL,
 
 rrq_db <- function(con, keys) {
   redux::storr_redis_api(keys$db_prefix, con)
+}
+
+
+queue_remove <- function(con, keys, task_ids) {
+  if (length(task_ids) == 0) {
+    return(invisible(logical(0)))
+  }
+  res <- con$pipeline(
+    redux::redis$LRANGE(keys$queue, 0, -1),
+    redux::redis$DEL(keys$queue))
+  ids <- list_to_character(res[[1L]])
+  keep <- !(ids %in% task_ids)
+  if (any(keep)) {
+    con$RPUSH(keys$queue, ids[keep])
+  }
+  invisible(task_ids %in% ids)
 }
