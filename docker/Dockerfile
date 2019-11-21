@@ -5,9 +5,10 @@ RUN apt-get update && apt-get -y install \
         libssl-dev
 
 COPY docker/bin /usr/local/bin/
-RUN sed  -i'' '/mran.microsoft.com/d' /usr/local/lib/R/etc/Rprofile.site
+RUN sed  -i'' '/mran.microsoft.com/d' /usr/local/lib/R/etc/Rprofile.site && \
+        Rscript -e 'install.packages("docopt")'
 
-RUN install2.r --error \
+RUN install_packages \
         R6 \
         docopt \
         ids \
