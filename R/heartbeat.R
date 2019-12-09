@@ -10,56 +10,47 @@ heartbeat <- function(con, keys, period, verbose) {
   }
 }
 
+
+worker_detect_exited <- function(obj) {
+  time <- heartbeat_time_remaining(obj)
+  cleanup_orphans(obj, time)
+}
+
+
 heartbeat_time_remaining <- function(obj) {
-  worker_id <- obj$worker_list()
-  if (length(worker_id) > 0L) {
-    key <- rrq_key_worker_heartbeat(obj$queue_id, worker_id)
+  info <- obj$worker_info(obj$worker_list())
+  ttl <- function(key) {
+    if (is.null(key)) Inf else obj$con$PTTL(key)
+  }
+  vnapply(info, function(x) ttl(x$heartbeat_key))
+}
 
-    ## Do _all_ this in one block for consistency I think
-    status <- obj$worker_status()
-    time <- vnapply(key, obj$con$PTTL)
-    task_id <- obj$worker_task_id(worker_id)
 
-    ## Turn time into seconds:
-    alive <- time > 0
-    time[alive] <- time[alive] / 1000
-  } else {
-    time <- numeric(0)
-    status <- task_id <- character(0)
+cleanup_orphans <- function(obj, time) {
+  worker_id <- names(time)[time < 0]
+
+  if (length(worker_id) == 0L) {
+    return(invisible(NULL))
   }
 
-  ret <- data.frame(worker_id = worker_id,
-                    time = time,
-                    status = status,
-                    task_id = task_id,
-                    stringsAsFactors = FALSE)
-  rownames(ret) <- NULL
-  ret
-}
+  message(sprintf(
+    "Lost %s %s:\n%s",
+    length(worker_id), ngettext(length(worker_id), "worker", "workers"),
+    paste0("  - ", worker_id, collapse = "\n")))
 
-identify_orphan_tasks <- function(obj) {
-  dat <- heartbeat_time_remaining(obj)
-  cleanup_orphans(obj, dat)
-}
+  task_id <- obj$worker_task_id(worker_id)
+  i <- !is.na(task_id)
 
-cleanup_orphans <- function(obj, dat) {
-  i <- dat$time < 0
-  if (any(i)) {
-    task_id <- dat$task_id[i]
-    task_id <- task_id[!is.na(task_id)]
-    worker_id <- dat$worker_id[i]
-    message(sprintf(
-      "Lost %s %s:\n%s",
-      length(worker_id), ngettext(length(worker_id), "worker", "workers"),
-      paste0("  - ", worker_id, collapse = "\n")))
+  if (sum(i) > 0) {
     message(sprintf(
       "Orphaning %s %s:\n%s",
-      length(task_id), ngettext(length(task_id), "task", "tasks"),
+      length(task_id), ngettext(sum(i), "task", "tasks"),
       paste0("  - ", task_id, collapse = "\n")))
-    obj$con$HMSET(obj$keys$task_status, dat$task_id[i], TASK_ORPHAN)
-    obj$con$HMSET(obj$keys$worker_status, dat$worker_id[i], WORKER_LOST)
-    obj$con$SREM(obj$keys$worker_name, dat$worker_id[i])
+    obj$con$HMSET(obj$keys$task_status, task_id[i], TASK_ORPHAN)
   }
-  ret <- dat[i, c("worker_id", "task_id"), drop = FALSE]
-  ret
+
+  obj$con$HMSET(obj$keys$worker_status, worker_id, WORKER_LOST)
+  obj$con$SREM(obj$keys$worker_name, worker_id)
+
+  invisible(task_id)
 }

@@ -118,56 +118,6 @@ test_that("interrupt stuck worker (via heartbeat)", {
                c("REQUEUE", "MESSAGE", "RESPONSE"))
 })
 
-test_that("detect killed worker (via heartbeat)", {
-  skip_if_not_installed("heartbeatr")
-  obj <- test_rrq("myfuns.R")
-
-  ## We need to set time_poll to be fairly fast because BLPOP is not
-  ## interruptable; the interrupt will only be handled _after_ R gets
-  ## control back.
-  res <- obj$worker_config_save("localhost", time_poll = 1,
-                                heartbeat_period = 1)
-
-  wid <- test_worker_spawn(obj)
-  pid <- obj$worker_info()[[wid]]$pid
-
-  key <- rrq_key_worker_heartbeat(obj$queue_id, wid)
-  expect_equal(obj$con$EXISTS(key), 1)
-  expire <- res$heartbeat_period * 3
-  expect_equal(obj$con$GET(key), as.character(expire))
-  expect_lte(obj$con$TTL(key), expire)
-
-  t <- obj$enqueue(slowdouble(10000))
-  wait_status(t, obj, status = TASK_PENDING)
-  expect_equal(obj$task_status(t), setNames(TASK_RUNNING, t))
-  expect_equal(obj$worker_status(wid), setNames(WORKER_BUSY, wid))
-
-  tools::pskill(pid, tools::SIGTERM)
-  Sys.sleep(0.1)
-  expect_equal(obj$task_status(t), setNames(TASK_RUNNING, t))
-  expect_equal(obj$worker_status(wid), setNames(WORKER_BUSY, wid))
-
-  ## This is a bit annoying as it takes a while to run through;
-  Sys.sleep(expire)
-
-  ## Our key has gone!  Marvellous!
-  expect_equal(obj$con$EXISTS(key), 0)
-
-  expect_equal(obj$worker_list(), wid)
-  dat1 <- heartbeat_time_remaining(obj)
-  dat2 <- identify_orphan_tasks(obj)
-  expect_equal(obj$worker_list(), character(0))
-  dat3 <- heartbeat_time_remaining(obj)
-
-  cmp <- data.frame(worker_id = wid, time = -2, status = WORKER_BUSY,
-                    task_id = t, stringsAsFactors = FALSE)
-  expect_equal(dat1, cmp)
-  expect_equal(dat2, cmp[c("worker_id", "task_id")])
-  expect_equal(dat3, cmp[integer(0), ])
-
-  expect_message(cleanup_orphans(obj, dat1), "Lost 1 worker:")
-  expect_message(cleanup_orphans(obj, dat1), "Orphaning 1 task:")
-})
 
 test_that("Stop task with interrupt", {
   skip_if_not_installed("heartbeatr")
@@ -236,4 +186,105 @@ test_that("race conditioning handling when cancelling tasks", {
 
   obj$con$HSET(obj$keys$worker_status, w$name, WORKER_IDLE)
   expect_error(obj$task_cancel(t), "Task finished during check")
+})
+
+
+test_that("detecting exited workers with no workers is quiet", {
+  obj <- test_rrq("myfuns.R")
+  expect_silent(res <- withVisible(obj$worker_detect_exited()))
+  expect_false(res$visible)
+  expect_null(nrow(res$value))
+})
+
+
+test_that("detecting workers with no heartbeat is quiet", {
+  obj <- test_rrq("myfuns.R")
+  wid <- test_worker_spawn(obj)
+
+  expect_silent(res <- withVisible(obj$worker_detect_exited()))
+  expect_false(res$visible)
+  expect_null(res$value)
+
+  obj$worker_stop()
+  expect_silent(res <- withVisible(obj$worker_detect_exited()))
+  expect_false(res$visible)
+  expect_null(res$value)
+})
+
+
+test_that("detecting output with clean exit is quiet", {
+  skip_if_not_installed("heartbeatr")
+  obj <- test_rrq("myfuns.R")
+
+  ## We need to set time_poll to be fairly fast because BLPOP is not
+  ## interruptable; the interrupt will only be handled _after_ R gets
+  ## control back.
+  res <- obj$worker_config_save("localhost", time_poll = 1,
+                                heartbeat_period = 1)
+
+  wid <- test_worker_spawn(obj)
+  pid <- obj$worker_info()[[wid]]$pid
+
+  expect_silent(res <- withVisible(obj$worker_detect_exited()))
+  expect_false(res$visible)
+  expect_null(res$value)
+
+  obj$worker_stop(wid)
+  expect_silent(res <- withVisible(obj$worker_detect_exited()))
+  expect_false(res$visible)
+  expect_null(res$value)
+
+  Sys.sleep(3)
+
+  expect_silent(res <- withVisible(obj$worker_detect_exited()))
+  expect_false(res$visible)
+  expect_null(res$value)
+})
+
+
+test_that("detect killed worker (via heartbeat)", {
+  skip_if_not_installed("heartbeatr")
+  obj <- test_rrq("myfuns.R")
+
+  ## We need to set time_poll to be fairly fast because BLPOP is not
+  ## interruptable; the interrupt will only be handled _after_ R gets
+  ## control back.
+  res <- obj$worker_config_save("localhost", time_poll = 1,
+                                heartbeat_period = 1)
+
+  wid <- test_worker_spawn(obj)
+  pid <- obj$worker_info()[[wid]]$pid
+
+  key <- rrq_key_worker_heartbeat(obj$queue_id, wid)
+  expect_equal(obj$con$EXISTS(key), 1)
+  expire <- res$heartbeat_period * 3
+  expect_equal(obj$con$GET(key), as.character(expire))
+  expect_lte(obj$con$TTL(key), expire)
+
+  t <- obj$enqueue(slowdouble(10000))
+  wait_status(t, obj, status = TASK_PENDING)
+  expect_equal(obj$task_status(t), setNames(TASK_RUNNING, t))
+  expect_equal(obj$worker_status(wid), setNames(WORKER_BUSY, wid))
+
+  tools::pskill(pid, tools::SIGTERM)
+  Sys.sleep(0.1)
+  expect_equal(obj$task_status(t), setNames(TASK_RUNNING, t))
+  expect_equal(obj$worker_status(wid), setNames(WORKER_BUSY, wid))
+
+  ## This is a bit annoying as it takes a while to run through;
+  Sys.sleep(expire)
+
+  ## Our key has gone!  Marvellous!
+  expect_equal(obj$con$EXISTS(key), 0)
+
+  expect_equal(obj$worker_list(), wid)
+  msg <- capture_messages(res <- obj$worker_detect_exited())
+  expect_equal(res, set_names(t, wid))
+  expect_match(msg, sprintf("Lost 1 worker:\\s+- %s", wid),
+               all = FALSE)
+  expect_match(msg, sprintf("Orphaning 1 task:\\s+- %s", t),
+               all = FALSE)
+
+  expect_silent(res <- obj$worker_detect_exited())
+  expect_null(res)
 })
