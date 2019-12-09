@@ -1,3 +1,7 @@
+# rrq 0.2.3
+
+* New `$worker_detect_exited` for detecting exited workers when a heartbeat is used (mrc-1231)
+
 # rrq 0.2.2
 
 * Tasks can now be interrupted with `$task_cancel` if running with a heartbeat enabled (mrc-734)
