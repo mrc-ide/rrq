@@ -158,6 +158,7 @@ R6_rrq_controller <- R6::R6Class(
       worker_list(self$con, self$keys)
     },
 
+    ## Lists workers *known* to have exited
     worker_list_exited = function() {
       worker_list_exited(self$con, self$keys)
     },
@@ -178,6 +179,7 @@ R6_rrq_controller <- R6::R6Class(
       worker_task_id(self$con, self$keys, worker_ids)
     },
 
+    ## Cleans up workers *known* to have exited
     worker_delete_exited = function(worker_ids = NULL) {
       worker_delete_exited(self$con, self$keys, worker_ids)
     },
@@ -186,6 +188,11 @@ R6_rrq_controller <- R6::R6Class(
                             timeout = 0, time_poll = 1, progress = NULL) {
       worker_stop(self$con, self$keys, worker_ids, type,
                    timeout, time_poll, progress)
+    },
+
+    ## Detects exited workers through a lapsed heartbeat
+    worker_detect_exited = function() {
+      worker_detect_exited(self)
     },
 
     ## This is likely only to work with workers started by
