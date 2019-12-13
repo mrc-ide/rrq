@@ -1,3 +1,7 @@
+# rrq 0.2.4
+
+* Better error message is given whe non-existant task is cancelled (mrc-1259)
+
 # rrq 0.2.3
 
 * New `$worker_detect_exited` for detecting exited workers when a heartbeat is used (mrc-1231)

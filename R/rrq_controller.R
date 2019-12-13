@@ -343,6 +343,10 @@ task_cancel <- function(con, keys, task_id) {
     worker = redis$HGET(keys$task_worker, task_id),
     status = redis$HGET(keys$task_status, task_id))
 
+  if (is.null(dat$status)) {
+    dat$status <- TASK_MISSING
+  }
+
   if (dat$status == TASK_PENDING) {
     task_delete(con, keys, task_id, FALSE)
     dat <- con$pipeline(
