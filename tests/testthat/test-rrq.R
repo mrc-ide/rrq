@@ -306,3 +306,12 @@ test_that("can't cancel completed task", {
     obj$task_cancel(t),
     "Task [[:xdigit:]]{32} is not running \\(COMPLETE\\)")
 })
+
+
+test_that("can't cancel nonexistant task", {
+  obj <- test_rrq()
+  id <- ids::random_id()
+  expect_error(
+    obj$task_cancel(id),
+    "Task [[:xdigit:]]{32} is not running \\(MISSING\\)")
+})
