@@ -1,3 +1,7 @@
+# rrq 0.2.5
+
+* New `$task_data` method for getting underlying task data (mrc-1304)
+
 # rrq 0.2.4
 
 * Better error message is given whe non-existant task is cancelled (mrc-1259)
