@@ -395,9 +395,6 @@ task_data <- function(con, keys, db, task_id) {
   task <- bin_to_object(expr)
   data <- as.list(expression_restore_locals(task, emptyenv(), db))
   task$objects <- data[names(task$objects)]
-  if (!is.null(task$function_hash)) {
-    task$function_value <- data[[task$function_hash]]
-  }
   task
 }
 
