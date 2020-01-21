@@ -130,6 +130,10 @@ R6_rrq_controller <- R6::R6Class(
       task_cancel(self$con, self$keys, task_id)
     },
 
+    task_data = function(task_id) {
+      task_data(self$con, self$keys, self$db, task_id)
+    },
+
     ## 2. Fast queue
     queue_length = function() {
       self$con$LLEN(self$keys$queue)
@@ -381,6 +385,22 @@ task_cancel <- function(con, keys, task_id) {
   heartbeatr::heartbeat_send_signal(con, heartbeat_key, tools::SIGINT)
   invisible(TRUE)
 }
+
+
+task_data <- function(con, keys, db, task_id) {
+  expr <- con$HGET(keys$task_expr, task_id)
+  if (is.null(expr)) {
+    stop(sprintf("Task '%s' not found", task_id))
+  }
+  task <- bin_to_object(expr)
+  data <- as.list(expression_restore_locals(task, emptyenv(), db))
+  task$objects <- data[names(task$objects)]
+  if (!is.null(task$function_hash)) {
+    task$function_value <- data[[task$function_hash]]
+  }
+  task
+}
+
 
 task_submit_n <- function(con, keys, dat, key_complete) {
   n <- length(dat)

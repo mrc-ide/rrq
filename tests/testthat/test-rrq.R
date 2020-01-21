@@ -315,3 +315,25 @@ test_that("can't cancel nonexistant task", {
     obj$task_cancel(id),
     "Task [[:xdigit:]]{32} is not running \\(MISSING\\)")
 })
+
+
+test_that("get task info", {
+  obj <- test_rrq()
+
+  a <- 1
+  b <- 2
+  t <- obj$enqueue(log(a, b))
+  res <- obj$task_data(t)
+  expect_equal(res$expr, quote(log(a, b)))
+  expect_mapequal(res$objects, list(a = 1, b = 2))
+})
+
+
+## This is pretty ugly:
+test_that("get task info with anonymous function", {
+  obj <- test_rrq()
+  grp <- obj$lapply_(1:10, function(x) x + 1, timeout = 0)
+  res <- obj$task_data(grp$task_ids[[1]])
+  expect_equal(res$function_value, function(x) x + 1)
+  expect_equal(res$objects, set_names(list(), character(0)))
+})
