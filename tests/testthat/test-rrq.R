@@ -327,3 +327,12 @@ test_that("get task info", {
   expect_equal(res$expr, quote(log(a, b)))
   expect_mapequal(res$objects, list(a = 1, b = 2))
 })
+
+
+test_that("get task data errors appropriately if task is missing", {
+  obj <- test_rrq()
+  id <- ids::random_id()
+  expect_error(
+    obj$task_data(id),
+    "Task '[[:xdigit:]]+' not found")
+})
