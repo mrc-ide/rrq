@@ -315,3 +315,24 @@ test_that("can't cancel nonexistant task", {
     obj$task_cancel(id),
     "Task [[:xdigit:]]{32} is not running \\(MISSING\\)")
 })
+
+
+test_that("get task info", {
+  obj <- test_rrq()
+
+  a <- 1
+  b <- 2
+  t <- obj$enqueue(log(a, b))
+  res <- obj$task_data(t)
+  expect_equal(res$expr, quote(log(a, b)))
+  expect_mapequal(res$objects, list(a = 1, b = 2))
+})
+
+
+test_that("get task data errors appropriately if task is missing", {
+  obj <- test_rrq()
+  id <- ids::random_id()
+  expect_error(
+    obj$task_data(id),
+    "Task '[[:xdigit:]]+' not found")
+})
