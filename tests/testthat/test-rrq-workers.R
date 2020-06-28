@@ -260,6 +260,16 @@ test_that("rrq_worker_main_args parse", {
 })
 
 
+test_that("can pass --key-alive", {
+  expect_mapequal(
+    rrq_worker_main_args(c("name", "--key-alive=key")),
+    list(queue_id = "name",
+         config = "localhost",
+         name = NULL,
+         key_alive = "key"))
+})
+
+
 test_that("write worker script", {
   p <- tempfile()
   res <- write_rrq_worker(p)
