@@ -16,10 +16,11 @@ Options:
 --name=NAME      Name of the worker (optional)
 --key-alive=KEY  Key to write to once alive (optional)"
   dat <- docopt::docopt(doc, args)
+  names(dat) <- gsub("-", "_", names(dat), fixed = TRUE)
   list(queue_id = dat$queue,
        config = dat$config,
        name = dat$name,
-       key_alive = dat[["key-alive"]])
+       key_alive = dat[["key_alive"]])
 }
 
 

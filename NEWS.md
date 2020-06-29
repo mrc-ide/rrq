@@ -1,3 +1,7 @@
+# rrq 0.2.6
+
+* Update `worker_spawn` to work with breaking change in docopt (mrc-1667)
+
 # rrq 0.2.5
 
 * New `$task_data` method for getting underlying task data (mrc-1304)
