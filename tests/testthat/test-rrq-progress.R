@@ -94,5 +94,5 @@ test_that("collect progress from signal", {
   t <- obj$enqueue(run_with_progress_signal(5, 0))
   w$step(TRUE)
   expect_equal(obj$task_result(t), 5)
-  expect_equal(obj$task_progress(t), "iteration 5")
+  expect_equal(obj$task_progress(t), list(message = "iteration 5"))
 })

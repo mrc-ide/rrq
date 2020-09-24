@@ -66,11 +66,14 @@ test_rrq <- function(sources = NULL, root = tempfile()) {
 
   name <- sprintf("rrq:%s", ids::random_id())
 
+  create_env <- new.env(parent = globalenv())
+  create_env$sources <- sources
   create <- function(envir) {
     for (s in sources) {
       sys.source(s, envir)
     }
   }
+  environment(create) <- create_env
 
   obj <- rrq_controller(name)
   obj$worker_config_save("localhost", time_poll = 1)

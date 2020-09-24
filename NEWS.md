@@ -1,3 +1,7 @@
+# rrq 0.2.7
+
+* rrq progress now passes all fields in underlying condition (mrc-1772)
+
 # rrq 0.2.6
 
 * Update `worker_spawn` to work with breaking change in docopt (mrc-1667)
