@@ -20,6 +20,16 @@
 ##'   a heartbeat the task becomes `ORPHAN`
 ##' * The status of an unknown task is `MISSING`
 ##'
+##' @section Worker lifecycle:
+##'
+##' * A worker appears and is `IDLE`
+##' * When running a task it is `BUSY`
+##' * If it recieves a `PAUSE` message it becomes `PAUSED` until it
+##'   recieves a `RESUME` message
+##' * If it exits cleanly (e.g., via a `STOP` message or a timeout) it
+##'   becomes `EXITED`
+##' * If it crashes and was running a heartbeat, it becomes `LOST`
+##'
 ##' @export
 rrq_controller <- function(queue_id, con = redux::hiredis()) {
   assert_scalar_character(queue_id)
@@ -320,37 +330,67 @@ R6_rrq_controller <- R6::R6Class(
       queue_remove(self$con, self$keys, task_ids)
     },
 
-    ## 4. Workers
+    ##' @description Returns the number of active workers
     worker_len = function() {
       worker_len(self$con, self$keys)
     },
 
+    ##' @description Returns the ids of active workers
     worker_list = function() {
       worker_list(self$con, self$keys)
     },
 
-    ## Lists workers *known* to have exited
+    ##' @description Returns the ids of workers known to have exited
     worker_list_exited = function() {
       worker_list_exited(self$con, self$keys)
     },
 
+    ##' @description Returns a list of information about active
+    ##' workers (or exited workers if `worker_ids` includes them).
+    ##
+    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
+    ##' all active workers are used.
     worker_info = function(worker_ids = NULL) {
       worker_info(self$con, self$keys, worker_ids)
     },
 
+    ##' @description Returns a character vector of current worker statuses
+    ##'
+    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
+    ##' all active workers are used.
     worker_status = function(worker_ids = NULL) {
       worker_status(self$con, self$keys, worker_ids)
     },
 
+    ##' @description Returns the last (few) elements in the worker
+    ##' log. The log will be returned as a [data.frame] of entries
+    ##' `worker_id` (the worker id), `time` (the time in Redis when the
+    ##' event happened; see [redux::redis_time] to convert this to an R
+    ##' time), `command` (the worker command) and `message` (the message
+    ##' corresponding to that command).
+    ##'
+    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
+    ##' all active workers are used.
+    ##'
+    ##' @param n Number of elements to select, the default being the single
+    ##' last entry. Use `Inf` or `0` to indicate that you want all log entries
     worker_log_tail = function(worker_ids = NULL, n = 1) {
       worker_log_tail(self$con, self$keys, worker_ids, n)
     },
 
+    ##' @description Returns the task id that each worker is working on,
+    ##' if any.
+    ##'
+    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
+    ##' all active workers are used.
     worker_task_id = function(worker_ids = NULL) {
       worker_task_id(self$con, self$keys, worker_ids)
     },
 
-    ## Cleans up workers *known* to have exited
+    ##' @description Cleans up workers known to have exited
+    ##'
+    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
+    ##' rrq looks for exited workers.
     worker_delete_exited = function(worker_ids = NULL) {
       worker_delete_exited(self$con, self$keys, worker_ids)
     },
