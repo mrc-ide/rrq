@@ -20,3 +20,4 @@ Suggests:
     testthat
 RoxygenNote: 6.1.1
 Encoding: UTF-8
+Roxygen: list(markdown = TRUE)

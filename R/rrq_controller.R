@@ -8,6 +8,18 @@
 ##'
 ##' @param con A redis connection
 ##'
+##' @section Task lifecycle:
+##'
+##' * A task is queued with `$enqueue()`, at which point it becomes `PENDING`
+##' * Once a worker selects the task to run, it becomes `RUNNING`
+##' * If the task completes successfully without error it becomes `COMPLETE`
+##' * If the task throws an error, it becomes `ERROR`
+##' * If the worker was interrupted (e.g., by a message) the task
+##'   becomes `INTERRUPTED`
+##' * If the worker crashes, possibly due to the task, *and* the worker runs
+##'   a heartbeat the task becomes `ORPHAN`
+##' * The status of an unknown task is `MISSING`
+##'
 ##' @export
 rrq_controller <- function(queue_id, con = redux::hiredis()) {
   assert_scalar_character(queue_id)
@@ -17,6 +29,7 @@ rrq_controller <- function(queue_id, con = redux::hiredis()) {
 
 R6_rrq_controller <- R6::R6Class(
   "rrq_controller",
+  cloneable = FALSE,
 
   public = list(
     con = NULL,
@@ -34,8 +47,26 @@ R6_rrq_controller <- R6::R6Class(
       rpush_max_length(self$con, self$keys$controller, info, 10)
     },
 
-    ## This is super destructive
-    destroy = function(delete = TRUE, type = "message",
+    ##' @description Entirely destroy a queue, by deleting all keys
+    ##' associated with it from the Redis database. This is a very
+    ##' destructive action and cannot be undone.
+    ##'
+    ##' @param delete Either `TRUE` (the default) indicating that the
+    ##'   keys should be immediately deleted. Alternatively, provide an
+    ##'   integer value and the keys will instead be marked for future
+    ##'   deletion by "expiring" after this many seconds, using Redis'
+    ##'   `EXPIRE` command.
+    ##'
+    ##' @param worker_stop_type Passed to `$worker_stop`; Can be one of
+    ##'   "message", "kill" or "kill_local". The "kill" method requires that
+    ##'   the workers are using a heartbeat, and "kill_local" requires that
+    ##'   the workers are on the same machine as the controller. However,
+    ##'   these may be faster to stop workers than "message", which will
+    ##'   wait until any task is finished.
+    ##'
+    ##' @param worker_stop_timeout A timeout to pass to the worker if
+    ##'   using `type = "message"`
+    destroy = function(delete = TRUE, worker_stop_type = "message",
                        worker_stop_timeout = 0) {
       if (!is.null(self$con)) {
         rrq_clean(self$con, self$queue_id, delete, type,
@@ -47,6 +78,15 @@ R6_rrq_controller <- R6::R6Class(
       }
     },
 
+    ##' @description Register a function to create an environment when
+    ##'   creating a worker. When a worker starts, they will run this
+    ##'   function.
+    ##'
+    ##' @param create A function that will create an environment. It will
+    ##'   be called with no parameters, in a fresh R session.
+    ##'
+    ##' @param notify Boolean, indicating if we should send a `REFRESH`
+    ##'   message to all workers to update their environment.
     envir = function(create, notify = TRUE) {
       if (is.null(create)) {
         self$con$DEL(self$keys$envir)
@@ -59,56 +99,141 @@ R6_rrq_controller <- R6::R6Class(
       }
     },
 
-    ## 0. Queuing
+    ##' @description Queue an expression
+    ##'
+    ##' @param expr Any R expression, unevaluated
+    ##'
+    ##' @param envir The environment that you would run this expression in
+    ##'   locally. This will be used to copy across any dependent variables.
+    ##'   For example, if your expression is `sum(1 + a)`, we will also send
+    ##'   the value of `a` to the worker along with the expression.
+    ##
+    ##' @param key_complete The name of a Redis key to write to once the
+    ##'   task is complete. You can use this with `$task_wait` to efficiently
+    ##'   wait for the task to complete (i.e., without using a busy loop).
     enqueue = function(expr, envir = parent.frame(), key_complete = NULL) {
       self$enqueue_(substitute(expr), envir, key_complete)
     },
 
+    ##' @description Queue an expression
+    ##'
+    ##' @param expr Any R expression, quoted; use this to use `$enqueue`
+    ##' in a programmatic context where you want to construct expressions
+    ##' directly (e.g., `bquote(log(.(x)), list(x = 10))`
+    ##'
+    ##' @param envir The environment that you would run this expression in
+    ##'   locally. This will be used to copy across any dependent variables.
+    ##'   For example, if your expression is `sum(1 + a)`, we will also send
+    ##'   the value of `a` to the worker along with the expression.
+    ##
+    ##' @param key_complete The name of a Redis key to write to once the
+    ##'   task is complete. You can use this in conjunction with something
+    ##'   like `BLPOP` to wait until a task is complete without a busy (sleep)
+    ##'   loop.
     enqueue_ = function(expr, envir = parent.frame(), key_complete = NULL) {
       dat <- expression_prepare(expr, envir, NULL, self$db)
       task_submit(self$con, self$keys, dat, key_complete)
     },
 
-    ## 1. Tasks
-    ##
-    ## TODO: decide if the tasks/task split here is ideal.  It does
-    ## seem reasonable at this point.  OTOH it conflicts with queuer
-    ## where we use task_list, task_status etc.
-    ##
-    ## The big issue is things like tasks_result and tasks_wait which
-    ## return vectors.  Another way of doing this is to have a
-    ## `multiple = TRUE` argument which always returns a list.
+
+    ##' @description List ids of all tasks known to this rrq controller
     task_list = function() {
       as.character(self$con$HKEYS(self$keys$task_expr))
     },
 
+    ##' @description Return a character vector of task statuses. The name
+    ##' of each element corresponds to a task id, and the value will the
+    ##' one of the possible statuses ("PENDING", "COMPLETE", etc).
+    ##'
+    ##' @param task_ids Optional character vector of task ids for which you
+    ##' would like statuses. If not given (or `NULL`) then the status of
+    ##' all task ids known to this rrq controller is returned.
     task_status = function(task_ids = NULL) {
       task_status(self$con, self$keys, task_ids)
     },
 
-    task_progress = function(task_id = NULL) {
+    ##' @description Retrieve task progress, if set. This will be `NULL`
+    ##'   if progress has never been registered, otherwise whatever value
+    ##'   was set - can be an arbitrary R object.
+    ##'
+    ##' @param task_id A single task id for which the progress is wanted.
+    task_progress = function(task_id) {
       task_progress(self$con, self$keys, task_id)
     },
 
+    ##' @description Provide a high level overview of task statuses
+    ##' for a set of task ids, being the count in major categories of
+    ##' `PENDING`, `RUNNING`, `COMPLETE` and `ERROR`.
     task_overview = function(task_ids = NULL) {
       task_overview(self$con, self$keys, task_ids)
     },
 
+    ##' @description Find the position of one or more tasks in the queue.
+    ##'
+    ##' @param task_ids Character vector of tasks to find the position for.
+    ##'
+    ##' @param missing Value to return if the task is not found in the queue.
+    ##'   A task will take value `missing` if it is running, complete,
+    ##'   errored etc and a positive integer if it is in the queue,
+    ##'   indicating its position (with 1) being the next task to run.
     task_position = function(task_ids, missing = 0L) {
       task_position(self$con, self$keys, task_ids, missing)
     },
 
-    ## One result, as the object
+    ##' @description Get the result for a single task (see `$tasks_result`
+    ##'   for a method for efficiently getting multiple results at once).
+    ##'   Returns the value of running the task if it is complete, and an
+    ##'   error otherwise.
+    ##'
+    ##' @param task_id The single id for which the result is wanted.
     task_result = function(task_id) {
       assert_scalar_character(task_id)
       self$tasks_result(task_id)[[1L]]
     },
 
-    ## zero, one or more tasks as a list
+    ##' @description Get the results of a group of tasks, returning them as a
+    ##' list.
+    ##'
+    ##' @param task_ids A vector of task ids for which the task result
+    ##' is wanted.
     tasks_result = function(task_ids) {
       task_results(self$con, self$keys, task_ids)
     },
 
+    ##' @description Poll for a task to complete, returning the result
+    ##' when completed. If the task has already completed this is
+    ##' roughly equivalent to `task_result`. See `$tasks_wait` for an
+    ##' efficient way of doing this for a group of tasks.
+    ##'
+    ##' @param task_id The single id that we will wait for
+    ##'
+    ##' @param timeout Optional timeout, in seconds, after which an
+    ##'   error will be thrown if the task has not completed.
+    ##'
+    ##' @param time_poll Optional time with which to "poll" for
+    ##'   completion. The default and behaviour depend on `key_complete` -
+    ##'   see the details section.
+    ##'
+    ##' @param progress Optional logical indicating if a progress bar
+    ##'   should be displayed. If `NULL` we fall back on the value of the
+    ##'   global option `rrq.progress`, and if that is unset display a
+    ##'   progress bar if in an interactive session.
+    ##'
+    ##' @param key_complete Optional key used when `enqueing` the tasks
+    ##'   that will be written to on completion.
+    ##'
+    ##' @details The polling behaviour depends on `key_complete`. If
+    ##' `key_complete` is `NULL` then we use a busy-loop, sleeping for
+    ##' `time_poll` seconds between polls of Redis. As such, the smaller
+    ##' the `time_poll` the faster you will get your result, as it may
+    ##' be delayed by up to `time_poll`, but the heavier the network and
+    ##' Redis load (the default is 0.05s). Alternatively, if
+    ##' `key_complete` is given then your task will be returned as soon
+    ##' as it is written into Redis, and `time_poll` is the time between
+    ##' subsequent calls to the Redis function that enables
+    ##' this. Shorter values of `time_poll` then make R more responsive
+    ##' to being interrupted and longer values reduce network load (the
+    ##' default is 1s)
     task_wait = function(task_id, timeout = Inf, time_poll = NULL,
                        progress = NULL, key_complete = NULL) {
       assert_scalar_character(task_id)
@@ -116,40 +241,82 @@ R6_rrq_controller <- R6::R6Class(
                       progress, key_complete)[[1L]]
     },
 
+    ##' @description Poll for a group of tasks to complete, returning the
+    ##' result as list when completed. If the tasks have already completed
+    ##' this is roughly equivalent to `tasks_result`.
+    ##'
+    ##' @param task_ids A vector of task ids to poll for
+    ##'
+    ##' @param timeout Optional timeout, in seconds, after which an
+    ##'   error will be thrown if the task has not completed.
+    ##'
+    ##' @param time_poll Optional time with which to "poll" for
+    ##'   completion. The default and behaviour depend on `key_complete` -
+    ##'   see the details section of `$task_wait`
+    ##'
+    ##' @param progress Optional logical indicating if a progress bar
+    ##'   should be displayed. If `NULL` we fall back on the value of the
+    ##'   global option `rrq.progress`, and if that is unset display a
+    ##'   progress bar if in an interactive session.
+    ##'
+    ##' @param key_complete Optional key used when `enqueing` the tasks
+    ##'   that will be written to on completion. If used, then all tasks
+    ##'   must share the same completion key.
     tasks_wait = function(task_ids, timeout = Inf, time_poll = NULL,
                           progress = NULL, key_complete = NULL) {
       tasks_wait(self$con, self$keys, task_ids, timeout, time_poll, progress,
                  key_complete)
     },
 
+    ##' @description Delete one or more tasks
+    ##'
+    ##' @param task_ids Vector of task ids to delete
+    ##'
+    ##' @param check Logical indicating if we should check that the tasks
+    ##'   are not running. Deleting running tasks is unlikely to result in
+    ##'   desirable behaviour.
     task_delete = function(task_ids, check = TRUE) {
       task_delete(self$con, self$keys, task_ids, check)
     },
 
+    ##' @description Cancel a single task. If the task is `PENDING` it
+    ##' will be deleted. If `RUNNING` then the worker will be
+    ##' interrupted if it supports this.
+    ##'
+    ##' @param task_id Id of the task to cancel
     task_cancel = function(task_id) {
       task_cancel(self$con, self$keys, task_id)
     },
 
+    ##' @description Fetch internal data about a task from Redis
+    ##' (expert use only).
+    ##'
+    ##' @param task_id The id of the task
     task_data = function(task_id) {
       task_data(self$con, self$keys, self$db, task_id)
     },
 
-    ## 2. Fast queue
+    ##' @description Returns the number of tasks in the queue (waiting for
+    ##' an available worker).
     queue_length = function() {
       self$con$LLEN(self$keys$queue)
     },
 
+    ##' @description Returns the keys in the task queue.
     queue_list = function() {
       list_to_character(self$con$LRANGE(self$keys$queue, 0, -1))
     },
 
-    ## NOTE: uses a pipeline to avoid a race condition - nothing may
-    ## interere with the queue between the LRANGE and the DEL or we
-    ## might lose tasks or double-queue them. If a job is queued
-    ## between the DEL and the RPUSH the newly submitted job gets
-    ## bounced ahead in the queue, which seems tolerable but might not
-    ## always be ideal.  To solve this we should use a lua script.
+    ##' @description Remove task ids from a queue.
+    ##'
+    ##' @param task_ids Task ids to remove
     queue_remove = function(task_ids) {
+      ## NOTE: uses a pipeline to avoid a race condition - nothing may
+      ## interere with the queue between the LRANGE and the DEL or we
+      ## might lose tasks or double-queue them. If a job is queued
+      ## between the DEL and the RPUSH the newly submitted job gets
+      ## bounced ahead in the queue, which seems tolerable but might not
+      ## always be ideal.  To solve this we should use a lua script.
       queue_remove(self$con, self$keys, task_ids)
     },
 
