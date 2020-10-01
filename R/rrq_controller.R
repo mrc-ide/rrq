@@ -30,6 +30,51 @@
 ##'   becomes `EXITED`
 ##' * If it crashes and was running a heartbeat, it becomes `LOST`
 ##'
+##' @section Messages
+##'
+##' Most of the time workers process tasks, but you can also send them
+##'   "messages". Messages take priority over tasks, so if a worker
+##'   becomes idle (by coming online or by finishing a task) it will
+##'   consume all available messages before starting on a new task,
+##'   even if both are available.
+##'
+##' Each message has a "command" and may have "arguments" to that
+##'   command. The supported messages are:
+##'
+##' * `PING` (no args): "ping" the worker, if alive it will respond
+##'   with "PONG"
+##'
+##' * `ECHO` (accepts an argument of a string): Print a string to the
+##'   terminal and log of the worker. Will respond with `OK` once the
+##'   message has been printed.
+##'
+##' * `EVAL` (accepts a string or a quoted expression): Evaluate an
+##'   arbitrary R expression on the worker. Repsonds with the value of
+##'   this expression.
+##'
+##' * `STOP` (accepts a string to print as the worker exits, defaults
+##'   to "BYE"): Tells the worker to stop.
+##'
+##' * `INFO` (no args): Returns information about the worker (versions
+##'   of packages, hostname, pid, etc).
+##'
+##' * `PAUSE` (no args): Tells the worker to stop accepting tasks
+##'   (until it recieves a `RESUME` message). Messages are processed
+##'   as normal.
+##'
+##' * `RESUME` (no args): Tells a paused worker to resume accepting
+##'   tasks.
+##'
+##' * `REFRESH` (no args): Tells the worker to rebuild their
+##'   environment with the `create` method.
+##'
+##' * `TIMEOUT_SET` (accepts a number, represnting seconds): Updates
+##'   the worker timeout - the length of time after which it will exit
+##'   if it has not processed a task.
+##'
+##' * `TIMEOUT_GET` (no args): Tells the worker to respond with its
+##'   current timeout.
+##'
 ##' @export
 rrq_controller <- function(queue_id, con = redux::hiredis()) {
   assert_scalar_character(queue_id)
@@ -395,21 +440,62 @@ R6_rrq_controller <- R6::R6Class(
       worker_delete_exited(self$con, self$keys, worker_ids)
     },
 
+    ##' @description Stop workers.
+    ##'
+    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
+    ##' all active workers will be stopped.
+    ##'
+    ##' @param type The strategy used to stop the workers. Can be `message`,
+    ##'   `kill` or `kill_local` (see details).
+    ##'
+    ##' @param timeout Optional timeout; if greater than zero then we poll
+    ##'   for a response from the worker for this many seconds until they
+    ##'   acknowledge the message and stop (only has an effect if `type`
+    ##'   is `message`).
+    ##'
+    ##' @param time_poll If `type` is `message` and `timeout` is greater
+    ##'   than zero, this is the polling interval used beween redis calls.
+    ##'   Increasing this reduces network load but decreases the ability
+    ##'   to interrupt the process.
+    ##'
+    ##' @param progress Optional logical indicating if a progress bar
+    ##'   should be displayed. If `NULL` we fall back on the value of the
+    ##'   global option `rrq.progress`, and if that is unset display a
+    ##'   progress bar if in an interactive session.
+    ##'
+    ##' @details The `type` parameter indicates the strategy used to stop
+    ##' workers, and interacts with other parameters. The strategies used by
+    ##' the different values are:
+    ##'
+    ##' * `message`, in which case a `STOP` message will be sent to the
+    ##'   worker, which they will recieve after finishing any currently
+    ##'   running task (if `RUNNING`; `IDLE` workers will stop immediately).
+    ##' * `kill`, in which case a kill signal will be sent via the heartbeat
+    ##'   (if the worker is using one). This will kill the worker even if
+    ##'   is currently working on a task, eventually leaving that task with
+    ##'   a status of `ORPHAN`.
+    ##' * `kill_local`, in which case a kill signal is sent using operating
+    ##'    system signals, which requires that the worker is on the same
+    ##'    machine as the controller.
     worker_stop = function(worker_ids = NULL, type = "message",
-                            timeout = 0, time_poll = 1, progress = NULL) {
+                           timeout = 0, time_poll = 1, progress = NULL) {
       worker_stop(self$con, self$keys, worker_ids, type,
                    timeout, time_poll, progress)
     },
 
-    ## Detects exited workers through a lapsed heartbeat
+    ##' @description Detects exited workers through a lapsed heartbeat
     worker_detect_exited = function() {
       worker_detect_exited(self)
     },
 
-    ## This is likely only to work with workers started by
-    ## worker_spawn, and will basically only work when we're on the
-    ## same physical storage.
-    worker_process_log = function(worker_id, parse = TRUE) {
+    ##' @description Return the contents of a worker's process log, if
+    ##' it is located on the same physical storage (including network
+    ##' storage) as the controller. This will generally behave for
+    ##' workers started with [worker_spawn] but may require significant
+    ##' care otherwise.
+    ##'
+    ##' @param worker_id The worker for which the log is reqiured
+    worker_process_log = function(worker_id) {
       assert_scalar(worker_id)
       path <- self$con$HGET(self$keys$worker_process, worker_id)
       if (is.null(path)) {
@@ -418,6 +504,37 @@ R6_rrq_controller <- R6::R6Class(
       readLines(path)
     },
 
+    ##' @description Save a worker configuration, which can be used to
+    ##' start workers with a set of options with the cli. These
+    ##' correspond to arguments to [rrq::rrq_worker].
+    ##'
+    ##' @param name Name for this configuration
+    ##'
+    ##' @param time_poll Poll time.  Longer values here will reduce the
+    ##'   impact on the database but make workers less responsive to being
+    ##'   killed with an interrupt.  The default should be good for most
+    ##'   uses, but shorter values are used for debugging.
+    ##'
+    ##' @param timeout Optional timeout to set for the worker.  This is
+    ##'   (roughly) quivalent to issuing a \code{TIMEOUT_SET} message
+    ##'   after initialising the worker, except that it's guaranteed to be
+    ##'   run by all workers.
+    ##'
+    ##' @param heartbeat_period Optional period for the heartbeat.  If
+    ##'   non-NULL then a heartbeat process will be started (using the
+    ##'   \code{heartbeatr} package) which can be used to build fault
+    ##'   tolerant queues.
+    ##'
+    ##' @param verbose Logical, indicating if the worker should print
+    ##'   logging output to the screen.  Logging to screen has a small but
+    ##'   measurable performance cost, and if you will not collect system
+    ##'   logs from the worker then it is wasted time.  Logging to the
+    ##'   redis server is always enabled.
+    ##'
+    ##' @param overwrite Logical, indicating if an existing configuration
+    ##'   with this `name` should be overwritten if it exists (if
+    ##'   `overwrite = FALSE` and the configuration exists an error will
+    ##'   be thrown).
     worker_config_save = function(name, time_poll = NULL, timeout = NULL,
                                   heartbeat_period = NULL, verbose = NULL,
                                   overwrite = TRUE) {
@@ -425,44 +542,136 @@ R6_rrq_controller <- R6::R6Class(
                          heartbeat_period, verbose, overwrite)
     },
 
+    ##' @description Return names of worker configurations saved by
+    ##' `$worker_config_save`
     worker_config_list = function() {
       list_to_character(self$con$HKEYS(self$keys$worker_config))
     },
 
+    ##' @description Return the value of a of worker configuration saved by
+    ##' `$worker_config_save`
+    ##'
+    ##' @param name Name of the configuration
     worker_config_read = function(name) {
       worker_config_read(self$con, self$keys, name)
     },
 
+    ##' Report on worker "load" (the number of workers being used over
+    ##' time). Rertuns an object of class `worker_load`, for which a
+    ##' `mean` method exists (this method is a work in progress and the
+    ##' interface may change).
+    ##'
+    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
+    ##'   all active workers are used.
     worker_load = function(worker_ids = NULL, ...) {
       worker_load(self$con, self$keys, worker_ids, ...)
     },
 
-    ## 4. Messaging
+    ##' @descripton Send a message to workers. Sending a message returns
+    ##' a message id, which can be used to poll for a response with the
+    ##' other `message_*` methods.
+    ##'
+    ##' @param command A command, such as `PING`, `PAUSE`; see the Messages
+    ##' section of the Details for al messages.
+    ##'
+    ##' @param args Arguments to the command, if supported
+    ##'
+    ##' @param worker_ids Optional vector of worker ids to send the message
+    ##'   to. If `NULL` then the message will be sent to all active workers.
     message_send = function(command, args = NULL, worker_ids = NULL) {
       message_send(self$con, self$keys, command, args, worker_ids)
     },
 
+    ##' @description Detect if a response is available for a message
+    ##'
+    ##' @param message_id The message id
+    ##'
+    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
+    ##'   all active workers are used (note that this may differ to the set
+    ##'   of workers that the message was sent to!)
+    ##'
+    ##' @param named Logical, indicating if the return vector should be named
     message_has_response = function(message_id, worker_ids = NULL,
                                     named = TRUE) {
       message_has_response(self$con, self$keys, message_id, worker_ids, named)
     },
 
+    ##' @description Get response to messages, waiting until the
+    ##' message has been responded to.
+    ##'
+    ##' @param message_id The message id
+    ##'
+    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
+    ##'   all active workers are used (note that this may differ to the set
+    ##'   of workers that the message was sent to!)
+    ##'
+    ##' @param named Logical, indicating if the return value should be
+    ##'   named by worker id.
+    ##'
+    ##' @param delete Logical, indicating if messages should be deleted
+    ##'   after retrieval
+    ##'
+    ##' @param timeout Integer, representing seconds to wait until the
+    ##'   response has been recieved. An error will be thrown if a
+    ##'   response has not been recieved in this time.
+    ##'
+    ##' @param time_poll If `timeout` is greater
+    ##'   than zero, this is the polling interval used beween redis calls.
+    ##'   Increasing this reduces network load but increases the time that
+    ##'   may be waited for.
+    ##'
+    ##' @param progress Optional logical indicating if a progress bar
+    ##'   should be displayed. If `NULL` we fall back on the value of the
+    ##'   global option `rrq.progress`, and if that is unset display a
+    ##'   progress bar if in an interactive session.
     message_get_response = function(message_id, worker_ids = NULL, named = TRUE,
-                                     delete = FALSE, timeout = 0,
-                                     time_poll = 1, progress = NULL) {
+                                    delete = FALSE, timeout = 0,
+                                    time_poll = 1, progress = NULL) {
       message_get_response(self$con, self$keys, message_id, worker_ids, named,
                            delete, timeout, time_poll, progress)
     },
 
+    ##' @description Return ids for messages with responses for a
+    ##' particular worker.
+    ##'
+    ##' @param worker_id The worker id
     message_response_ids = function(worker_id) {
       message_response_ids(self$con, self$keys, worker_id)
     },
 
-    ## All in one; this gets merged into the send function, just like
-    ## the bulk submissing thing (TODO)
+    ##' @description Send a message and wait for responses.
+    ##' This is a helper function around `message_send` and
+    ##' `message_get_response`.
+    ##'
+    ##' @param command A command, such as `PING`, `PAUSE`; see the Messages
+    ##' section of the Details for al messages.
+    ##'
+    ##' @param args Arguments to the command, if supported
+    ##'
+    ##' @param worker_ids Optional vector of worker ids to send the message
+    ##'   to. If `NULL` then the message will be sent to all active workers.
+    ##' @param named Logical, indicating if the return value should be
+    ##'   named by worker id.
+    ##'
+    ##' @param delete Logical, indicating if messages should be deleted
+    ##'   after retrieval
+    ##'
+    ##' @param timeout Integer, representing seconds to wait until the
+    ##'   response has been recieved. An error will be thrown if a
+    ##'   response has not been recieved in this time.
+    ##'
+    ##' @param time_poll If `timeout` is greater
+    ##'   than zero, this is the polling interval used beween redis calls.
+    ##'   Increasing this reduces network load but increases the time that
+    ##'   may be waited for.
+    ##'
+    ##' @param progress Optional logical indicating if a progress bar
+    ##'   should be displayed. If `NULL` we fall back on the value of the
+    ##'   global option `rrq.progress`, and if that is unset display a
+    ##'   progress bar if in an interactive session.
     message_send_and_wait = function(command, args = NULL, worker_ids = NULL,
                                      named = TRUE, delete = TRUE, timeout = 600,
-                                     time_poll = 0.05, progress = NULL) {
+                                     time_poll = 1, progress = NULL) {
       message_send_and_wait(self$con, self$keys, command, args, worker_ids,
                             named, delete, timeout, time_poll, progress)
     }
