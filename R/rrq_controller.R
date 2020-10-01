@@ -135,7 +135,7 @@ rrq_controller_ <- R6::R6Class(
     destroy = function(delete = TRUE, worker_stop_type = "message",
                        worker_stop_timeout = 0) {
       if (!is.null(self$con)) {
-        rrq_clean(self$con, self$queue_id, delete, type,
+        rrq_clean(self$con, self$queue_id, delete, worker_stop_type,
                   worker_stop_timeout)
         ## render the controller useless:
         self$con <- NULL
