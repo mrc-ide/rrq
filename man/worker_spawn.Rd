@@ -5,12 +5,18 @@
 \alias{worker_wait}
 \title{Spawn a worker}
 \usage{
-worker_spawn(obj, n = 1, logdir = NULL, timeout = 600,
-  worker_config = "localhost", worker_name_base = NULL,
-  time_poll = 1, progress = NULL)
+worker_spawn(
+  obj,
+  n = 1,
+  logdir = NULL,
+  timeout = 600,
+  worker_config = "localhost",
+  worker_name_base = NULL,
+  time_poll = 1,
+  progress = NULL
+)
 
-worker_wait(obj, key_alive, timeout = 600, time_poll = 1,
-  progress = NULL)
+worker_wait(obj, key_alive, timeout = 600, time_poll = 1, progress = NULL)
 }
 \arguments{
 \item{obj}{An \code{rrq_controller} object}

@@ -30,7 +30,7 @@
 ##'   becomes `EXITED`
 ##' * If it crashes and was running a heartbeat, it becomes `LOST`
 ##'
-##' @section Messages
+##' @section Messages:
 ##'
 ##' Most of the time workers process tasks, but you can also send them
 ##'   "messages". Messages take priority over tasks, so if a worker
@@ -79,10 +79,11 @@
 rrq_controller <- function(queue_id, con = redux::hiredis()) {
   assert_scalar_character(queue_id)
   assert_is(con, "redis_api")
-  R6_rrq_controller$new(con, queue_id)
+  rrq_controller_$new(queue_id, con)
 }
 
-R6_rrq_controller <- R6::R6Class(
+##' @rdname rrq_controller
+rrq_controller_ <- R6::R6Class(
   "rrq_controller",
   cloneable = FALSE,
 
@@ -92,7 +93,10 @@ R6_rrq_controller <- R6::R6Class(
     keys = NULL,
     db = NULL,
 
-    initialize = function(con, queue_id) {
+    ##' @description Constructor (called by `rrq_controller()`)
+    ##' @param queue_id An identifier for the queue
+    ##' @param con A redis connection
+    initialize = function(queue_id, con) {
       self$con <- con
       self$queue_id <- queue_id
       self$keys <- rrq_keys(self$queue_id)
@@ -219,6 +223,10 @@ R6_rrq_controller <- R6::R6Class(
     ##' @description Provide a high level overview of task statuses
     ##' for a set of task ids, being the count in major categories of
     ##' `PENDING`, `RUNNING`, `COMPLETE` and `ERROR`.
+    ##'
+    ##' @param task_ids Optional character vector of task ids for which you
+    ##' would like the overview. If not given (or `NULL`) then the status of
+    ##' all task ids known to this rrq controller is used.
     task_overview = function(task_ids = NULL) {
       task_overview(self$con, self$keys, task_ids)
     },
@@ -563,11 +571,11 @@ R6_rrq_controller <- R6::R6Class(
     ##'
     ##' @param worker_ids Optional vector of worker ids. If `NULL` then
     ##'   all active workers are used.
-    worker_load = function(worker_ids = NULL, ...) {
-      worker_load(self$con, self$keys, worker_ids, ...)
+    worker_load = function(worker_ids = NULL) {
+      worker_load(self$con, self$keys, worker_ids)
     },
 
-    ##' @descripton Send a message to workers. Sending a message returns
+    ##' @description Send a message to workers. Sending a message returns
     ##' a message id, which can be used to poll for a response with the
     ##' other `message_*` methods.
     ##'
