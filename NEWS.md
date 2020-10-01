@@ -1,3 +1,7 @@
+# rrq 0.2.8
+
+* Expand documentation (mrc-1800)
+
 # rrq 0.2.7
 
 * rrq progress now passes all fields in underlying condition (mrc-1772)
