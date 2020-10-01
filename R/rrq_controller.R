@@ -88,9 +88,16 @@ rrq_controller_ <- R6::R6Class(
   cloneable = FALSE,
 
   public = list(
+    ##' @field con The redis connection
     con = NULL,
+
+    ##' @field queue_id The queue id used on creation
     queue_id = NULL,
+
+    ##' @field keys Internally used keys
     keys = NULL,
+
+    ##' @field db Internally used storr database
     db = NULL,
 
     ##' @description Constructor (called by `rrq_controller()`)

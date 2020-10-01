@@ -84,6 +84,19 @@ current timeout.
 }
 }
 
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{con}}{The redis connection}
+
+\item{\code{queue_id}}{The queue id used on creation}
+
+\item{\code{keys}}{Internally used keys}
+
+\item{\code{db}}{Internally used storr database}
+}
+\if{html}{\out{</div>}}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
