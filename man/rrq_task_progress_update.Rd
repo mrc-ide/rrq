@@ -17,7 +17,7 @@ status is found for a task.}
 \item{error}{Logical, indicating if we should throw an error if
 not running as an \code{rrq} task. Set this to \code{FALSE} if
 you want code to work without modification within and outside of
-an `rrq` job, or to \code{TRUE} if you want to be sure that
+an \code{rrq} job, or to \code{TRUE} if you want to be sure that
 progress messages have made it to the server.}
 }
 \description{

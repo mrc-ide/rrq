@@ -4,9 +4,16 @@
 \alias{rrq_worker}
 \title{rrq queue worker}
 \usage{
-rrq_worker(queue_id, con = redux::hiredis(), key_alive = NULL,
-  worker_name = NULL, time_poll = NULL, timeout = NULL,
-  heartbeat_period = NULL, verbose = TRUE)
+rrq_worker(
+  queue_id,
+  con = redux::hiredis(),
+  key_alive = NULL,
+  worker_name = NULL,
+  time_poll = NULL,
+  timeout = NULL,
+  heartbeat_period = NULL,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{queue_id}{Name of the queue to connect to.  This will be the

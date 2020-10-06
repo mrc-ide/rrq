@@ -96,7 +96,7 @@ test_that("task_position", {
 })
 
 
-test_that("task_position", {
+test_that("task_overview", {
   obj <- test_rrq("myfuns.R")
 
   expect_equal(
