@@ -208,7 +208,7 @@ rrq_controller_ <- R6::R6Class(
     },
 
     ##' @description Return a character vector of task statuses. The name
-    ##' of each element corresponds to a task id, and the value will the
+    ##' of each element corresponds to a task id, and the value will be
     ##' one of the possible statuses ("PENDING", "COMPLETE", etc).
     ##'
     ##' @param task_ids Optional character vector of task ids for which you
