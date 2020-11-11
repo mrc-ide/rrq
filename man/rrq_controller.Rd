@@ -105,6 +105,9 @@ current timeout.
 \item \href{#method-envir}{\code{rrq_controller_$envir()}}
 \item \href{#method-enqueue}{\code{rrq_controller_$enqueue()}}
 \item \href{#method-enqueue_}{\code{rrq_controller_$enqueue_()}}
+\item \href{#method-lapply}{\code{rrq_controller_$lapply()}}
+\item \href{#method-lapply_}{\code{rrq_controller_$lapply_()}}
+\item \href{#method-bulk_wait}{\code{rrq_controller_$bulk_wait()}}
 \item \href{#method-task_list}{\code{rrq_controller_$task_list()}}
 \item \href{#method-task_status}{\code{rrq_controller_$task_status()}}
 \item \href{#method-task_progress}{\code{rrq_controller_$task_progress()}}
@@ -277,6 +280,141 @@ loop.}
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-lapply"></a>}}
+\if{latex}{\out{\hypertarget{method-lapply}{}}}
+\subsection{Method \code{lapply()}}{
+Apply a function over a list of of data. This is
+equivalent to using \verb{$enqueue()} over each element in the list.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$lapply(
+  x,
+  fun,
+  ...,
+  DOTS = NULL,
+  envir = parent.frame(),
+  envir_base = NULL,
+  timeout = Inf,
+  time_poll = NULL,
+  progress = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{A list of data to apply our function against}
+
+\item{\code{fun}}{A function to be applied to each element of \code{x}}
+
+\item{\code{...}}{Additional arguments to \code{fun}}
+
+\item{\code{DOTS}}{As an alternative to \code{...}, you can provide the dots
+as a list of additional arguments. This may be easier to program
+against.}
+
+\item{\code{envir}}{The environment to use to try and find the function}
+
+\item{\code{envir_base}}{Somehow another environment}
+
+\item{\code{timeout}}{Optional timeout, in seconds, after which an
+error will be thrown if the task has not completed.}
+
+\item{\code{time_poll}}{Optional time with which to "poll" for
+completion.}
+
+\item{\code{progress}}{Optional logical indicating if a progress bar
+should be displayed. If \code{NULL} we fall back on the value of the
+global option \code{rrq.progress}, and if that is unset display a
+progress bar if in an interactive session.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-lapply_"></a>}}
+\if{latex}{\out{\hypertarget{method-lapply_}{}}}
+\subsection{Method \code{lapply_()}}{
+The "standard evaluation" version of \verb{$lapply()}.
+This differs in how the function is found and how dots are passed.
+With this version, both are passed by value; this may create more
+overhead on the redis server as the values of the variables will
+be copied over rather than using their names if possible.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$lapply_(
+  x,
+  fun,
+  ...,
+  DOTS = NULL,
+  envir = parent.frame(),
+  envir_base = envir,
+  timeout = Inf,
+  time_poll = NULL,
+  progress = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{A list of data to apply our function against}
+
+\item{\code{fun}}{A function to be applied to each element of \code{x}}
+
+\item{\code{...}}{Additional arguments to \code{fun}}
+
+\item{\code{DOTS}}{As an alternative to \code{...}, you can provide the dots
+as a list of additional arguments. This may be easier to program
+against.}
+
+\item{\code{envir}}{The environment to use to try and find the function}
+
+\item{\code{envir_base}}{Somehow another environment}
+
+\item{\code{timeout}}{Optional timeout, in seconds, after which an
+error will be thrown if the task has not completed. If a
+timeout is given as \code{0}, then we return a handle that can be used
+to check for tasks using \code{bulk_wait}}
+
+\item{\code{time_poll}}{Optional time with which to "poll" for
+completion.}
+
+\item{\code{progress}}{Optional logical indicating if a progress bar
+should be displayed. If \code{NULL} we fall back on the value of the
+global option \code{rrq.progress}, and if that is unset display a
+progress bar if in an interactive session.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-bulk_wait"></a>}}
+\if{latex}{\out{\hypertarget{method-bulk_wait}{}}}
+\subsection{Method \code{bulk_wait()}}{
+Wait for a group of tasks
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$bulk_wait(x, timeout = Inf, time_poll = NULL, progress = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{An object of class \code{rrq_bulk}, as created by \verb{$lapply()}}
+
+\item{\code{timeout}}{Optional timeout, in seconds, after which an
+error will be thrown if the task has not completed.}
+
+\item{\code{time_poll}}{Optional time with which to "poll" for
+completion.}
+
+\item{\code{progress}}{Optional logical indicating if a progress bar
+should be displayed. If \code{NULL} we fall back on the value of the
+global option \code{rrq.progress}, and if that is unset display a
+progress bar if in an interactive session.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-task_list"></a>}}
 \if{latex}{\out{\hypertarget{method-task_list}{}}}
 \subsection{Method \code{task_list()}}{
@@ -291,7 +429,7 @@ List ids of all tasks known to this rrq controller
 \if{latex}{\out{\hypertarget{method-task_status}{}}}
 \subsection{Method \code{task_status()}}{
 Return a character vector of task statuses. The name
-of each element corresponds to a task id, and the value will the
+of each element corresponds to a task id, and the value will be
 one of the possible statuses ("PENDING", "COMPLETE", etc).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_status(task_ids = NULL)}\if{html}{\out{</div>}}

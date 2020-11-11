@@ -204,30 +204,105 @@ rrq_controller_ <- R6::R6Class(
     ## One option for envir_base would be to use search()[2] (~=
     ## parent.env(.GlobalEnv)) as that's going to be relatively likely
     ## to be ok because that's where the packages end.
-    lapply = function(X, FUN, ..., DOTS = NULL,
+
+
+    ##' @description Apply a function over a list of of data. This is
+    ##' equivalent to using `$enqueue()` over each element in the list.
+    ##'
+    ##' @param x A list of data to apply our function against
+    ##'
+    ##' @param fun A function to be applied to each element of `x`
+    ##'
+    ##' @param ... Additional arguments to `fun`
+    ##'
+    ##' @param DOTS As an alternative to `...`, you can provide the dots
+    ##'   as a list of additional arguments. This may be easier to program
+    ##'   against.
+    ##'
+    ##' @param envir The environment to use to try and find the function
+    ##'
+    ##' @param envir_base Somehow another environment
+    ##'
+    ##' @param timeout Optional timeout, in seconds, after which an
+    ##'   error will be thrown if the task has not completed.
+    ##'
+    ##' @param time_poll Optional time with which to "poll" for
+    ##'   completion.
+    ##'
+    ##' @param progress Optional logical indicating if a progress bar
+    ##'   should be displayed. If `NULL` we fall back on the value of the
+    ##'   global option `rrq.progress`, and if that is unset display a
+    ##'   progress bar if in an interactive session.
+    lapply = function(x, fun, ..., DOTS = NULL,
                       envir = parent.frame(), envir_base = NULL,
                       timeout = Inf, time_poll = NULL, progress = NULL) {
       if (is.null(DOTS)) {
         DOTS <- as.list(substitute(list(...)))[-1L]
       }
-      self$lapply_(X, substitute(FUN), DOTS = DOTS,
+      self$lapply_(x, substitute(fun), DOTS = DOTS,
                    envir = envir, envir_base = envir_base,
                    timeout = timeout, time_poll = time_poll, progress = NULL)
     },
 
-    lapply_ = function(X, FUN, ..., DOTS = NULL,
-                         envir = parent.frame(), envir_base = envir,
-                         timeout = Inf, time_poll = NULL, progress = NULL) {
+    ##' @description The "standard evaluation" version of `$lapply()`.
+    ##' This differs in how the function is found and how dots are passed.
+    ##' With this version, both are passed by value; this may create more
+    ##' overhead on the redis server as the values of the variables will
+    ##' be copied over rather than using their names if possible.
+    ##'
+    ##' @param x A list of data to apply our function against
+    ##'
+    ##' @param fun A function to be applied to each element of `x`
+    ##'
+    ##' @param ... Additional arguments to `fun`
+    ##'
+    ##' @param DOTS As an alternative to `...`, you can provide the dots
+    ##'   as a list of additional arguments. This may be easier to program
+    ##'   against.
+    ##'
+    ##' @param envir The environment to use to try and find the function
+    ##'
+    ##' @param envir_base Somehow another environment
+    ##'
+    ##' @param timeout Optional timeout, in seconds, after which an
+    ##'   error will be thrown if the task has not completed. If a
+    ##'   timeout is given as `0`, then we return a handle that can be used
+    ##'   to check for tasks using `bulk_wait`
+    ##'
+    ##' @param time_poll Optional time with which to "poll" for
+    ##'   completion.
+    ##'
+    ##' @param progress Optional logical indicating if a progress bar
+    ##'   should be displayed. If `NULL` we fall back on the value of the
+    ##'   global option `rrq.progress`, and if that is unset display a
+    ##'   progress bar if in an interactive session.
+    lapply_ = function(x, fun, ..., DOTS = NULL,
+                       envir = parent.frame(), envir_base = envir,
+                       timeout = Inf, time_poll = NULL, progress = NULL) {
       if (is.null(DOTS)) {
         DOTS <- list(...)
       }
       rrq_lapply(self$con, self$keys, self$db,
-                 X, FUN, DOTS, envir, envir_base,
+                 x, fun, DOTS, envir, envir_base,
                  timeout, time_poll, progress)
     },
 
+    ##' @description Wait for a group of tasks
+    ##'
+    ##' @param x An object of class `rrq_bulk`, as created by `$lapply()`
+    ##'
+    ##' @param timeout Optional timeout, in seconds, after which an
+    ##'   error will be thrown if the task has not completed.
+    ##'
+    ##' @param time_poll Optional time with which to "poll" for
+    ##'   completion.
+    ##'
+    ##' @param progress Optional logical indicating if a progress bar
+    ##'   should be displayed. If `NULL` we fall back on the value of the
+    ##'   global option `rrq.progress`, and if that is unset display a
+    ##'   progress bar if in an interactive session.
     bulk_wait = function(x, timeout = Inf, time_poll = NULL,
-                           progress = NULL) {
+                         progress = NULL) {
       rrq_bulk_wait(self$con, self$keys, x, timeout, time_poll, progress)
     },
 
