@@ -75,6 +75,46 @@
 ##' * `TIMEOUT_GET` (no args): Tells the worker to respond with its
 ##'   current timeout.
 ##'
+##' @section Bulk interface (`lapply`):
+##'
+##' The bulk interface is a bit more complicated than the basic
+##'   `enqueue` interface. In the majority of cases you can ignore the
+##'   details and use the `lapply` method in much the same way as you
+##'   would in normal R. Assuming that `obj` is your `rrq_controller`
+##'   object, you might write:
+##'
+##' ```
+##' ans <- obj$lapply(1:10, sqrt)
+##' ```
+##'
+##' which will return the same thing as `lapply(1:10, sqrt)` (provided
+##'   that you have a Redis server running and workers registered)
+##'
+##' There is some sleight of hand here, though as we need to identify
+##'   that it is the *symbol* `sqrt` that matters there corresponding
+##'   to the builtin [sqrt] function. You can make this more explicit
+##'   by passing in the name of the function using `$lapply_()`
+##'
+##' ```
+##' ans <- obj$lapply(1:10, quote(sqrt))
+##' ```
+##'
+##' The same treatment applies to the dots; this is allowed:
+##'
+##' ```
+##' b <- 2
+##' ans <- obj$lapply(1:10, log, base = b)
+##' ```
+##'
+##' But this will look up the bindings of `log` and `b` in the context
+##'   in which the call is made. This may not always do what is
+##'   expected, so you can use the names directly:
+##'
+##' ```
+##' b <- 2
+##' ans <- obj$lapply_(1:10, quote(log), base = quote(b))
+##' ```
+##'
 ##' @export
 rrq_controller <- function(queue_id, con = redux::hiredis()) {
   assert_scalar_character(queue_id)

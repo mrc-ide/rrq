@@ -84,6 +84,36 @@ current timeout.
 }
 }
 
+\section{Bulk interface (\code{lapply})}{
+
+
+The bulk interface is a bit more complicated than the basic
+\code{enqueue} interface. In the majority of cases you can ignore the
+details and use the \code{lapply} method in much the same way as you
+would in normal R. Assuming that \code{obj} is your \code{rrq_controller}
+object, you might write:\preformatted{ans <- obj$lapply(1:10, sqrt)
+}
+
+which will return the same thing as \code{lapply(1:10, sqrt)} (provided
+that you have a Redis server running and workers registered)
+
+There is some sleight of hand here, though as we need to identify
+that it is the \emph{symbol} \code{sqrt} that matters there corresponding
+to the builtin \link{sqrt} function. You can make this more explicit
+by passing in the name of the function using \verb{$lapply_()}\preformatted{ans <- obj$lapply(1:10, quote(sqrt))
+}
+
+The same treatment applies to the dots; this is allowed:\preformatted{b <- 2
+ans <- obj$lapply(1:10, log, base = b)
+}
+
+But this will look up the bindings of \code{log} and \code{b} in the context
+in which the call is made. This may not always do what is
+expected, so you can use the names directly:\preformatted{b <- 2
+ans <- obj$lapply_(1:10, quote(log), base = quote(b))
+}
+}
+
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
@@ -292,7 +322,6 @@ equivalent to using \verb{$enqueue()} over each element in the list.
   ...,
   DOTS = NULL,
   envir = parent.frame(),
-  envir_base = NULL,
   timeout = Inf,
   time_poll = NULL,
   progress = NULL
@@ -313,8 +342,6 @@ as a list of additional arguments. This may be easier to program
 against.}
 
 \item{\code{envir}}{The environment to use to try and find the function}
-
-\item{\code{envir_base}}{Somehow another environment}
 
 \item{\code{timeout}}{Optional timeout, in seconds, after which an
 error will be thrown if the task has not completed.}
@@ -346,7 +373,6 @@ be copied over rather than using their names if possible.
   ...,
   DOTS = NULL,
   envir = parent.frame(),
-  envir_base = envir,
   timeout = Inf,
   time_poll = NULL,
   progress = NULL
@@ -367,8 +393,6 @@ as a list of additional arguments. This may be easier to program
 against.}
 
 \item{\code{envir}}{The environment to use to try and find the function}
-
-\item{\code{envir_base}}{Somehow another environment}
 
 \item{\code{timeout}}{Optional timeout, in seconds, after which an
 error will be thrown if the task has not completed. If a
