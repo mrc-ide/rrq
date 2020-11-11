@@ -85,6 +85,7 @@ test_rrq <- function(sources = NULL, root = tempfile()) {
 
 test_worker_spawn <- function(obj, ..., timeout = 10) {
   skip_on_cran()
+  skip_on_windows()
   worker_spawn(obj, ..., timeout = timeout)
 }
 
