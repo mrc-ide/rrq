@@ -27,6 +27,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install hiredis
+
       - name: Query dependencies
         run: |
           install.packages('remotes')
