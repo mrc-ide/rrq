@@ -2,14 +2,9 @@ context("bulk support")
 
 test_that("match_fun_envir can find functions by name", {
   add <- function(a, b) a + b
-  expected1 <- list(name = NULL, value = add)
-  expected2 <- list(name = quote(add), value = add)
-  expect_equal(match_fun_envir("add"), expected1)
-  expect_equal(match_fun_envir(quote(add)), expected1)
-  expect_equal(match_fun_envir("add", envir_base = environment()),
-               expected2)
-  expect_equal(match_fun_envir(quote(quote(add)), envir_base = environment()),
-               expected2)
+  expected <- list(name = NULL, value = add)
+  expect_equal(match_fun_envir("add"), expected)
+  expect_equal(match_fun_envir(quote(add)), expected)
 })
 
 
@@ -38,9 +33,9 @@ test_that("match_fun_envir can find functions in nested environments", {
   e1 <- list2env(list(add = add), new.env(parent = .GlobalEnv))
   e2 <- list2env(list(sum = add), new.env(parent = e1))
 
-  expect_equal(match_fun_envir(quote(add), e2, e1),
-               list(name = quote(add), value = add))
-  expect_equal(match_fun_envir(quote(sum), e2, e1),
+  expect_equal(match_fun_envir(quote(add), e2),
+               list(name = NULL, value = add))
+  expect_equal(match_fun_envir(quote(sum), e2),
                list(name = NULL, value = add))
 })
 

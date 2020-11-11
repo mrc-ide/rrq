@@ -201,11 +201,6 @@ rrq_controller_ <- R6::R6Class(
       task_submit(self$con, self$keys, dat, key_complete)
     },
 
-    ## One option for envir_base would be to use search()[2] (~=
-    ## parent.env(.GlobalEnv)) as that's going to be relatively likely
-    ## to be ok because that's where the packages end.
-
-
     ##' @description Apply a function over a list of of data. This is
     ##' equivalent to using `$enqueue()` over each element in the list.
     ##'
@@ -221,8 +216,6 @@ rrq_controller_ <- R6::R6Class(
     ##'
     ##' @param envir The environment to use to try and find the function
     ##'
-    ##' @param envir_base Somehow another environment
-    ##'
     ##' @param timeout Optional timeout, in seconds, after which an
     ##'   error will be thrown if the task has not completed.
     ##'
@@ -234,13 +227,12 @@ rrq_controller_ <- R6::R6Class(
     ##'   global option `rrq.progress`, and if that is unset display a
     ##'   progress bar if in an interactive session.
     lapply = function(x, fun, ..., DOTS = NULL,
-                      envir = parent.frame(), envir_base = NULL,
+                      envir = parent.frame(),
                       timeout = Inf, time_poll = NULL, progress = NULL) {
       if (is.null(DOTS)) {
         DOTS <- as.list(substitute(list(...)))[-1L]
       }
-      self$lapply_(x, substitute(fun), DOTS = DOTS,
-                   envir = envir, envir_base = envir_base,
+      self$lapply_(x, substitute(fun), DOTS = DOTS, envir = envir,
                    timeout = timeout, time_poll = time_poll, progress = NULL)
     },
 
@@ -262,8 +254,6 @@ rrq_controller_ <- R6::R6Class(
     ##'
     ##' @param envir The environment to use to try and find the function
     ##'
-    ##' @param envir_base Somehow another environment
-    ##'
     ##' @param timeout Optional timeout, in seconds, after which an
     ##'   error will be thrown if the task has not completed. If a
     ##'   timeout is given as `0`, then we return a handle that can be used
@@ -277,13 +267,12 @@ rrq_controller_ <- R6::R6Class(
     ##'   global option `rrq.progress`, and if that is unset display a
     ##'   progress bar if in an interactive session.
     lapply_ = function(x, fun, ..., DOTS = NULL,
-                       envir = parent.frame(), envir_base = envir,
+                       envir = parent.frame(),
                        timeout = Inf, time_poll = NULL, progress = NULL) {
       if (is.null(DOTS)) {
         DOTS <- list(...)
       }
-      rrq_lapply(self$con, self$keys, self$db,
-                 x, fun, DOTS, envir, envir_base,
+      rrq_lapply(self$con, self$keys, self$db, x, fun, DOTS, envir,
                  timeout, time_poll, progress)
     },
 

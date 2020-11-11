@@ -1,6 +1,6 @@
-rrq_lapply <- function(con, keys, db, X, FUN, DOTS, envir, envir_base,
+rrq_lapply <- function(con, keys, db, X, FUN, DOTS, envir,
                        timeout, time_poll, progress) {
-  dat <- rrq_lapply_submit(con, keys, db, X, FUN, DOTS, envir, envir_base)
+  dat <- rrq_lapply_submit(con, keys, db, X, FUN, DOTS, envir)
   if (timeout == 0) {
     return(dat)
   }
@@ -8,8 +8,8 @@ rrq_lapply <- function(con, keys, db, X, FUN, DOTS, envir, envir_base,
 }
 
 
-rrq_lapply_submit <- function(con, keys, db, X, FUN, DOTS, envir, envir_base) {
-  dat <- rrq_lapply_prepare(db, X, FUN, DOTS, envir, envir_base)
+rrq_lapply_submit <- function(con, keys, db, X, FUN, DOTS, envir) {
+  dat <- rrq_lapply_prepare(db, X, FUN, DOTS, envir)
   key_complete <- rrq_key_task_complete(keys$queue)
   task_ids <- task_submit_n(con, keys, dat, key_complete)
   ret <- list(task_ids = task_ids, key_complete = key_complete,
@@ -19,11 +19,11 @@ rrq_lapply_submit <- function(con, keys, db, X, FUN, DOTS, envir, envir_base) {
 }
 
 
-rrq_lapply_prepare <- function(db, X, FUN, DOTS, envir, envir_base) {
-  fun <- match_fun_envir(FUN, envir, envir_base)
+rrq_lapply_prepare <- function(db, X, FUN, DOTS, envir) {
+  fun <- match_fun_envir(FUN, envir)
 
   template <- as.call(c(list(fun$name, NULL), DOTS))
-  dat <- expression_prepare(template, envir, envir_base, db,
+  dat <- expression_prepare(template, envir, NULL, db,
                             function_value = if (is.null(fun$name)) fun$value)
 
   rewrite <- function(x) {
@@ -54,7 +54,7 @@ rrq_bulk_wait <- function(con, keys, dat, timeout, time_poll, progress,
 ## run.  This used to work quite well with lazyeval but that also
 ## changed behaviour and is itself basically deprecated in favour of
 ## rlang.
-match_fun_envir <- function(fun, envir = parent.frame(), envir_base = NULL) {
+match_fun_envir <- function(fun, envir = parent.frame()) {
   if (is_call(fun, quote(quote))) {
     fun <- fun[[2L]]
   }
@@ -72,13 +72,7 @@ match_fun_envir <- function(fun, envir = parent.frame(), envir_base = NULL) {
     ## it's easier for bugs to hide there because it's not so obvious
     ## that each branch has been run.  So this is done as an if/else
     ## ladder here at least for now.
-    if (identical(envir, envir_base)) {
-      name_ok <- TRUE
-    } else if (!is.null(envir_base) &&
-                identical(get(fun_search, envir_base), value)) {
-      name_ok <- TRUE
-    } else if (is.primitive(value) &&
-               identical(get(fun_search, baseenv()), value)) {
+    if (is.primitive(value) && identical(get(fun_search, baseenv()), value)) {
       name_ok <- TRUE
     } else {
       name_ok <- FALSE
