@@ -5,6 +5,8 @@ test_that("match_fun_envir can find functions by name", {
   expected <- list(name = NULL, value = add)
   expect_equal(match_fun_envir("add"), expected)
   expect_equal(match_fun_envir(quote(add)), expected)
+  expect_equal(match_fun_envir(quote(quote(add))), expected)
+  expect_equal(match_fun_envir(quote(quote(quote(add)))), expected)
 })
 
 

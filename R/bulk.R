@@ -55,7 +55,7 @@ rrq_bulk_wait <- function(con, keys, dat, timeout, time_poll, progress,
 ## changed behaviour and is itself basically deprecated in favour of
 ## rlang.
 match_fun_envir <- function(fun, envir = parent.frame()) {
-  if (is_call(fun, quote(quote))) {
+  while (is_call(fun, quote(quote))) {
     fun <- fun[[2L]]
   }
 
