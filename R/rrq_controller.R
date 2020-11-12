@@ -241,7 +241,7 @@ rrq_controller_ <- R6::R6Class(
       task_submit(self$con, self$keys, dat, key_complete)
     },
 
-    ##' @description Apply a function over a list of of data. This is
+    ##' @description Apply a function over a list of data. This is
     ##' equivalent to using `$enqueue()` over each element in the list.
     ##'
     ##' @param x A list of data to apply our function against
