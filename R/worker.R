@@ -18,7 +18,7 @@
 ##'   uses, but shorter values are used for debugging.
 ##'
 ##' @param timeout Optional timeout to set for the worker.  This is
-##'   (roughly) quivalent to issuing a \code{TIMEOUT_SET} message
+##'   (roughly) equivalent to issuing a \code{TIMEOUT_SET} message
 ##'   after initialising the worker, except that it's guaranteed to be
 ##'   run by all workers.
 ##'
@@ -38,14 +38,14 @@ rrq_worker <- function(queue_id, con = redux::hiredis(), key_alive = NULL,
                        worker_name = NULL, time_poll = NULL,
                        timeout = NULL,
                        heartbeat_period = NULL, verbose = TRUE) {
-  w <- R6_rrq_worker$new(con, queue_id, key_alive, worker_name, time_poll,
-                         timeout, heartbeat_period, verbose)
+  w <- rrq_worker_$new(con, queue_id, key_alive, worker_name, time_poll,
+                       timeout, heartbeat_period, verbose)
   w$loop()
   invisible()
 }
 
 
-R6_rrq_worker <- R6::R6Class(
+rrq_worker_ <- R6::R6Class(
   "rrq_worker",
 
   public = list(

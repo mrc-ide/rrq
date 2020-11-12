@@ -11,17 +11,17 @@ username <- function() {
                                    Sys.getenv("USERNAME"))))
 }
 
-vcapply <- function(X, FUN, ...) {
-  vapply(X, FUN, character(1), ...)
+vcapply <- function(x, fun, ...) {
+  vapply(x, fun, character(1), ...)
 }
-vnapply <- function(X, FUN, ...) {
-  vapply(X, FUN, numeric(1), ...)
+vnapply <- function(x, fun, ...) {
+  vapply(x, fun, numeric(1), ...)
 }
-viapply <- function(X, FUN, ...) {
-  vapply(X, FUN, integer(1), ...)
+viapply <- function(x, fun, ...) {
+  vapply(x, fun, integer(1), ...)
 }
-vlapply <- function(X, FUN, ...) {
-  vapply(X, FUN, logical(1), ...)
+vlapply <- function(x, fun, ...) {
+  vapply(x, fun, logical(1), ...)
 }
 
 
@@ -34,7 +34,7 @@ blank <- function(n) {
   strrep(" ", n)
 }
 
-`%||%` <- function(a, b) {
+`%||%` <- function(a, b) { # nolint
   if (is.null(a)) b else a
 }
 

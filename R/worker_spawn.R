@@ -2,7 +2,7 @@
 ##'
 ##' Spawning multiple workers.  If \code{n} is greater than one,
 ##' multiple workers will be spawned.  This happens in parallel so it
-##' does not take n times longer than spawing a single worker.
+##' does not take n times longer than spawning a single worker.
 ##'
 ##' Beware that signals like Ctrl-C passed to \emph{this} R instance
 ##' can still propagate to the child processes and can result in them
@@ -118,7 +118,7 @@ worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
 ##' Register that workers are expected.  This generates a key that one
 ##' or more workers will write to when they start up (as used by
 ##' \code{worker_spawn}).
-##' @title Registed expected workers
+##' @title Register expected workers
 ##' @param obj A rrq_controller object
 ##' @param names Names of expected workers
 ##' @export
