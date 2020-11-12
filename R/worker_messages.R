@@ -66,7 +66,7 @@ run_message_pause <- function(worker) {
     "NOOP"
   } else {
     worker$paused <- TRUE
-    worker$con$HSET(worker$keys$worker_status, worker$name, WORKER_pauseD)
+    worker$con$HSET(worker$keys$worker_status, worker$name, WORKER_PAUSED)
     "OK"
   }
 }

@@ -193,7 +193,7 @@ worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
     redis$HSET(keys$worker_info,   worker$name, object_to_bin(worker$info())))
 
   if (!is.null(timeout)) {
-    run_message_TIMEOUT_SET(worker, timeout)
+    run_message_timeout_set(worker, timeout)
   }
 
   worker$log("ALIVE")
