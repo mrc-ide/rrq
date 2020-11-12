@@ -347,7 +347,7 @@ worker_format <- function(worker) {
   x <- worker$info()
   x$heartbeat_key <- x$heartbeat_key %||% "<not set>"
   n <- nchar(names(x))
-  pad <- vcapply(max(n) - n, strrep, x = " ")
+  pad <- vcapply(max(n) - n, function(n) strrep(" ", n))
   sprintf("    %s:%s %s", names(x), pad, as.character(x))
 }
 

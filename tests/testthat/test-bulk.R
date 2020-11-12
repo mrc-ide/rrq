@@ -6,7 +6,7 @@ test_that("lapply simple case", {
                          time_poll = 1, overwrite = TRUE)
   w <- test_worker_blocking(obj)
 
-  grp <- obj$lapply_(1:10, quote(log), DOTS = list(base = 2), timeout = 0)
+  grp <- obj$lapply_(1:10, quote(log), dots = list(base = 2), timeout = 0)
   expect_is(grp, "rrq_bulk")
   expect_setequal(names(grp), c("task_ids", "key_complete", "names"))
 
@@ -79,6 +79,6 @@ test_that("NSE - use namespaced function with lazy dots", {
 test_that("lapply blocking", {
   obj <- test_rrq()
   w <- test_worker_spawn(obj)
-  res <- obj$lapply(1:10, sqrt)
-  expect_equal(res, as.list(sqrt(1:10)))
+  res <- obj$lapply(1:10, sqrt, timeout = 1)
+  expect_equal(res, as.list(sqrt(1:10)), timeout = 10)
 })
