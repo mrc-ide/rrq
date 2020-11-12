@@ -30,13 +30,13 @@ rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
   keys <- rrq_keys(queue_id)
   config <- worker_config_read(con, keys, worker_config)
 
-  R6_rrq_worker$new(con, queue_id,
-                    key_alive = key_alive,
-                    worker_name = worker_name,
-                    time_poll = config$time_poll,
-                    timeout = config$timeout,
-                    heartbeat_period = config$heartbeat_period,
-                    verbose = config$verbose)
+  rrq_worker_$new(con, queue_id,
+                  key_alive = key_alive,
+                  worker_name = worker_name,
+                  time_poll = config$time_poll,
+                  timeout = config$timeout,
+                  heartbeat_period = config$heartbeat_period,
+                  verbose = config$verbose)
 }
 
 
@@ -44,11 +44,11 @@ rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
 write_rrq_worker <- function(path = tempfile(), versioned = FALSE) {
   dir.create(path, FALSE, TRUE)
   if (versioned) {
-    Rscript <- file.path(R.home(), "bin", "Rscript")
+    rscript <- file.path(R.home(), "bin", "Rscript")
   } else {
-    Rscript <- "/usr/bin/env Rscript"
+    rscript <- "/usr/bin/env Rscript"
   }
-  code <- c(sprintf("#!%s", Rscript),
+  code <- c(sprintf("#!%s", rscript),
             "rrq:::rrq_worker_main()")
   path_bin <- file.path(path, "rrq_worker")
   writeLines(code, path_bin)

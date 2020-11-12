@@ -10,39 +10,39 @@ run_message <- function(worker, msg) {
 
   ## TODO: worker restart?  Is that even possible?
   res <- switch(cmd,
-                PING = run_message_PING(),
-                ECHO = run_message_ECHO(args),
-                EVAL = run_message_EVAL(args),
-                STOP = run_message_STOP(worker, message_id, args), # noreturn
-                INFO = run_message_INFO(worker),
-                PAUSE = run_message_PAUSE(worker),
-                RESUME = run_message_RESUME(worker),
-                REFRESH = run_message_REFRESH(worker),
-                TIMEOUT_SET = run_message_TIMEOUT_SET(worker, args),
-                TIMEOUT_GET = run_message_TIMEOUT_GET(worker),
+                PING = run_message_ping(),
+                ECHO = run_message_echo(args),
+                EVAL = run_message_eval(args),
+                STOP = run_message_stop(worker, message_id, args), # noreturn
+                INFO = run_message_info(worker),
+                PAUSE = run_message_pause(worker),
+                RESUME = run_message_resume(worker),
+                REFRESH = run_message_refresh(worker),
+                TIMEOUT_SET = run_message_timeout_set(worker, args),
+                TIMEOUT_GET = run_message_timeout_get(worker),
                 run_message_unknown(cmd, args))
 
   message_respond(worker, message_id, cmd, res)
 }
 
-run_message_PING <- function() {
+run_message_ping <- function() {
   message("PONG")
   "PONG"
 }
 
-run_message_ECHO <- function(msg) {
+run_message_echo <- function(msg) {
   message(msg)
   "OK"
 }
 
-run_message_EVAL <- function(args) {
+run_message_eval <- function(args) {
   if (is.character(args)) {
     args <- parse(text = args)
   }
   print(try(eval(args, .GlobalEnv)))
 }
 
-run_message_STOP <- function(worker, message_id, args) {
+run_message_stop <- function(worker, message_id, args) {
   message_respond(worker, message_id, "STOP", "BYE")
   if (is.null(args)) {
     args <- "BYE"
@@ -50,18 +50,18 @@ run_message_STOP <- function(worker, message_id, args) {
   stop(rrq_worker_stop(worker, args))
 }
 
-run_message_INFO <- function(worker) {
+run_message_info <- function(worker) {
   info <- worker$info()
   worker$con$HSET(worker$keys$worker_info, worker$name, object_to_bin(info))
   info
 }
 
-run_message_REFRESH <- function(worker) {
+run_message_refresh <- function(worker) {
   worker$load_envir()
   "OK"
 }
 
-run_message_PAUSE <- function(worker) {
+run_message_pause <- function(worker) {
   if (worker$paused) {
     "NOOP"
   } else {
@@ -71,7 +71,7 @@ run_message_PAUSE <- function(worker) {
   }
 }
 
-run_message_RESUME <- function(worker, args) {
+run_message_resume <- function(worker, args) {
   if (worker$paused) {
     worker$paused <- FALSE
     worker$con$HSET(worker$keys$worker_status, worker$name, WORKER_IDLE)
@@ -81,7 +81,7 @@ run_message_RESUME <- function(worker, args) {
   }
 }
 
-run_message_TIMEOUT_SET <- function(worker, args) {
+run_message_timeout_set <- function(worker, args) {
   if (is.numeric(args) || is.null(args)) {
     worker$timeout <- args
     worker$timer_start()
@@ -91,7 +91,7 @@ run_message_TIMEOUT_SET <- function(worker, args) {
   }
 }
 
-run_message_TIMEOUT_GET <- function(worker) {
+run_message_timeout_get <- function(worker) {
   if (is.null(worker$timeout)) {
     c(timeout = Inf, remaining = Inf)
   } else {

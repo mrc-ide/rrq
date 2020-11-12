@@ -24,8 +24,8 @@
 ##'
 ##' * A worker appears and is `IDLE`
 ##' * When running a task it is `BUSY`
-##' * If it recieves a `PAUSE` message it becomes `PAUSED` until it
-##'   recieves a `RESUME` message
+##' * If it receives a `PAUSE` message it becomes `PAUSED` until it
+##'   receives a `RESUME` message
 ##' * If it exits cleanly (e.g., via a `STOP` message or a timeout) it
 ##'   becomes `EXITED`
 ##' * If it crashes and was running a heartbeat, it becomes `LOST`
@@ -49,7 +49,7 @@
 ##'   message has been printed.
 ##'
 ##' * `EVAL` (accepts a string or a quoted expression): Evaluate an
-##'   arbitrary R expression on the worker. Repsonds with the value of
+##'   arbitrary R expression on the worker. Responds with the value of
 ##'   this expression.
 ##'
 ##' * `STOP` (accepts a string to print as the worker exits, defaults
@@ -59,7 +59,7 @@
 ##'   of packages, hostname, pid, etc).
 ##'
 ##' * `PAUSE` (no args): Tells the worker to stop accepting tasks
-##'   (until it recieves a `RESUME` message). Messages are processed
+##'   (until it receives a `RESUME` message). Messages are processed
 ##'   as normal.
 ##'
 ##' * `RESUME` (no args): Tells a paused worker to resume accepting
@@ -68,7 +68,7 @@
 ##' * `REFRESH` (no args): Tells the worker to rebuild their
 ##'   environment with the `create` method.
 ##'
-##' * `TIMEOUT_SET` (accepts a number, represnting seconds): Updates
+##' * `TIMEOUT_SET` (accepts a number, representing seconds): Updates
 ##'   the worker timeout - the length of time after which it will exit
 ##'   if it has not processed a task.
 ##'
@@ -250,7 +250,7 @@ rrq_controller_ <- R6::R6Class(
     ##'
     ##' @param ... Additional arguments to `fun`
     ##'
-    ##' @param DOTS As an alternative to `...`, you can provide the dots
+    ##' @param dots As an alternative to `...`, you can provide the dots
     ##'   as a list of additional arguments. This may be easier to program
     ##'   against.
     ##'
@@ -266,13 +266,13 @@ rrq_controller_ <- R6::R6Class(
     ##'   should be displayed. If `NULL` we fall back on the value of the
     ##'   global option `rrq.progress`, and if that is unset display a
     ##'   progress bar if in an interactive session.
-    lapply = function(x, fun, ..., DOTS = NULL,
+    lapply = function(x, fun, ..., dots = NULL,
                       envir = parent.frame(),
                       timeout = Inf, time_poll = NULL, progress = NULL) {
-      if (is.null(DOTS)) {
-        DOTS <- as.list(substitute(list(...)))[-1L]
+      if (is.null(dots)) {
+        dots <- as.list(substitute(list(...)))[-1L]
       }
-      self$lapply_(x, substitute(fun), DOTS = DOTS, envir = envir,
+      self$lapply_(x, substitute(fun), dots = dots, envir = envir,
                    timeout = timeout, time_poll = time_poll, progress = NULL)
     },
 
@@ -288,7 +288,7 @@ rrq_controller_ <- R6::R6Class(
     ##'
     ##' @param ... Additional arguments to `fun`
     ##'
-    ##' @param DOTS As an alternative to `...`, you can provide the dots
+    ##' @param dots As an alternative to `...`, you can provide the dots
     ##'   as a list of additional arguments. This may be easier to program
     ##'   against.
     ##'
@@ -306,13 +306,13 @@ rrq_controller_ <- R6::R6Class(
     ##'   should be displayed. If `NULL` we fall back on the value of the
     ##'   global option `rrq.progress`, and if that is unset display a
     ##'   progress bar if in an interactive session.
-    lapply_ = function(x, fun, ..., DOTS = NULL,
+    lapply_ = function(x, fun, ..., dots = NULL,
                        envir = parent.frame(),
                        timeout = Inf, time_poll = NULL, progress = NULL) {
-      if (is.null(DOTS)) {
-        DOTS <- list(...)
+      if (is.null(dots)) {
+        dots <- list(...)
       }
-      rrq_lapply(self$con, self$keys, self$db, x, fun, DOTS, envir,
+      rrq_lapply(self$con, self$keys, self$db, x, fun, dots, envir,
                  timeout, time_poll, progress)
     },
 
@@ -602,7 +602,7 @@ rrq_controller_ <- R6::R6Class(
     ##'   is `message`).
     ##'
     ##' @param time_poll If `type` is `message` and `timeout` is greater
-    ##'   than zero, this is the polling interval used beween redis calls.
+    ##'   than zero, this is the polling interval used between redis calls.
     ##'   Increasing this reduces network load but decreases the ability
     ##'   to interrupt the process.
     ##'
@@ -616,7 +616,7 @@ rrq_controller_ <- R6::R6Class(
     ##' the different values are:
     ##'
     ##' * `message`, in which case a `STOP` message will be sent to the
-    ##'   worker, which they will recieve after finishing any currently
+    ##'   worker, which they will receive after finishing any currently
     ##'   running task (if `RUNNING`; `IDLE` workers will stop immediately).
     ##' * `kill`, in which case a kill signal will be sent via the heartbeat
     ##'   (if the worker is using one). This will kill the worker even if
@@ -642,7 +642,7 @@ rrq_controller_ <- R6::R6Class(
     ##' workers started with [worker_spawn] but may require significant
     ##' care otherwise.
     ##'
-    ##' @param worker_id The worker for which the log is reqiured
+    ##' @param worker_id The worker for which the log is required
     worker_process_log = function(worker_id) {
       assert_scalar(worker_id)
       path <- self$con$HGET(self$keys$worker_process, worker_id)
@@ -664,7 +664,7 @@ rrq_controller_ <- R6::R6Class(
     ##'   uses, but shorter values are used for debugging.
     ##'
     ##' @param timeout Optional timeout to set for the worker.  This is
-    ##'   (roughly) quivalent to issuing a \code{TIMEOUT_SET} message
+    ##'   (roughly) equivalent to issuing a \code{TIMEOUT_SET} message
     ##'   after initialising the worker, except that it's guaranteed to be
     ##'   run by all workers.
     ##'
@@ -705,7 +705,7 @@ rrq_controller_ <- R6::R6Class(
     },
 
     ##' Report on worker "load" (the number of workers being used over
-    ##' time). Rertuns an object of class `worker_load`, for which a
+    ##' time). Reruns an object of class `worker_load`, for which a
     ##' `mean` method exists (this method is a work in progress and the
     ##' interface may change).
     ##'
@@ -760,11 +760,11 @@ rrq_controller_ <- R6::R6Class(
     ##'   after retrieval
     ##'
     ##' @param timeout Integer, representing seconds to wait until the
-    ##'   response has been recieved. An error will be thrown if a
-    ##'   response has not been recieved in this time.
+    ##'   response has been received. An error will be thrown if a
+    ##'   response has not been received in this time.
     ##'
     ##' @param time_poll If `timeout` is greater
-    ##'   than zero, this is the polling interval used beween redis calls.
+    ##'   than zero, this is the polling interval used between redis calls.
     ##'   Increasing this reduces network load but increases the time that
     ##'   may be waited for.
     ##'
@@ -805,11 +805,11 @@ rrq_controller_ <- R6::R6Class(
     ##'   after retrieval
     ##'
     ##' @param timeout Integer, representing seconds to wait until the
-    ##'   response has been recieved. An error will be thrown if a
-    ##'   response has not been recieved in this time.
+    ##'   response has been received. An error will be thrown if a
+    ##'   response has not been received in this time.
     ##'
     ##' @param time_poll If `timeout` is greater
-    ##'   than zero, this is the polling interval used beween redis calls.
+    ##'   than zero, this is the polling interval used between redis calls.
     ##'   Increasing this reduces network load but increases the time that
     ##'   may be waited for.
     ##'

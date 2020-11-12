@@ -2,7 +2,7 @@
 % Please edit documentation in R/worker_spawn.R
 \name{rrq_expect_worker}
 \alias{rrq_expect_worker}
-\title{Registed expected workers}
+\title{Register expected workers}
 \usage{
 rrq_expect_worker(obj, names)
 }

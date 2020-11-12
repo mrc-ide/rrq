@@ -1,3 +1,4 @@
+## nolint start
 ## First, the ideal lifecycle:
 ## * after submissing a job is pending
 TASK_PENDING  <- "PENDING"
@@ -22,6 +23,7 @@ WORKER_BUSY <- "BUSY"
 WORKER_EXITED <- "EXITED"
 WORKER_LOST <- "LOST"
 WORKER_PAUSED <- "PAUSED"
+## nolint end
 
 version_info <- function(package = "rrq") {
   descr <- packageDescription(package)

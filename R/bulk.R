@@ -1,6 +1,6 @@
-rrq_lapply <- function(con, keys, db, X, FUN, DOTS, envir,
+rrq_lapply <- function(con, keys, db, x, fun, dots, envir,
                        timeout, time_poll, progress) {
-  dat <- rrq_lapply_submit(con, keys, db, X, FUN, DOTS, envir)
+  dat <- rrq_lapply_submit(con, keys, db, x, fun, dots, envir)
   if (timeout == 0) {
     return(dat)
   }
@@ -8,21 +8,21 @@ rrq_lapply <- function(con, keys, db, X, FUN, DOTS, envir,
 }
 
 
-rrq_lapply_submit <- function(con, keys, db, X, FUN, DOTS, envir) {
-  dat <- rrq_lapply_prepare(db, X, FUN, DOTS, envir)
+rrq_lapply_submit <- function(con, keys, db, x, fun, dots, envir) {
+  dat <- rrq_lapply_prepare(db, x, fun, dots, envir)
   key_complete <- rrq_key_task_complete(keys$queue)
   task_ids <- task_submit_n(con, keys, dat, key_complete)
   ret <- list(task_ids = task_ids, key_complete = key_complete,
-              names = names(X))
+              names = names(x))
   class(ret) <- "rrq_bulk"
   ret
 }
 
 
-rrq_lapply_prepare <- function(db, X, FUN, DOTS, envir) {
-  fun <- match_fun_envir(FUN, envir)
+rrq_lapply_prepare <- function(db, x, fun, dots, envir) {
+  fun <- match_fun_envir(fun, envir)
 
-  template <- as.call(c(list(fun$name, NULL), DOTS))
+  template <- as.call(c(list(fun$name, NULL), dots))
   dat <- expression_prepare(template, envir, NULL, db,
                             function_value = if (is.null(fun$name)) fun$value)
 
@@ -31,7 +31,7 @@ rrq_lapply_prepare <- function(db, X, FUN, DOTS, envir) {
     object_to_bin(dat)
   }
 
-  lapply(X, rewrite)
+  lapply(x, rewrite)
 }
 
 

@@ -33,7 +33,7 @@ killed with an interrupt.  The default should be good for most
 uses, but shorter values are used for debugging.}
 
 \item{timeout}{Optional timeout to set for the worker.  This is
-(roughly) quivalent to issuing a \code{TIMEOUT_SET} message
+(roughly) equivalent to issuing a \code{TIMEOUT_SET} message
 after initialising the worker, except that it's guaranteed to be
 run by all workers.}
 

@@ -37,8 +37,8 @@ a heartbeat the task becomes \code{ORPHAN}
 \itemize{
 \item A worker appears and is \code{IDLE}
 \item When running a task it is \code{BUSY}
-\item If it recieves a \code{PAUSE} message it becomes \code{PAUSED} until it
-recieves a \code{RESUME} message
+\item If it receives a \code{PAUSE} message it becomes \code{PAUSED} until it
+receives a \code{RESUME} message
 \item If it exits cleanly (e.g., via a \code{STOP} message or a timeout) it
 becomes \code{EXITED}
 \item If it crashes and was running a heartbeat, it becomes \code{LOST}
@@ -63,20 +63,20 @@ with "PONG"
 terminal and log of the worker. Will respond with \code{OK} once the
 message has been printed.
 \item \code{EVAL} (accepts a string or a quoted expression): Evaluate an
-arbitrary R expression on the worker. Repsonds with the value of
+arbitrary R expression on the worker. Responds with the value of
 this expression.
 \item \code{STOP} (accepts a string to print as the worker exits, defaults
 to "BYE"): Tells the worker to stop.
 \item \code{INFO} (no args): Returns information about the worker (versions
 of packages, hostname, pid, etc).
 \item \code{PAUSE} (no args): Tells the worker to stop accepting tasks
-(until it recieves a \code{RESUME} message). Messages are processed
+(until it receives a \code{RESUME} message). Messages are processed
 as normal.
 \item \code{RESUME} (no args): Tells a paused worker to resume accepting
 tasks.
 \item \code{REFRESH} (no args): Tells the worker to rebuild their
 environment with the \code{create} method.
-\item \code{TIMEOUT_SET} (accepts a number, represnting seconds): Updates
+\item \code{TIMEOUT_SET} (accepts a number, representing seconds): Updates
 the worker timeout - the length of time after which it will exit
 if it has not processed a task.
 \item \code{TIMEOUT_GET} (no args): Tells the worker to respond with its
@@ -313,14 +313,14 @@ loop.}
 \if{html}{\out{<a id="method-lapply"></a>}}
 \if{latex}{\out{\hypertarget{method-lapply}{}}}
 \subsection{Method \code{lapply()}}{
-Apply a function over a list of of data. This is
+Apply a function over a list of data. This is
 equivalent to using \verb{$enqueue()} over each element in the list.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$lapply(
   x,
   fun,
   ...,
-  DOTS = NULL,
+  dots = NULL,
   envir = parent.frame(),
   timeout = Inf,
   time_poll = NULL,
@@ -337,7 +337,7 @@ equivalent to using \verb{$enqueue()} over each element in the list.
 
 \item{\code{...}}{Additional arguments to \code{fun}}
 
-\item{\code{DOTS}}{As an alternative to \code{...}, you can provide the dots
+\item{\code{dots}}{As an alternative to \code{...}, you can provide the dots
 as a list of additional arguments. This may be easier to program
 against.}
 
@@ -371,7 +371,7 @@ be copied over rather than using their names if possible.
   x,
   fun,
   ...,
-  DOTS = NULL,
+  dots = NULL,
   envir = parent.frame(),
   timeout = Inf,
   time_poll = NULL,
@@ -388,7 +388,7 @@ be copied over rather than using their names if possible.
 
 \item{\code{...}}{Additional arguments to \code{fun}}
 
-\item{\code{DOTS}}{As an alternative to \code{...}, you can provide the dots
+\item{\code{dots}}{As an alternative to \code{...}, you can provide the dots
 as a list of additional arguments. This may be easier to program
 against.}
 
@@ -923,7 +923,7 @@ acknowledge the message and stop (only has an effect if \code{type}
 is \code{message}).}
 
 \item{\code{time_poll}}{If \code{type} is \code{message} and \code{timeout} is greater
-than zero, this is the polling interval used beween redis calls.
+than zero, this is the polling interval used between redis calls.
 Increasing this reduces network load but decreases the ability
 to interrupt the process.}
 
@@ -940,7 +940,7 @@ workers, and interacts with other parameters. The strategies used by
 the different values are:
 \itemize{
 \item \code{message}, in which case a \code{STOP} message will be sent to the
-worker, which they will recieve after finishing any currently
+worker, which they will receive after finishing any currently
 running task (if \code{RUNNING}; \code{IDLE} workers will stop immediately).
 \item \code{kill}, in which case a kill signal will be sent via the heartbeat
 (if the worker is using one). This will kill the worker even if
@@ -979,7 +979,7 @@ care otherwise.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{worker_id}}{The worker for which the log is reqiured}
+\item{\code{worker_id}}{The worker for which the log is required}
 }
 \if{html}{\out{</div>}}
 }
@@ -1013,7 +1013,7 @@ killed with an interrupt.  The default should be good for most
 uses, but shorter values are used for debugging.}
 
 \item{\code{timeout}}{Optional timeout to set for the worker.  This is
-(roughly) quivalent to issuing a \code{TIMEOUT_SET} message
+(roughly) equivalent to issuing a \code{TIMEOUT_SET} message
 after initialising the worker, except that it's guaranteed to be
 run by all workers.}
 
@@ -1062,7 +1062,7 @@ Return the value of a of worker configuration saved by
 \describe{
 \item{\code{name}}{Name of the configuration
 Report on worker "load" (the number of workers being used over
-time). Rertuns an object of class \code{worker_load}, for which a
+time). Reruns an object of class \code{worker_load}, for which a
 \code{mean} method exists (this method is a work in progress and the
 interface may change).}
 }
@@ -1172,11 +1172,11 @@ named by worker id.}
 after retrieval}
 
 \item{\code{timeout}}{Integer, representing seconds to wait until the
-response has been recieved. An error will be thrown if a
-response has not been recieved in this time.}
+response has been received. An error will be thrown if a
+response has not been received in this time.}
 
 \item{\code{time_poll}}{If \code{timeout} is greater
-than zero, this is the polling interval used beween redis calls.
+than zero, this is the polling interval used between redis calls.
 Increasing this reduces network load but increases the time that
 may be waited for.}
 
@@ -1244,11 +1244,11 @@ named by worker id.}
 after retrieval}
 
 \item{\code{timeout}}{Integer, representing seconds to wait until the
-response has been recieved. An error will be thrown if a
-response has not been recieved in this time.}
+response has been received. An error will be thrown if a
+response has not been received in this time.}
 
 \item{\code{time_poll}}{If \code{timeout} is greater
-than zero, this is the polling interval used beween redis calls.
+than zero, this is the polling interval used between redis calls.
 Increasing this reduces network load but increases the time that
 may be waited for.}
 

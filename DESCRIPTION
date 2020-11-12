@@ -22,3 +22,4 @@ RoxygenNote: 7.1.1
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Remotes: mrc-ide/heartbeatr
+Language: en-GB
