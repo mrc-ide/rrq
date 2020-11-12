@@ -75,6 +75,46 @@
 ##' * `TIMEOUT_GET` (no args): Tells the worker to respond with its
 ##'   current timeout.
 ##'
+##' @section Bulk interface (`lapply`):
+##'
+##' The bulk interface is a bit more complicated than the basic
+##'   `enqueue` interface. In the majority of cases you can ignore the
+##'   details and use the `lapply` method in much the same way as you
+##'   would in normal R. Assuming that `obj` is your `rrq_controller`
+##'   object, you might write:
+##'
+##' ```
+##' ans <- obj$lapply(1:10, sqrt)
+##' ```
+##'
+##' which will return the same thing as `lapply(1:10, sqrt)` (provided
+##'   that you have a Redis server running and workers registered)
+##'
+##' There is some sleight of hand here, though as we need to identify
+##'   that it is the *symbol* `sqrt` that matters there corresponding
+##'   to the builtin [sqrt] function. You can make this more explicit
+##'   by passing in the name of the function using `$lapply_()`
+##'
+##' ```
+##' ans <- obj$lapply(1:10, quote(sqrt))
+##' ```
+##'
+##' The same treatment applies to the dots; this is allowed:
+##'
+##' ```
+##' b <- 2
+##' ans <- obj$lapply(1:10, log, base = b)
+##' ```
+##'
+##' But this will look up the bindings of `log` and `b` in the context
+##'   in which the call is made. This may not always do what is
+##'   expected, so you can use the names directly:
+##'
+##' ```
+##' b <- 2
+##' ans <- obj$lapply_(1:10, quote(log), base = quote(b))
+##' ```
+##'
 ##' @export
 rrq_controller <- function(queue_id, con = redux::hiredis()) {
   assert_scalar_character(queue_id)
@@ -201,6 +241,99 @@ rrq_controller_ <- R6::R6Class(
       task_submit(self$con, self$keys, dat, key_complete)
     },
 
+    ##' @description Apply a function over a list of data. This is
+    ##' equivalent to using `$enqueue()` over each element in the list.
+    ##'
+    ##' @param x A list of data to apply our function against
+    ##'
+    ##' @param fun A function to be applied to each element of `x`
+    ##'
+    ##' @param ... Additional arguments to `fun`
+    ##'
+    ##' @param DOTS As an alternative to `...`, you can provide the dots
+    ##'   as a list of additional arguments. This may be easier to program
+    ##'   against.
+    ##'
+    ##' @param envir The environment to use to try and find the function
+    ##'
+    ##' @param timeout Optional timeout, in seconds, after which an
+    ##'   error will be thrown if the task has not completed.
+    ##'
+    ##' @param time_poll Optional time with which to "poll" for
+    ##'   completion.
+    ##'
+    ##' @param progress Optional logical indicating if a progress bar
+    ##'   should be displayed. If `NULL` we fall back on the value of the
+    ##'   global option `rrq.progress`, and if that is unset display a
+    ##'   progress bar if in an interactive session.
+    lapply = function(x, fun, ..., DOTS = NULL,
+                      envir = parent.frame(),
+                      timeout = Inf, time_poll = NULL, progress = NULL) {
+      if (is.null(DOTS)) {
+        DOTS <- as.list(substitute(list(...)))[-1L]
+      }
+      self$lapply_(x, substitute(fun), DOTS = DOTS, envir = envir,
+                   timeout = timeout, time_poll = time_poll, progress = NULL)
+    },
+
+    ##' @description The "standard evaluation" version of `$lapply()`.
+    ##' This differs in how the function is found and how dots are passed.
+    ##' With this version, both are passed by value; this may create more
+    ##' overhead on the redis server as the values of the variables will
+    ##' be copied over rather than using their names if possible.
+    ##'
+    ##' @param x A list of data to apply our function against
+    ##'
+    ##' @param fun A function to be applied to each element of `x`
+    ##'
+    ##' @param ... Additional arguments to `fun`
+    ##'
+    ##' @param DOTS As an alternative to `...`, you can provide the dots
+    ##'   as a list of additional arguments. This may be easier to program
+    ##'   against.
+    ##'
+    ##' @param envir The environment to use to try and find the function
+    ##'
+    ##' @param timeout Optional timeout, in seconds, after which an
+    ##'   error will be thrown if the task has not completed. If a
+    ##'   timeout is given as `0`, then we return a handle that can be used
+    ##'   to check for tasks using `bulk_wait`
+    ##'
+    ##' @param time_poll Optional time with which to "poll" for
+    ##'   completion.
+    ##'
+    ##' @param progress Optional logical indicating if a progress bar
+    ##'   should be displayed. If `NULL` we fall back on the value of the
+    ##'   global option `rrq.progress`, and if that is unset display a
+    ##'   progress bar if in an interactive session.
+    lapply_ = function(x, fun, ..., DOTS = NULL,
+                       envir = parent.frame(),
+                       timeout = Inf, time_poll = NULL, progress = NULL) {
+      if (is.null(DOTS)) {
+        DOTS <- list(...)
+      }
+      rrq_lapply(self$con, self$keys, self$db, x, fun, DOTS, envir,
+                 timeout, time_poll, progress)
+    },
+
+    ##' @description Wait for a group of tasks
+    ##'
+    ##' @param x An object of class `rrq_bulk`, as created by `$lapply()`
+    ##'
+    ##' @param timeout Optional timeout, in seconds, after which an
+    ##'   error will be thrown if the task has not completed.
+    ##'
+    ##' @param time_poll Optional time with which to "poll" for
+    ##'   completion.
+    ##'
+    ##' @param progress Optional logical indicating if a progress bar
+    ##'   should be displayed. If `NULL` we fall back on the value of the
+    ##'   global option `rrq.progress`, and if that is unset display a
+    ##'   progress bar if in an interactive session.
+    bulk_wait = function(x, timeout = Inf, time_poll = NULL,
+                         progress = NULL) {
+      rrq_bulk_wait(self$con, self$keys, x, timeout, time_poll, progress)
+    },
 
     ##' @description List ids of all tasks known to this rrq controller
     task_list = function() {

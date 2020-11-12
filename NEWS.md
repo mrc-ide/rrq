@@ -1,3 +1,7 @@
+# rrq 0.2.9
+
+* `$lapply` and friends restored after being removed during the refactor for version 0.2.0 (mrc-558)
+
 # rrq 0.2.8
 
 * Expand documentation (mrc-1800)
