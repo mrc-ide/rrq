@@ -487,6 +487,9 @@ rrq_controller_ <- R6::R6Class(
     ##' interrupted if it supports this.
     ##'
     ##' @param task_id Id of the task to cancel
+    ##' 
+    ##' @return TRUE if successfully cancelled, otherwise throws an error with
+    ##' task_id and status e.g. Task 123 is not running (MISSING)
     task_cancel = function(task_id) {
       task_cancel(self$con, self$keys, task_id)
     },
