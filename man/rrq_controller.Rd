@@ -706,6 +706,10 @@ interrupted if it supports this.
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+TRUE if successfully cancelled, otherwise throws an error with
+task_id and status e.g. Task 123 is not running (MISSING)
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-task_data"></a>}}
