@@ -1,3 +1,7 @@
+# rrq 0.2.10
+
+* Gracefully detect multiple killed workers (#22, reported by @MartinHanewald)
+
 # rrq 0.2.9
 
 * `$lapply` and friends restored after being removed during the refactor for version 0.2.0 (mrc-558)
