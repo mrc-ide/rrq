@@ -230,6 +230,8 @@ test_that("detecting output with clean exit is quiet", {
   expect_null(res$value)
 
   obj$worker_stop(wid)
+
+  Sys.sleep(3)
   expect_silent(res <- withVisible(obj$worker_detect_exited()))
   expect_false(res$visible)
   expect_null(res$value)
