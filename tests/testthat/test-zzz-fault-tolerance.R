@@ -288,3 +288,36 @@ test_that("detect killed worker (via heartbeat)", {
   expect_silent(res <- obj$worker_detect_exited())
   expect_null(res)
 })
+
+
+## See https://github.com/mrc-ide/rrq/issues/22
+test_that("detect multiple killed workers", {
+  skip_if_not_installed("heartbeatr")
+  obj <- test_rrq("myfuns.R")
+
+  res <- obj$worker_config_save("localhost", time_poll = 1,
+                                heartbeat_period = 1)
+
+  wid <- test_worker_spawn(obj, n = 2)
+  pid <- vnapply(obj$worker_info()[wid], "[[", "pid")
+
+  t1 <- obj$enqueue(slowdouble(10000))
+  t2 <- obj$enqueue(slowdouble(10000))
+  wait_status(t1, obj, status = TASK_PENDING)
+  wait_status(t2, obj, status = TASK_PENDING)
+
+  tools::pskill(pid[[1]], tools::SIGTERM)
+  tools::pskill(pid[[2]], tools::SIGTERM)
+
+  expire <- res$heartbeat_period * 3
+  Sys.sleep(expire)
+
+  res <- obj$worker_detect_exited()
+
+  expect_equal(length(res), 2)
+  expect_setequal(names(res), wid)
+  expect_setequal(unname(res), c(t1, t2))
+
+  expect_silent(res <- obj$worker_detect_exited())
+  expect_null(res)
+})

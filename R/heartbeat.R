@@ -46,10 +46,12 @@ cleanup_orphans <- function(obj, time) {
       "Orphaning %s %s:\n%s",
       length(task_id), ngettext(sum(i), "task", "tasks"),
       paste0("  - ", task_id, collapse = "\n")))
-    obj$con$HMSET(obj$keys$task_status, task_id[i], TASK_ORPHAN)
+    obj$con$HMSET(obj$keys$task_status, task_id[i],
+                  rep(TASK_ORPHAN, sum(i)))
   }
 
-  obj$con$HMSET(obj$keys$worker_status, worker_id, WORKER_LOST)
+  obj$con$HMSET(obj$keys$worker_status, worker_id,
+                rep(WORKER_LOST, length(worker_id)))
   obj$con$SREM(obj$keys$worker_name, worker_id)
 
   invisible(task_id)
