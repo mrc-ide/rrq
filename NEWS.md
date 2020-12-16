@@ -1,3 +1,7 @@
+# rrq 0.2.11
+
+* Support for multiple queues, with varying priorities. This can be used to create workers that listen to overlapping queues, with "fast" and "slow" queues (mrc-2068)
+
 # rrq 0.2.10
 
 * Gracefully detect multiple killed workers (#22, reported by @MartinHanewald)
