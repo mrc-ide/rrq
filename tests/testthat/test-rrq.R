@@ -336,3 +336,30 @@ test_that("get task data errors appropriately if task is missing", {
     obj$task_data(id),
     "Task '[[:xdigit:]]+' not found")
 })
+
+
+test_that("a worker will pick up tasks from the priority queue", {
+  obj <- test_rrq("myfuns.R")
+  obj$worker_config_save("localhost", queue = c("a", "b"))
+  w <- test_worker_blocking(obj)
+
+  t1 <- obj$enqueue(sin(1))
+  t2 <- obj$enqueue(sin(2), queue = "b")
+  t3 <- obj$enqueue(sin(3), queue = "a")
+
+  expect_equal(unname(obj$task_status(c(t1, t2, t3))),
+               rep("PENDING", 3))
+  expect_equal(obj$queue_list(), t1)
+  expect_equal(obj$queue_list("b"), t2)
+  expect_equal(obj$queue_list("a"), t3)
+
+  w$step(TRUE)
+  expect_equal(unname(obj$task_status(c(t1, t2, t3))),
+               c("PENDING", "PENDING", "COMPLETE"))
+  w$step(TRUE)
+  expect_equal(unname(obj$task_status(c(t1, t2, t3))),
+               c("PENDING", "COMPLETE", "COMPLETE"))
+  w$step(TRUE)
+  expect_equal(unname(obj$task_status(c(t1, t2, t3))),
+               c("COMPLETE", "COMPLETE", "COMPLETE"))
+})

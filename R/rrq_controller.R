@@ -217,8 +217,15 @@ rrq_controller_ <- R6::R6Class(
     ##' @param key_complete The name of a Redis key to write to once the
     ##'   task is complete. You can use this with `$task_wait` to efficiently
     ##'   wait for the task to complete (i.e., without using a busy loop).
-    enqueue = function(expr, envir = parent.frame(), key_complete = NULL) {
-      self$enqueue_(substitute(expr), envir, key_complete)
+    ##'
+    ##' @param queue The queue to add the task to; if not specified the
+    ##'   "default" queue (which all workers listen to) will be
+    ##'   used. If you have configured workers to listen to more than
+    ##'   one queue you can specify that here. Be warned that if you
+    ##'   push jobs onto a queue with no worker, it will queue forever.
+    enqueue = function(expr, envir = parent.frame(), key_complete = NULL,
+                       queue = NULL) {
+      self$enqueue_(substitute(expr), envir, key_complete, queue)
     },
 
     ##' @description Queue an expression
@@ -236,9 +243,16 @@ rrq_controller_ <- R6::R6Class(
     ##'   task is complete. You can use this in conjunction with something
     ##'   like `BLPOP` to wait until a task is complete without a busy (sleep)
     ##'   loop.
-    enqueue_ = function(expr, envir = parent.frame(), key_complete = NULL) {
+    ##'
+    ##' @param queue The queue to add the task to; if not specified the
+    ##'   "default" queue (which all workers listen to) will be
+    ##'   used. If you have configured workers to listen to more than
+    ##'   one queue you can specify that here. Be warned that if you
+    ##'   push jobs onto a queue with no worker, it will queue forever.
+    enqueue_ = function(expr, envir = parent.frame(), key_complete = NULL,
+                        queue = NULL) {
       dat <- expression_prepare(expr, envir, NULL, self$db)
-      task_submit(self$con, self$keys, dat, key_complete)
+      task_submit(self$con, self$keys, dat, key_complete, queue)
     },
 
     ##' @description Apply a function over a list of data. This is
@@ -266,14 +280,18 @@ rrq_controller_ <- R6::R6Class(
     ##'   should be displayed. If `NULL` we fall back on the value of the
     ##'   global option `rrq.progress`, and if that is unset display a
     ##'   progress bar if in an interactive session.
+    ##'
+    ##' @param queue The queue to add the tasks to (see `$enqueue` for
+    ##'   details).
     lapply = function(x, fun, ..., dots = NULL,
-                      envir = parent.frame(),
+                      envir = parent.frame(), queue = NULL,
                       timeout = Inf, time_poll = NULL, progress = NULL) {
       if (is.null(dots)) {
         dots <- as.list(substitute(list(...)))[-1L]
       }
       self$lapply_(x, substitute(fun), dots = dots, envir = envir,
-                   timeout = timeout, time_poll = time_poll, progress = NULL)
+                   queue = queue, timeout = timeout, time_poll = time_poll,
+                   progress = NULL)
     },
 
     ##' @description The "standard evaluation" version of `$lapply()`.
@@ -306,13 +324,16 @@ rrq_controller_ <- R6::R6Class(
     ##'   should be displayed. If `NULL` we fall back on the value of the
     ##'   global option `rrq.progress`, and if that is unset display a
     ##'   progress bar if in an interactive session.
+    ##'
+    ##' @param queue The queue to add the tasks to (see `$enqueue` for
+    ##'   details).
     lapply_ = function(x, fun, ..., dots = NULL,
-                       envir = parent.frame(),
+                       envir = parent.frame(), queue = NULL,
                        timeout = Inf, time_poll = NULL, progress = NULL) {
       if (is.null(dots)) {
         dots <- list(...)
       }
-      rrq_lapply(self$con, self$keys, self$db, x, fun, dots, envir,
+      rrq_lapply(self$con, self$keys, self$db, x, fun, dots, envir, queue,
                  timeout, time_poll, progress)
     },
 
@@ -379,8 +400,11 @@ rrq_controller_ <- R6::R6Class(
     ##'   A task will take value `missing` if it is running, complete,
     ##'   errored etc and a positive integer if it is in the queue,
     ##'   indicating its position (with 1) being the next task to run.
-    task_position = function(task_ids, missing = 0L) {
-      task_position(self$con, self$keys, task_ids, missing)
+    ##'
+    ##' @param queue The name of the queue to query (defaults to the
+    ##'   "default" queue).
+    task_position = function(task_ids, missing = 0L, queue = NULL) {
+      task_position(self$con, self$keys, task_ids, missing, queue)
     },
 
     ##' @description Get the result for a single task (see `$tasks_result`
@@ -503,26 +527,36 @@ rrq_controller_ <- R6::R6Class(
 
     ##' @description Returns the number of tasks in the queue (waiting for
     ##' an available worker).
-    queue_length = function() {
-      self$con$LLEN(self$keys$queue)
+    ##'
+    ##' @param queue The name of the queue to query (defaults to the
+    ##'   "default" queue).
+    queue_length = function(queue = NULL) {
+      self$con$LLEN(rrq_key_queue(self$keys$queue_id, queue))
     },
 
     ##' @description Returns the keys in the task queue.
-    queue_list = function() {
-      list_to_character(self$con$LRANGE(self$keys$queue, 0, -1))
+    ##'
+    ##' @param queue The name of the queue to query (defaults to the
+    ##'   "default" queue).
+    queue_list = function(queue = NULL) {
+      key_queue <- rrq_key_queue(self$keys$queue_id, queue)
+      list_to_character(self$con$LRANGE(key_queue, 0, -1))
     },
 
     ##' @description Remove task ids from a queue.
     ##'
     ##' @param task_ids Task ids to remove
-    queue_remove = function(task_ids) {
+    ##'
+    ##' @param queue The name of the queue to query (defaults to the
+    ##'   "default" queue).
+    queue_remove = function(task_ids, queue = NULL) {
       ## NOTE: uses a pipeline to avoid a race condition - nothing may
       ## interere with the queue between the LRANGE and the DEL or we
       ## might lose tasks or double-queue them. If a job is queued
       ## between the DEL and the RPUSH the newly submitted job gets
       ## bounced ahead in the queue, which seems tolerable but might not
       ## always be ideal.  To solve this we should use a lua script.
-      queue_remove(self$con, self$keys, task_ids)
+      queue_remove(self$con, self$keys, task_ids, queue %||% QUEUE_DEFAULT)
     },
 
     ##' @description Returns the number of active workers
@@ -670,6 +704,14 @@ rrq_controller_ <- R6::R6Class(
     ##'   after initialising the worker, except that it's guaranteed to be
     ##'   run by all workers.
     ##'
+    ##' @param queue Optional character vector of queues to listen on
+    ##'   for jobs. There is a default queue which is always listened
+    ##'   on (called 'default'). You can specify additional names here
+    ##'   and jobs put onto these queues with `$enqueue()` will have
+    ##'   *higher* priority than the default. You can explicitly list
+    ##'   the "default" queue (e.g., `queue = c("high", "default",
+    ##'   "low")`) to set the position of the default queue.
+    ##'
     ##' @param heartbeat_period Optional period for the heartbeat.  If
     ##'   non-NULL then a heartbeat process will be started (using the
     ##'   \code{heartbeatr} package) which can be used to build fault
@@ -686,9 +728,9 @@ rrq_controller_ <- R6::R6Class(
     ##'   `overwrite = FALSE` and the configuration exists an error will
     ##'   be thrown).
     worker_config_save = function(name, time_poll = NULL, timeout = NULL,
-                                  heartbeat_period = NULL, verbose = NULL,
-                                  overwrite = TRUE) {
-      worker_config_save(self$con, self$keys, name, time_poll, timeout,
+                                  queue = NULL, heartbeat_period = NULL,
+                                  verbose = NULL, overwrite = TRUE) {
+      worker_config_save(self$con, self$keys, name, time_poll, timeout, queue,
                          heartbeat_period, verbose, overwrite)
     },
 
@@ -856,13 +898,14 @@ task_overview <- function(con, keys, task_ids) {
 ##
 ## A better way would possibly be to use a LUA script; especially for
 ## the case where there is a single job that'd be fairly easy to do.
-task_position <- function(con, keys, task_ids, missing) {
-  queue <- vcapply(con$LRANGE(keys$queue, 0, -1L), identity)
-  match(task_ids, queue, missing)
+task_position <- function(con, keys, task_ids, missing, queue) {
+  key_queue <- rrq_key_queue(keys$queue_id, queue)
+  queue_contents <- vcapply(con$LRANGE(key_queue, 0, -1L), identity)
+  match(task_ids, queue_contents, missing)
 }
 
-task_submit <- function(con, keys, dat, key_complete) {
-  task_submit_n(con, keys, list(object_to_bin(dat)), key_complete)
+task_submit <- function(con, keys, dat, key_complete, queue) {
+  task_submit_n(con, keys, list(object_to_bin(dat)), key_complete, queue)
 }
 
 task_delete <- function(con, keys, task_ids, check = TRUE) {
@@ -880,7 +923,9 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
     redis$HDEL(keys$task_complete, task_ids),
     redis$HDEL(keys$task_progress, task_ids),
     redis$HDEL(keys$task_worker,   task_ids))
-  queue_remove(con, keys, task_ids)
+  queue <- list_to_character(con$HMGET(keys$task_queue, task_ids))
+  queue_remove(con, keys, task_ids, queue)
+
   invisible()
 }
 
@@ -965,9 +1010,11 @@ task_data <- function(con, keys, db, task_id) {
 }
 
 
-task_submit_n <- function(con, keys, dat, key_complete) {
+task_submit_n <- function(con, keys, dat, key_complete, queue) {
   n <- length(dat)
   task_ids <- ids::random_id(n)
+  queue <- queue %||% QUEUE_DEFAULT
+  key_queue <- rrq_key_queue(keys$queue_id, queue)
 
   con$pipeline(
     if (!is.null(key_complete)) {
@@ -975,7 +1022,8 @@ task_submit_n <- function(con, keys, dat, key_complete) {
     },
     redis$HMSET(keys$task_expr, task_ids, dat),
     redis$HMSET(keys$task_status, task_ids, rep_len(TASK_PENDING, n)),
-    redis$RPUSH(keys$queue, task_ids))
+    redis$HMSET(keys$task_queue, task_ids, rep_len(queue, n)),
+    redis$RPUSH(key_queue, task_ids))
 
   task_ids
 }
@@ -1227,17 +1275,23 @@ rrq_db <- function(con, keys) {
 }
 
 
-queue_remove <- function(con, keys, task_ids) {
+queue_remove <- function(con, keys, task_ids, queue) {
   if (length(task_ids) == 0) {
     return(invisible(logical(0)))
   }
+  if (length(queue) > 1) {
+    tmp <- split(task_ids, queue)
+    res <- Map(function(i, q) i[queue_remove(con, keys, i, q)], tmp, names(tmp))
+    return(invisible(task_ids %in% unlist(res)))
+  }
+  key_queue <- rrq_key_queue(keys$queue_id, queue)
   res <- con$pipeline(
-    redux::redis$LRANGE(keys$queue, 0, -1),
-    redux::redis$DEL(keys$queue))
+    redux::redis$LRANGE(key_queue, 0, -1),
+    redux::redis$DEL(key_queue))
   ids <- list_to_character(res[[1L]])
   keep <- !(ids %in% task_ids)
   if (any(keep)) {
-    con$RPUSH(keys$queue, ids[keep])
+    con$RPUSH(key_queue, ids[keep])
   }
   invisible(task_ids %in% ids)
 }

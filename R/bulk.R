@@ -1,6 +1,6 @@
-rrq_lapply <- function(con, keys, db, x, fun, dots, envir,
+rrq_lapply <- function(con, keys, db, x, fun, dots, envir, queue,
                        timeout, time_poll, progress) {
-  dat <- rrq_lapply_submit(con, keys, db, x, fun, dots, envir)
+  dat <- rrq_lapply_submit(con, keys, db, x, fun, dots, envir, queue)
   if (timeout == 0) {
     return(dat)
   }
@@ -8,10 +8,10 @@ rrq_lapply <- function(con, keys, db, x, fun, dots, envir,
 }
 
 
-rrq_lapply_submit <- function(con, keys, db, x, fun, dots, envir) {
+rrq_lapply_submit <- function(con, keys, db, x, fun, dots, envir, queue) {
   dat <- rrq_lapply_prepare(db, x, fun, dots, envir)
-  key_complete <- rrq_key_task_complete(keys$queue)
-  task_ids <- task_submit_n(con, keys, dat, key_complete)
+  key_complete <- rrq_key_task_complete(keys$queue_id)
+  task_ids <- task_submit_n(con, keys, dat, key_complete, queue)
   ret <- list(task_ids = task_ids, key_complete = key_complete,
               names = names(x))
   class(ret) <- "rrq_bulk"
