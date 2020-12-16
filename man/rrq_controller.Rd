@@ -260,7 +260,12 @@ message to all workers to update their environment.}
 \subsection{Method \code{enqueue()}}{
 Queue an expression
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$enqueue(expr, envir = parent.frame(), key_complete = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$enqueue(
+  expr,
+  envir = parent.frame(),
+  key_complete = NULL,
+  queue = NULL
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -276,6 +281,12 @@ the value of \code{a} to the worker along with the expression.}
 \item{\code{key_complete}}{The name of a Redis key to write to once the
 task is complete. You can use this with \verb{$task_wait} to efficiently
 wait for the task to complete (i.e., without using a busy loop).}
+
+\item{\code{queue}}{The queue to add the task to; if not specified the
+"default" queue (which all workers listen to) will be
+used. If you have configured workers to listen to more than
+one queue you can specify that here. Be warned that if you
+push jobs onto a queue with no worker, it will queue forever.}
 }
 \if{html}{\out{</div>}}
 }
@@ -286,7 +297,12 @@ wait for the task to complete (i.e., without using a busy loop).}
 \subsection{Method \code{enqueue_()}}{
 Queue an expression
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$enqueue_(expr, envir = parent.frame(), key_complete = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$enqueue_(
+  expr,
+  envir = parent.frame(),
+  key_complete = NULL,
+  queue = NULL
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -305,6 +321,12 @@ the value of \code{a} to the worker along with the expression.}
 task is complete. You can use this in conjunction with something
 like \code{BLPOP} to wait until a task is complete without a busy (sleep)
 loop.}
+
+\item{\code{queue}}{The queue to add the task to; if not specified the
+"default" queue (which all workers listen to) will be
+used. If you have configured workers to listen to more than
+one queue you can specify that here. Be warned that if you
+push jobs onto a queue with no worker, it will queue forever.}
 }
 \if{html}{\out{</div>}}
 }
@@ -322,6 +344,7 @@ equivalent to using \verb{$enqueue()} over each element in the list.
   ...,
   dots = NULL,
   envir = parent.frame(),
+  queue = NULL,
   timeout = Inf,
   time_poll = NULL,
   progress = NULL
@@ -342,6 +365,9 @@ as a list of additional arguments. This may be easier to program
 against.}
 
 \item{\code{envir}}{The environment to use to try and find the function}
+
+\item{\code{queue}}{The queue to add the tasks to (see \verb{$enqueue} for
+details).}
 
 \item{\code{timeout}}{Optional timeout, in seconds, after which an
 error will be thrown if the task has not completed.}
@@ -373,6 +399,7 @@ be copied over rather than using their names if possible.
   ...,
   dots = NULL,
   envir = parent.frame(),
+  queue = NULL,
   timeout = Inf,
   time_poll = NULL,
   progress = NULL
@@ -393,6 +420,9 @@ as a list of additional arguments. This may be easier to program
 against.}
 
 \item{\code{envir}}{The environment to use to try and find the function}
+
+\item{\code{queue}}{The queue to add the tasks to (see \verb{$enqueue} for
+details).}
 
 \item{\code{timeout}}{Optional timeout, in seconds, after which an
 error will be thrown if the task has not completed. If a
@@ -515,7 +545,7 @@ all task ids known to this rrq controller is used.}
 \subsection{Method \code{task_position()}}{
 Find the position of one or more tasks in the queue.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_position(task_ids, missing = 0L)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_position(task_ids, missing = 0L, queue = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -527,6 +557,9 @@ Find the position of one or more tasks in the queue.
 A task will take value \code{missing} if it is running, complete,
 errored etc and a positive integer if it is in the queue,
 indicating its position (with 1) being the next task to run.}
+
+\item{\code{queue}}{The name of the queue to query (defaults to the
+"default" queue).}
 }
 \if{html}{\out{</div>}}
 }
@@ -736,9 +769,17 @@ Fetch internal data about a task from Redis
 Returns the number of tasks in the queue (waiting for
 an available worker).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$queue_length()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$queue_length(queue = NULL)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{queue}}{The name of the queue to query (defaults to the
+"default" queue).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-queue_list"></a>}}
@@ -746,9 +787,17 @@ an available worker).
 \subsection{Method \code{queue_list()}}{
 Returns the keys in the task queue.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$queue_list()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$queue_list(queue = NULL)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{queue}}{The name of the queue to query (defaults to the
+"default" queue).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-queue_remove"></a>}}
@@ -756,13 +805,16 @@ Returns the keys in the task queue.
 \subsection{Method \code{queue_remove()}}{
 Remove task ids from a queue.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$queue_remove(task_ids)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$queue_remove(task_ids, queue = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{task_ids}}{Task ids to remove}
+
+\item{\code{queue}}{The name of the queue to query (defaults to the
+"default" queue).}
 }
 \if{html}{\out{</div>}}
 }
@@ -1000,6 +1052,7 @@ correspond to arguments to \link{rrq_worker}.
   name,
   time_poll = NULL,
   timeout = NULL,
+  queue = NULL,
   heartbeat_period = NULL,
   verbose = NULL,
   overwrite = TRUE
@@ -1020,6 +1073,13 @@ uses, but shorter values are used for debugging.}
 (roughly) equivalent to issuing a \code{TIMEOUT_SET} message
 after initialising the worker, except that it's guaranteed to be
 run by all workers.}
+
+\item{\code{queue}}{Optional character vector of queues to listen on
+for jobs. There is a default queue which is always listened
+on (called 'default'). You can specify additional names here
+and jobs put onto these queues with \verb{$enqueue()} will have
+\emph{higher} priority than the default. You can explicitly list
+the "default" queue (e.g., \code{queue = c("high", "default", "low")}) to set the position of the default queue.}
 
 \item{\code{heartbeat_period}}{Optional period for the heartbeat.  If
 non-NULL then a heartbeat process will be started (using the
