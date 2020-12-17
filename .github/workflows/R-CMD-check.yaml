@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+      - mrc-2068-control
   pull_request:
     branches:
       - main
