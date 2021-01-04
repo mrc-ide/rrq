@@ -26,9 +26,6 @@ rrq_keys_common <- function(queue_id) {
        worker_expect  = sprintf("%s:worker:expect",  queue_id),
        worker_process = sprintf("%s:worker:process", queue_id),
 
-       ## This will be removed
-       queue          = sprintf("%s:queue",          queue_id),
-
        task_expr      = sprintf("%s:task:expr",      queue_id),
        task_status    = sprintf("%s:task:status",    queue_id),
        task_worker    = sprintf("%s:task:worker",    queue_id),
