@@ -33,6 +33,8 @@ test_that("interrupt stuck worker (local)", {
   skip_on_os("windows")
   ## This fails on covr with the worker disappearing
   skip_on_covr()
+  ## Fails on CI too, at least for ubuntu/R-devel; mrc-2094
+  skip_on_ci()
 
   obj <- test_rrq("myfuns.R")
 
