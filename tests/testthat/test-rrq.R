@@ -367,8 +367,6 @@ test_that("a worker will pick up tasks from the priority queue", {
 
 test_that("Query jobs in different queues", {
   obj <- test_rrq("myfuns.R")
-  # obj$worker_config_save("localhost", queue = c("a", "b"))
-  # w <- test_worker_blocking(obj)
 
   t1 <- obj$enqueue(sin(1), queue = "a")
   t2 <- obj$enqueue(sin(2), queue = "a")
