@@ -312,7 +312,7 @@ worker_catch_interrupt <- function(worker) {
   force(worker)
 
   queue_type <- set_names(
-    c("message", "queue"),
+    c("message", rep("queue", length(worker$queue))),
     c(worker$keys$worker_message, worker$queue))
 
   function(e) {

@@ -82,3 +82,20 @@ test_that("lapply blocking", {
   res <- obj$lapply(1:10, sqrt, timeout = 1)
   expect_equal(res, as.list(sqrt(1:10)), timeout = 10)
 })
+
+
+test_that("lapply to alt queue", {
+  obj <- test_rrq()
+  obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
+                         time_poll = 1, overwrite = TRUE, queue = "a")
+  w <- test_worker_blocking(obj)
+
+  grp <- obj$lapply_(1:10, quote(log), dots = list(base = 2), timeout = 0,
+                     queue = "a")
+  expect_equal(obj$queue_length("a"), 10)
+  expect_equal(obj$queue_length(), 0)
+
+  w$loop(immediate = TRUE)
+
+  expect_equal(obj$bulk_wait(grp), as.list(log(1:10, base = 2)))
+})
