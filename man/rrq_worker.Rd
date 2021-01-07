@@ -9,6 +9,7 @@ rrq_worker(
   con = redux::hiredis(),
   key_alive = NULL,
   worker_name = NULL,
+  queue = NULL,
   time_poll = NULL,
   timeout = NULL,
   heartbeat_period = NULL,
@@ -26,6 +27,9 @@ worker is alive.}
 
 \item{worker_name}{Optional worker name.  If omitted, a random
 name will be created.}
+
+\item{queue}{Queues to listen on, listed in decreasing order of
+priority. If not given, we listen on the "default" queue.}
 
 \item{time_poll}{Poll time.  Longer values here will reduce the
 impact on the database but make workers less responsive to being

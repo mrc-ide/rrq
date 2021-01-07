@@ -9,7 +9,7 @@ rrq_worker_main <- function(args = commandArgs(TRUE)) {
 
 rrq_worker_main_args <- function(args) {
   doc <- "Usage:
-  rrq_worker [options] <queue>
+  rrq_worker [options] <id>
 
 Options:
 --config=NAME    Name of a worker configuration [default: localhost]
@@ -17,7 +17,7 @@ Options:
 --key-alive=KEY  Key to write to once alive (optional)"
   dat <- docopt::docopt(doc, args)
   names(dat) <- gsub("-", "_", names(dat), fixed = TRUE)
-  list(queue_id = dat$queue,
+  list(queue_id = dat$id,
        config = dat$config,
        name = dat$name,
        key_alive = dat[["key_alive"]])
@@ -33,6 +33,7 @@ rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
   rrq_worker_$new(con, queue_id,
                   key_alive = key_alive,
                   worker_name = worker_name,
+                  queue = config$queue,
                   time_poll = config$time_poll,
                   timeout = config$timeout,
                   heartbeat_period = config$heartbeat_period,

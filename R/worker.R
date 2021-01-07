@@ -33,13 +33,16 @@
 ##'   logs from the worker then it is wasted time.  Logging to the
 ##'   redis server is always enabled.
 ##'
+##' @param queue Queues to listen on, listed in decreasing order of
+##'   priority. If not given, we listen on the "default" queue.
+##'
 ##' @export
 rrq_worker <- function(queue_id, con = redux::hiredis(), key_alive = NULL,
-                       worker_name = NULL, time_poll = NULL,
-                       timeout = NULL,
+                       worker_name = NULL, queue = NULL,
+                       time_poll = NULL, timeout = NULL,
                        heartbeat_period = NULL, verbose = TRUE) {
-  w <- rrq_worker_$new(con, queue_id, key_alive, worker_name, time_poll,
-                       timeout, heartbeat_period, verbose)
+  w <- rrq_worker_$new(con, queue_id, key_alive, worker_name, queue,
+                       time_poll, timeout, heartbeat_period, verbose)
   w$loop()
   invisible()
 }
@@ -52,6 +55,7 @@ rrq_worker_ <- R6::R6Class(
     name = NULL,
     envir = NULL,
     keys = NULL,
+    queue = NULL,
     con = NULL,
     db = NULL,
     paused = FALSE,
@@ -66,7 +70,7 @@ rrq_worker_ <- R6::R6Class(
     active_task = NULL,
 
     initialize = function(con, queue_id, key_alive = NULL, worker_name = NULL,
-                          time_poll = NULL, timeout = NULL,
+                          queue = NULL, time_poll = NULL, timeout = NULL,
                           heartbeat_period = NULL, verbose = NULL) {
       assert_is(con, "redis_api")
 
@@ -74,6 +78,10 @@ rrq_worker_ <- R6::R6Class(
       self$name <- worker_name %||% ids::adjective_animal()
       self$keys <- rrq_keys(queue_id, self$name)
       self$verbose <- verbose
+
+      queue <- worker_queue(queue)
+      self$queue <- rrq_key_queue(queue_id, queue)
+      self$log("QUEUE", queue)
 
       if (self$con$SISMEMBER(self$keys$worker_name, self$name) == 1L) {
         stop("Looks like this worker exists already...")
@@ -110,7 +118,7 @@ rrq_worker_ <- R6::R6Class(
       if (self$paused) {
         keys <- keys$worker_message
       } else {
-        keys <- c(keys$worker_message, keys$queue)
+        keys <- c(keys$worker_message, self$queue)
       }
       self$loop_task <- blpop(self$con, keys, self$time_poll, immediate)
     },
@@ -166,6 +174,7 @@ worker_info_collect <- function(worker) {
               running = sys$running,
               hostname = hostname(),
               username = username(),
+              queue = worker$queue,
               wd = getwd(),
               pid = process_id(),
               redis_host = redis_config$host,
@@ -303,9 +312,8 @@ worker_catch_interrupt <- function(worker) {
   force(worker)
 
   queue_type <- set_names(
-    c("message", "queue"),
-    c(worker$keys$worker_message, worker$keys$queue))
-
+    c("message", rep("queue", length(worker$queue))),
+    c(worker$keys$worker_message, worker$queue))
 
   function(e) {
     ## NOTE: this won't recursively catch interrupts.  Especially
@@ -379,4 +387,17 @@ worker_log <- function(con, keys, label, value, verbose) {
     message(res$screen)
   }
   con$RPUSH(keys$worker_log, res$redis)
+}
+
+
+worker_queue <- function(queue) {
+  if (is.null(queue)) {
+    queue <- QUEUE_DEFAULT
+  } else {
+    assert_character(queue)
+    if (!(QUEUE_DEFAULT %in% queue)) {
+      queue <- c(queue, QUEUE_DEFAULT)
+    }
+  }
+  queue
 }

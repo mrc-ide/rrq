@@ -23,6 +23,8 @@ WORKER_BUSY <- "BUSY"
 WORKER_EXITED <- "EXITED"
 WORKER_LOST <- "LOST"
 WORKER_PAUSED <- "PAUSED"
+
+QUEUE_DEFAULT <- "default"
 ## nolint end
 
 version_info <- function(package = "rrq") {
