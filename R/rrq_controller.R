@@ -407,6 +407,19 @@ rrq_controller_ <- R6::R6Class(
       task_position(self$con, self$keys, task_ids, missing, queue)
     },
 
+    ##' @description List the tasks in front of `task_id` in the queue.
+    ##'   If the task is missing from the queue this will return NULL. If
+    ##'   the task is next in the queue this will return an empty character
+    ##'   vector.
+    ##'
+    ##' @param task_id Task to find the position for.
+    ##'
+    ##' @param queue The name of the queue to query (defaults to the
+    ##'   "default" queue).
+    task_preceeding = function(task_id, queue = NULL) {
+      task_preceeding(self$con, self$keys, task_id, queue)
+    },
+
     ##' @description Get the result for a single task (see `$tasks_result`
     ##'   for a method for efficiently getting multiple results at once).
     ##'   Returns the value of running the task if it is complete, and an
@@ -902,6 +915,16 @@ task_position <- function(con, keys, task_ids, missing, queue) {
   key_queue <- rrq_key_queue(keys$queue_id, queue)
   queue_contents <- vcapply(con$LRANGE(key_queue, 0, -1L), identity)
   match(task_ids, queue_contents, missing)
+}
+
+task_preceeding <- function(con, keys, task_id, queue) {
+  key_queue <- rrq_key_queue(keys$queue_id, queue)
+  queue_contents <- vcapply(con$LRANGE(key_queue, 0, -1L), identity)
+  task_position <- match(task_id, queue_contents)
+  if (is.na(task_position)) {
+    return(NULL)
+  }
+  queue_contents[seq_len(task_position - 1)]
 }
 
 task_submit <- function(con, keys, dat, key_complete, queue) {

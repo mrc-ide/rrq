@@ -95,6 +95,36 @@ test_that("task_position", {
                c(1L, NA_integer_))
 })
 
+test_that("task_preceeding", {
+  obj <- test_rrq("myfuns.R")
+
+  t1 <- obj$enqueue(sin(1))
+  t2 <- obj$enqueue(sin(1))
+  t3 <- obj$enqueue(sin(1))
+
+  expect_equal(obj$task_preceeding(t1), character(0))
+  expect_equal(obj$task_preceeding(t2), t1)
+  expect_equal(obj$task_preceeding(t3), c(t1, t2))
+  expect_null(obj$task_preceeding("not a real task"))
+
+  wid <- test_worker_spawn(obj)
+  obj$task_wait(t3)
+  expect_null(obj$task_preceeding(t3))
+})
+
+
+test_that("task_position and task_preceeding are consistent", {
+  obj <- test_rrq("myfuns.R")
+
+  t1 <- obj$enqueue(sin(1))
+  t2 <- obj$enqueue(sin(1))
+  t3 <- obj$enqueue(sin(1))
+
+  expect_equal(length(obj$task_preceeding(t1)), obj$task_position(t1) - 1)
+  expect_equal(length(obj$task_preceeding(t2)), obj$task_position(t2) - 1)
+  expect_equal(length(obj$task_preceeding(t3)), obj$task_position(t3) - 1)
+})
+
 
 test_that("task_overview", {
   obj <- test_rrq("myfuns.R")
