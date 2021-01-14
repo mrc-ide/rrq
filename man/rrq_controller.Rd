@@ -143,6 +143,7 @@ ans <- obj$lapply_(1:10, quote(log), base = quote(b))
 \item \href{#method-task_progress}{\code{rrq_controller_$task_progress()}}
 \item \href{#method-task_overview}{\code{rrq_controller_$task_overview()}}
 \item \href{#method-task_position}{\code{rrq_controller_$task_position()}}
+\item \href{#method-task_preceeding}{\code{rrq_controller_$task_preceeding()}}
 \item \href{#method-task_result}{\code{rrq_controller_$task_result()}}
 \item \href{#method-tasks_result}{\code{rrq_controller_$tasks_result()}}
 \item \href{#method-task_wait}{\code{rrq_controller_$task_wait()}}
@@ -557,6 +558,29 @@ Find the position of one or more tasks in the queue.
 A task will take value \code{missing} if it is running, complete,
 errored etc and a positive integer if it is in the queue,
 indicating its position (with 1) being the next task to run.}
+
+\item{\code{queue}}{The name of the queue to query (defaults to the
+"default" queue).}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-task_preceeding"></a>}}
+\if{latex}{\out{\hypertarget{method-task_preceeding}{}}}
+\subsection{Method \code{task_preceeding()}}{
+List the tasks in front of \code{task_id} in the queue.
+If the task is missing from the queue this will return NULL. If
+the task is next in the queue this will return an empty character
+vector.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_preceeding(task_id, queue = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{task_id}}{Task to find the position for.}
 
 \item{\code{queue}}{The name of the queue to query (defaults to the
 "default" queue).}

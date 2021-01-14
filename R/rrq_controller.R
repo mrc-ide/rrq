@@ -408,20 +408,16 @@ rrq_controller_ <- R6::R6Class(
     },
 
     ##' @description List the tasks in front of `task_id` in the queue.
-    ##'   If the task is missing from the queue this will return `missing`. If
+    ##'   If the task is missing from the queue this will return NULL. If
     ##'   the task is next in the queue this will return an empty character
     ##'   vector.
     ##'
     ##' @param task_id Task to find the position for.
     ##'
-    ##' @param missing Value to return if the task is not found in the queue.
-    ##'   A task will take value `missing` if it is running, complete,
-    ##'   errored etc.
-    ##'
     ##' @param queue The name of the queue to query (defaults to the
     ##'   "default" queue).
-    task_preceeding = function(task_id, missing = NA_character_, queue = NULL) {
-      task_preceeding(self$con, self$keys, task_id, missing, queue)
+    task_preceeding = function(task_id, queue = NULL) {
+      task_preceeding(self$con, self$keys, task_id, queue)
     },
 
     ##' @description Get the result for a single task (see `$tasks_result`
@@ -921,12 +917,12 @@ task_position <- function(con, keys, task_ids, missing, queue) {
   match(task_ids, queue_contents, missing)
 }
 
-task_preceeding <- function(con, keys, task_id, missing, queue) {
+task_preceeding <- function(con, keys, task_id, queue) {
   key_queue <- rrq_key_queue(keys$queue_id, queue)
   queue_contents <- vcapply(con$LRANGE(key_queue, 0, -1L), identity)
   task_position <- match(task_id, queue_contents)
   if (is.na(task_position)) {
-    return(missing)
+    return(NULL)
   }
   queue_contents[seq_len(task_position - 1)]
 }
