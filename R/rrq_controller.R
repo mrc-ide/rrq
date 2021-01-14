@@ -406,14 +406,14 @@ rrq_controller_ <- R6::R6Class(
     task_position = function(task_ids, missing = 0L, queue = NULL) {
       task_position(self$con, self$keys, task_ids, missing, queue)
     },
-    
+
     ##' @description List the tasks in front of `task_id` in the queue.
     ##'   If the task is missing from the queue this will return `missing`. If
     ##'   the task is next in the queue this will return an empty character
     ##'   vector.
     ##'
     ##' @param task_id Task to find the position for.
-    ##' 
+    ##'
     ##' @param missing Value to return if the task is not found in the queue.
     ##'   A task will take value `missing` if it is running, complete,
     ##'   errored etc.
