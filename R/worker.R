@@ -71,7 +71,8 @@ rrq_worker_ <- R6::R6Class(
 
     initialize = function(con, queue_id, key_alive = NULL, worker_name = NULL,
                           queue = NULL, time_poll = NULL, timeout = NULL,
-                          heartbeat_period = NULL, verbose = NULL) {
+                          heartbeat_period = NULL, verbose = TRUE,
+                          register = TRUE) {
       assert_is(con, "redis_api")
 
       self$con <- con
@@ -90,9 +91,12 @@ rrq_worker_ <- R6::R6Class(
       self$db <- rrq_db(self$con, self$keys)
       self$time_poll <- time_poll %||% 60
 
-      withCallingHandlers(
-        worker_initialise(self, key_alive, timeout, heartbeat_period),
-        error = worker_catch_error(self))
+      self$load_envir()
+      if (register) {
+        withCallingHandlers(
+          worker_initialise(self, key_alive, timeout, heartbeat_period),
+          error = worker_catch_error(self))
+      }
     },
 
     info = function() {
@@ -189,8 +193,6 @@ worker_info_collect <- function(worker) {
 worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
   con <- worker$con
   keys <- worker$keys
-
-  worker$load_envir()
 
   worker$heartbeat <- heartbeat(con, keys, heartbeat_period, worker$verbose)
 

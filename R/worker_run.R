@@ -1,11 +1,42 @@
 worker_run_task <- function(worker, task_id) {
   task <- worker_run_task_start(worker, task_id)
-  e <- expression_restore_locals(task, worker$envir, worker$db)
-  res <- withCallingHandlers(
-    expression_eval_safely(task$expr, e),
-    progress = function(e) task_progress_update(unclass(e), worker, FALSE))
+  if (task$separate_process) {
+    res <- worker_run_task_separate_process(task, worker)
+  } else {
+    res <- worker_run_task_local(task, worker)
+  }
   task_status <- if (res$success) TASK_COMPLETE else TASK_ERROR
   worker_run_task_cleanup(worker, task_status, res$value)
+}
+
+
+worker_run_task_local <- function(task, worker) {
+  e <- expression_restore_locals(task, worker$envir, worker$db)
+  withCallingHandlers(
+    expression_eval_safely(task$expr, e),
+    progress = function(e) task_progress_update(unclass(e), worker, FALSE))
+}
+
+
+worker_run_task_separate_process <- function(task, worker) {
+  redis_config <- worker$con$config()
+  queue_id <- worker$keys$queue_id
+  task_id <- task$id
+  worker$log("REMOTE", task_id)
+  callr::r(function(redis_config, queue_id, task_id)
+    remote_run_task(redis_config, queue_id, task_id),
+    list(redis_config, queue_id, task_id),
+    package = "rrq")
+}
+
+
+remote_run_task <- function(redis_config, queue_id, task_id) {
+  ## TODO: we might actually pass the worker id through here too and
+  ## create a new id <name>_<suffix>
+  con <- redux::hiredis(config = redis_config)
+  worker <- rrq_worker_$new(con, queue_id, register = FALSE)
+  task <- bin_to_object(con$HGET(worker$keys$task_expr, task_id))
+  worker_run_task_local(task, worker)
 }
 
 
@@ -19,6 +50,7 @@ worker_run_task_start <- function(worker, task_id) {
     redis$HSET(keys$task_worker,   task_id,   name),
     redis$HSET(keys$task_status,   task_id,   TASK_RUNNING),
     redis$HGET(keys$task_complete, task_id),
+    redis$HGET(keys$task_local,    task_id),
     redis$HGET(keys$task_expr,     task_id))
 
   ## This holds the bits of worker state we might need to refer to
@@ -27,8 +59,12 @@ worker_run_task_start <- function(worker, task_id) {
 
   ## And this holds the data used in worker_run_task_to actually run
   ## the task
-  bin_to_object(dat[[7]])
+  ret <- bin_to_object(dat[[8]])
+  ret$separate_process <- dat[[7]] == "FALSE" # NOTE: not a coersion
+  ret$id <- task_id
+  ret
 }
+
 
 worker_run_task_cleanup <- function(worker, status, value) {
   task <- worker$active_task
