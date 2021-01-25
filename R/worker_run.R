@@ -14,7 +14,8 @@ worker_run_task_local <- function(task, worker) {
   e <- expression_restore_locals(task, worker$envir, worker$db)
   withCallingHandlers(
     expression_eval_safely(task$expr, e),
-    progress = function(e) task_progress_update(unclass(e), worker, FALSE))
+    progress = function(e)
+      task_progress_update(unclass(e), worker, FALSE))
 }
 
 
@@ -36,6 +37,12 @@ remote_run_task <- function(redis_config, queue_id, task_id) {
   con <- redux::hiredis(config = redis_config)
   worker <- rrq_worker_$new(con, queue_id, register = FALSE)
   task <- bin_to_object(con$HGET(worker$keys$task_expr, task_id))
+
+  ## Ensures that the worker and task will be found by
+  ## rrq_task_progress_update
+  cache$active_worker <- worker
+  worker$active_task <- list(task_id = task_id)
+
   worker_run_task_local(task, worker)
 }
 

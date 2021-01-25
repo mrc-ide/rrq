@@ -96,3 +96,45 @@ test_that("collect progress from signal", {
   expect_equal(obj$task_result(t), 5)
   expect_equal(obj$task_progress(t), list(message = "iteration 5"))
 })
+
+
+test_that("collect progress from separate process", {
+  skip_if_not_installed("callr")
+  obj <- test_rrq("myfuns.R")
+  wid <- test_worker_spawn(obj, 1)
+  p <- tempfile()
+
+  t <- obj$enqueue(run_with_progress_interactive(p),
+                   separate_process = TRUE)
+  wait_status(t, obj)
+
+  Sys.sleep(0.2)
+  expect_equal(obj$task_progress(t),
+               "Waiting for file")
+
+  writeLines("something", p)
+  Sys.sleep(0.2)
+  expect_equal(obj$task_progress(t),
+               "Got contents 'something'")
+
+  writeLines("another thing", p)
+  Sys.sleep(0.2)
+  expect_equal(obj$task_progress(t),
+               "Got contents 'another thing'")
+
+  writeLines("STOP", p)
+  wait_status(t, obj, status = TASK_RUNNING)
+  expect_equal(obj$task_progress(t),
+               "Finishing")
+})
+
+
+test_that("collect progress from signal", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+  t <- obj$enqueue(run_with_progress_signal(5, 0),
+                   separate_process = TRUE)
+  w$step(TRUE)
+  expect_equal(obj$task_result(t), 5)
+  expect_equal(obj$task_progress(t), list(message = "iteration 5"))
+})

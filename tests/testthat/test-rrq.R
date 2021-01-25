@@ -420,6 +420,7 @@ test_that("Query jobs in different queues", {
 
 
 test_that("Send job to new process", {
+  skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
 

@@ -46,12 +46,16 @@ run_with_progress_interactive <- function(path, poll = 0.01) {
   while (!file.exists(path)) {
     Sys.sleep(poll)
   }
+  last_write <- ""
   repeat {
     contents <- readLines(path)
     if (identical(contents, "STOP")) {
       break
     }
-    rrq::rrq_task_progress_update(sprintf("Got contents '%s'", contents))
+    if (contents != last_write) {
+      rrq::rrq_task_progress_update(sprintf("Got contents '%s'", contents))
+      last_write <- contents
+    }
     Sys.sleep(poll)
   }
   rrq::rrq_task_progress_update("Finishing")
