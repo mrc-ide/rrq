@@ -108,9 +108,11 @@ test_that("collect progress from separate process", {
                    separate_process = TRUE)
   wait_status(t, obj)
 
-  Sys.sleep(0.2)
-  expect_equal(obj$task_progress(t),
-               "Waiting for file")
+  testthat::try_again(5, {
+    Sys.sleep(0.5)
+    expect_equal(obj$task_progress(t),
+                 "Waiting for file")
+  })
 
   writeLines("something", p)
   Sys.sleep(0.2)
