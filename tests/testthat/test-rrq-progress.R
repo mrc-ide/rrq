@@ -62,6 +62,7 @@ test_that("update progress multiple times in task", {
 
   writeLines("STOP", p)
   wait_status(t, obj, status = TASK_RUNNING)
+  expect_equal(obj$task_status(t), set_names(TASK_COMPLETE, t))
   expect_equal(obj$task_progress(t),
                "Finishing")
 })
