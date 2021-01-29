@@ -307,6 +307,7 @@ test_that("queue remove", {
 ## called as expected but given how simple the function is it seems
 ## like the test really just implements the function like that.
 test_that("worker_send_signal", {
+  skip_if_not_installed("heartbeatr")
   obj <- test_rrq()
   w1 <- test_worker_blocking(obj)
   w2 <- test_worker_blocking(obj)
