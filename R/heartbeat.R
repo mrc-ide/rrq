@@ -2,9 +2,8 @@ heartbeat <- function(con, keys, period, verbose) {
   if (!is.null(period)) {
     key <- keys$worker_heartbeat
     worker_log(con, keys, "HEARTBEAT", key, verbose)
-    loadNamespace("heartbeatr")
     config <- con$config()
-    ret <- heartbeatr::heartbeat(key, period, config = config)
+    ret <- redux::heartbeat(key, period, config = config)
     worker_log(con, keys, "HEARTBEAT", "OK", verbose)
     ret
   }

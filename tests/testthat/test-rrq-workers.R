@@ -177,7 +177,6 @@ test_that("Timer is recreated after task run", {
 
 
 test_that("kill worker with a signal", {
-  skip_if_not_installed("heartbeatr")
   skip_on_os("windows")
 
   obj <- test_rrq()

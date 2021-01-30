@@ -23,8 +23,8 @@
 ##'   run by all workers.
 ##'
 ##' @param heartbeat_period Optional period for the heartbeat.  If
-##'   non-NULL then a heartbeat process will be started (using the
-##'   \code{heartbeatr} package) which can be used to build fault
+##'   non-NULL then a heartbeat process will be started (using
+##'   [redux::heartbeat]) which can be used to build fault
 ##'   tolerant queues.
 ##'
 ##' @param verbose Logical, indicating if the worker should print
@@ -225,7 +225,7 @@ rrq_worker_stop <- function(worker, message) {
 worker_send_signal <- function(con, keys, signal, worker_ids) {
   if (length(worker_ids) > 0L) {
     for (key in rrq_key_worker_heartbeat(keys$queue_id, worker_ids)) {
-      heartbeatr::heartbeat_send_signal(con, key, signal)
+      redux::heartbeat_send_signal(con, key, signal)
     }
   }
 }

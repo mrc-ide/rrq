@@ -1106,8 +1106,8 @@ and jobs put onto these queues with \verb{$enqueue()} will have
 the "default" queue (e.g., \code{queue = c("high", "default", "low")}) to set the position of the default queue.}
 
 \item{\code{heartbeat_period}}{Optional period for the heartbeat.  If
-non-NULL then a heartbeat process will be started (using the
-\code{heartbeatr} package) which can be used to build fault
+non-NULL then a heartbeat process will be started (using
+\link[redux:heartbeat]{redux::heartbeat}) which can be used to build fault
 tolerant queues.}
 
 \item{\code{verbose}}{Logical, indicating if the worker should print
