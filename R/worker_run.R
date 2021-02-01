@@ -22,20 +22,21 @@ worker_run_task_local <- function(task, worker) {
 worker_run_task_separate_process <- function(task, worker) {
   redis_config <- worker$con$config()
   queue_id <- worker$keys$queue_id
+  worker_id <- worker$name
   task_id <- task$id
   worker$log("REMOTE", task_id)
-  callr::r(function(redis_config, queue_id, task_id)
-    remote_run_task(redis_config, queue_id, task_id),
-    list(redis_config, queue_id, task_id),
+  callr::r(function(redis_config, queue_id, worker_id, task_id)
+    remote_run_task(redis_config, queue_id, worker_id, task_id),
+    list(redis_config, queue_id, worker_id, task_id),
     package = "rrq")
 }
 
 
-remote_run_task <- function(redis_config, queue_id, task_id) {
-  ## TODO: we might actually pass the worker id through here too and
-  ## create a new id <name>_<suffix>
+remote_run_task <- function(redis_config, queue_id, worker_id, task_id) {
+  worker_name <- sprintf("%s_%s", worker_id, ids::random_id(bytes = 4))
   con <- redux::hiredis(config = redis_config)
-  worker <- rrq_worker_$new(con, queue_id, register = FALSE)
+  worker <- rrq_worker_$new(con, queue_id, worker_name = worker_name,
+                            register = FALSE)
   task <- bin_to_object(con$HGET(worker$keys$task_expr, task_id))
 
   ## Ensures that the worker and task will be found by
