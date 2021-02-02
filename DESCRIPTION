@@ -1,6 +1,6 @@
 Package: rrq
 Title: Simple Redis Queue
-Version: 0.2.12
+Version: 0.2.13
 Author: Rich FitzJohn
 Maintainer: Rich FitzJohn <rich.fitzjohn@gmail.com>
 Description: Simple Redis queue in R.
@@ -15,6 +15,7 @@ Imports:
     progress,
     redux (>= 1.0.0)
 Suggests:
+    callr,
     heartbeatr,
     storr,
     testthat

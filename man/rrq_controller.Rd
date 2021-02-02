@@ -265,7 +265,8 @@ Queue an expression
   expr,
   envir = parent.frame(),
   key_complete = NULL,
-  queue = NULL
+  queue = NULL,
+  separate_process = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -288,6 +289,14 @@ wait for the task to complete (i.e., without using a busy loop).}
 used. If you have configured workers to listen to more than
 one queue you can specify that here. Be warned that if you
 push jobs onto a queue with no worker, it will queue forever.}
+
+\item{\code{separate_process}}{Logical, indicating if the task should be
+run in a separate process on the worker. If \code{TRUE}, then the
+worker runs the task in a separate process using the \code{callr}
+package. This means that the worker environment is completely
+clean, subsequent runs are not affected by preceeding ones.
+The downside of this approach is a considerable overhead in
+starting the extenal process and transferring data back.}
 }
 \if{html}{\out{</div>}}
 }
@@ -302,7 +311,8 @@ Queue an expression
   expr,
   envir = parent.frame(),
   key_complete = NULL,
-  queue = NULL
+  queue = NULL,
+  separate_process = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -328,6 +338,10 @@ loop.}
 used. If you have configured workers to listen to more than
 one queue you can specify that here. Be warned that if you
 push jobs onto a queue with no worker, it will queue forever.}
+
+\item{\code{separate_process}}{Logical, indicating if the task should be
+run in a separate process on the worker (see \verb{$enqueue} for
+details).}
 }
 \if{html}{\out{</div>}}
 }
@@ -346,6 +360,7 @@ equivalent to using \verb{$enqueue()} over each element in the list.
   dots = NULL,
   envir = parent.frame(),
   queue = NULL,
+  separate_process = FALSE,
   timeout = Inf,
   time_poll = NULL,
   progress = NULL
@@ -368,6 +383,10 @@ against.}
 \item{\code{envir}}{The environment to use to try and find the function}
 
 \item{\code{queue}}{The queue to add the tasks to (see \verb{$enqueue} for
+details).}
+
+\item{\code{separate_process}}{Logical, indicating if the task should be
+run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
 \item{\code{timeout}}{Optional timeout, in seconds, after which an
@@ -401,6 +420,7 @@ be copied over rather than using their names if possible.
   dots = NULL,
   envir = parent.frame(),
   queue = NULL,
+  separate_process = FALSE,
   timeout = Inf,
   time_poll = NULL,
   progress = NULL
@@ -423,6 +443,10 @@ against.}
 \item{\code{envir}}{The environment to use to try and find the function}
 
 \item{\code{queue}}{The queue to add the tasks to (see \verb{$enqueue} for
+details).}
+
+\item{\code{separate_process}}{Logical, indicating if the task should be
+run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
 \item{\code{timeout}}{Optional timeout, in seconds, after which an

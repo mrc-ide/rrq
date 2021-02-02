@@ -307,6 +307,7 @@ test_that("queue remove", {
 ## called as expected but given how simple the function is it seems
 ## like the test really just implements the function like that.
 test_that("worker_send_signal", {
+  skip_if_not_installed("heartbeatr")
   obj <- test_rrq()
   w1 <- test_worker_blocking(obj)
   w2 <- test_worker_blocking(obj)
@@ -416,4 +417,17 @@ test_that("Query jobs in different queues", {
   expect_equal(obj$task_position(t2, queue = "a"), 1)
   expect_equal(obj$queue_length("a"), 2)
   expect_equal(obj$queue_list("a"), c(t2, t3))
+})
+
+
+test_that("Send job to new process", {
+  skip_if_not_installed("callr")
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t <- obj$enqueue(slowdouble(0.1), separate_process = TRUE)
+  expect_is(t, "character")
+  w$step(TRUE)
+  expect_equal(obj$task_wait(t, 2), 0.2)
+  expect_equal(obj$task_result(t), 0.2)
 })

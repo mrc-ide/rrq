@@ -223,9 +223,18 @@ rrq_controller_ <- R6::R6Class(
     ##'   used. If you have configured workers to listen to more than
     ##'   one queue you can specify that here. Be warned that if you
     ##'   push jobs onto a queue with no worker, it will queue forever.
+    ##'
+    ##' @param separate_process Logical, indicating if the task should be
+    ##'   run in a separate process on the worker. If `TRUE`, then the
+    ##'   worker runs the task in a separate process using the `callr`
+    ##'   package. This means that the worker environment is completely
+    ##'   clean, subsequent runs are not affected by preceeding ones.
+    ##'   The downside of this approach is a considerable overhead in
+    ##'   starting the extenal process and transferring data back.
     enqueue = function(expr, envir = parent.frame(), key_complete = NULL,
-                       queue = NULL) {
-      self$enqueue_(substitute(expr), envir, key_complete, queue)
+                       queue = NULL, separate_process = FALSE) {
+      self$enqueue_(substitute(expr), envir, key_complete, queue,
+                    separate_process)
     },
 
     ##' @description Queue an expression
@@ -249,10 +258,15 @@ rrq_controller_ <- R6::R6Class(
     ##'   used. If you have configured workers to listen to more than
     ##'   one queue you can specify that here. Be warned that if you
     ##'   push jobs onto a queue with no worker, it will queue forever.
+    ##'
+    ##' @param separate_process Logical, indicating if the task should be
+    ##'   run in a separate process on the worker (see `$enqueue` for
+    ##'   details).
     enqueue_ = function(expr, envir = parent.frame(), key_complete = NULL,
-                        queue = NULL) {
+                        queue = NULL, separate_process = FALSE) {
       dat <- expression_prepare(expr, envir, NULL, self$db)
-      task_submit(self$con, self$keys, dat, key_complete, queue)
+      task_submit(self$con, self$keys, dat, key_complete, queue,
+                  separate_process)
     },
 
     ##' @description Apply a function over a list of data. This is
@@ -283,15 +297,20 @@ rrq_controller_ <- R6::R6Class(
     ##'
     ##' @param queue The queue to add the tasks to (see `$enqueue` for
     ##'   details).
+    ##'
+    ##' @param separate_process Logical, indicating if the task should be
+    ##'   run in a separate process on the worker (see `$enqueue` for
+    ##'   details).
     lapply = function(x, fun, ..., dots = NULL,
                       envir = parent.frame(), queue = NULL,
+                      separate_process = FALSE,
                       timeout = Inf, time_poll = NULL, progress = NULL) {
       if (is.null(dots)) {
         dots <- as.list(substitute(list(...)))[-1L]
       }
       self$lapply_(x, substitute(fun), dots = dots, envir = envir,
-                   queue = queue, timeout = timeout, time_poll = time_poll,
-                   progress = NULL)
+                   queue = queue, separate_process = separate_process,
+                   timeout = timeout, time_poll = time_poll, progress = NULL)
     },
 
     ##' @description The "standard evaluation" version of `$lapply()`.
@@ -327,14 +346,19 @@ rrq_controller_ <- R6::R6Class(
     ##'
     ##' @param queue The queue to add the tasks to (see `$enqueue` for
     ##'   details).
+    ##'
+    ##' @param separate_process Logical, indicating if the task should be
+    ##'   run in a separate process on the worker (see `$enqueue` for
+    ##'   details).
     lapply_ = function(x, fun, ..., dots = NULL,
                        envir = parent.frame(), queue = NULL,
-                       timeout = Inf, time_poll = NULL, progress = NULL) {
+                       separate_process = FALSE, timeout = Inf,
+                       time_poll = NULL, progress = NULL) {
       if (is.null(dots)) {
         dots <- list(...)
       }
       rrq_lapply(self$con, self$keys, self$db, x, fun, dots, envir, queue,
-                 timeout, time_poll, progress)
+                 separate_process, timeout, time_poll, progress)
     },
 
     ##' @description Wait for a group of tasks
@@ -927,8 +951,10 @@ task_preceeding <- function(con, keys, task_id, queue) {
   queue_contents[seq_len(task_position - 1)]
 }
 
-task_submit <- function(con, keys, dat, key_complete, queue) {
-  task_submit_n(con, keys, list(object_to_bin(dat)), key_complete, queue)
+task_submit <- function(con, keys, dat, key_complete, queue,
+                        separate_process) {
+  task_submit_n(con, keys, list(object_to_bin(dat)), key_complete, queue,
+                separate_process)
 }
 
 task_delete <- function(con, keys, task_ids, check = TRUE) {
@@ -1033,11 +1059,13 @@ task_data <- function(con, keys, db, task_id) {
 }
 
 
-task_submit_n <- function(con, keys, dat, key_complete, queue) {
+task_submit_n <- function(con, keys, dat, key_complete, queue,
+                          separate_process) {
   n <- length(dat)
   task_ids <- ids::random_id(n)
   queue <- queue %||% QUEUE_DEFAULT
   key_queue <- rrq_key_queue(keys$queue_id, queue)
+  local <- if (separate_process) "FALSE" else "TRUE"
 
   con$pipeline(
     if (!is.null(key_complete)) {
@@ -1046,6 +1074,7 @@ task_submit_n <- function(con, keys, dat, key_complete, queue) {
     redis$HMSET(keys$task_expr, task_ids, dat),
     redis$HMSET(keys$task_status, task_ids, rep_len(TASK_PENDING, n)),
     redis$HMSET(keys$task_queue, task_ids, rep_len(queue, n)),
+    redis$HMSET(keys$task_local, task_ids, rep_len(local, n)),
     redis$RPUSH(key_queue, task_ids))
 
   task_ids

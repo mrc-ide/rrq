@@ -62,6 +62,7 @@ test_that("update progress multiple times in task", {
 
   writeLines("STOP", p)
   wait_status(t, obj, status = TASK_RUNNING)
+  expect_equal(obj$task_status(t), set_names(TASK_COMPLETE, t))
   expect_equal(obj$task_progress(t),
                "Finishing")
 })
@@ -95,4 +96,79 @@ test_that("collect progress from signal", {
   w$step(TRUE)
   expect_equal(obj$task_result(t), 5)
   expect_equal(obj$task_progress(t), list(message = "iteration 5"))
+})
+
+
+test_that("collect progress from separate process", {
+  skip_if_not_installed("callr")
+  obj <- test_rrq("myfuns.R")
+  wid <- test_worker_spawn(obj, 1)
+  p <- tempfile()
+
+  t <- obj$enqueue(run_with_progress_interactive(p),
+                   separate_process = TRUE)
+  wait_status(t, obj)
+
+  testthat::try_again(5, {
+    Sys.sleep(0.5)
+    expect_equal(obj$task_progress(t),
+                 "Waiting for file")
+  })
+
+  writeLines("something", p)
+  Sys.sleep(0.2)
+  expect_equal(obj$task_progress(t),
+               "Got contents 'something'")
+
+  writeLines("another thing", p)
+  Sys.sleep(0.2)
+  expect_equal(obj$task_progress(t),
+               "Got contents 'another thing'")
+
+  writeLines("STOP", p)
+  wait_status(t, obj, status = TASK_RUNNING)
+  expect_equal(obj$task_status(t), set_names(TASK_COMPLETE, t))
+  expect_equal(obj$task_progress(t),
+               "Finishing")
+})
+
+
+test_that("collect progress from signal", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+  t <- obj$enqueue(run_with_progress_signal(5, 0),
+                   separate_process = TRUE)
+  w$step(TRUE)
+  expect_equal(obj$task_result(t), 5)
+  expect_equal(obj$task_progress(t), list(message = "iteration 5"))
+})
+
+
+test_that("Separtate process leaves global env clean", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t1 <- obj$enqueue(dirty_double(1))
+  t2 <- obj$enqueue(dirty_double(2))
+  w$step(TRUE)
+  w$step(TRUE)
+
+  ## Running locally pollutes the global environment and is not
+  ## isolated:
+  expect_equal(obj$task_result(t1), list(NULL, 2))
+  expect_equal(obj$task_result(t2), list(1, 4))
+  expect_equal(.GlobalEnv$.rrq_dirty_double, 2)
+
+  t3 <- obj$enqueue(dirty_double(3), separate_process = TRUE)
+  t4 <- obj$enqueue(dirty_double(4), separate_process = TRUE)
+  w$step(TRUE)
+  w$step(TRUE)
+
+  ## Running in separate process is unaffected by global environment
+  ## and does not affect it:
+  expect_equal(obj$task_result(t3), list(NULL, 6))
+  expect_equal(obj$task_result(t4), list(NULL, 8))
+  expect_equal(.GlobalEnv$.rrq_dirty_double, 2)
+
+  rm(list = ".rrq_dirty_double", envir = .GlobalEnv)
 })
