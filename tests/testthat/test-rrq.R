@@ -431,3 +431,21 @@ test_that("Send job to new process", {
   expect_equal(obj$task_wait(t, 2), 0.2)
   expect_equal(obj$task_result(t), 0.2)
 })
+
+
+test_that("task can be added to front of queue", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t <- obj$enqueue(sin(0))
+  expect_equal(obj$queue_list(), t)
+  t2 <- obj$enqueue(sin(pi/2), at_front = TRUE)
+  expect_equal(obj$queue_list(), c(t2, t))
+
+  expect_equivalent(obj$task_status(t), "PENDING")
+  expect_equivalent(obj$task_status(t2), "PENDING")
+  w$step(TRUE)
+  expect_equal(obj$task_wait(t2, 2), 1)
+  expect_equivalent(obj$task_status(t), "PENDING")
+  expect_equivalent(obj$task_status(t2), "COMPLETE")
+})

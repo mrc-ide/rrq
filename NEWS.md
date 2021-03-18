@@ -1,3 +1,7 @@
+# rrq 0.2.14
+
+* `enqueue` can add a task to start of the queue via `at_front = TRUE` (mrc-2254)
+
 # rrq 0.2.13
 
 * Run tasks in a separate process (with some overhead) with new argument `separate_process = TRUE` to `$enqueue()`. Use this to ensure isolation between tasks (mrc-2068)
