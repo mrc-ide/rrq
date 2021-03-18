@@ -439,7 +439,7 @@ test_that("task can be added to front of queue", {
 
   t <- obj$enqueue(sin(0))
   expect_equal(obj$queue_list(), t)
-  t2 <- obj$enqueue(sin(pi/2), at_front = TRUE)
+  t2 <- obj$enqueue(sin(pi / 2), at_front = TRUE)
   expect_equal(obj$queue_list(), c(t2, t))
 
   expect_equivalent(obj$task_status(t), "PENDING")
