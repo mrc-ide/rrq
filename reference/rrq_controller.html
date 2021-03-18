@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.13</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.14</span>
       </span>
     </div>
 
@@ -364,7 +364,8 @@ message to all workers to update their environment.</p></dd>
   envir <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>parent.frame</a></span><span class='op'>(</span><span class='op'>)</span>,
   key_complete <span class='op'>=</span> <span class='cn'>NULL</span>,
   queue <span class='op'>=</span> <span class='cn'>NULL</span>,
-  separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>
+  separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  at_front <span class='op'>=</span> <span class='cn'>FALSE</span>
 <span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
@@ -394,6 +395,9 @@ clean, subsequent runs are not affected by preceeding ones.
 The downside of this approach is a considerable overhead in
 starting the extenal process and transferring data back.</p></dd>
 
+<dt><code>at_front</code></dt><dd><p>Logical, if TRUE then add the task to the front
+of the queue.</p></dd>
+
 </dl><p></div></p>
 <p><hr>
 <a id="method-enqueue_"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>enqueue_()</code></h3>
@@ -403,7 +407,8 @@ starting the extenal process and transferring data back.</p></dd>
   envir <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>parent.frame</a></span><span class='op'>(</span><span class='op'>)</span>,
   key_complete <span class='op'>=</span> <span class='cn'>NULL</span>,
   queue <span class='op'>=</span> <span class='cn'>NULL</span>,
-  separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>
+  separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  at_front <span class='op'>=</span> <span class='cn'>FALSE</span>
 <span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
@@ -431,6 +436,9 @@ push jobs onto a queue with no worker, it will queue forever.</p></dd>
 <dt><code>separate_process</code></dt><dd><p>Logical, indicating if the task should be
 run in a separate process on the worker (see <code>$enqueue</code> for
 details).</p></dd>
+
+<dt><code>at_front</code></dt><dd><p>Logical, if TRUE then add the task to the front
+of the queue.</p></dd>
 
 </dl><p></div></p>
 <p><hr>
