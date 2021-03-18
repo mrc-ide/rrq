@@ -266,7 +266,8 @@ Queue an expression
   envir = parent.frame(),
   key_complete = NULL,
   queue = NULL,
-  separate_process = FALSE
+  separate_process = FALSE,
+  at_front = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -297,6 +298,9 @@ package. This means that the worker environment is completely
 clean, subsequent runs are not affected by preceeding ones.
 The downside of this approach is a considerable overhead in
 starting the extenal process and transferring data back.}
+
+\item{\code{at_front}}{Logical, if TRUE then add the task to the front
+of the queue.}
 }
 \if{html}{\out{</div>}}
 }
@@ -312,7 +316,8 @@ Queue an expression
   envir = parent.frame(),
   key_complete = NULL,
   queue = NULL,
-  separate_process = FALSE
+  separate_process = FALSE,
+  at_front = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -342,6 +347,9 @@ push jobs onto a queue with no worker, it will queue forever.}
 \item{\code{separate_process}}{Logical, indicating if the task should be
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
+
+\item{\code{at_front}}{Logical, if TRUE then add the task to the front
+of the queue.}
 }
 \if{html}{\out{</div>}}
 }

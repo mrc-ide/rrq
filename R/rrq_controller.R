@@ -231,10 +231,14 @@ rrq_controller_ <- R6::R6Class(
     ##'   clean, subsequent runs are not affected by preceeding ones.
     ##'   The downside of this approach is a considerable overhead in
     ##'   starting the extenal process and transferring data back.
+    ##'
+    ##' @param at_front Logical, if TRUE then add the task to the front
+    ##'   of the queue.
     enqueue = function(expr, envir = parent.frame(), key_complete = NULL,
-                       queue = NULL, separate_process = FALSE) {
+                       queue = NULL, separate_process = FALSE,
+                       at_front = FALSE) {
       self$enqueue_(substitute(expr), envir, key_complete, queue,
-                    separate_process)
+                    separate_process, at_front)
     },
 
     ##' @description Queue an expression
@@ -262,11 +266,15 @@ rrq_controller_ <- R6::R6Class(
     ##' @param separate_process Logical, indicating if the task should be
     ##'   run in a separate process on the worker (see `$enqueue` for
     ##'   details).
+    ##'
+    ##' @param at_front Logical, if TRUE then add the task to the front
+    ##'   of the queue.
     enqueue_ = function(expr, envir = parent.frame(), key_complete = NULL,
-                        queue = NULL, separate_process = FALSE) {
+                        queue = NULL, separate_process = FALSE,
+                        at_front = FALSE) {
       dat <- expression_prepare(expr, envir, NULL, self$db)
       task_submit(self$con, self$keys, dat, key_complete, queue,
-                  separate_process)
+                  separate_process, at_front)
     },
 
     ##' @description Apply a function over a list of data. This is
@@ -952,9 +960,9 @@ task_preceeding <- function(con, keys, task_id, queue) {
 }
 
 task_submit <- function(con, keys, dat, key_complete, queue,
-                        separate_process) {
+                        separate_process, at_front = FALSE) {
   task_submit_n(con, keys, list(object_to_bin(dat)), key_complete, queue,
-                separate_process)
+                separate_process, at_front)
 }
 
 task_delete <- function(con, keys, task_ids, check = TRUE) {
@@ -1060,7 +1068,7 @@ task_data <- function(con, keys, db, task_id) {
 
 
 task_submit_n <- function(con, keys, dat, key_complete, queue,
-                          separate_process) {
+                          separate_process, at_front = FALSE) {
   n <- length(dat)
   task_ids <- ids::random_id(n)
   queue <- queue %||% QUEUE_DEFAULT
@@ -1075,7 +1083,11 @@ task_submit_n <- function(con, keys, dat, key_complete, queue,
     redis$HMSET(keys$task_status, task_ids, rep_len(TASK_PENDING, n)),
     redis$HMSET(keys$task_queue, task_ids, rep_len(queue, n)),
     redis$HMSET(keys$task_local, task_ids, rep_len(local, n)),
-    redis$RPUSH(key_queue, task_ids))
+    if (at_front) {
+      redis$LPUSH(key_queue, task_ids)
+    } else {
+      redis$RPUSH(key_queue, task_ids)
+    })
 
   task_ids
 }
