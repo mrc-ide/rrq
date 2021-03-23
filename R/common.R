@@ -18,6 +18,12 @@ TASK_REDIRECT <- "REDIRECT"
 ## An unknown task
 TASK_MISSING  <- "MISSING"
 
+## Dependency tasks lifecycle:
+## waiting for a dependency before being added to queue
+TASK_DEFERRED <- "DEFERRED"
+## dependency errored so this tasks condition can never be satisfied
+TASK_IMPOSSIBLE <- "IMPOSSIBLE"
+
 WORKER_IDLE <- "IDLE"
 WORKER_BUSY <- "BUSY"
 WORKER_EXITED <- "EXITED"

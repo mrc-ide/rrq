@@ -6,6 +6,7 @@ worker_run_task <- function(worker, task_id) {
     res <- worker_run_task_local(task, worker)
   }
   task_status <- if (res$success) TASK_COMPLETE else TASK_ERROR
+  worker_handle_dependencies(worker, task_id, task_status)
   worker_run_task_cleanup(worker, task_status, res$value)
 }
 

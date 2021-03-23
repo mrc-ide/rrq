@@ -1,3 +1,7 @@
+# rrq 0.2.15
+
+* `enqueue` can add a task with dependencies i.e. tasks which must be complete before this task can be run via `depends_on` (mrc-2255)
+
 # rrq 0.2.14
 
 * `enqueue` can add a task to start of the queue via `at_front = TRUE` (mrc-2254)

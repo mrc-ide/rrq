@@ -72,3 +72,19 @@ rrq_key_task_complete <- function(queue) {
 rrq_key_worker_alive <- function(queue_id) {
   sprintf("%s:worker:alive:%s", queue_id, ids::random_id())
 }
+
+rrq_key_queue_deferred <- function(queue, name) {
+  sprintf("%s:deferred", rrq_key_queue(queue, name))
+}
+
+rrq_key_task_dependencies <- function(queue_id, task_id) {
+  sprintf("%s:task:%s:dependencies", queue_id, task_id)
+}
+
+rrq_key_task_dependencies_original <- function(queue_id, task_id) {
+  sprintf("%s:task:%s:dependencies.original", queue_id, task_id)
+}
+
+rrq_key_task_dependents <- function(queue_id, task_id) {
+  sprintf("%s:task:%s:dependents", queue_id, task_id)
+}

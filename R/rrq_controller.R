@@ -234,11 +234,17 @@ rrq_controller_ <- R6::R6Class(
     ##'
     ##' @param at_front Logical, if TRUE then add the task to the front
     ##'   of the queue.
+    ##'
+    ##' @param depends_on Vector or list of IDs of tasks which must have
+    ##'   completed before this job can be run. Once all dependent tasks
+    ##'   have been successfully run, this task will get added to the
+    ##'   queue. If the dependent task fails then this task will be
+    ##'   removed from the queue.
     enqueue = function(expr, envir = parent.frame(), key_complete = NULL,
                        queue = NULL, separate_process = FALSE,
-                       at_front = FALSE) {
+                       at_front = FALSE, depends_on = NULL) {
       self$enqueue_(substitute(expr), envir, key_complete, queue,
-                    separate_process, at_front)
+                    separate_process, at_front, depends_on)
     },
 
     ##' @description Queue an expression
@@ -269,12 +275,29 @@ rrq_controller_ <- R6::R6Class(
     ##'
     ##' @param at_front Logical, if TRUE then add the task to the front
     ##'   of the queue.
+    ##'
+    ##' @param depends_on Vector or list of IDs of tasks which must have
+    ##'   completed before this job can be run. Once all dependent tasks
+    ##'   have been successfully run, this task will get added to the
+    ##'   queue. If the dependent task fails then this task will be
+    ##'   removed from the queue.
     enqueue_ = function(expr, envir = parent.frame(), key_complete = NULL,
                         queue = NULL, separate_process = FALSE,
-                        at_front = FALSE) {
+                        at_front = FALSE, depends_on = NULL) {
       dat <- expression_prepare(expr, envir, NULL, self$db)
+      if (!is.null(depends_on)) {
+        dependencies_exist <- self$task_exists(depends_on)
+        if (!all(dependencies_exist)) {
+          missing <- names(dependencies_exist[!dependencies_exist])
+          error_msg <- ngettext(
+            length(missing),
+            "Failed to queue as dependency %s does not exist.",
+            "Failed to queue as dependencies %s do not exist.")
+          stop(sprintf(error_msg, paste0(missing, collapse = ", ")))
+        }
+      }
       task_submit(self$con, self$keys, dat, key_complete, queue,
-                  separate_process, at_front)
+                  separate_process, at_front, depends_on)
     },
 
     ##' @description Apply a function over a list of data. This is
@@ -391,6 +414,15 @@ rrq_controller_ <- R6::R6Class(
     ##' @description List ids of all tasks known to this rrq controller
     task_list = function() {
       as.character(self$con$HKEYS(self$keys$task_expr))
+    },
+
+    ##' @description Test if task with id `task_ids` is known to this
+    ##'   rrq controller
+    ##' @param task_ids Character vector of task ids to check for existence.
+    task_exists = function(task_ids = NULL) {
+      vlapply(task_ids, function(id) {
+        as.logical(self$con$HEXISTS(self$keys$task_expr, id))
+      })
     },
 
     ##' @description Return a character vector of task statuses. The name
@@ -960,9 +992,10 @@ task_preceeding <- function(con, keys, task_id, queue) {
 }
 
 task_submit <- function(con, keys, dat, key_complete, queue,
-                        separate_process, at_front = FALSE) {
+                        separate_process, at_front = FALSE,
+                        depends_on = NULL) {
   task_submit_n(con, keys, list(object_to_bin(dat)), key_complete, queue,
-                separate_process, at_front)
+                separate_process, at_front, depends_on)
 }
 
 task_delete <- function(con, keys, task_ids, check = TRUE) {
@@ -1068,29 +1101,72 @@ task_data <- function(con, keys, db, task_id) {
 
 
 task_submit_n <- function(con, keys, dat, key_complete, queue,
-                          separate_process, at_front = FALSE) {
+                          separate_process, at_front = FALSE,
+                          depends_on = NULL) {
   n <- length(dat)
   task_ids <- ids::random_id(n)
   queue <- queue %||% QUEUE_DEFAULT
   key_queue <- rrq_key_queue(keys$queue_id, queue)
+  key_queue_deferred <- rrq_key_queue_deferred(keys$queue_id, queue)
   local <- if (separate_process) "FALSE" else "TRUE"
 
-  con$pipeline(
+  original_deps_keys <- rrq_key_task_dependencies_original(
+    keys$queue_id, task_ids)
+  dependency_keys <- rrq_key_task_dependencies(keys$queue_id, task_ids)
+  dependent_keys <- rrq_key_task_dependents(keys$queue_id, depends_on)
+  status <- NULL
+
+  response <- con$pipeline(.commands = c(list(
     if (!is.null(key_complete)) {
       redis$HMSET(keys$task_complete, task_ids, rep_len(key_complete, n))
+    } else {
+      ## We need this because if this sends NULL then response from
+      ## running the pipeline has 11 items (as this would be NULL)
+      ## but we're trying to set names for 12 items so it errors
+      ## (ideally redux would deal with this)
+      redis$PING()
     },
     redis$HMSET(keys$task_expr, task_ids, dat),
     redis$HMSET(keys$task_status, task_ids, rep_len(TASK_PENDING, n)),
     redis$HMSET(keys$task_queue, task_ids, rep_len(queue, n)),
-    redis$HMSET(keys$task_local, task_ids, rep_len(local, n)),
-    if (at_front) {
-      redis$LPUSH(key_queue, task_ids)
+    redis$HMSET(keys$task_local, task_ids, rep_len(local, n))),
+    if (length(depends_on) > 0) {
+      c(list(
+        status = redis$HMGET(keys$task_status, depends_on),
+        redis$HMSET(keys$task_status, task_ids, rep_len(TASK_DEFERRED, n))),
+        lapply(original_deps_keys, redis$SADD, depends_on),
+        lapply(dependency_keys, redis$SADD, depends_on),
+        lapply(dependent_keys, redis$SADD, task_ids),
+        list(redis$SADD(key_queue_deferred, task_ids))
+      )
+    } else if (at_front) {
+      list(redis$LPUSH(key_queue, task_ids))
     } else {
-      redis$RPUSH(key_queue, task_ids)
-    })
+      list(redis$RPUSH(key_queue, task_ids))
+    }
+  ))
+
+  ## If any are impossible to do - then cleanup
+  incomplete_status <- c(TASK_ERROR, TASK_ORPHAN, TASK_INTERRUPTED,
+                         TASK_IMPOSSIBLE)
+  if (any(response$status %in% incomplete_status)) {
+    set_task_impossible(con, keys, key_queue_deferred, task_ids)
+    incomplete <- response$status[response$status %in% incomplete_status]
+    names(incomplete) <- depends_on[response$status %in% incomplete_status]
+    stop(sprintf("Failed to queue as dependent tasks failed:\n%s",
+                 paste0(paste0(names(incomplete), ": ", incomplete),
+                        collapse = ", ")))
+  }
+
+  complete <- depends_on[response$status == TASK_COMPLETE]
+  for (dep_id in complete) {
+    handle_dependency_success(con, keys, key_queue, key_queue_deferred, dep_id,
+                              task_ids)
+  }
 
   task_ids
 }
+
 
 task_results <- function(con, keys, task_ids) {
   res <- from_redis_hash(con, keys$task_result, task_ids, identity, NULL)
