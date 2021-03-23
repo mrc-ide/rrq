@@ -40,7 +40,8 @@ handle_dependency_success <- function(con, keys, queue, queue_deferred,
     if (cardinality == 0) then
       redis.call("SREM", key_deferred_queue, deferred_task_id)
       redis.call("LPUSH", key_queue, deferred_task_id)
-      redis.call("HMSET", key_task_status, deferred_task_id, task_pending_status)
+      redis.call("HMSET", key_task_status, deferred_task_id,
+                 task_pending_status)
     end
   '
   scripts <- redux::redis_scripts(con, move_to_queue = move_to_queue)
