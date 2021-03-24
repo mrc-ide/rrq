@@ -1150,7 +1150,7 @@ task_submit_n <- function(con, keys, dat, key_complete, queue,
   incomplete_status <- c(TASK_ERROR, TASK_ORPHAN, TASK_INTERRUPTED,
                          TASK_IMPOSSIBLE)
   if (any(response$status %in% incomplete_status)) {
-    set_task_impossible(con, keys, key_queue_deferred, task_ids)
+    cancel_dependencies(con, keys, key_queue_deferred, task_ids)
     incomplete <- response$status[response$status %in% incomplete_status]
     names(incomplete) <- depends_on[response$status %in% incomplete_status]
     stop(sprintf("Failed to queue as dependent tasks failed:\n%s",
@@ -1160,8 +1160,8 @@ task_submit_n <- function(con, keys, dat, key_complete, queue,
 
   complete <- depends_on[response$status == TASK_COMPLETE]
   for (dep_id in complete) {
-    handle_dependency_success(con, keys, key_queue, key_queue_deferred, dep_id,
-                              task_ids)
+    queue_dependencies(con, keys, key_queue, key_queue_deferred, dep_id,
+                       task_ids)
   }
 
   task_ids

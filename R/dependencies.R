@@ -1,32 +1,30 @@
-worker_handle_dependencies <- function(worker, task_id, task_status) {
+worker_queue_dependencies <- function(worker, task_id, task_status) {
   dependent_keys <- rrq_key_task_dependents(worker$keys$queue_id, task_id)
   dependent_ids <- worker$con$SMEMBERS(dependent_keys)
   if (length(dependent_ids) == 0) {
-    return(invisible(TRUE))
+    return()
   }
 
   if (identical(task_status, TASK_ERROR)) {
-    set_task_impossible(worker$con, worker$keys, worker$queue_deferred,
+    cancel_dependencies(worker$con, worker$keys, worker$queue_deferred,
                         dependent_ids)
   } else {
-    handle_dependency_success(worker$con, worker$keys, worker$queue,
-                              worker$queue_deferred, task_id, dependent_ids)
+    queue_dependencies(worker$con, worker$keys, worker$queue,
+                       worker$queue_deferred, task_id, dependent_ids)
   }
   invisible(TRUE)
 }
 
-set_task_impossible <- function(con, keys, queue_deferred, ids) {
+cancel_dependencies <- function(con, keys, queue_deferred, ids) {
   n <- length(ids)
-  ## NOTE: We're not clearing up dependency keys on the task_id - is that OK?
-  ## We don't have to clear up the dependent_keys here
   con$pipeline(
     redis$HMSET(keys$task_status, ids, rep_len(TASK_IMPOSSIBLE, n)),
     redis$SREM(queue_deferred, ids)
   )
 }
 
-handle_dependency_success <- function(con, keys, queue, queue_deferred,
-                                      task_id, deferred_task_ids) {
+queue_dependencies <- function(con, keys, queue, queue_deferred,
+                               task_id, deferred_task_ids) {
   move_to_queue <- '
     local key_dependencies_set = KEYS[1]
     local key_queue = KEYS[2]
