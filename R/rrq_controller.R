@@ -452,7 +452,7 @@ rrq_controller_ <- R6::R6Class(
     ##'
     ##' @param missing Value to return if the task is not found in the queue.
     ##'   A task will take value `missing` if it is running, complete,
-    ##'   errored etc and a positive integer if it is in the queue,
+    ##'   errored, deferred etc and a positive integer if it is in the queue,
     ##'   indicating its position (with 1) being the next task to run.
     ##'
     ##' @param queue The name of the queue to query (defaults to the
