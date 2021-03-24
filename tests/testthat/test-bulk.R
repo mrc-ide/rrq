@@ -102,9 +102,6 @@ test_that("lapply to alt queue", {
 
 
 test_that("bulk tasks can be queued with dependency", {
-  ## e.g. report B depends on report A, and we want to run B
-  ## 3 times for different parameter values
-  ## And then run report C which depends on 3 runs of B
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
 
