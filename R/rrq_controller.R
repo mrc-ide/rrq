@@ -374,8 +374,8 @@ rrq_controller_ <- R6::R6Class(
     ##'   details).
     lapply_ = function(x, fun, ..., dots = NULL,
                        envir = parent.frame(), queue = NULL,
-                       separate_process = FALSE, depends_on, timeout = Inf,
-                       time_poll = NULL, progress = NULL) {
+                       separate_process = FALSE, depends_on = NULL,
+                       timeout = Inf, time_poll = NULL, progress = NULL) {
       if (is.null(dots)) {
         dots <- list(...)
       }

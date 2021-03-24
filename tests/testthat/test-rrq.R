@@ -490,11 +490,11 @@ test_that("task can be queued with dependency", {
   ## Original dependencies are stored
   original_deps_keys <- rrq_key_task_dependencies_original(
     obj$keys$queue_id, t3)
-  expect_true(all(list(t, t2) %in% obj$con$SMEMBERS(original_deps_keys)))
+  expect_setequal(obj$con$SMEMBERS(original_deps_keys), c(t, t2))
 
   ## Pending dependencies are stored
   dependency_keys <- rrq_key_task_dependencies(obj$keys$queue_id, t3)
-  expect_true(all(list(t, t2) %in% obj$con$SMEMBERS(dependency_keys)))
+  expect_setequal(obj$con$SMEMBERS(dependency_keys), c(t, t2))
 
   ## Inverse depends_on relationship is stored
   dependent_keys <- rrq_key_task_dependents(obj$keys$queue_id, c(t, t2))
@@ -516,7 +516,7 @@ test_that("task can be queued with dependency", {
   ## Still not on queue
   expect_equal(obj$queue_list(), t2)
   ## Status of it has updated
-  expect_true(all(list(t, t2) %in% obj$con$SMEMBERS(original_deps_keys)))
+  expect_setequal(obj$con$SMEMBERS(original_deps_keys), c(t, t2))
   expect_equal(obj$con$SMEMBERS(dependency_keys), list(t2))
   expect_equal(obj$con$SMEMBERS(key_queue_deferred), list(t3))
 
@@ -527,7 +527,7 @@ test_that("task can be queued with dependency", {
   ## Now added to queue
   expect_equal(obj$queue_list(), t3)
   ## Status can be retrieved
-  expect_true(all(list(t, t2) %in% obj$con$SMEMBERS(original_deps_keys)))
+  expect_setequal(obj$con$SMEMBERS(original_deps_keys), c(t, t2))
   expect_equal(obj$con$SMEMBERS(dependency_keys), list())
   expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
 
@@ -618,14 +618,14 @@ test_that("multiple tasks can be queued with same dependency", {
 
   ## t3 is on dependency queue
   key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
-  expect_true(all(c(t2, t3) %in% obj$con$SMEMBERS(key_queue_deferred)))
+  expect_setequal(obj$con$SMEMBERS(key_queue_deferred), c(t2, t3))
 
   w$step(TRUE)
   obj$task_wait(t, 2)
   expect_equivalent(obj$task_status(t), "COMPLETE")
   expect_equivalent(obj$task_status(t2), "PENDING")
   expect_equivalent(obj$task_status(t3), "PENDING")
-  expect_true(all(c(t2, t3) %in% obj$queue_list()))
+  expect_setequal(obj$queue_list(), c(t2, t3))
 
   expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
 })
