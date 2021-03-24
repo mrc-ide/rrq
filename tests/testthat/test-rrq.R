@@ -457,8 +457,10 @@ test_that("can check task exists", {
   t2 <- obj$enqueue(sin(0))
   expect_true(obj$task_exists(t))
   expect_false(obj$task_exists("123"))
-  expect_equivalent(obj$task_exists(c(t, t2)), c(TRUE, TRUE))
-  expect_equivalent(obj$task_exists(c(t, "123")), c(TRUE, FALSE))
+  expect_equal(obj$task_exists(c(t, t2)),
+               setNames(c(TRUE, TRUE), c(t, t2)))
+  expect_equal(obj$task_exists(c(t, "123")),
+               setNames(c(TRUE, FALSE), c(t, "123")))
 })
 
 

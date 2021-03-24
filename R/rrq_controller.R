@@ -410,7 +410,8 @@ rrq_controller_ <- R6::R6Class(
     ##'   rrq controller
     ##' @param task_ids Character vector of task ids to check for existence.
     task_exists = function(task_ids = NULL) {
-      as.logical(self$con$HMGET(self$keys$task_expr, task_ids))
+      exists <- !vlapply(self$con$HMGET(self$keys$task_expr, task_ids), is.null)
+      setNames(exists, task_ids)
     },
 
     ##' @description Return a character vector of task statuses. The name
@@ -1102,39 +1103,39 @@ task_submit_n <- function(con, keys, dat, key_complete, queue,
     keys$queue_id, task_ids)
   dependency_keys <- rrq_key_task_dependencies(keys$queue_id, task_ids)
   dependent_keys <- rrq_key_task_dependents(keys$queue_id, depends_on)
-  status <- NULL
 
-  response <- con$pipeline(.commands = c(list(
-    if (!is.null(key_complete)) {
-      redis$HMSET(keys$task_complete, task_ids, rep_len(key_complete, n))
-    } else {
-      ## We need this because if this sends NULL then response from
-      ## running the pipeline has 11 items (as this would be NULL)
-      ## but we're trying to set names for 12 items so it errors
-      ## (ideally redux would deal with this)
-      redis$PING()
-    },
-    redis$HMSET(keys$task_expr, task_ids, dat),
-    redis$HMSET(keys$task_status, task_ids, rep_len(TASK_PENDING, n)),
-    redis$HMSET(keys$task_queue, task_ids, rep_len(queue, n)),
-    redis$HMSET(keys$task_local, task_ids, rep_len(local, n))),
-    if (length(depends_on) > 0) {
-      c(list(
+  if (!is.null(key_complete)) {
+    cmds <- list(
+      redis$HMSET(keys$task_complete, task_ids, rep_len(key_complete, n)))
+  } else {
+    cmds <- list()
+  }
+  cmds <- c(
+    cmds,
+    list(
+      redis$HMSET(keys$task_expr, task_ids, dat),
+      redis$HMSET(keys$task_status, task_ids, rep_len(TASK_PENDING, n)),
+      redis$HMSET(keys$task_queue, task_ids, rep_len(queue, n)),
+      redis$HMSET(keys$task_local, task_ids, rep_len(local, n))))
+  if (length(depends_on) > 0) {
+    cmds <- c(
+      cmds,
+      list(
         status = redis$HMGET(keys$task_status, depends_on),
         redis$HMSET(keys$task_status, task_ids, rep_len(TASK_DEFERRED, n))),
-        lapply(original_deps_keys, redis$SADD, depends_on),
-        lapply(dependency_keys, redis$SADD, depends_on),
-        lapply(dependent_keys, redis$SADD, task_ids),
-        list(redis$SADD(key_queue_deferred, task_ids))
-      )
-    } else if (at_front) {
-      list(redis$LPUSH(key_queue, task_ids))
-    } else {
-      list(redis$RPUSH(key_queue, task_ids))
-    }
-  ))
+      lapply(original_deps_keys, redis$SADD, depends_on),
+      lapply(dependency_keys, redis$SADD, depends_on),
+      lapply(dependent_keys, redis$SADD, task_ids),
+      list(redis$SADD(key_queue_deferred, task_ids))
+    )
+  } else if (at_front) {
+    cmds <- c(cmds, list(redis$LPUSH(key_queue, task_ids)))
+  } else {
+    cmds <- c(cmds, list(redis$RPUSH(key_queue, task_ids)))
+  }
+  response <- con$pipeline(.commands = cmds)
 
-  ## If any are impossible to do - then cleanup
+  ## If any dependencies will never be satisfied then cleanup and error
   incomplete_status <- c(TASK_ERROR, TASK_ORPHAN, TASK_INTERRUPTED,
                          TASK_IMPOSSIBLE)
   if (any(response$status %in% incomplete_status)) {
