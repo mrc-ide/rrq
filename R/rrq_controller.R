@@ -285,17 +285,7 @@ rrq_controller_ <- R6::R6Class(
                         queue = NULL, separate_process = FALSE,
                         at_front = FALSE, depends_on = NULL) {
       dat <- expression_prepare(expr, envir, NULL, self$db)
-      if (!is.null(depends_on)) {
-        dependencies_exist <- self$task_exists(depends_on)
-        if (!all(dependencies_exist)) {
-          missing <- names(dependencies_exist[!dependencies_exist])
-          error_msg <- ngettext(
-            length(missing),
-            "Failed to queue as dependency %s does not exist.",
-            "Failed to queue as dependencies %s do not exist.")
-          stop(sprintf(error_msg, paste0(missing, collapse = ", ")))
-        }
-      }
+      verify_dependencies_exist(self, depends_on)
       task_submit(self$con, self$keys, dat, key_complete, queue,
                   separate_process, at_front, depends_on)
     },
@@ -420,9 +410,7 @@ rrq_controller_ <- R6::R6Class(
     ##'   rrq controller
     ##' @param task_ids Character vector of task ids to check for existence.
     task_exists = function(task_ids = NULL) {
-      vlapply(task_ids, function(id) {
-        as.logical(self$con$HEXISTS(self$keys$task_expr, id))
-      })
+      as.logical(self$con$HMGET(self$keys$task_expr, task_ids))
     },
 
     ##' @description Return a character vector of task statuses. The name
@@ -1434,4 +1422,19 @@ queue_remove <- function(con, keys, task_ids, queue) {
     con$RPUSH(key_queue, ids[keep])
   }
   invisible(task_ids %in% ids)
+}
+
+verify_dependencies_exist <- function(controller, depends_on) {
+  if (!is.null(depends_on)) {
+    dependencies_exist <- controller$task_exists(depends_on)
+    if (!all(dependencies_exist)) {
+      missing <- names(dependencies_exist[!dependencies_exist])
+      error_msg <- ngettext(
+        length(missing),
+        "Failed to queue as dependency %s does not exist.",
+        "Failed to queue as dependencies %s do not exist.")
+      stop(sprintf(error_msg, paste0(missing, collapse = ", ")))
+    }
+  }
+  invisible(TRUE)
 }

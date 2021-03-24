@@ -82,7 +82,7 @@ rrq_key_task_dependencies <- function(queue_id, task_id) {
 }
 
 rrq_key_task_dependencies_original <- function(queue_id, task_id) {
-  sprintf("%s:task:%s:dependencies.original", queue_id, task_id)
+  sprintf("%s:task:%s:dependencies:original", queue_id, task_id)
 }
 
 rrq_key_task_dependents <- function(queue_id, task_id) {
