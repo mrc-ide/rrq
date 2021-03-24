@@ -575,16 +575,20 @@ test_that("queueing with depends_on errored task fails", {
   expect_true(TASK_ERROR %in% status)
 })
 
-test_that("dependent tasks updated if fails", {
+test_that("dependent tasks updated if dependency fails", {
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
 
   t <- obj$enqueue(only_positive(-1))
   t2 <- obj$enqueue(sin(0), depends_on = t)
+  t3 <- obj$enqueue(sin(0), depends_on = t)
+  t4 <- obj$enqueue(sin(0), depends_on = t2)
 
   expect_equal(obj$queue_list(), t)
   expect_equivalent(obj$task_status(t), "PENDING")
   expect_equivalent(obj$task_status(t2), "DEFERRED")
+  expect_equivalent(obj$task_status(t3), "DEFERRED")
+  expect_equivalent(obj$task_status(t4), "DEFERRED")
 
   w$step(TRUE)
   obj$task_wait(t, 2)
@@ -592,6 +596,8 @@ test_that("dependent tasks updated if fails", {
 
   ## Dependent task updated and nothing queued
   expect_equivalent(obj$task_status(t2), "IMPOSSIBLE")
+  expect_equivalent(obj$task_status(t3), "IMPOSSIBLE")
+  expect_equivalent(obj$task_status(t4), "IMPOSSIBLE")
   expect_equal(obj$queue_list(), character(0))
   key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
   expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())

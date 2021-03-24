@@ -21,6 +21,11 @@ cancel_dependencies <- function(con, keys, queue_deferred, ids) {
     redis$HMSET(keys$task_status, ids, rep_len(TASK_IMPOSSIBLE, n)),
     redis$SREM(queue_deferred, ids)
   )
+  dependent_keys <- rrq_key_task_dependents(keys$queue_id, ids)
+  for (dependent_key in dependent_keys) {
+    dependent_ids <- con$SMEMBERS(dependent_key)
+    cancel_dependencies(con, keys, queue_deferred, dependent_ids)
+  }
 }
 
 queue_dependencies <- function(con, keys, queue, queue_deferred,
