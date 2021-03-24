@@ -602,3 +602,28 @@ test_that("dependent tasks updated if dependency fails", {
   key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
   expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
 })
+
+test_that("multiple tasks can be queued with same dependency", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t <- obj$enqueue(sin(0))
+  t2 <- obj$enqueue(sin(0), depends_on = t)
+  t3 <- obj$enqueue(sin(0), depends_on = t)
+  expect_equal(obj$queue_list(), t)
+  expect_equivalent(obj$task_status(t2), "DEFERRED")
+  expect_equivalent(obj$task_status(t3), "DEFERRED")
+
+  ## t3 is on dependency queue
+  key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
+  expect_true(all(c(t2, t3) %in% obj$con$SMEMBERS(key_queue_deferred)))
+
+  w$step(TRUE)
+  obj$task_wait(t, 2)
+  expect_equivalent(obj$task_status(t), "COMPLETE")
+  expect_equivalent(obj$task_status(t2), "PENDING")
+  expect_equivalent(obj$task_status(t3), "PENDING")
+  expect_true(all(c(t2, t3) %in% obj$queue_list()))
+
+  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
+})
