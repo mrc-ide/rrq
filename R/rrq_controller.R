@@ -324,14 +324,15 @@ rrq_controller_ <- R6::R6Class(
     ##'   details).
     lapply = function(x, fun, ..., dots = NULL,
                       envir = parent.frame(), queue = NULL,
-                      separate_process = FALSE,
+                      separate_process = FALSE, depends_on = NULL,
                       timeout = Inf, time_poll = NULL, progress = NULL) {
       if (is.null(dots)) {
         dots <- as.list(substitute(list(...)))[-1L]
       }
       self$lapply_(x, substitute(fun), dots = dots, envir = envir,
                    queue = queue, separate_process = separate_process,
-                   timeout = timeout, time_poll = time_poll, progress = NULL)
+                   depends_on = depends_on, timeout = timeout,
+                   time_poll = time_poll, progress = NULL)
     },
 
     ##' @description The "standard evaluation" version of `$lapply()`.
@@ -373,13 +374,13 @@ rrq_controller_ <- R6::R6Class(
     ##'   details).
     lapply_ = function(x, fun, ..., dots = NULL,
                        envir = parent.frame(), queue = NULL,
-                       separate_process = FALSE, timeout = Inf,
+                       separate_process = FALSE, depends_on, timeout = Inf,
                        time_poll = NULL, progress = NULL) {
       if (is.null(dots)) {
         dots <- list(...)
       }
       rrq_lapply(self$con, self$keys, self$db, x, fun, dots, envir, queue,
-                 separate_process, timeout, time_poll, progress)
+                 separate_process, depends_on, timeout, time_poll, progress)
     },
 
     ##' @description Wait for a group of tasks
