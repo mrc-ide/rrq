@@ -449,3 +449,183 @@ test_that("task can be added to front of queue", {
   expect_equivalent(obj$task_status(t), "PENDING")
   expect_equivalent(obj$task_status(t2), "COMPLETE")
 })
+
+
+test_that("can check task exists", {
+  obj <- test_rrq("myfuns.R")
+  t <- obj$enqueue(sin(0))
+  t2 <- obj$enqueue(sin(0))
+  expect_true(obj$task_exists(t))
+  expect_false(obj$task_exists("123"))
+  expect_equal(obj$task_exists(c(t, t2)),
+               setNames(c(TRUE, TRUE), c(t, t2)))
+  expect_equal(obj$task_exists(c(t, "123")),
+               setNames(c(TRUE, FALSE), c(t, "123")))
+})
+
+
+test_that("queue task with missing dependency throws an error", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  expect_error(obj$enqueue(sin(0), depends_on = "123"),
+               "Failed to queue as dependency 123 does not exist.")
+  expect_error(obj$enqueue(sin(0), depends_on = c("123", "456")),
+               "Failed to queue as dependencies 123, 456 do not exist.")
+})
+
+
+test_that("task can be queued with dependency", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t <- obj$enqueue(sin(0))
+  t2 <- obj$enqueue(sin(0))
+  expect_equal(obj$queue_list(), c(t, t2))
+  t3 <- obj$enqueue(sin(pi / 2), depends_on = c(t, t2))
+  ## t3 has not been added to main queue yet
+  expect_equal(obj$queue_list(), c(t, t2))
+  expect_equivalent(obj$task_status(t3), "DEFERRED")
+
+  ## Original dependencies are stored
+  original_deps_keys <- rrq_key_task_dependencies_original(
+    obj$keys$queue_id, t3)
+  expect_setequal(obj$con$SMEMBERS(original_deps_keys), c(t, t2))
+
+  ## Pending dependencies are stored
+  dependency_keys <- rrq_key_task_dependencies(obj$keys$queue_id, t3)
+  expect_setequal(obj$con$SMEMBERS(dependency_keys), c(t, t2))
+
+  ## Inverse depends_on relationship is stored
+  dependent_keys <- rrq_key_task_dependents(obj$keys$queue_id, c(t, t2))
+  for (key in dependent_keys) {
+    expect_equal(obj$con$SMEMBERS(key), list(t3))
+  }
+
+  ## t3 is on dependency queue
+  key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
+  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list(t3))
+
+  ## Function to retrieve status of t3 and see what it is waiting for
+
+  w$step(TRUE)
+  obj$task_wait(t, 2)
+  expect_equivalent(obj$task_status(t), "COMPLETE")
+  expect_equivalent(obj$task_status(t2), "PENDING")
+  expect_equivalent(obj$task_status(t3), "DEFERRED")
+  ## Still not on queue
+  expect_equal(obj$queue_list(), t2)
+  ## Status of it has updated
+  expect_setequal(obj$con$SMEMBERS(original_deps_keys), c(t, t2))
+  expect_equal(obj$con$SMEMBERS(dependency_keys), list(t2))
+  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list(t3))
+
+  w$step(TRUE)
+  obj$task_wait(t2, 2)
+  expect_equivalent(obj$task_status(t2), "COMPLETE")
+  expect_equivalent(obj$task_status(t3), "PENDING")
+  ## Now added to queue
+  expect_equal(obj$queue_list(), t3)
+  ## Status can be retrieved
+  expect_setequal(obj$con$SMEMBERS(original_deps_keys), c(t, t2))
+  expect_equal(obj$con$SMEMBERS(dependency_keys), list())
+  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
+
+  w$step(TRUE)
+  obj$task_wait(t3, 2)
+  expect_equivalent(obj$task_status(t3), "COMPLETE")
+})
+
+test_that("task added to queue immediately if dependencies satified", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t <- obj$enqueue(sin(0))
+  expect_equal(obj$queue_list(), t)
+
+  w$step(TRUE)
+  obj$task_wait(t, 2)
+
+  ## Immediately added to queue as t has completed
+  t2 <- obj$enqueue(sin(pi / 2), depends_on = t)
+  expect_equal(obj$queue_list(), t2)
+  expect_equivalent(obj$task_status(t2), TASK_PENDING)
+})
+
+test_that("queueing with depends_on errored task fails", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t <- obj$enqueue(only_positive(-1))
+  w$step(TRUE)
+  res <- obj$task_result(t)
+  expect_is(res, "rrq_task_error")
+
+  expect_error(obj$enqueue(sin(0), depends_on = t),
+               paste0("Failed to queue as dependent tasks failed:\n",
+                      t, ": ERROR"),
+               fixed = TRUE)
+
+  ## deferred queue is empty
+  key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
+  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
+
+  ## Task is set to impossible
+  status <- obj$task_status()
+  expect_length(status, 2)
+  expect_true(TASK_IMPOSSIBLE %in% status)
+  expect_true(TASK_ERROR %in% status)
+})
+
+test_that("dependent tasks updated if dependency fails", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t <- obj$enqueue(only_positive(-1))
+  t2 <- obj$enqueue(sin(0), depends_on = t)
+  t3 <- obj$enqueue(sin(0), depends_on = t)
+  t4 <- obj$enqueue(sin(0), depends_on = t2)
+
+  expect_equal(obj$queue_list(), t)
+  expect_equivalent(obj$task_status(t), "PENDING")
+  expect_equivalent(obj$task_status(t2), "DEFERRED")
+  expect_equivalent(obj$task_status(t3), "DEFERRED")
+  expect_equivalent(obj$task_status(t4), "DEFERRED")
+
+  w$step(TRUE)
+  obj$task_wait(t, 2)
+  expect_equivalent(obj$task_status(t), "ERROR")
+
+  ## Dependent task updated and nothing queued
+  expect_equivalent(obj$task_status(t2), "IMPOSSIBLE")
+  expect_equivalent(obj$task_status(t3), "IMPOSSIBLE")
+  expect_equivalent(obj$task_status(t4), "IMPOSSIBLE")
+  expect_equal(obj$queue_list(), character(0))
+  key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
+  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
+})
+
+test_that("multiple tasks can be queued with same dependency", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t <- obj$enqueue(sin(0))
+  t2 <- obj$enqueue(sin(0), depends_on = t)
+  t3 <- obj$enqueue(sin(0), depends_on = t)
+  expect_equal(obj$queue_list(), t)
+  expect_equivalent(obj$task_status(t2), "DEFERRED")
+  expect_equivalent(obj$task_status(t3), "DEFERRED")
+
+  ## t3 is on dependency queue
+  key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
+  expect_setequal(obj$con$SMEMBERS(key_queue_deferred), c(t2, t3))
+
+  w$step(TRUE)
+  obj$task_wait(t, 2)
+  expect_equivalent(obj$task_status(t), "COMPLETE")
+  expect_equivalent(obj$task_status(t2), "PENDING")
+  expect_equivalent(obj$task_status(t3), "PENDING")
+  expect_setequal(obj$queue_list(), c(t2, t3))
+
+  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
+})

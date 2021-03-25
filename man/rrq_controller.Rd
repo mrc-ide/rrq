@@ -139,6 +139,7 @@ ans <- obj$lapply_(1:10, quote(log), base = quote(b))
 \item \href{#method-lapply_}{\code{rrq_controller_$lapply_()}}
 \item \href{#method-bulk_wait}{\code{rrq_controller_$bulk_wait()}}
 \item \href{#method-task_list}{\code{rrq_controller_$task_list()}}
+\item \href{#method-task_exists}{\code{rrq_controller_$task_exists()}}
 \item \href{#method-task_status}{\code{rrq_controller_$task_status()}}
 \item \href{#method-task_progress}{\code{rrq_controller_$task_progress()}}
 \item \href{#method-task_overview}{\code{rrq_controller_$task_overview()}}
@@ -267,7 +268,8 @@ Queue an expression
   key_complete = NULL,
   queue = NULL,
   separate_process = FALSE,
-  at_front = FALSE
+  at_front = FALSE,
+  depends_on = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -301,6 +303,12 @@ starting the extenal process and transferring data back.}
 
 \item{\code{at_front}}{Logical, if TRUE then add the task to the front
 of the queue.}
+
+\item{\code{depends_on}}{Vector or list of IDs of tasks which must have
+completed before this job can be run. Once all dependent tasks
+have been successfully run, this task will get added to the
+queue. If the dependent task fails then this task will be
+removed from the queue.}
 }
 \if{html}{\out{</div>}}
 }
@@ -317,7 +325,8 @@ Queue an expression
   key_complete = NULL,
   queue = NULL,
   separate_process = FALSE,
-  at_front = FALSE
+  at_front = FALSE,
+  depends_on = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -350,6 +359,12 @@ details).}
 
 \item{\code{at_front}}{Logical, if TRUE then add the task to the front
 of the queue.}
+
+\item{\code{depends_on}}{Vector or list of IDs of tasks which must have
+completed before this job can be run. Once all dependent tasks
+have been successfully run, this task will get added to the
+queue. If the dependent task fails then this task will be
+removed from the queue.}
 }
 \if{html}{\out{</div>}}
 }
@@ -510,6 +525,24 @@ List ids of all tasks known to this rrq controller
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_list()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-task_exists"></a>}}
+\if{latex}{\out{\hypertarget{method-task_exists}{}}}
+\subsection{Method \code{task_exists()}}{
+Test if task with id \code{task_ids} is known to this
+rrq controller
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_exists(task_ids = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{task_ids}}{Character vector of task ids to check for existence.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-task_status"></a>}}

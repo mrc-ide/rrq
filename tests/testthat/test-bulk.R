@@ -99,3 +99,99 @@ test_that("lapply to alt queue", {
 
   expect_equal(obj$bulk_wait(grp), as.list(log(1:10, base = 2)))
 })
+
+
+test_that("bulk tasks can be queued with dependency", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t <- obj$enqueue(sin(0))
+  t2 <- obj$enqueue(sin(pi / 2))
+  grp <- obj$lapply(c(0, pi / 2), sin, timeout = 0, depends_on = c(t, t2))
+  expect_equal(obj$queue_list(), c(t, t2))
+  t3 <- obj$enqueue(sin(pi / 2), depends_on = grp$task_ids)
+  ## t3 has not been added to main queue yet
+  expect_equal(obj$queue_list(), c(t, t2))
+  expect_equivalent(obj$task_status(t), "PENDING")
+  expect_equivalent(obj$task_status(t2), "PENDING")
+  expect_equivalent(obj$task_status(grp$task_ids), c("DEFERRED", "DEFERRED"))
+  expect_equivalent(obj$task_status(t3), "DEFERRED")
+
+  ## Original dependencies are stored
+  grp_id_1 <- grp$task_ids[[1]]
+  grp_id_2 <- grp$task_ids[[2]]
+  original_grp_dep_id_1 <- rrq_key_task_dependencies_original(
+    obj$keys$queue_id, grp_id_1)
+  expect_setequal(obj$con$SMEMBERS(original_grp_dep_id_1), c(t, t2))
+  original_grp_dep_id_2 <- rrq_key_task_dependencies_original(
+    obj$keys$queue_id, grp_id_2)
+  expect_setequal(obj$con$SMEMBERS(original_grp_dep_id_2), c(t, t2))
+  original_deps_keys_t3 <- rrq_key_task_dependencies_original(
+    obj$keys$queue_id, t3)
+  expect_setequal(obj$con$SMEMBERS(original_deps_keys_t3), grp$task_ids)
+
+  ## Pending dependencies are stored
+  grp_dep_id_1 <- rrq_key_task_dependencies(obj$keys$queue_id, grp_id_1)
+  expect_setequal(obj$con$SMEMBERS(grp_dep_id_1), c(t, t2))
+  grp_dep_id_2 <- rrq_key_task_dependencies(obj$keys$queue_id, grp_id_2)
+  expect_setequal(obj$con$SMEMBERS(grp_dep_id_2), c(t, t2))
+  dependency_keys_t3 <- rrq_key_task_dependencies(obj$keys$queue_id, t3)
+  expect_setequal(obj$con$SMEMBERS(dependency_keys_t3), grp$task_ids)
+
+  ## Inverse depends_on relationship is stored
+  dependent_keys_t <- rrq_key_task_dependents(obj$keys$queue_id, t)
+  for (key in dependent_keys_t) {
+    expect_setequal(obj$con$SMEMBERS(key), grp$task_ids)
+  }
+  dependent_keys_t2 <- rrq_key_task_dependents(obj$keys$queue_id, t2)
+  for (key in dependent_keys_t2) {
+    expect_setequal(obj$con$SMEMBERS(key), grp$task_ids)
+  }
+  grp_dependents_1 <- rrq_key_task_dependents(obj$keys$queue_id, grp_id_1)
+  for (key in grp_dependents_1) {
+    expect_setequal(obj$con$SMEMBERS(key), t3)
+  }
+  grp_dependents_2 <- rrq_key_task_dependents(obj$keys$queue_id, grp_id_2)
+  for (key in grp_dependents_2) {
+    expect_setequal(obj$con$SMEMBERS(key), t3)
+  }
+
+  ## Items are in deferred queue
+  key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
+  expect_setequal(obj$con$SMEMBERS(key_queue_deferred), c(grp$task_ids, t3))
+
+  w$step(TRUE)
+  obj$task_wait(t, 2)
+  expect_equivalent(obj$task_status(t), "COMPLETE")
+  expect_equivalent(obj$task_status(t2), "PENDING")
+  expect_equivalent(obj$task_status(grp$task_ids), c("DEFERRED", "DEFERRED"))
+  expect_equivalent(obj$task_status(t3), "DEFERRED")
+
+  w$step(TRUE)
+  obj$task_wait(t2, 2)
+  expect_equivalent(obj$task_status(t2), "COMPLETE")
+  expect_equivalent(obj$task_status(grp$task_ids), c("PENDING", "PENDING"))
+  expect_equivalent(obj$task_status(t3), "DEFERRED")
+  queue <- obj$queue_list()
+  expect_setequal(queue, grp$task_ids)
+  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list(t3))
+
+  w$step(TRUE)
+  obj$task_wait(queue[1], 2)
+  expect_setequal(obj$task_status(grp$task_ids), c("COMPLETE", "PENDING"))
+  expect_equivalent(obj$task_status(t3), "DEFERRED")
+  expect_equal(obj$queue_list(), queue[2])
+  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list(t3))
+
+  w$step(TRUE)
+  obj$task_wait(queue[2], 2)
+  expect_equivalent(obj$task_status(grp$task_ids), c("COMPLETE", "COMPLETE"))
+  expect_equivalent(obj$task_status(t3), "PENDING")
+  expect_equal(obj$queue_list(), t3)
+  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
+
+  w$step(TRUE)
+  obj$task_wait(t3, 2)
+  expect_equivalent(obj$task_status(t3), "COMPLETE")
+  expect_equal(obj$queue_list(), character(0))
+})
