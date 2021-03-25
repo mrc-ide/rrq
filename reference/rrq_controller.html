@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.14</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.15</span>
       </span>
     </div>
 
@@ -262,6 +262,7 @@ expected, so you can use the names directly:</p><pre><span class='va'>b</span> <
 <li><p><a href='#method-lapply_'><code>rrq_controller_$lapply_()</code></a></p></li>
 <li><p><a href='#method-bulk_wait'><code>rrq_controller_$bulk_wait()</code></a></p></li>
 <li><p><a href='#method-task_list'><code>rrq_controller_$task_list()</code></a></p></li>
+<li><p><a href='#method-task_exists'><code>rrq_controller_$task_exists()</code></a></p></li>
 <li><p><a href='#method-task_status'><code>rrq_controller_$task_status()</code></a></p></li>
 <li><p><a href='#method-task_progress'><code>rrq_controller_$task_progress()</code></a></p></li>
 <li><p><a href='#method-task_overview'><code>rrq_controller_$task_overview()</code></a></p></li>
@@ -365,7 +366,8 @@ message to all workers to update their environment.</p></dd>
   key_complete <span class='op'>=</span> <span class='cn'>NULL</span>,
   queue <span class='op'>=</span> <span class='cn'>NULL</span>,
   separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  at_front <span class='op'>=</span> <span class='cn'>FALSE</span>
+  at_front <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  depends_on <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
@@ -398,6 +400,12 @@ starting the extenal process and transferring data back.</p></dd>
 <dt><code>at_front</code></dt><dd><p>Logical, if TRUE then add the task to the front
 of the queue.</p></dd>
 
+<dt><code>depends_on</code></dt><dd><p>Vector or list of IDs of tasks which must have
+completed before this job can be run. Once all dependent tasks
+have been successfully run, this task will get added to the
+queue. If the dependent task fails then this task will be
+removed from the queue.</p></dd>
+
 </dl><p></div></p>
 <p><hr>
 <a id="method-enqueue_"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>enqueue_()</code></h3>
@@ -408,7 +416,8 @@ of the queue.</p></dd>
   key_complete <span class='op'>=</span> <span class='cn'>NULL</span>,
   queue <span class='op'>=</span> <span class='cn'>NULL</span>,
   separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  at_front <span class='op'>=</span> <span class='cn'>FALSE</span>
+  at_front <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  depends_on <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
@@ -439,6 +448,12 @@ details).</p></dd>
 
 <dt><code>at_front</code></dt><dd><p>Logical, if TRUE then add the task to the front
 of the queue.</p></dd>
+
+<dt><code>depends_on</code></dt><dd><p>Vector or list of IDs of tasks which must have
+completed before this job can be run. Once all dependent tasks
+have been successfully run, this task will get added to the
+queue. If the dependent task fails then this task will be
+removed from the queue.</p></dd>
 
 </dl><p></div></p>
 <p><hr>
@@ -572,6 +587,17 @@ progress bar if in an interactive session.</p></dd>
 <p>List ids of all tasks known to this rrq controller</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
 <p><div class="r"></p><pre><span class='va'>rrq_controller_</span><span class='op'>$</span><span class='fu'>task_list</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
 
+<p><hr>
+<a id="method-task_exists"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>task_exists()</code></h3>
+<p>Test if task with id <code>task_ids</code> is known to this
+rrq controller</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_controller_</span><span class='op'>$</span><span class='fu'>task_exists</span><span class='op'>(</span>task_ids <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>task_ids</code></dt><dd><p>Character vector of task ids to check for existence.</p></dd>
+
+</dl><p></div></p>
 <p><hr>
 <a id="method-task_status"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>task_status()</code></h3>
 <p>Return a character vector of task statuses. The name
