@@ -503,7 +503,7 @@ test_that("task can be queued with dependency", {
   }
 
   ## t3 is on dependency queue
-  key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
+  key_queue_deferred <- obj$keys$queue_deferred
   expect_equal(obj$con$SMEMBERS(key_queue_deferred), list(t3))
 
   ## Function to retrieve status of t3 and see what it is waiting for
@@ -567,7 +567,7 @@ test_that("queueing with depends_on errored task fails", {
                fixed = TRUE)
 
   ## deferred queue is empty
-  key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
+  key_queue_deferred <- obj$keys$queue_deferred
   expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
 
   ## Task is set to impossible
@@ -601,7 +601,7 @@ test_that("dependent tasks updated if dependency fails", {
   expect_equivalent(obj$task_status(t3), "IMPOSSIBLE")
   expect_equivalent(obj$task_status(t4), "IMPOSSIBLE")
   expect_equal(obj$queue_list(), character(0))
-  key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
+  key_queue_deferred <- obj$keys$queue_deferred
   expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
 })
 
@@ -617,7 +617,7 @@ test_that("multiple tasks can be queued with same dependency", {
   expect_equivalent(obj$task_status(t3), "DEFERRED")
 
   ## t3 is on dependency queue
-  key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
+  key_queue_deferred <- obj$keys$queue_deferred
   expect_setequal(obj$con$SMEMBERS(key_queue_deferred), c(t2, t3))
 
   w$step(TRUE)
@@ -635,16 +635,17 @@ test_that("deferred task is added to specified queue", {
   w <- test_worker_blocking(obj)
 
   t <- obj$enqueue(sin(0))
-  t2 <- obj$enqueue(sin(0), depends_on = t, queue = "a")
+  t2 <- obj$enqueue(sin(0), depends_on = t)
+  t3 <- obj$enqueue(sin(0), depends_on = t, queue = "a")
   expect_equal(obj$queue_list(), t)
   expect_equal(obj$queue_list("a"), character(0))
-  key_queue_deferred <-
-  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list(t2))
+  key_queue_deferred <- obj$keys$queue_deferred
+  expect_setequal(obj$con$SMEMBERS(key_queue_deferred), list(t2, t3))
 
   w$step(TRUE)
   obj$task_wait(t, 2)
 
-  expect_equal(obj$queue_list(), character(0))
-  expect_equal(obj$queue_list("a"), t2)
+  expect_equal(obj$queue_list(), t2)
+  expect_equal(obj$queue_list("a"), t3)
   expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
 })
