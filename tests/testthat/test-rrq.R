@@ -503,7 +503,7 @@ test_that("task can be queued with dependency", {
   }
 
   ## t3 is on dependency queue
-  key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
+  key_queue_deferred <- obj$keys$queue_deferred
   expect_equal(obj$con$SMEMBERS(key_queue_deferred), list(t3))
 
   ## Function to retrieve status of t3 and see what it is waiting for
@@ -567,7 +567,7 @@ test_that("queueing with depends_on errored task fails", {
                fixed = TRUE)
 
   ## deferred queue is empty
-  key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
+  key_queue_deferred <- obj$keys$queue_deferred
   expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
 
   ## Task is set to impossible
@@ -601,7 +601,7 @@ test_that("dependent tasks updated if dependency fails", {
   expect_equivalent(obj$task_status(t3), "IMPOSSIBLE")
   expect_equivalent(obj$task_status(t4), "IMPOSSIBLE")
   expect_equal(obj$queue_list(), character(0))
-  key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
+  key_queue_deferred <- obj$keys$queue_deferred
   expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
 })
 
@@ -617,7 +617,7 @@ test_that("multiple tasks can be queued with same dependency", {
   expect_equivalent(obj$task_status(t3), "DEFERRED")
 
   ## t3 is on dependency queue
-  key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
+  key_queue_deferred <- obj$keys$queue_deferred
   expect_setequal(obj$con$SMEMBERS(key_queue_deferred), c(t2, t3))
 
   w$step(TRUE)
@@ -628,4 +628,20 @@ test_that("multiple tasks can be queued with same dependency", {
   expect_setequal(obj$queue_list(), c(t2, t3))
 
   expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
+})
+
+test_that("deferred task delete", {
+  skip("TODO")
+  obj <- test_rrq("myfuns.R")
+  t1 <- obj$enqueue(1 + 1)
+  t2 <- obj$enqueue(2 + 2, depends_on = t1)
+  t3 <- obj$enqueue(2 + 2, depends_on = t1)
+
+  expect_setequal(obj$task_list(), c(t1, t2, t3))
+  obj$task_delete(t2)
+  expect_setequal(obj$task_list(), c(t1, t3))
+
+  obj$task_delete(t1)
+  ## Should data be deleted??
+  expect_setequal(obj$task_list(), character(0))
 })

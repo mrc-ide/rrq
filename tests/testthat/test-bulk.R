@@ -157,7 +157,7 @@ test_that("bulk tasks can be queued with dependency", {
   }
 
   ## Items are in deferred queue
-  key_queue_deferred <- rrq_key_queue_deferred(obj$keys$queue_id, QUEUE_DEFAULT)
+  key_queue_deferred <- obj$keys$queue_deferred
   expect_setequal(obj$con$SMEMBERS(key_queue_deferred), c(grp$task_ids, t3))
 
   w$step(TRUE)

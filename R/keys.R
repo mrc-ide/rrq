@@ -33,7 +33,9 @@ rrq_keys_common <- function(queue_id) {
        task_local     = sprintf("%s:task:local",     queue_id),
        task_progress  = sprintf("%s:task:progress",  queue_id),
        task_result    = sprintf("%s:task:result",    queue_id),
-       task_complete  = sprintf("%s:task:complete",  queue_id))
+       task_complete  = sprintf("%s:task:complete",  queue_id),
+
+       queue_deferred = sprintf("%s:queue:deferred", queue_id))
 }
 
 rrq_keys_worker <- function(queue, worker) {
@@ -71,10 +73,6 @@ rrq_key_task_complete <- function(queue) {
 
 rrq_key_worker_alive <- function(queue_id) {
   sprintf("%s:worker:alive:%s", queue_id, ids::random_id())
-}
-
-rrq_key_queue_deferred <- function(queue, name) {
-  sprintf("%s:deferred", rrq_key_queue(queue, name))
 }
 
 rrq_key_task_dependencies <- function(queue_id, task_id) {
