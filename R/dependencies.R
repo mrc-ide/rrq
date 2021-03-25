@@ -9,8 +9,8 @@ worker_queue_dependencies <- function(worker, task_id, task_status) {
     cancel_dependencies(worker$con, worker$keys, worker$queue_deferred,
                         dependent_ids)
   } else {
-    queue_dependencies(worker$con, worker$keys, worker$queue,
-                       worker$queue_deferred, task_id, dependent_ids)
+    queue_dependencies(worker$con, worker$keys, worker$queue_deferred,
+                       task_id, dependent_ids)
   }
   invisible(TRUE)
 }
@@ -28,8 +28,8 @@ cancel_dependencies <- function(con, keys, queue_deferred, ids) {
   }
 }
 
-queue_dependencies <- function(con, keys, queue, queue_deferred,
-                               task_id, deferred_task_ids) {
+queue_dependencies <- function(con, keys, queue_deferred, task_id,
+                               deferred_task_ids) {
   dependency_keys <- rrq_key_task_dependencies(keys$queue_id, deferred_task_ids)
   res <- con$pipeline(.commands = c(
     lapply(dependency_keys, redis$SREM, task_id),
@@ -37,13 +37,16 @@ queue_dependencies <- function(con, keys, queue, queue_deferred,
   )
 
   ## Tasks with 0 remaining dependencies can be queued
+  browser()
   tasks_to_queue <- names(res[res == 0 & names(res) != ""])
-  cmds <- lapply(tasks_to_queue, function(id) {
+  queue_keys <- con$HMGET(keys$task_queue, tasks_to_queue)
+  queue_task <- function(id, key_queue) {
     list(
       redis$SREM(queue_deferred, id),
-      redis$LPUSH(queue, id),
+      redis$LPUSH(key_queue, id),
       redis$HMSET(keys$task_status, id, TASK_PENDING)
     )
-  })
+  }
+  cmds <- Map(queue_task, tasks_to_queue, queue_keys)
   con$pipeline(.commands = unlist(cmds, FALSE, FALSE))
 }

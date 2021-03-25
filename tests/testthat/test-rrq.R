@@ -629,3 +629,22 @@ test_that("multiple tasks can be queued with same dependency", {
 
   expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
 })
+
+test_that("deferred task is added to specified queue", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t <- obj$enqueue(sin(0))
+  t2 <- obj$enqueue(sin(0), depends_on = t, queue = "a")
+  expect_equal(obj$queue_list(), t)
+  expect_equal(obj$queue_list("a"), character(0))
+  key_queue_deferred <-
+  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list(t2))
+
+  w$step(TRUE)
+  obj$task_wait(t, 2)
+
+  expect_equal(obj$queue_list(), character(0))
+  expect_equal(obj$queue_list("a"), t2)
+  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
+})
