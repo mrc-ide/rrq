@@ -661,8 +661,8 @@ test_that("task set to impossible cannot be added to queue", {
   expect_equivalent(obj$task_status(t2), "PENDING")
   expect_equivalent(obj$task_status(t3), "DEFERRED")
   expect_equal(obj$queue_list(), c(t, t2))
-  key_queue_deferred <- obj$keys$queue_deferred
-  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list(t3))
+  deferred_set <- obj$keys$deferred_set
+  expect_equal(obj$con$SMEMBERS(deferred_set), list(t3))
 
   w$step(TRUE)
   res <- obj$task_result(t)
@@ -672,7 +672,7 @@ test_that("task set to impossible cannot be added to queue", {
   expect_equivalent(obj$task_status(t2), "PENDING")
   expect_equivalent(obj$task_status(t3), "IMPOSSIBLE")
   expect_equal(obj$queue_list(), t2)
-  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
+  expect_equal(obj$con$SMEMBERS(deferred_set), list())
 
   w$step(TRUE)
   obj$task_wait(t2, 2)
@@ -680,5 +680,5 @@ test_that("task set to impossible cannot be added to queue", {
   expect_equivalent(obj$task_status(t2), "COMPLETE")
   expect_equivalent(obj$task_status(t3), "IMPOSSIBLE")
   expect_equal(obj$queue_list(), character(0))
-  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
+  expect_equal(obj$con$SMEMBERS(deferred_set), list())
 })
