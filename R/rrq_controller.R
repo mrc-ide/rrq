@@ -1097,7 +1097,6 @@ task_submit_n <- function(con, keys, dat, key_complete, queue,
   task_ids <- ids::random_id(n)
   queue <- queue %||% QUEUE_DEFAULT
   key_queue <- rrq_key_queue(keys$queue_id, queue)
-  key_queue_deferred <- rrq_key_queue_deferred(keys$queue_id, queue)
   local <- if (separate_process) "FALSE" else "TRUE"
 
   original_deps_keys <- rrq_key_task_dependencies_original(
@@ -1127,7 +1126,7 @@ task_submit_n <- function(con, keys, dat, key_complete, queue,
       lapply(original_deps_keys, redis$SADD, depends_on),
       lapply(dependency_keys, redis$SADD, depends_on),
       lapply(dependent_keys, redis$SADD, task_ids),
-      list(redis$SADD(key_queue_deferred, task_ids))
+      list(redis$SADD(keys$deferred_set, task_ids))
     )
   } else if (at_front) {
     cmds <- c(cmds, list(redis$LPUSH(key_queue, task_ids)))
@@ -1140,7 +1139,7 @@ task_submit_n <- function(con, keys, dat, key_complete, queue,
   incomplete_status <- c(TASK_ERROR, TASK_ORPHAN, TASK_INTERRUPTED,
                          TASK_IMPOSSIBLE)
   if (any(response$status %in% incomplete_status)) {
-    cancel_dependencies(con, keys, key_queue_deferred, task_ids)
+    cancel_dependencies(con, keys, keys$deferred_set, task_ids)
     incomplete <- response$status[response$status %in% incomplete_status]
     names(incomplete) <- depends_on[response$status %in% incomplete_status]
     stop(sprintf("Failed to queue as dependent tasks failed:\n%s",
@@ -1150,8 +1149,7 @@ task_submit_n <- function(con, keys, dat, key_complete, queue,
 
   complete <- depends_on[response$status == TASK_COMPLETE]
   for (dep_id in complete) {
-    queue_dependencies(con, keys, key_queue, key_queue_deferred, dep_id,
-                       task_ids)
+    queue_dependencies(con, keys, keys$deferred_set, dep_id, task_ids)
   }
 
   task_ids
