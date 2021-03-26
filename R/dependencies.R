@@ -38,15 +38,17 @@ queue_dependencies <- function(con, keys, queue_deferred, task_id,
 
   ## Tasks with 0 remaining dependencies can be queued
   tasks_to_queue <- names(res[res == 0 & names(res) != ""])
-  task_queues <- con$HMGET(keys$task_queue, tasks_to_queue)
-  queue_keys <- rrq_key_queue(keys$queue_id, task_queues)
-  queue_task <- function(id, queue_key) {
-    list(
-      redis$SREM(queue_deferred, id),
-      redis$LPUSH(queue_key, id),
-      redis$HMSET(keys$task_status, id, TASK_PENDING)
-    )
+  if (length(tasks_to_queue > 0)) {
+    task_queues <- con$HMGET(keys$task_queue, tasks_to_queue)
+    queue_keys <- rrq_key_queue(keys$queue_id, task_queues)
+    queue_task <- function(id, queue_key) {
+      list(
+        redis$SREM(queue_deferred, id),
+        redis$LPUSH(queue_key, id),
+        redis$HMSET(keys$task_status, id, TASK_PENDING)
+      )
+    }
+    cmds <- Map(queue_task, tasks_to_queue, queue_keys)
+    con$pipeline(.commands = unlist(cmds, FALSE, FALSE))
   }
-  cmds <- Map(queue_task, tasks_to_queue, queue_keys)
-  con$pipeline(.commands = unlist(cmds, FALSE, FALSE))
 }

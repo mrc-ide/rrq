@@ -1149,8 +1149,7 @@ task_submit_n <- function(con, keys, dat, key_complete, queue,
 
   complete <- depends_on[response$status == TASK_COMPLETE]
   for (dep_id in complete) {
-    queue_dependencies(con, keys, key_queue, keys$queue_deferred, dep_id,
-                       task_ids)
+    queue_dependencies(con, keys, keys$queue_deferred, dep_id, task_ids)
   }
 
   task_ids
