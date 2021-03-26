@@ -56,7 +56,7 @@ rrq_worker_ <- R6::R6Class(
     envir = NULL,
     keys = NULL,
     queue = NULL,
-    queue_deferred = NULL,
+    deferred_set = NULL,
     con = NULL,
     db = NULL,
     paused = FALSE,
@@ -83,7 +83,7 @@ rrq_worker_ <- R6::R6Class(
 
       queue <- worker_queue(queue)
       self$queue <- rrq_key_queue(queue_id, queue)
-      self$queue_deferred <- self$keys$queue_deferred
+      self$deferred_set <- self$keys$deferred_set
       self$log("QUEUE", queue)
 
       if (self$con$SISMEMBER(self$keys$worker_name, self$name) == 1L) {
