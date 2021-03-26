@@ -35,7 +35,7 @@ rrq_keys_common <- function(queue_id) {
        task_result    = sprintf("%s:task:result",    queue_id),
        task_complete  = sprintf("%s:task:complete",  queue_id),
 
-       queue_deferred = sprintf("%s:queue:deferred", queue_id))
+       deferred_set   = sprintf("%s:deferred", queue_id))
 }
 
 rrq_keys_worker <- function(queue, worker) {
