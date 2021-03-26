@@ -649,3 +649,36 @@ test_that("deferred task is added to specified queue", {
   expect_equal(obj$queue_list("a"), t3)
   expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
 })
+
+test_that("task set to impossible cannot be added to queue", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t <- obj$enqueue(only_positive(-1))
+  t2 <- obj$enqueue(sin(0))
+  t3 <- obj$enqueue(sin(pi / 2), depends_on = c(t, t2))
+  expect_equivalent(obj$task_status(t), "PENDING")
+  expect_equivalent(obj$task_status(t2), "PENDING")
+  expect_equivalent(obj$task_status(t3), "DEFERRED")
+  expect_equal(obj$queue_list(), c(t, t2))
+  key_queue_deferred <- obj$keys$queue_deferred
+  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list(t3))
+
+  w$step(TRUE)
+  res <- obj$task_result(t)
+  expect_is(res, "rrq_task_error")
+
+  expect_equivalent(obj$task_status(t), "ERROR")
+  expect_equivalent(obj$task_status(t2), "PENDING")
+  expect_equivalent(obj$task_status(t3), "IMPOSSIBLE")
+  expect_equal(obj$queue_list(), t2)
+  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
+
+  w$step(TRUE)
+  obj$task_wait(t2, 2)
+
+  expect_equivalent(obj$task_status(t2), "COMPLETE")
+  expect_equivalent(obj$task_status(t3), "IMPOSSIBLE")
+  expect_equal(obj$queue_list(), character(0))
+  expect_equal(obj$con$SMEMBERS(key_queue_deferred), list())
+})
