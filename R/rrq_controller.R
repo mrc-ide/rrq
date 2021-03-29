@@ -1054,7 +1054,7 @@ task_cancel <- function(con, keys, task_id) {
   }
 
   if (dat$status %in% c(TASK_PENDING, TASK_DEFERRED)) {
-    cancel_dependencies(con, keys, task_id, dependencies_only = TRUE)
+    cancel_dependencies(con, keys, task_id)
     task_delete(con, keys, task_id, FALSE)
     dat <- con$pipeline(
       worker = redis$HGET(keys$task_worker, task_id),
@@ -1086,7 +1086,7 @@ task_cancel <- function(con, keys, task_id) {
   }
 
   heartbeatr::heartbeat_send_signal(con, heartbeat_key, tools::SIGINT)
-  cancel_dependencies(con, keys, task_id, dependencies_only = TRUE)
+  cancel_dependencies(con, keys, task_id)
   invisible(TRUE)
 }
 
@@ -1152,6 +1152,11 @@ task_submit_n <- function(con, keys, dat, key_complete, queue,
   incomplete_status <- c(TASK_ERROR, TASK_ORPHAN, TASK_INTERRUPTED,
                          TASK_IMPOSSIBLE)
   if (any(response$status %in% incomplete_status)) {
+    n <- length(task_ids)
+    con$pipeline(
+      redis$HMSET(keys$task_status, task_ids, rep_len(TASK_IMPOSSIBLE, n)),
+      redis$SREM(keys$deferred_set, task_ids)
+    )
     cancel_dependencies(con, keys, task_ids)
     incomplete <- response$status[response$status %in% incomplete_status]
     names(incomplete) <- depends_on[response$status %in% incomplete_status]
