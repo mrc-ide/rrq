@@ -996,13 +996,24 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
       stop("Can't delete running tasks")
     }
   }
-  con$pipeline(
+
+  original_deps_keys <- rrq_key_task_dependencies_original(
+    keys$queue_id, task_ids)
+  dependency_keys <- rrq_key_task_dependencies(keys$queue_id, task_ids)
+  dependent_keys <- rrq_key_task_dependents(keys$queue_id, task_ids)
+  con$pipeline(.commands = c(list(
     redis$HDEL(keys$task_expr,     task_ids),
     redis$HDEL(keys$task_status,   task_ids),
     redis$HDEL(keys$task_result,   task_ids),
     redis$HDEL(keys$task_complete, task_ids),
     redis$HDEL(keys$task_progress, task_ids),
-    redis$HDEL(keys$task_worker,   task_ids))
+    redis$HDEL(keys$task_worker,   task_ids),
+    redis$HDEL(keys$task_local,    task_ids),
+    redis$SREM(keys$deferred_set,  task_ids)),
+    lapply(original_deps_keys, redis$DEL),
+    lapply(dependency_keys, redis$DEL),
+    lapply(dependent_keys, redis$DEL)
+    ))
   queue <- list_to_character(con$HMGET(keys$task_queue, task_ids))
   queue_remove(con, keys, task_ids, queue)
 
@@ -1042,7 +1053,8 @@ task_cancel <- function(con, keys, task_id) {
     dat$status <- TASK_MISSING
   }
 
-  if (dat$status == TASK_PENDING) {
+  if (dat$status %in% c(TASK_PENDING, TASK_DEFERRED, TASK_IMPOSSIBLE)) {
+    cancel_dependencies(con, keys, keys$deferred_set, task_id)
     task_delete(con, keys, task_id, FALSE)
     dat <- con$pipeline(
       worker = redis$HGET(keys$task_worker, task_id),

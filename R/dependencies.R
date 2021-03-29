@@ -15,16 +15,20 @@ worker_queue_dependencies <- function(worker, task_id, task_status) {
   invisible(TRUE)
 }
 
-cancel_dependencies <- function(con, keys, deferred_set, ids) {
-  n <- length(ids)
-  con$pipeline(
-    redis$HMSET(keys$task_status, ids, rep_len(TASK_IMPOSSIBLE, n)),
-    redis$SREM(deferred_set, ids)
-  )
+cancel_dependencies <- function(con, keys, deferred_set, ids,
+                                dependencies_only = FALSE) {
+  if (!dependencies_only) {
+    n <- length(ids)
+    con$pipeline(
+      redis$HMSET(keys$task_status, ids, rep_len(TASK_IMPOSSIBLE, n)),
+      redis$SREM(deferred_set, ids)
+    )
+  }
   dependent_keys <- rrq_key_task_dependents(keys$queue_id, ids)
   for (dependent_key in dependent_keys) {
     dependent_ids <- con$SMEMBERS(dependent_key)
-    cancel_dependencies(con, keys, deferred_set, dependent_ids)
+    cancel_dependencies(con, keys, deferred_set, dependent_ids,
+                        dependencies_only = FALSE)
   }
 }
 
