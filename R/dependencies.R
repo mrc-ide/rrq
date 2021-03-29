@@ -6,34 +6,29 @@ worker_queue_dependencies <- function(worker, task_id, task_status) {
   }
 
   if (identical(task_status, TASK_ERROR)) {
-    cancel_dependencies(worker$con, worker$keys, worker$deferred_set,
-                        dependent_ids)
+    cancel_dependencies(worker$con, worker$keys, dependent_ids)
   } else {
-    queue_dependencies(worker$con, worker$keys, worker$deferred_set,
-                       task_id, dependent_ids)
+    queue_dependencies(worker$con, worker$keys, task_id, dependent_ids)
   }
   invisible(TRUE)
 }
 
-cancel_dependencies <- function(con, keys, deferred_set, ids,
-                                dependencies_only = FALSE) {
+cancel_dependencies <- function(con, keys, ids, dependencies_only = FALSE) {
   if (!dependencies_only) {
     n <- length(ids)
     con$pipeline(
       redis$HMSET(keys$task_status, ids, rep_len(TASK_IMPOSSIBLE, n)),
-      redis$SREM(deferred_set, ids)
+      redis$SREM(keys$deferred_set, ids)
     )
   }
   dependent_keys <- rrq_key_task_dependents(keys$queue_id, ids)
   for (dependent_key in dependent_keys) {
     dependent_ids <- con$SMEMBERS(dependent_key)
-    cancel_dependencies(con, keys, deferred_set, dependent_ids,
-                        dependencies_only = FALSE)
+    cancel_dependencies(con, keys, dependent_ids, dependencies_only = FALSE)
   }
 }
 
-queue_dependencies <- function(con, keys, deferred_set, task_id,
-                               deferred_task_ids) {
+queue_dependencies <- function(con, keys, task_id, deferred_task_ids) {
   dependency_keys <- rrq_key_task_dependencies(keys$queue_id, deferred_task_ids)
   res <- con$pipeline(.commands = c(
     lapply(dependency_keys, redis$SREM, task_id),
@@ -47,7 +42,7 @@ queue_dependencies <- function(con, keys, deferred_set, task_id,
     queue_keys <- rrq_key_queue(keys$queue_id, task_queues)
     queue_task <- function(id, queue_key) {
       list(
-        redis$SREM(deferred_set, id),
+        redis$SREM(keys$deferred_set, id),
         redis$LPUSH(queue_key, id),
         redis$HMSET(keys$task_status, id, TASK_PENDING)
       )
