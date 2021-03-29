@@ -1053,7 +1053,7 @@ task_cancel <- function(con, keys, task_id) {
     dat$status <- TASK_MISSING
   }
 
-  if (dat$status %in% c(TASK_PENDING, TASK_DEFERRED, TASK_IMPOSSIBLE)) {
+  if (dat$status %in% c(TASK_PENDING, TASK_DEFERRED)) {
     cancel_dependencies(con, keys, keys$deferred_set, task_id)
     task_delete(con, keys, task_id, FALSE)
     dat <- con$pipeline(
