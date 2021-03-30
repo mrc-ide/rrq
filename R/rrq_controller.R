@@ -629,8 +629,8 @@ rrq_controller_ <- R6::R6Class(
     ##' @description Return deferred tasks and what they are waiting on.
     ##'   Note this is in an arbitrary order, tasks will be added to the
     ##'   queue as their dependencies are satisfied.
-    deferred_tasks = function() {
-      deferred_tasks(self$con, self$keys)
+    deferred_list = function() {
+      deferred_list(self$con, self$keys)
     },
 
     ##' @description Returns the number of active workers

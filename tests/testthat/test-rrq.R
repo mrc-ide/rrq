@@ -789,7 +789,7 @@ test_that("can get deferred tasks", {
   t3 <- obj$enqueue(2 + 2, depends_on = c(t1, t2))
   t4 <- obj$enqueue(2 + 2, depends_on = t1)
 
-  tasks <- obj$deferred_tasks()
+  tasks <- obj$deferred_list()
   expect_setequal(names(tasks), c(t3, t4))
   expect_setequal(names(tasks[[t3]]), c(t1, t2))
   expect_equal(tasks[[t3]][[t1]], "PENDING")
@@ -800,7 +800,7 @@ test_that("can get deferred tasks", {
   w$step(TRUE)
   obj$task_wait(t1, 2)
 
-  tasks <- obj$deferred_tasks()
+  tasks <- obj$deferred_list()
   expect_equal(names(tasks), t3)
   expect_setequal(names(tasks[[t3]]), c(t1, t2))
   expect_equal(tasks[[t3]][[t1]], "COMPLETE")
@@ -811,6 +811,6 @@ test_that("can get deferred tasks", {
   obj$task_wait(t2, 2)
   obj$task_wait(t4, 2)
 
-  tasks <- obj$deferred_tasks()
-  expect_setequal(obj$deferred_tasks(), list())
+  tasks <- obj$deferred_list()
+  expect_setequal(obj$deferred_list(), list())
 })
