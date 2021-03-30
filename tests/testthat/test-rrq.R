@@ -779,3 +779,38 @@ test_that("deferred task cancel", {
   expect_equivalent(obj$task_status(t3), "IMPOSSIBLE")
   expect_equivalent(obj$task_status(t4), "IMPOSSIBLE")
 })
+
+test_that("can get deferred tasks", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t1 <- obj$enqueue(1 + 1)
+  t2 <- obj$enqueue(1 + 1)
+  t3 <- obj$enqueue(2 + 2, depends_on = c(t1, t2))
+  t4 <- obj$enqueue(2 + 2, depends_on = t1)
+
+  tasks <- obj$deferred_list()
+  expect_setequal(names(tasks), c(t3, t4))
+  expect_setequal(names(tasks[[t3]]), c(t1, t2))
+  expect_equal(tasks[[t3]][[t1]], "PENDING")
+  expect_equal(tasks[[t3]][[t2]], "PENDING")
+  expect_equal(names(tasks[[t4]]), t1)
+  expect_equal(tasks[[t4]][[t1]], "PENDING")
+
+  w$step(TRUE)
+  obj$task_wait(t1, 2)
+
+  tasks <- obj$deferred_list()
+  expect_equal(names(tasks), t3)
+  expect_setequal(names(tasks[[t3]]), c(t1, t2))
+  expect_equal(tasks[[t3]][[t1]], "COMPLETE")
+  expect_equal(tasks[[t3]][[t2]], "PENDING")
+
+  w$step(TRUE)
+  w$step(TRUE)
+  obj$task_wait(t2, 2)
+  obj$task_wait(t4, 2)
+
+  tasks <- obj$deferred_list()
+  expect_setequal(obj$deferred_list(), list())
+})

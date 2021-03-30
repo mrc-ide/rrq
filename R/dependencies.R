@@ -49,3 +49,15 @@ queue_dependencies <- function(con, keys, task_id, deferred_task_ids) {
     con$pipeline(.commands = unlist(cmds, FALSE, FALSE))
   }
 }
+
+
+deferred_list <- function(con, keys) {
+  deferred_task_ids <- con$SMEMBERS(keys$deferred_set)
+  deferred <- lapply(deferred_task_ids, function(deferred_task) {
+    dependency_key <- rrq_key_task_dependencies_original(keys$queue_id,
+                                                         deferred_task)
+    deps <- con$SMEMBERS(dependency_key)
+    set_names(con$HMGET(keys$task_status, deps), deps)
+  })
+  set_names(deferred, deferred_task_ids)
+}

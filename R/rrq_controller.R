@@ -322,6 +322,13 @@ rrq_controller_ <- R6::R6Class(
     ##' @param separate_process Logical, indicating if the task should be
     ##'   run in a separate process on the worker (see `$enqueue` for
     ##'   details).
+    ##'
+    ##' @param depends_on Vector or list of IDs of tasks which must have
+    ##'   completed before this job can be run. Once all dependent tasks
+    ##'   have been successfully run, this task will get added to the
+    ##'   queue. If the dependent task fails then this task will be
+    ##'   removed from the queue. Dependencies are applied to all
+    ##'   tasks added to the queue.
     lapply = function(x, fun, ..., dots = NULL,
                       envir = parent.frame(), queue = NULL,
                       separate_process = FALSE, depends_on = NULL,
@@ -372,6 +379,13 @@ rrq_controller_ <- R6::R6Class(
     ##' @param separate_process Logical, indicating if the task should be
     ##'   run in a separate process on the worker (see `$enqueue` for
     ##'   details).
+    ##'
+    ##' @param depends_on Vector or list of IDs of tasks which must have
+    ##'   completed before this job can be run. Once all dependent tasks
+    ##'   have been successfully run, this task will get added to the
+    ##'   queue. If the dependent task fails then this task will be
+    ##'   removed from the queue. Dependencies are applied to all
+    ##'   tasks added to the queue.
     lapply_ = function(x, fun, ..., dots = NULL,
                        envir = parent.frame(), queue = NULL,
                        separate_process = FALSE, depends_on = NULL,
@@ -624,6 +638,13 @@ rrq_controller_ <- R6::R6Class(
       ## bounced ahead in the queue, which seems tolerable but might not
       ## always be ideal.  To solve this we should use a lua script.
       queue_remove(self$con, self$keys, task_ids, queue %||% QUEUE_DEFAULT)
+    },
+
+    ##' @description Return deferred tasks and what they are waiting on.
+    ##'   Note this is in an arbitrary order, tasks will be added to the
+    ##'   queue as their dependencies are satisfied.
+    deferred_list = function() {
+      deferred_list(self$con, self$keys)
     },
 
     ##' @description Returns the number of active workers
