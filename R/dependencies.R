@@ -15,9 +15,9 @@ worker_queue_dependencies <- function(worker, task_id, task_status) {
 
 cancel_dependencies <- function(con, keys, ids) {
   dependent_keys <- rrq_key_task_dependents(keys$queue_id, ids)
-  for (dependent_key in dependent_keys) {
-    dependent_ids <- con$SMEMBERS(dependent_key)
-    n <- length(dependent_ids)
+  dependent_ids <- unique(unlist(lapply(dependent_keys, con$SMEMBERS)))
+  n <- length(dependent_ids)
+  if (n > 0) {
     con$pipeline(
       redis$HMSET(keys$task_status, dependent_ids, rep_len(TASK_IMPOSSIBLE, n)),
       redis$SREM(keys$deferred_set, dependent_ids)
