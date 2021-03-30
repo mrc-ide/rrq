@@ -30,7 +30,7 @@ queue_dependencies <- function(con, keys, task_id, deferred_task_ids) {
   dependency_keys <- rrq_key_task_dependencies(keys$queue_id, deferred_task_ids)
   res <- con$pipeline(.commands = c(
     lapply(dependency_keys, redis$SREM, task_id),
-    setNames(lapply(dependency_keys, redis$SCARD), deferred_task_ids))
+    set_names(lapply(dependency_keys, redis$SCARD), deferred_task_ids))
   )
 
   ## Tasks with 0 remaining dependencies can be queued

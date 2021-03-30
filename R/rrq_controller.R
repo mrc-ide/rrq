@@ -1002,9 +1002,8 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
   dependency_keys <- rrq_key_task_dependencies(keys$queue_id, task_ids)
   dependent_keys <- rrq_key_task_dependents(keys$queue_id, task_ids)
   res <- con$pipeline(.commands = c(
-    setNames(lapply(task_ids, function(x) redis$HGET(keys$task_status, x)),
-             paste0("status_", task_ids)),
-    setNames(lapply(dependent_keys, redis$SMEMBERS), task_ids),
+    lapply(task_ids, function(x) redis$HGET(keys$task_status, x)),
+    set_names(lapply(dependent_keys, redis$SMEMBERS), task_ids),
     list(
       redis$HDEL(keys$task_expr,     task_ids),
       redis$HDEL(keys$task_status,   task_ids),
@@ -1024,14 +1023,14 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
 
   ## We only want to cancel dependencies i.e. set status to IMPOSSIBLE when
   ## A. They are dependents of a task which is PENDING or DEFERRED AND
-  ## B. Their dependencies have not already been set to MISSING, ERROED, etc.
-  ## i.e. their dependencies are also PENDING or DEFERRED
-  status <- res[grepl("status_", names(res))]
+  ## B. Their dependencies have not already been deleted or set to ERROED, etc.
+  ## i.e. their dependencies are also DEFERRED
+  status <- res[seq_along(task_ids)]
   ids_to_cancel <- task_ids[unlist(status) %in% c(TASK_PENDING, TASK_DEFERRED)]
   dependents <- unique(unlist(res[ids_to_cancel]))
   if (length(dependents) > 0) {
     status_dependent <- con$HMGET(keys$task_status, dependents)
-    cancel <- dependents[status_dependent %in% c(TASK_PENDING, TASK_DEFERRED)]
+    cancel <- dependents[status_dependent == TASK_DEFERRED]
     if (length(cancel) > 0) {
       con$pipeline(
         redis$HMSET(keys$task_status, cancel,
