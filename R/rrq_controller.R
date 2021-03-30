@@ -1030,7 +1030,7 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
 
   ## We only want to cancel dependencies i.e. set status to IMPOSSIBLE when
   ## A. They are dependents of a task which is PENDING or DEFERRED AND
-  ## B. Their dependencies have not already been deleted or set to ERROED, etc.
+  ## B. Their dependencies have not already been deleted or set to ERRORED, etc.
   ## i.e. their dependencies are also DEFERRED
   status <- res[seq_along(task_ids)]
   ids_to_cancel <- task_ids[unlist(status) %in% c(TASK_PENDING, TASK_DEFERRED)]
