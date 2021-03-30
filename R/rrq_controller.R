@@ -322,6 +322,13 @@ rrq_controller_ <- R6::R6Class(
     ##' @param separate_process Logical, indicating if the task should be
     ##'   run in a separate process on the worker (see `$enqueue` for
     ##'   details).
+    ##'
+    ##' @param depends_on Vector or list of IDs of tasks which must have
+    ##'   completed before this job can be run. Once all dependent tasks
+    ##'   have been successfully run, this task will get added to the
+    ##'   queue. If the dependent task fails then this task will be
+    ##'   removed from the queue. Dependencies are applied to all
+    ##'   tasks added to the queue.
     lapply = function(x, fun, ..., dots = NULL,
                       envir = parent.frame(), queue = NULL,
                       separate_process = FALSE, depends_on = NULL,
@@ -372,6 +379,13 @@ rrq_controller_ <- R6::R6Class(
     ##' @param separate_process Logical, indicating if the task should be
     ##'   run in a separate process on the worker (see `$enqueue` for
     ##'   details).
+    ##'
+    ##' @param depends_on Vector or list of IDs of tasks which must have
+    ##'   completed before this job can be run. Once all dependent tasks
+    ##'   have been successfully run, this task will get added to the
+    ##'   queue. If the dependent task fails then this task will be
+    ##'   removed from the queue. Dependencies are applied to all
+    ##'   tasks added to the queue.
     lapply_ = function(x, fun, ..., dots = NULL,
                        envir = parent.frame(), queue = NULL,
                        separate_process = FALSE, depends_on = NULL,

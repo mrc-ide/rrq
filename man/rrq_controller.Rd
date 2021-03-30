@@ -155,6 +155,7 @@ ans <- obj$lapply_(1:10, quote(log), base = quote(b))
 \item \href{#method-queue_length}{\code{rrq_controller_$queue_length()}}
 \item \href{#method-queue_list}{\code{rrq_controller_$queue_list()}}
 \item \href{#method-queue_remove}{\code{rrq_controller_$queue_remove()}}
+\item \href{#method-deferred_list}{\code{rrq_controller_$deferred_list()}}
 \item \href{#method-worker_len}{\code{rrq_controller_$worker_len()}}
 \item \href{#method-worker_list}{\code{rrq_controller_$worker_list()}}
 \item \href{#method-worker_list_exited}{\code{rrq_controller_$worker_list_exited()}}
@@ -384,6 +385,7 @@ equivalent to using \verb{$enqueue()} over each element in the list.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
+  depends_on = NULL,
   timeout = Inf,
   time_poll = NULL,
   progress = NULL
@@ -411,6 +413,13 @@ details).}
 \item{\code{separate_process}}{Logical, indicating if the task should be
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
+
+\item{\code{depends_on}}{Vector or list of IDs of tasks which must have
+completed before this job can be run. Once all dependent tasks
+have been successfully run, this task will get added to the
+queue. If the dependent task fails then this task will be
+removed from the queue. Dependencies are applied to all
+tasks added to the queue.}
 
 \item{\code{timeout}}{Optional timeout, in seconds, after which an
 error will be thrown if the task has not completed.}
@@ -444,6 +453,7 @@ be copied over rather than using their names if possible.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
+  depends_on = NULL,
   timeout = Inf,
   time_poll = NULL,
   progress = NULL
@@ -471,6 +481,13 @@ details).}
 \item{\code{separate_process}}{Logical, indicating if the task should be
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
+
+\item{\code{depends_on}}{Vector or list of IDs of tasks which must have
+completed before this job can be run. Once all dependent tasks
+have been successfully run, this task will get added to the
+queue. If the dependent task fails then this task will be
+removed from the queue. Dependencies are applied to all
+tasks added to the queue.}
 
 \item{\code{timeout}}{Optional timeout, in seconds, after which an
 error will be thrown if the task has not completed. If a
@@ -621,7 +638,7 @@ Find the position of one or more tasks in the queue.
 
 \item{\code{missing}}{Value to return if the task is not found in the queue.
 A task will take value \code{missing} if it is running, complete,
-errored etc and a positive integer if it is in the queue,
+errored, deferred etc and a positive integer if it is in the queue,
 indicating its position (with 1) being the next task to run.}
 
 \item{\code{queue}}{The name of the queue to query (defaults to the
@@ -907,6 +924,18 @@ Remove task ids from a queue.
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-deferred_list"></a>}}
+\if{latex}{\out{\hypertarget{method-deferred_list}{}}}
+\subsection{Method \code{deferred_list()}}{
+Return deferred tasks and what they are waiting on.
+Note this is in an arbitrary order, tasks will be added to the
+queue as their dependencies are satisfied.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$deferred_list()}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-worker_len"></a>}}
