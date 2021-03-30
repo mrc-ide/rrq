@@ -1001,21 +1001,46 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
     keys$queue_id, task_ids)
   dependency_keys <- rrq_key_task_dependencies(keys$queue_id, task_ids)
   dependent_keys <- rrq_key_task_dependents(keys$queue_id, task_ids)
-  con$pipeline(.commands = c(list(
-    redis$HDEL(keys$task_expr,     task_ids),
-    redis$HDEL(keys$task_status,   task_ids),
-    redis$HDEL(keys$task_result,   task_ids),
-    redis$HDEL(keys$task_complete, task_ids),
-    redis$HDEL(keys$task_progress, task_ids),
-    redis$HDEL(keys$task_worker,   task_ids),
-    redis$HDEL(keys$task_local,    task_ids),
-    redis$SREM(keys$deferred_set,  task_ids)),
+  res <- con$pipeline(.commands = c(
+    setNames(lapply(task_ids, function(x) redis$HGET(keys$task_status, x)),
+             paste0("status_", task_ids)),
+    setNames(lapply(dependent_keys, redis$SMEMBERS), task_ids),
+    list(
+      redis$HDEL(keys$task_expr,     task_ids),
+      redis$HDEL(keys$task_status,   task_ids),
+      redis$HDEL(keys$task_result,   task_ids),
+      redis$HDEL(keys$task_complete, task_ids),
+      redis$HDEL(keys$task_progress, task_ids),
+      redis$HDEL(keys$task_worker,   task_ids),
+      redis$HDEL(keys$task_local,    task_ids),
+      redis$SREM(keys$deferred_set,  task_ids)
+    ),
     lapply(original_deps_keys, redis$DEL),
     lapply(dependency_keys, redis$DEL),
     lapply(dependent_keys, redis$DEL)
     ))
   queue <- list_to_character(con$HMGET(keys$task_queue, task_ids))
   queue_remove(con, keys, task_ids, queue)
+
+  ## We only want to cancel dependencies i.e. set status to IMPOSSIBLE when
+  ## A. They are dependents of a task which is PENDING or DEFERRED AND
+  ## B. Their dependencies have not already been set to MISSING, ERROED, etc.
+  ## i.e. their dependencies are also PENDING or DEFERRED
+  status <- res[grepl("status_", names(res))]
+  ids_to_cancel <- task_ids[unlist(status) %in% c(TASK_PENDING, TASK_DEFERRED)]
+  dependents <- unique(unlist(res[ids_to_cancel]))
+  if (length(dependents) > 0) {
+    status_dependent <- con$HMGET(keys$task_status, dependents)
+    cancel <- dependents[status_dependent %in% c(TASK_PENDING, TASK_DEFERRED)]
+    if (length(cancel) > 0) {
+      con$pipeline(
+        redis$HMSET(keys$task_status, cancel,
+                    rep_len(TASK_IMPOSSIBLE, length(cancel))),
+        redis$SREM(keys$deferred_set, cancel)
+      )
+      cancel_dependencies(con, keys, cancel)
+    }
+  }
 
   invisible()
 }
