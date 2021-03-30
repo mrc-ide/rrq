@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.17</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.18</span>
       </span>
     </div>
 
@@ -278,6 +278,7 @@ expected, so you can use the names directly:</p><pre><span class='va'>b</span> <
 <li><p><a href='#method-queue_length'><code>rrq_controller_$queue_length()</code></a></p></li>
 <li><p><a href='#method-queue_list'><code>rrq_controller_$queue_list()</code></a></p></li>
 <li><p><a href='#method-queue_remove'><code>rrq_controller_$queue_remove()</code></a></p></li>
+<li><p><a href='#method-deferred_list'><code>rrq_controller_$deferred_list()</code></a></p></li>
 <li><p><a href='#method-worker_len'><code>rrq_controller_$worker_len()</code></a></p></li>
 <li><p><a href='#method-worker_list'><code>rrq_controller_$worker_list()</code></a></p></li>
 <li><p><a href='#method-worker_list_exited'><code>rrq_controller_$worker_list_exited()</code></a></p></li>
@@ -468,6 +469,7 @@ equivalent to using <code>$enqueue()</code> over each element in the list.</p><h
   envir <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>parent.frame</a></span><span class='op'>(</span><span class='op'>)</span>,
   queue <span class='op'>=</span> <span class='cn'>NULL</span>,
   separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  depends_on <span class='op'>=</span> <span class='cn'>NULL</span>,
   timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
   time_poll <span class='op'>=</span> <span class='cn'>NULL</span>,
   progress <span class='op'>=</span> <span class='cn'>NULL</span>
@@ -493,6 +495,13 @@ details).</p></dd>
 <dt><code>separate_process</code></dt><dd><p>Logical, indicating if the task should be
 run in a separate process on the worker (see <code>$enqueue</code> for
 details).</p></dd>
+
+<dt><code>depends_on</code></dt><dd><p>Vector or list of IDs of tasks which must have
+completed before this job can be run. Once all dependent tasks
+have been successfully run, this task will get added to the
+queue. If the dependent task fails then this task will be
+removed from the queue. Dependencies are applied to all
+tasks added to the queue.</p></dd>
 
 <dt><code>timeout</code></dt><dd><p>Optional timeout, in seconds, after which an
 error will be thrown if the task has not completed.</p></dd>
@@ -521,6 +530,7 @@ be copied over rather than using their names if possible.</p><h4 class='hasAncho
   envir <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>parent.frame</a></span><span class='op'>(</span><span class='op'>)</span>,
   queue <span class='op'>=</span> <span class='cn'>NULL</span>,
   separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  depends_on <span class='op'>=</span> <span class='cn'>NULL</span>,
   timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
   time_poll <span class='op'>=</span> <span class='cn'>NULL</span>,
   progress <span class='op'>=</span> <span class='cn'>NULL</span>
@@ -546,6 +556,13 @@ details).</p></dd>
 <dt><code>separate_process</code></dt><dd><p>Logical, indicating if the task should be
 run in a separate process on the worker (see <code>$enqueue</code> for
 details).</p></dd>
+
+<dt><code>depends_on</code></dt><dd><p>Vector or list of IDs of tasks which must have
+completed before this job can be run. Once all dependent tasks
+have been successfully run, this task will get added to the
+queue. If the dependent task fails then this task will be
+removed from the queue. Dependencies are applied to all
+tasks added to the queue.</p></dd>
 
 <dt><code>timeout</code></dt><dd><p>Optional timeout, in seconds, after which an
 error will be thrown if the task has not completed. If a
@@ -649,7 +666,7 @@ all task ids known to this rrq controller is used.</p></dd>
 
 <dt><code>missing</code></dt><dd><p>Value to return if the task is not found in the queue.
 A task will take value <code>missing</code> if it is running, complete,
-errored etc and a positive integer if it is in the queue,
+errored, deferred etc and a positive integer if it is in the queue,
 indicating its position (with 1) being the next task to run.</p></dd>
 
 <dt><code>queue</code></dt><dd><p>The name of the queue to query (defaults to the
@@ -855,6 +872,13 @@ an available worker).</p><h4 class='hasAnchor' id='arguments'><a class='anchor' 
 "default" queue).</p></dd>
 
 </dl><p></div></p>
+<p><hr>
+<a id="method-deferred_list"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>deferred_list()</code></h3>
+<p>Return deferred tasks and what they are waiting on.
+Note this is in an arbitrary order, tasks will be added to the
+queue as their dependencies are satisfied.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_controller_</span><span class='op'>$</span><span class='fu'>deferred_list</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
+
 <p><hr>
 <a id="method-worker_len"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>worker_len()</code></h3>
 <p>Returns the number of active workers</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
