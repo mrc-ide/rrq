@@ -52,3 +52,52 @@ test_that("match_fun", {
   expect_identical(match_fun(quote(ids:::as_integer_bignum), e),
                    ids:::as_integer_bignum)
 })
+
+
+test_that("prepare bulk x where it is a vector", {
+  expect_equal(rrq_bulk_prepare_call_x(1), list(1))
+  expect_equal(rrq_bulk_prepare_call_x(1:5), as.list(1:5))
+  expect_equal(rrq_bulk_prepare_call_x(c(a = 1, b = 2)),
+               list(a = 1, b = 2))
+  expect_equal(rrq_bulk_prepare_call_x(list(1:5, 2:6)),
+               list(1:5, 2:6))
+  expect_error(
+    rrq_bulk_prepare_call_x(list(a = 1:5, b = 2)),
+    "Every element of 'x' must have the same length")
+
+  nms <- letters[1:5]
+  x <- list(set_names(1:5, nms),
+            set_names(2:6, nms))
+  expect_equal(rrq_bulk_prepare_call_x(x), x)
+  expect_error(rrq_bulk_prepare_call_x(c(x, list(3:7))),
+               "Elements of 'x' must have the same names")
+  expect_error(rrq_bulk_prepare_call_x(list()),
+               "'x' must have at least one element")
+  expect_error(rrq_bulk_prepare_call_x(NULL),
+               "x must be a data.frame or list")
+})
+
+
+test_that("prepare bulk x where it is a data.frame", {
+  x <- data.frame(x = 1:2, y = 3:4)
+  expect_equal(
+    rrq_bulk_prepare_call_x(x),
+    list(list(x = 1, y = 3), list(x = 2, y = 4)))
+
+  expect_error(
+    rrq_bulk_prepare_call_x(x[0, ]),
+    "'x' must have at least one row")
+  expect_error(
+    rrq_bulk_prepare_call_x(x[, 0]),
+    "'x' must have at least one column")
+})
+
+
+test_that("Prevent factors!", {
+  expect_error(rrq_bulk_prepare_call_x(factor(1:4)),
+               "Factors cannot be used in bulk expressions")
+  expect_error(rrq_bulk_prepare_call_x(data.frame(a = 1:4, b = factor(1:4))),
+               "Factors cannot be used in bulk expressions")
+  expect_error(rrq_bulk_prepare_call_x(list(a = 1:4, b = factor(1:4))),
+               "Factors cannot be used in bulk expressions")
+})

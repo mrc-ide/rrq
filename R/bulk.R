@@ -10,10 +10,10 @@ rrq_lapply <- function(con, keys, db, x, fun, dots, envir, queue,
 }
 
 
-rrq_enqueue_bulk <- function(con, keys, db, x, fun, dots, do_call,
+rrq_enqueue_bulk <- function(con, keys, db, x, fun, dots,
                              envir, queue, separate_process, depends_on,
                              timeout, time_poll, progress) {
-  dat <- rrq_bulk_submit(con, keys, db, x, fun, dots, do_call,
+  dat <- rrq_bulk_submit(con, keys, db, x, fun, dots, TRUE,
                          envir, queue, separate_process, depends_on)
   if (timeout == 0) {
     return(dat)
@@ -24,7 +24,14 @@ rrq_enqueue_bulk <- function(con, keys, db, x, fun, dots, do_call,
 
 rrq_bulk_submit <- function(con, keys, db, x, fun, dots, do_call,
                             envir, queue, separate_process, depends_on) {
-  dat <- rrq_bulk_prepare(db, x, fun, dots, do_call, envir)
+  fun <- match_fun_envir(fun, envir)
+  if (do_call) {
+    x <- rrq_bulk_prepare_call_x(x)
+    dat <- rrq_bulk_prepare_call(db, x, fun, dots, envir)
+  } else {
+    dat <- rrq_bulk_prepare_lapply(db, x, fun, dots, envir)
+  }
+
   key_complete <- rrq_key_task_complete(keys$queue_id)
   task_ids <- task_submit_n(con, keys, dat, key_complete, queue,
                             separate_process, depends_on = depends_on)
@@ -32,17 +39,6 @@ rrq_bulk_submit <- function(con, keys, db, x, fun, dots, do_call,
               names = names(x))
   class(ret) <- "rrq_bulk"
   ret
-}
-
-
-rrq_bulk_prepare <- function(db, x, fun, dots, do_call, envir) {
-  fun <- match_fun_envir(fun, envir)
-
-  if (do_call) {
-    rrq_bulk_prepare_call(db, x, fun, dots, envir)
-  } else {
-    rrq_bulk_prepare_lapply(db, x, fun, dots, envir)
-  }
 }
 
 
@@ -63,6 +59,8 @@ rrq_bulk_prepare_lapply <- function(db, x, fun, dots, envir) {
 ##                              FUN(X[[2]][[2]], X[[2]][[2]], ...),
 ##                              ...]
 rrq_bulk_prepare_call <- function(db, x, fun, dots, envir) {
+
+
   len <- length(x[[1L]])
   nms <- names(x[[1L]])
   args <- set_names(rep(list(NULL), len), nms)
@@ -79,6 +77,45 @@ rrq_bulk_prepare_call <- function(db, x, fun, dots, envir) {
     object_to_bin(dat)
   }
   lapply(x, rewrite)
+}
+
+
+rrq_bulk_prepare_call_x <- function(x) {
+  is_factor <- is.factor(x) || (is.recursive(x) && any(vlapply(x, is.factor)))
+  if (is_factor) {
+    stop("Factors cannot be used in bulk expressions")
+  }
+
+  ## Simplifies logic below
+  if (is.atomic(x) && !is.null(x)) {
+    x <- as.list(x)
+  }
+
+  if (is.data.frame(x)) {
+    if (ncol(x) == 0L) {
+      stop("'x' must have at least one column")
+    }
+    if (nrow(x) == 0L) {
+      stop("'x' must have at least one row")
+    }
+    x <- df_to_list(x)
+  } else if (is.list(x)) {
+    if (length(x) == 0L) {
+      stop("'x' must have at least one element")
+    }
+    lens <- lengths(x)
+    if (length(unique(lens)) != 1L) {
+      stop("Every element of 'x' must have the same length")
+    }
+    nms <- lapply(x, names)
+    if (!all(vlapply(nms, identical, nms[[1]]))) {
+      stop("Elements of 'x' must have the same names")
+    }
+  } else {
+    stop("x must be a data.frame or list")
+  }
+
+  x
 }
 
 

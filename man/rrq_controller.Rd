@@ -137,6 +137,8 @@ ans <- obj$lapply_(1:10, quote(log), base = quote(b))
 \item \href{#method-enqueue_}{\code{rrq_controller_$enqueue_()}}
 \item \href{#method-lapply}{\code{rrq_controller_$lapply()}}
 \item \href{#method-lapply_}{\code{rrq_controller_$lapply_()}}
+\item \href{#method-enqueue_bulk}{\code{rrq_controller_$enqueue_bulk()}}
+\item \href{#method-enqueue_bulk_}{\code{rrq_controller_$enqueue_bulk_()}}
 \item \href{#method-bulk_wait}{\code{rrq_controller_$bulk_wait()}}
 \item \href{#method-task_list}{\code{rrq_controller_$task_list()}}
 \item \href{#method-task_exists}{\code{rrq_controller_$task_exists()}}
@@ -493,6 +495,147 @@ tasks added to the queue.}
 error will be thrown if the task has not completed. If a
 timeout is given as \code{0}, then we return a handle that can be used
 to check for tasks using \code{bulk_wait}}
+
+\item{\code{time_poll}}{Optional time with which to "poll" for
+completion.}
+
+\item{\code{progress}}{Optional logical indicating if a progress bar
+should be displayed. If \code{NULL} we fall back on the value of the
+global option \code{rrq.progress}, and if that is unset display a
+progress bar if in an interactive session.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-enqueue_bulk"></a>}}
+\if{latex}{\out{\hypertarget{method-enqueue_bulk}{}}}
+\subsection{Method \code{enqueue_bulk()}}{
+Send a bulk set of tasks to your workers.
+This function is a bit like a mash-up of \link{Map} and \link{do.call},
+when used with a \link{data.frame} argument, which is typically what
+is provided. Rather than \verb{$lapply()} which applies \code{fun} to each
+element of \code{x}, \verb{enqueue_bulk will apply over each row of }x\verb{, spreading the columms out as arguments. If you have a function }f(a, b)\verb{and a [data.frame] with columns}a\code{and}b` this
+should feel intuitive.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$enqueue_bulk(
+  x,
+  fun,
+  ...,
+  dots = NULL,
+  envir = parent.frame(),
+  queue = NULL,
+  separate_process = FALSE,
+  depends_on = NULL,
+  timeout = Inf,
+  time_poll = NULL,
+  progress = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{Typically a \link{data.frame}, which you want to apply \code{fun}
+over, row-wise. The names of the \code{data.frame} must match the
+arguments of your function.}
+
+\item{\code{fun}}{A function}
+
+\item{\code{...}}{Additional arguments to add to every call to \code{fun}}
+
+\item{\code{dots}}{As an alternative to \code{...}, you can provide the dots
+as a list of additional arguments. This may be easier to program
+against.}
+
+\item{\code{envir}}{The environment to use to try and find the function}
+
+\item{\code{queue}}{The queue to add the tasks to (see \verb{$enqueue} for
+details).}
+
+\item{\code{separate_process}}{Logical, indicating if the task should be
+run in a separate process on the worker (see \verb{$enqueue} for
+details).}
+
+\item{\code{depends_on}}{Vector or list of IDs of tasks which must have
+completed before this job can be run. Once all dependent tasks
+have been successfully run, this task will get added to the
+queue. If the dependent task fails then this task will be
+removed from the queue. Dependencies are applied to all
+tasks added to the queue.}
+
+\item{\code{timeout}}{Optional timeout, in seconds, after which an
+error will be thrown if the task has not completed.}
+
+\item{\code{time_poll}}{Optional time with which to "poll" for
+completion.}
+
+\item{\code{progress}}{Optional logical indicating if a progress bar
+should be displayed. If \code{NULL} we fall back on the value of the
+global option \code{rrq.progress}, and if that is unset display a
+progress bar if in an interactive session.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-enqueue_bulk_"></a>}}
+\if{latex}{\out{\hypertarget{method-enqueue_bulk_}{}}}
+\subsection{Method \code{enqueue_bulk_()}}{
+The "standard evaluation" version of \verb{$enqueue_bulk()}.
+This differs in how the function is found and how dots are passed.
+With this version, both are passed by value; this may create more
+overhead on the redis server as the values of the variables will
+be copied over rather than using their names if possible.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$enqueue_bulk_(
+  x,
+  fun,
+  ...,
+  dots = NULL,
+  envir = parent.frame(),
+  queue = NULL,
+  separate_process = FALSE,
+  depends_on = NULL,
+  timeout = Inf,
+  time_poll = NULL,
+  progress = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{Typically a \link{data.frame}, which you want to apply \code{fun}
+over, row-wise. The names of the \code{data.frame} must match the
+arguments of your function.}
+
+\item{\code{fun}}{A function}
+
+\item{\code{...}}{Additional arguments to add to every call to \code{fun}}
+
+\item{\code{dots}}{As an alternative to \code{...}, you can provide the dots
+as a list of additional arguments. This may be easier to program
+against.}
+
+\item{\code{envir}}{The environment to use to try and find the function}
+
+\item{\code{queue}}{The queue to add the tasks to (see \verb{$enqueue} for
+details).}
+
+\item{\code{separate_process}}{Logical, indicating if the task should be
+run in a separate process on the worker (see \verb{$enqueue} for
+details).}
+
+\item{\code{depends_on}}{Vector or list of IDs of tasks which must have
+completed before this job can be run. Once all dependent tasks
+have been successfully run, this task will get added to the
+queue. If the dependent task fails then this task will be
+removed from the queue. Dependencies are applied to all
+tasks added to the queue.}
+
+\item{\code{timeout}}{Optional timeout, in seconds, after which an
+error will be thrown if the task has not completed.}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for
 completion.}
