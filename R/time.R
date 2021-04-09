@@ -36,24 +36,26 @@ progress_timeout <- function(total, show, label, timeout, ...) {
     }
     fmt <- sprintf("%s | %s", label_prefix, label_suffix)
     p <- progress::progress_bar$new(fmt, total = total, show_after = 0,
-                                    ...)$tick
+                                    clear = TRUE, ...)
 
-    function(len = 1, ..., clear = FALSE) {
+    tick <- function(len = 1, ...) {
       rem <- max(0, time_left())
-      move <- if (clear || rem == 0) total else if (single) 0L else len
+      move <- if (rem == 0) total else if (single) 0L else len
       if (forever) {
-        p(move)
+        p$tick(move)
       } else {
         width <- max(0, floor(log10(timeout))) + 1
         remaining <- formatC(rem, digits = 0, width = width, format = "f")
-        p(move, tokens = list(remaining = remaining))
+        p$tick(move, tokens = list(remaining = remaining))
       }
       rem <= 0
     }
+    list(tick = tick, terminate = p$terminate)
   } else {
-    function(...) {
+    tick <- function(...) {
       time_left() <= 0
     }
+    list(tick = tick, terminate = function() NULL)
   }
 }
 

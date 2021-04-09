@@ -39,24 +39,29 @@ test_that("progress - vector and with timeout", {
   skip_on_cran() # too dependent on progress internals
   p <- progress_timeout(10, show = TRUE, label = "things", timeout = 5,
                         width = 50, force = TRUE)
-  expect_is(p, "function")
+  expect_setequal(names(p), c("tick", "terminate"))
+  expect_is(p$tick, "function")
+  expect_is(p$terminate, "function")
 
-  res1 <- evaluate_promise(p(1))
+  res1 <- evaluate_promise(p$tick(1))
   expect_equal(res1$result, FALSE)
   expect_match(res1$messages[[2]],
                "(-) [>------------]  10% things | giving up in",
                fixed = TRUE)
 
-  res2 <- evaluate_promise(p(4))
+  res2 <- evaluate_promise(p$tick(4))
   expect_equal(res2$result, FALSE)
   expect_match(res2$messages[[2]],
                "(\\) [=====>-------]  50% things | giving up in",
                fixed = TRUE)
 
-  res3 <- evaluate_promise(p(5))
+  res3 <- evaluate_promise(p$tick(5))
   expect_match(res3$messages[[2]],
                "(|) [=============] 100% things | giving up in",
                fixed = TRUE)
+
+  res4 <- evaluate_promise(p$terminate())
+  expect_match(res4$messages, "\r")
 })
 
 
@@ -64,15 +69,14 @@ test_that("progress - single and infinite", {
   skip_on_cran() # too dependent on progress internals
   p <- progress_timeout(1, show = TRUE, label = "things", timeout = Inf,
                         width = 50, force = TRUE)
-  expect_is(p, "function")
 
-  res1 <- evaluate_promise(p())
+  res1 <- evaluate_promise(p$tick())
   expect_equal(res1$result, FALSE)
   expect_match(res1$messages[[2]],
                "(-) waiting for thing | waited for",
                fixed = TRUE)
 
-  res2 <- evaluate_promise(p())
+  res2 <- evaluate_promise(p$tick())
   expect_equal(res2$result, FALSE)
   expect_match(res2$messages[[2]],
                "(\\) waiting for thing | waited for",
@@ -83,16 +87,18 @@ test_that("progress - single and infinite", {
 test_that("progress - don't show", {
   p <- progress_timeout(1, show = FALSE, label = "things", timeout = Inf,
                         width = 50, force = TRUE)
-  expect_is(p, "function")
-  expect_silent(p())
-  expect_false(p())
+  expect_setequal(names(p), c("tick", "terminate"))
+  expect_is(p$tick, "function")
+  expect_is(p$terminate, "function")
+  expect_silent(p$tick())
+  expect_false(p$tick())
+  expect_silent(p$terminate())
 })
 
 
 test_that("progress - timeout", {
   p <- progress_timeout(1, show = FALSE, label = "things", timeout = 0,
                         width = 50, force = TRUE)
-  expect_is(p, "function")
-  expect_silent(p())
-  expect_true(p())
+  expect_silent(p$tick())
+  expect_true(p$tick())
 })

@@ -97,7 +97,7 @@ general_poll <- function(fetch, time_poll, timeout, name, error, progress) {
   if (timeout > 0) {
     p <- progress_timeout(length(done), progress, name, timeout)
     tot <- sum(done)
-    p(tot)
+    p$tick(tot)
 
     while (!all(done)) {
       sys_sleep(time_poll)
@@ -106,10 +106,11 @@ general_poll <- function(fetch, time_poll, timeout, name, error, progress) {
       done <- fetch()
       tot <- sum(done)
 
-      if (p(tot - prev)) {
+      if (p$tick(tot - prev)) {
         break
       }
     }
+    p$terminate()
   }
 
   if (error && !all(done)) {
