@@ -29,7 +29,7 @@ worker_run_task_separate_process <- function(task, worker) {
   callr::r(function(redis_config, queue_id, worker_id, task_id)
     remote_run_task(redis_config, queue_id, worker_id, task_id),
     list(redis_config, queue_id, worker_id, task_id),
-    package = "rrq")
+    package = "rrq", supervise = TRUE)
 }
 
 
