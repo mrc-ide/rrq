@@ -52,7 +52,7 @@ progress_timeout <- function(total, show, label, timeout, ...) {
     }
     list(tick = tick, terminate = p$terminate)
   } else {
-    tick <- function(...) {
+    tick <- function(len = 1, ...) {
       time_left() <= 0
     }
     list(tick = tick, terminate = function() NULL)
