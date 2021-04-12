@@ -97,7 +97,7 @@ general_poll <- function(fetch, time_poll, timeout, name, error, progress) {
   if (timeout > 0) {
     p <- progress_timeout(length(done), progress, name, timeout)
     tot <- sum(done)
-    p(tot)
+    p$tick(tot)
 
     while (!all(done)) {
       sys_sleep(time_poll)
@@ -106,10 +106,11 @@ general_poll <- function(fetch, time_poll, timeout, name, error, progress) {
       done <- fetch()
       tot <- sum(done)
 
-      if (p(tot - prev)) {
+      if (p$tick(tot - prev)) {
         break
       }
     }
+    p$terminate()
   }
 
   if (error && !all(done)) {
@@ -134,4 +135,18 @@ collector <- function(init = character(0)) {
 
 is_call <- function(expr, what) {
   is.call(expr) && any(vlapply(what, identical, expr[[1L]]))
+}
+
+
+df_to_list <- function(x) {
+  at <- attributes(x)
+  attributes(x) <- at[intersect(names(at), c("names", "class", "row.names"))]
+
+  i <- vlapply(x, is.list)
+  prepare <- function(el) {
+    el <- as.list(el)
+    el[i] <- lapply(el[i], unlist, FALSE)
+    el
+  }
+  unname(lapply(split(x, seq_len(nrow(x))), prepare))
 }

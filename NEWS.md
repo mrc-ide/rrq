@@ -1,3 +1,7 @@
+# rrq 0.2.19
+
+* Add new `enqueue_bulk` method (previously deleted in 0.2.0) (mrc-2261)
+
 # rrq 0.2.15
 
 * `enqueue` can add a task with dependencies i.e. tasks which must be complete before this task can be run via `depends_on` (mrc-2255)

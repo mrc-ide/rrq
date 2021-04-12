@@ -39,6 +39,34 @@ test_that("lapply with anonymous function", {
 })
 
 
+test_that("bulk add with ordinary function", {
+  p <- data.frame(a = runif(10), b = runif(10))
+  p$b[3] <- NA
+  obj <- test_rrq()
+  obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
+                         time_poll = 1, overwrite = TRUE)
+  w <- test_worker_blocking(obj)
+  grp <- obj$enqueue_bulk(p, sum, na.rm = TRUE, timeout = 0)
+  w$loop(immediate = TRUE)
+  res <- obj$bulk_wait(grp)
+  expect_equal(res, as.list(rowSums(p, na.rm = TRUE)))
+})
+
+
+test_that("bulk add with anonymous functions", {
+  p <- data.frame(a = runif(10), b = runif(10))
+  p[2] <- NA
+  obj <- test_rrq()
+  obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
+                         time_poll = 1, overwrite = TRUE)
+  w <- test_worker_blocking(obj)
+  grp <- obj$enqueue_bulk_(p, function(a, b) a + b, timeout = 0)
+  w$loop(immediate = TRUE)
+  res <- obj$bulk_wait(grp)
+  expect_equal(res, as.list(p$a + p$b))
+})
+
+
 test_that("NSE - use namespaced function", {
   obj <- test_rrq()
   obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
@@ -80,7 +108,17 @@ test_that("lapply blocking", {
   obj <- test_rrq()
   w <- test_worker_spawn(obj)
   res <- obj$lapply(1:10, sqrt, timeout = 1)
-  expect_equal(res, as.list(sqrt(1:10)), timeout = 10)
+  expect_equal(res, as.list(sqrt(1:10)))
+})
+
+
+test_that("enqueue bulk blocking", {
+  obj <- test_rrq()
+  p <- data.frame(a = runif(5), b = runif(5))
+  f <- function(a, b) a + b
+  w <- test_worker_spawn(obj)
+  res <- obj$enqueue_bulk(p, f, timeout = 1)
+  expect_equal(res, as.list(rowSums(p)))
 })
 
 
