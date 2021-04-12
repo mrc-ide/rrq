@@ -5,6 +5,7 @@ assert_is <- function(x, what, name = deparse(substitute(x))) {
                  paste(what, collapse = " / ")), call. = FALSE)
   }
 }
+
 assert_character <- function(x, name = deparse(substitute(x))) {
   if (!is.character(x)) {
     stop(sprintf("%s must be character", name), call. = FALSE)
@@ -17,9 +18,21 @@ assert_logical <- function(x, name = deparse(substitute(x))) {
   }
 }
 
+assert_numeric <- function(x, name = deparse(substitute(x))) {
+  if (!is.numeric(x)) {
+    stop(sprintf("'%s' must be a numeric", name), call. = FALSE)
+  }
+}
+
 assert_character_or_null <- function(x, name = deparse(substitute(x))) {
   if (!is.null(x)) {
     assert_character(x, name)
+  }
+}
+
+assert_nonmissing <- function(x, name = deparse(substitute(x))) {
+  if (any(is.na(x))) {
+    stop(sprintf("'%s' must not be NA", name), call. = FALSE)
   }
 }
 
@@ -40,11 +53,19 @@ assert_length <- function(x, n, name = deparse(substitute(x))) {
 assert_scalar_character <- function(x, name = deparse(substitute(x))) {
   assert_scalar(x, name)
   assert_character(x, name)
+  assert_nonmissing(x, name)
 }
 
 assert_scalar_logical <- function(x, name = deparse(substitute(x))) {
   assert_scalar(x, name)
   assert_logical(x, name)
+  assert_nonmissing(x, name)
+}
+
+assert_scalar_numeric <- function(x, name = deparse(substitute(x))) {
+  assert_scalar(x, name)
+  assert_numeric(x, name)
+  assert_nonmissing(x, name)
 }
 
 assert_integer_like <- function(x, name = deparse(substitute(x))) {
@@ -56,4 +77,21 @@ assert_integer_like <- function(x, name = deparse(substitute(x))) {
 assert_scalar_integer_like <- function(x, name = deparse(substitute(x))) {
   assert_scalar(x, name)
   assert_integer_like(x, name)
+}
+
+assert_scalar_positive_integer <- function(x, zero_ok = FALSE,
+                                           name = deparse(substitute(x))) {
+  assert_scalar(x, name)
+  assert_nonmissing(x, name)
+  assert_integer_like(x, name)
+  if (x < if (zero_ok) 0 else 1) {
+    stop(sprintf("'%s' must be a positive integer", name), call. = FALSE)
+  }
+}
+
+assert_valid_timeout <- function(x, name = deparse(substitute(x))) {
+  assert_scalar_numeric(x, name)
+  if (x < 0) {
+    stop(sprintf("'%s' must be positive", name))
+  }
 }

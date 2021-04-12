@@ -16,11 +16,9 @@ Imports:
     redux (>= 1.0.0)
 Suggests:
     callr,
-    heartbeatr (>= 0.5.0),
     storr,
     testthat
 RoxygenNote: 7.1.1
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-Remotes: mrc-ide/heartbeatr@use-callr
 Language: en-GB
