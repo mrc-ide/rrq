@@ -62,17 +62,8 @@ test_that("interrupt stuck worker (local)", {
 
   expect_equal(obj$message_send_and_wait("PING", timeout = 10),
                setNames(list("PONG"), wid))
-
-  ## Then try the interrupt _during_ a string of messages and be sure
-  ## that the messages get requeued correctly.
-  tools::pskill(pid, tools::SIGINT)
-  expect_equal(obj$message_send_and_wait("PING", timeout = 10),
-               setNames(list("PONG"), wid))
-
-  tmp <- obj$worker_log_tail(wid, 3L)
-  expect_equal(tmp$command,
-               c("REQUEUE", "MESSAGE", "RESPONSE"))
 })
+
 
 test_that("interrupt stuck worker (via heartbeat)", {
   skip_if_not_installed("heartbeatr")
@@ -109,16 +100,6 @@ test_that("interrupt stuck worker (via heartbeat)", {
 
   expect_equal(obj$message_send_and_wait("PING", timeout = 10),
                setNames(list("PONG"), wid))
-
-  ## Then try the interrupt _during_ a string of messages and be sure
-  ## that the messages get requeued correctly.
-  worker_send_signal(obj$con, obj$keys, tools::SIGINT, wid)
-  expect_equal(obj$message_send_and_wait("PING", timeout = 10),
-               setNames(list("PONG"), wid))
-
-  tmp <- obj$worker_log_tail(wid, 3L)
-  expect_equal(tmp$command,
-               c("REQUEUE", "MESSAGE", "RESPONSE"))
 })
 
 
