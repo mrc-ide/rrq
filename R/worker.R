@@ -24,7 +24,7 @@
 ##'
 ##' @param heartbeat_period Optional period for the heartbeat.  If
 ##'   non-NULL then a heartbeat process will be started (using
-##'   [`rrq::hearbeat`]) which can be used to build fault
+##'   [`rrq::heartbeat`]) which can be used to build fault
 ##'   tolerant queues.
 ##'
 ##' @param verbose Logical, indicating if the worker should print
@@ -196,7 +196,8 @@ worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
   con <- worker$con
   keys <- worker$keys
 
-  worker$heartbeat <- worker_heartbeat(con, keys, heartbeat_period, worker$verbose)
+  worker$heartbeat <- worker_heartbeat(con, keys, heartbeat_period,
+                                       worker$verbose)
 
   worker$con$pipeline(
     redis$SADD(keys$worker_name,   worker$name),
