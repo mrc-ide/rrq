@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.18</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.19</span>
       </span>
     </div>
 
@@ -260,6 +260,8 @@ expected, so you can use the names directly:</p><pre><span class='va'>b</span> <
 <li><p><a href='#method-enqueue_'><code>rrq_controller_$enqueue_()</code></a></p></li>
 <li><p><a href='#method-lapply'><code>rrq_controller_$lapply()</code></a></p></li>
 <li><p><a href='#method-lapply_'><code>rrq_controller_$lapply_()</code></a></p></li>
+<li><p><a href='#method-enqueue_bulk'><code>rrq_controller_$enqueue_bulk()</code></a></p></li>
+<li><p><a href='#method-enqueue_bulk_'><code>rrq_controller_$enqueue_bulk_()</code></a></p></li>
 <li><p><a href='#method-bulk_wait'><code>rrq_controller_$bulk_wait()</code></a></p></li>
 <li><p><a href='#method-task_list'><code>rrq_controller_$task_list()</code></a></p></li>
 <li><p><a href='#method-task_exists'><code>rrq_controller_$task_exists()</code></a></p></li>
@@ -568,6 +570,133 @@ tasks added to the queue.</p></dd>
 error will be thrown if the task has not completed. If a
 timeout is given as <code>0</code>, then we return a handle that can be used
 to check for tasks using <code>bulk_wait</code></p></dd>
+
+<dt><code>time_poll</code></dt><dd><p>Optional time with which to "poll" for
+completion.</p></dd>
+
+<dt><code>progress</code></dt><dd><p>Optional logical indicating if a progress bar
+should be displayed. If <code>NULL</code> we fall back on the value of the
+global option <code>rrq.progress</code>, and if that is unset display a
+progress bar if in an interactive session.</p></dd>
+
+</dl><p></div></p>
+<p><hr>
+<a id="method-enqueue_bulk"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>enqueue_bulk()</code></h3>
+<p>Send a bulk set of tasks to your workers.
+This function is a bit like a mash-up of <a href='https://rdrr.io/r/base/funprog.html'>Map</a> and <a href='https://rdrr.io/r/base/do.call.html'>do.call</a>,
+when used with a <a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a> argument, which is typically what
+is provided. Rather than <code>$lapply()</code> which applies <code>fun</code> to each
+element of <code>x</code>, <code>enqueue_bulk will apply over each row of </code>x<code>, spreading the columms out as arguments. If you have a function </code>f(a, b)<code>and a [data.frame] with columns</code>a<code>and</code>b` this
+should feel intuitive.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_controller_</span><span class='op'>$</span><span class='fu'>enqueue_bulk</span><span class='op'>(</span>
+  <span class='va'>x</span>,
+  <span class='va'>fun</span>,
+  <span class='va'>...</span>,
+  dots <span class='op'>=</span> <span class='cn'>NULL</span>,
+  envir <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>parent.frame</a></span><span class='op'>(</span><span class='op'>)</span>,
+  queue <span class='op'>=</span> <span class='cn'>NULL</span>,
+  separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  depends_on <span class='op'>=</span> <span class='cn'>NULL</span>,
+  timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
+  time_poll <span class='op'>=</span> <span class='cn'>NULL</span>,
+  progress <span class='op'>=</span> <span class='cn'>NULL</span>
+<span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>x</code></dt><dd><p>Typically a <a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a>, which you want to apply <code>fun</code>
+over, row-wise. The names of the <code>data.frame</code> must match the
+arguments of your function.</p></dd>
+
+<dt><code>fun</code></dt><dd><p>A function</p></dd>
+
+<dt><code>...</code></dt><dd><p>Additional arguments to add to every call to <code>fun</code></p></dd>
+
+<dt><code>dots</code></dt><dd><p>As an alternative to <code>...</code>, you can provide the dots
+as a list of additional arguments. This may be easier to program
+against.</p></dd>
+
+<dt><code>envir</code></dt><dd><p>The environment to use to try and find the function</p></dd>
+
+<dt><code>queue</code></dt><dd><p>The queue to add the tasks to (see <code>$enqueue</code> for
+details).</p></dd>
+
+<dt><code>separate_process</code></dt><dd><p>Logical, indicating if the task should be
+run in a separate process on the worker (see <code>$enqueue</code> for
+details).</p></dd>
+
+<dt><code>depends_on</code></dt><dd><p>Vector or list of IDs of tasks which must have
+completed before this job can be run. Once all dependent tasks
+have been successfully run, this task will get added to the
+queue. If the dependent task fails then this task will be
+removed from the queue. Dependencies are applied to all
+tasks added to the queue.</p></dd>
+
+<dt><code>timeout</code></dt><dd><p>Optional timeout, in seconds, after which an
+error will be thrown if the task has not completed.</p></dd>
+
+<dt><code>time_poll</code></dt><dd><p>Optional time with which to "poll" for
+completion.</p></dd>
+
+<dt><code>progress</code></dt><dd><p>Optional logical indicating if a progress bar
+should be displayed. If <code>NULL</code> we fall back on the value of the
+global option <code>rrq.progress</code>, and if that is unset display a
+progress bar if in an interactive session.</p></dd>
+
+</dl><p></div></p>
+<p><hr>
+<a id="method-enqueue_bulk_"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>enqueue_bulk_()</code></h3>
+<p>The "standard evaluation" version of <code>$enqueue_bulk()</code>.
+This differs in how the function is found and how dots are passed.
+With this version, both are passed by value; this may create more
+overhead on the redis server as the values of the variables will
+be copied over rather than using their names if possible.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_controller_</span><span class='op'>$</span><span class='fu'>enqueue_bulk_</span><span class='op'>(</span>
+  <span class='va'>x</span>,
+  <span class='va'>fun</span>,
+  <span class='va'>...</span>,
+  dots <span class='op'>=</span> <span class='cn'>NULL</span>,
+  envir <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>parent.frame</a></span><span class='op'>(</span><span class='op'>)</span>,
+  queue <span class='op'>=</span> <span class='cn'>NULL</span>,
+  separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  depends_on <span class='op'>=</span> <span class='cn'>NULL</span>,
+  timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
+  time_poll <span class='op'>=</span> <span class='cn'>NULL</span>,
+  progress <span class='op'>=</span> <span class='cn'>NULL</span>
+<span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>x</code></dt><dd><p>Typically a <a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a>, which you want to apply <code>fun</code>
+over, row-wise. The names of the <code>data.frame</code> must match the
+arguments of your function.</p></dd>
+
+<dt><code>fun</code></dt><dd><p>A function</p></dd>
+
+<dt><code>...</code></dt><dd><p>Additional arguments to add to every call to <code>fun</code></p></dd>
+
+<dt><code>dots</code></dt><dd><p>As an alternative to <code>...</code>, you can provide the dots
+as a list of additional arguments. This may be easier to program
+against.</p></dd>
+
+<dt><code>envir</code></dt><dd><p>The environment to use to try and find the function</p></dd>
+
+<dt><code>queue</code></dt><dd><p>The queue to add the tasks to (see <code>$enqueue</code> for
+details).</p></dd>
+
+<dt><code>separate_process</code></dt><dd><p>Logical, indicating if the task should be
+run in a separate process on the worker (see <code>$enqueue</code> for
+details).</p></dd>
+
+<dt><code>depends_on</code></dt><dd><p>Vector or list of IDs of tasks which must have
+completed before this job can be run. Once all dependent tasks
+have been successfully run, this task will get added to the
+queue. If the dependent task fails then this task will be
+removed from the queue. Dependencies are applied to all
+tasks added to the queue.</p></dd>
+
+<dt><code>timeout</code></dt><dd><p>Optional timeout, in seconds, after which an
+error will be thrown if the task has not completed.</p></dd>
 
 <dt><code>time_poll</code></dt><dd><p>Optional time with which to "poll" for
 completion.</p></dd>
