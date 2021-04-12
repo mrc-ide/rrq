@@ -16,6 +16,7 @@ Imports:
     redux (>= 1.0.0)
 Suggests:
     callr,
+    processx,
     storr,
     testthat
 RoxygenNote: 7.1.1
