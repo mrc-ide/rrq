@@ -917,9 +917,8 @@ rrq_controller_ <- R6::R6Class(
     ##'   "low")`) to set the position of the default queue.
     ##'
     ##' @param heartbeat_period Optional period for the heartbeat.  If
-    ##'   non-NULL then a heartbeat process will be started (using the
-    ##'   \code{heartbeatr} package) which can be used to build fault
-    ##'   tolerant queues.
+    ##'   non-NULL then a heartbeat process will be started (using
+    ##' [`rrq::heartbeat`] which can be used to build fault tolerant queues.
     ##'
     ##' @param verbose Logical, indicating if the worker should print
     ##'   logging output to the screen.  Logging to screen has a small but
@@ -1246,7 +1245,7 @@ task_cancel <- function(con, keys, task_id) {
     stop("Worker does not have heartbeat enabled")
   }
 
-  heartbeatr::heartbeat_send_signal(con, heartbeat_key, tools::SIGINT)
+  heartbeat_send_signal(con, heartbeat_key, tools::SIGINT)
   cancel_dependencies(con, keys, task_id)
   invisible(TRUE)
 }
@@ -1464,7 +1463,7 @@ worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
            paste(worker_ids[is.na(heartbeat_key)], collapse = ", "))
     }
     for (key in heartbeat_key) {
-      heartbeatr::heartbeat_send_signal(con, key, tools::SIGTERM)
+      heartbeat_send_signal(con, key, tools::SIGTERM)
     }
   } else { # kill_local
     info <- worker_info(con, keys, worker_ids)

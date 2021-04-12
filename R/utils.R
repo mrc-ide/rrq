@@ -150,3 +150,14 @@ df_to_list <- function(x) {
   }
   unname(lapply(split(x, seq_len(nrow(x))), prepare))
 }
+
+wait_timeout <- function(explanation, timeout, keep_going,
+                         poll = timeout / 100) {
+  t_end <- Sys.time() + timeout
+  while (keep_going()) {
+    if (Sys.time() > t_end) {
+      stop("Timeout: ", explanation)
+    }
+    Sys.sleep(poll)
+  }
+}

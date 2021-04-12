@@ -299,13 +299,6 @@ test_that("queue remove", {
 })
 
 
-## This is not ideal, but should do for now. The worker_send_signal
-## function is not yet widely used from the controller, but will be at
-## some point. We depend on a implementation detail of heartbeatr, but
-## it's one that I think I have documented. The alternative would be
-## to mock this and ensure that heartbeatr::heartbeat_send_signal is
-## called as expected but given how simple the function is it seems
-## like the test really just implements the function like that.
 test_that("worker_send_signal", {
   skip_if_not_installed("heartbeatr")
   obj <- test_rrq()
