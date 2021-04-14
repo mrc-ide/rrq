@@ -16,11 +16,11 @@ Imports:
     redux (>= 1.0.0)
 Suggests:
     callr,
-    heartbeatr@3139908,
+    heartbeatr,
     storr,
     testthat
 RoxygenNote: 7.1.1
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-Remotes: mrc-ide/heartbeatr
+Remotes: mrc-ide/heartbeatr@3139908
 Language: en-GB
