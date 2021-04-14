@@ -1,7 +1,7 @@
 context("fault tolerance")
 
 test_that("heartbeat", {
-  skip_if_not_installed("heartbeatr")
+  skip_if_not_installed("callr")
   obj <- test_rrq()
 
   res <- obj$worker_config_save("localhost", heartbeat_period = 3)
@@ -62,20 +62,11 @@ test_that("interrupt stuck worker (local)", {
 
   expect_equal(obj$message_send_and_wait("PING", timeout = 10),
                setNames(list("PONG"), wid))
-
-  ## Then try the interrupt _during_ a string of messages and be sure
-  ## that the messages get requeued correctly.
-  tools::pskill(pid, tools::SIGINT)
-  expect_equal(obj$message_send_and_wait("PING", timeout = 10),
-               setNames(list("PONG"), wid))
-
-  tmp <- obj$worker_log_tail(wid, 3L)
-  expect_equal(tmp$command,
-               c("REQUEUE", "MESSAGE", "RESPONSE"))
 })
 
+
 test_that("interrupt stuck worker (via heartbeat)", {
-  skip_if_not_installed("heartbeatr")
+  skip_if_not_installed("callr")
   ## Basically the same test as above, but we'll do it via the
   ## heartbeat thread.  These might be worth merging.
   skip_on_os("windows")
@@ -109,21 +100,11 @@ test_that("interrupt stuck worker (via heartbeat)", {
 
   expect_equal(obj$message_send_and_wait("PING", timeout = 10),
                setNames(list("PONG"), wid))
-
-  ## Then try the interrupt _during_ a string of messages and be sure
-  ## that the messages get requeued correctly.
-  worker_send_signal(obj$con, obj$keys, tools::SIGINT, wid)
-  expect_equal(obj$message_send_and_wait("PING", timeout = 10),
-               setNames(list("PONG"), wid))
-
-  tmp <- obj$worker_log_tail(wid, 3L)
-  expect_equal(tmp$command,
-               c("REQUEUE", "MESSAGE", "RESPONSE"))
 })
 
 
 test_that("Stop task with interrupt", {
-  skip_if_not_installed("heartbeatr")
+  skip_if_not_installed("callr")
   skip_on_os("windows")
   obj <- test_rrq("myfuns.R")
 
@@ -163,7 +144,7 @@ test_that("Stop task with interrupt", {
 
 
 test_that("race conditioning handling when cancelling tasks", {
-  skip_if_not_installed("heartbeatr")
+  skip_if_not_installed("callr")
   skip_on_os("windows")
 
   obj <- test_rrq("myfuns.R")
@@ -216,7 +197,7 @@ test_that("detecting workers with no heartbeat is quiet", {
 
 
 test_that("detecting output with clean exit is quiet", {
-  skip_if_not_installed("heartbeatr")
+  skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")
 
   ## We need to set time_poll to be fairly fast because BLPOP is not
@@ -248,7 +229,7 @@ test_that("detecting output with clean exit is quiet", {
 
 
 test_that("detect killed worker (via heartbeat)", {
-  skip_if_not_installed("heartbeatr")
+  skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")
 
   ## We need to set time_poll to be fairly fast because BLPOP is not
@@ -297,7 +278,7 @@ test_that("detect killed worker (via heartbeat)", {
 
 ## See https://github.com/mrc-ide/rrq/issues/22
 test_that("detect multiple killed workers", {
-  skip_if_not_installed("heartbeatr")
+  skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")
 
   res <- obj$worker_config_save("localhost", time_poll = 1,

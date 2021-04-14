@@ -21,9 +21,22 @@ test_that("assertions", {
   expect_error(assert_character_or_null(pi), "must be character")
   expect_silent(assert_character_or_null(NULL))
 
+  expect_error(assert_numeric("a"), "must be a numeric")
+  expect_error(assert_numeric(TRUE), "must be a numeric")
+
+  expect_error(assert_nonmissing(NA), "must not be NA")
+  expect_error(assert_nonmissing(NA_integer_), "must not be NA")
+
   expect_error(assert_length(1:3, 2), "must be length 2")
 
   expect_error(assert_integer_like(pi), "must be integer like")
+
+  expect_error(assert_scalar_positive_integer(-1), "must be a positive integer")
+  expect_error(assert_scalar_positive_integer(0), "must be a positive integer")
+  expect_silent(assert_scalar_positive_integer(0, TRUE))
+
+  expect_error(assert_valid_timeout(-1), "must be positive")
+  expect_silent(assert_valid_timeout(1))
 
   expect_error(assert_is(1, "R6"), "must inherit from R6")
 })
@@ -113,4 +126,15 @@ test_that("polling: behaviour if timeout", {
   expect_error(
     general_poll(fetch, poll, poll * 3, "things", TRUE, FALSE),
     "Exceeded maximum time")
+})
+
+
+test_that("wait timeout errors informatively", {
+  skip_if_not_installed("mockery")
+  callback <- mockery::mock(TRUE, cycle = TRUE)
+  expect_error(
+    wait_timeout("my explanation", 0.1, callback),
+    "Timeout: my explanation")
+  expect_gt(length(mockery::mock_args(callback)), 1)
+  expect_equal(mockery::mock_args(callback)[[1]], list())
 })

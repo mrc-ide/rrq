@@ -42,8 +42,8 @@ after initialising the worker, except that it's guaranteed to be
 run by all workers.}
 
 \item{heartbeat_period}{Optional period for the heartbeat.  If
-non-NULL then a heartbeat process will be started (using the
-\code{heartbeatr} package) which can be used to build fault
+non-NULL then a heartbeat process will be started (using
+\code{\link{heartbeat}}) which can be used to build fault
 tolerant queues.}
 
 \item{verbose}{Logical, indicating if the worker should print
