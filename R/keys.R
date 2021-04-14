@@ -62,6 +62,12 @@ rrq_key_worker_heartbeat <- function(queue, worker) {
   sprintf("%s:worker:%s:heartbeat", queue, worker)
 }
 
+rrq_key_worker_repl <- function(queue, worker) {
+  list(input = sprintf("%s:worker:%s:repl:%s:input", queue, worker, id),
+       output = sprintf("%s:worker:%s:repl:%s:output", queue, worker, id),
+       status = sprintf("%s:worker:%s:repl:%s:status", queue, worker, id))
+}
+
 rrq_key_queue <- function(queue, name) {
   sprintf("%s:queue:%s", queue, name %||% QUEUE_DEFAULT)
 }

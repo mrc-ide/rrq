@@ -1,9 +1,35 @@
+repl_get_input <- function(prompt) {
+  cmd <- readline(prompt = prompt)
+  while (!is_complete_expression(cmd)) {
+    cmd <- paste0(cmd, sep = "\n", readline(prompt = "+ "))
+  }
+  cmd
+}
+
+
+is_complete_expression <- function(cmd) {
+  tryCatch({
+    parse(text = cmd)
+    TRUE
+  },
+  error = function(e)
+    !grepl(incomplete_error_message(), conditionMessage(e), fixed = TRUE))
+}
+
+
+incomplete_error_message <- function() {
+  exp <- tryCatch(parse(text = "1+"), error = function(e) e$message)
+  exp1 <- strsplit(exp, "\n")[[1]][[1]]
+  sub("^.*:\\s*([^:]+)$", "\\1", exp1, perl = TRUE)
+}
+
+
 ## Once working, all usage of cat(...) can safely become
 ## message(..., appendLF = FALSE) because the handling will dump that all
 ## into one stream.
-repl_eval <- function(expr, envir, path) {
-  withr::with_message_sink(path, {
-    withr::with_output_sink(path, {
+repl_eval <- function(expr, envir, con) {
+  withr::with_message_sink(con, {
+    withr::with_output_sink(con, {
       res <- repl_eval_expression(expr, envir)
       if (res$success) {
         if (res$value$visible) {

@@ -18,6 +18,7 @@ run_message <- function(worker, msg) {
                 PAUSE = run_message_pause(worker),
                 RESUME = run_message_resume(worker),
                 REFRESH = run_message_refresh(worker),
+                REPL = run_message_repl(worker, args),
                 TIMEOUT_SET = run_message_timeout_set(worker, args),
                 TIMEOUT_GET = run_message_timeout_get(worker),
                 run_message_unknown(cmd, args))
@@ -110,6 +111,65 @@ run_message_timeout_get <- function(worker) {
     c(timeout = worker$timeout, remaining = remaining)
   }
 }
+
+
+run_message_repl <- function(worker, args) {
+  key_repl <- rrq_key_worker_repl(worker$keys$queue_id, worker$name, args$id)
+
+  key_input <- key_repl$input
+  key_result <- key_repl$result
+  path_output <- tempfile()
+  on.exit(unlink(path_result), add = TRUE, after = TRUE)
+  forwarder <- repl_log_forwarder(repl_log_forwarder(path_output),
+                                  key_repl$output)
+  on.exit(forwarder$kill(), add = TRUE, after = FALSE)
+  ## Should wait here for file to become available, which should
+  ## happen very quickly.
+  Sys.sleep(0.5)
+  con_output <- fifo(path, "w", blocking = FALSE)
+  on.exit(close(con_output), add = TRUE, after = FALSE)
+
+  ## I think this is generally correct
+  envir <- globalenv()
+
+  con_redis <- worker$con
+
+  ## This is way to fast as it will cause load; we might use
+  ## args$timeout here if not in debug mode
+  timeout <- 1
+  t_end <- Sys.time() + args$timeout
+
+  ## This will tell the controller we're ready as they will listen on
+  ## this key.
+  con_redis$RPUSH(key_status, WORKER_ALIVE)
+
+  repeat {
+    input <- con_redis$BLPOP(key_input, timeout)
+    if (is.null(input)) {
+      if (Sys.time() > t_end) {
+        break
+      }
+    } else {
+      ## This exists only to make things easier:
+      con_redis$RPUSH(key_status, WORKER_BUSY)
+      cmd <- input[[2L]]
+      message(sprintf("Got input:\n%s", cmd))
+
+      ## We will expand this set of special commands
+      if (cmd == "Q") {
+        break
+      }
+
+      repl_eval(expr, envir, con_output)
+
+      message("done")
+      con_redis$RPUSH(key_status, WORKER_IDLE)
+    }
+  }
+
+  con_redis$RPUSH(key_status, WORKER_EXITED)
+}
+
 
 run_message_unknown <- function(cmd, args) {
   msg <- sprintf("Recieved unknown message: [%s]", cmd)
