@@ -16,6 +16,7 @@ Imports:
     redux (>= 1.0.0)
 Suggests:
     callr,
+    mockery,
     processx,
     storr,
     testthat
