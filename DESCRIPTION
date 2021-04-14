@@ -16,7 +16,7 @@ Imports:
     redux (>= 1.0.0)
 Suggests:
     callr,
-    heartbeatr,
+    heartbeatr@3139908,
     storr,
     testthat
 RoxygenNote: 7.1.1
