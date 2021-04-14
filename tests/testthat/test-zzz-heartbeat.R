@@ -45,8 +45,6 @@ test_that("Garbage collection", {
   expire <- 2
   con <- redux::hiredis()
 
-  path <- "tmp.log"
-
   obj <- heartbeat$new(key, period, expire = expire)
   expect_equal(con$EXISTS(key), 1)
   expect_true(obj$is_running())
