@@ -95,11 +95,6 @@ test_worker_blocking <- function(obj, worker_config = "localhost", ...) {
 }
 
 
-interrupt <- function() {
-  structure(list(), class = c("interrupt", "condition"))
-}
-
-
 make_counter <- function(start = 0L) {
   e <- environment()
   e$n <- start

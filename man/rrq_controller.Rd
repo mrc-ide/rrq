@@ -24,10 +24,10 @@ A queue controller.  Use this to interact with a queue/cluster.
 \item Once a worker selects the task to run, it becomes \code{RUNNING}
 \item If the task completes successfully without error it becomes \code{COMPLETE}
 \item If the task throws an error, it becomes \code{ERROR}
-\item If the worker was interrupted (e.g., by a message) the task
-becomes \code{INTERRUPTED}
-\item If the worker crashes, possibly due to the task, \emph{and} the worker runs
-a heartbeat the task becomes \code{ORPHAN}
+\item If the task was cancelled (e.g., via \verb{$task_cancel()}) it becomes
+\code{CANCELLED}
+\item If the task is killed by an external process, crashes or the worker
+dies (and is running a heartbeat) then the task becomes \code{DIED}.
 \item The status of an unknown task is \code{MISSING}
 }
 }
@@ -975,22 +975,30 @@ desirable behaviour.}
 \if{latex}{\out{\hypertarget{method-task_cancel}{}}}
 \subsection{Method \code{task_cancel()}}{
 Cancel a single task. If the task is \code{PENDING} it
-will be deleted. If \code{RUNNING} then the worker will be
-interrupted if it supports this.
+will be deleted. If \code{RUNNING} then the task will be stopped if
+it was set to run in a separate process (i.e., queued with
+\code{separate_process = TRUE}). Dependent tasks will be marked as
+impossible.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_cancel(task_id)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_cancel(task_id, wait = TRUE, delete = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{task_id}}{Id of the task to cancel}
+
+\item{\code{wait}}{Wait for the task to be stopped, if it was running. If
+\code{delete} is \code{TRUE}, then we will always wait for the task to stop.}
+
+\item{\code{delete}}{Delete the task after cancelling (if cancelling
+was successful).}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-TRUE if successfully cancelled, otherwise throws an error with
-task_id and status e.g. Task 123 is not running (MISSING)
+Nothing if successfully cancelled, otherwise throws an
+error with task_id and status e.g. Task 123 is not running (MISSING)
 }
 }
 \if{html}{\out{<hr>}}
@@ -1262,7 +1270,7 @@ running task (if \code{RUNNING}; \code{IDLE} workers will stop immediately).
 \item \code{kill}, in which case a kill signal will be sent via the heartbeat
 (if the worker is using one). This will kill the worker even if
 is currently working on a task, eventually leaving that task with
-a status of \code{ORPHAN}.
+a status of \code{DIED}.
 \item \code{kill_local}, in which case a kill signal is sent using operating
 system signals, which requires that the worker is on the same
 machine as the controller.

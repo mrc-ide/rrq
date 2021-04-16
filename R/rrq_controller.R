@@ -14,10 +14,10 @@
 ##' * Once a worker selects the task to run, it becomes `RUNNING`
 ##' * If the task completes successfully without error it becomes `COMPLETE`
 ##' * If the task throws an error, it becomes `ERROR`
-##' * If the worker was interrupted (e.g., by a message) the task
-##'   becomes `INTERRUPTED`
-##' * If the worker crashes, possibly due to the task, *and* the worker runs
-##'   a heartbeat the task becomes `ORPHAN`
+##' * If the task was cancelled (e.g., via `$task_cancel()`) it becomes
+##'   `CANCELLED`
+##' * If the task is killed by an external process, crashes or the worker
+##'   dies (and is running a heartbeat) then the task becomes `DIED`.
 ##' * The status of an unknown task is `MISSING`
 ##'
 ##' @section Worker lifecycle:
@@ -871,7 +871,7 @@ rrq_controller_ <- R6::R6Class(
     ##' * `kill`, in which case a kill signal will be sent via the heartbeat
     ##'   (if the worker is using one). This will kill the worker even if
     ##'   is currently working on a task, eventually leaving that task with
-    ##'   a status of `ORPHAN`.
+    ##'   a status of `DIED`.
     ##' * `kill_local`, in which case a kill signal is sent using operating
     ##'    system signals, which requires that the worker is on the same
     ##'    machine as the controller.
@@ -1305,7 +1305,7 @@ task_submit_n <- function(con, keys, dat, key_complete, queue,
   response <- con$pipeline(.commands = cmds)
 
   ## If any dependencies will never be satisfied then cleanup and error
-  incomplete_status <- c(TASK_ERROR, TASK_ORPHAN, TASK_INTERRUPTED,
+  incomplete_status <- c(TASK_ERROR, TASK_DIED, TASK_CANCELLED,
                          TASK_IMPOSSIBLE)
   if (any(response$status %in% incomplete_status)) {
     n <- length(task_ids)
