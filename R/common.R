@@ -15,6 +15,8 @@ TASK_ORPHAN   <- "ORPHAN"
 TASK_INTERRUPTED <- "INTERRUPTED" # will be removed
 ## task was cancelled
 TASK_CANCELLED <- "CANCELLED"
+## task running in a separate process died
+TASK_DIED <- "DIED"
 ## orphaned task was redirected
 TASK_REDIRECT <- "REDIRECT"
 ## An unknown task

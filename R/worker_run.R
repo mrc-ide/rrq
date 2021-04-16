@@ -41,27 +41,34 @@ worker_run_task_separate_process <- function(task, worker) {
     list(redis_config, queue_id, worker_id, task_id),
     package = "rrq", supervise = TRUE)
 
-  timeout_poll <- 10
+  timeout_poll <- 1
 
   ## TODO: We can also to a timeout check here since we have a
   ## sensible loop. We might want to rejig the statuses below though
   ## (TASK_CANCELLED, TASK_TIMEOUT, TASK_ORPHAN/TASK_DIED)
 
   repeat {
-    ## TODO: What happens on task death here? We can write out a pid
-    ## to file and kill the task to find out, but it will be really
-    ## similar to the below, *but* it's not handled because we'll end
-    ## up on the first branch.
-    result <- px$poll_io(timeout_poll)[["process"]]
+    result <- process_poll(px, timeout_poll)
     if (result == "ready") {
-      return(px$get_result())
+      ## The only failure here I have identified is that if the task
+      ## dies or is killed then we get an error of class
+      ## callr_status_error saying something:
+      ##
+      ## callr subprocess failed: could not start R, exited with non-zero
+      ##   status, has crashed or was killed
+      ##
+      ## A look through the callr sources suggests this is correct.
+      return(tryCatch(
+        px$get_result(),
+        error = function(e) list(value = NULL, status = TASK_DIED)))
     }
     if (!is.null(con$HGET(key_cancel, task_id))) {
       px$kill()
       ## Technically we *might* have completed here (i.e., during the
       ## time taken to compare result == "ready" and HGET on
       ## key_cancel but it's extremely unlikely and marking the task
-      ## as failed is fine.
+      ## as failed is fine because that is what the user wanted
+      ## anyway.
       worker$log("CANCEL")
       return(list(value = NULL, status = TASK_CANCELLED))
     }
@@ -138,4 +145,9 @@ worker_run_task_cleanup <- function(worker, status, value) {
 
   worker$active_task <- NULL
   invisible()
+}
+
+
+process_poll <- function(px, timeout) {
+  processx::poll(list(px$get_poll_connection()), timeout * 1000)[[1L]]
 }
