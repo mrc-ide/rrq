@@ -300,7 +300,6 @@ test_that("queue remove", {
 
 
 test_that("worker_send_signal", {
-  skip_if_not_installed("heartbeatr")
   obj <- test_rrq()
   w1 <- test_worker_blocking(obj)
   w2 <- test_worker_blocking(obj)
