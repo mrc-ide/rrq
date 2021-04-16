@@ -34,6 +34,7 @@ rrq_keys_common <- function(queue_id) {
        task_progress  = sprintf("%s:task:progress",  queue_id),
        task_result    = sprintf("%s:task:result",    queue_id),
        task_complete  = sprintf("%s:task:complete",  queue_id),
+       task_cancel    = sprintf("%s:task:cancel",    queue_id),
 
        deferred_set   = sprintf("%s:deferred", queue_id))
 }

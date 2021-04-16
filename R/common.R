@@ -12,8 +12,10 @@ TASK_ERROR    <- "ERROR"
 ## worker node died
 TASK_ORPHAN   <- "ORPHAN"
 ## task was interrupted
-TASK_INTERRUPTED <- "INTERRUPTED"
-## orphaned/interrupted task was redirected
+TASK_INTERRUPTED <- "INTERRUPTED" # will be removed
+## task was cancelled
+TASK_CANCELLED <- "CANCELLED"
+## orphaned task was redirected
 TASK_REDIRECT <- "REDIRECT"
 ## An unknown task
 TASK_MISSING  <- "MISSING"

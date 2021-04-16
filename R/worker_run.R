@@ -5,18 +5,25 @@ worker_run_task <- function(worker, task_id) {
   } else {
     res <- worker_run_task_local(task, worker)
   }
-  task_status <- if (res$success) TASK_COMPLETE else TASK_ERROR
+  task_status <- res$status
   worker_queue_dependencies(worker, task_id, task_status)
   worker_run_task_cleanup(worker, task_status, res$value)
 }
 
 
+worker_run_task_result <- function(result) {
+  list(value = result$value,
+       status = if (result$success) TASK_COMPLETE else TASK_ERROR)
+}
+
+
 worker_run_task_local <- function(task, worker) {
   e <- expression_restore_locals(task, worker$envir, worker$db)
-  withCallingHandlers(
+  result <- withCallingHandlers(
     expression_eval_safely(task$expr, e),
     progress = function(e)
       task_progress_update(unclass(e), worker, FALSE))
+  worker_run_task_result(result)
 }
 
 
@@ -25,11 +32,40 @@ worker_run_task_separate_process <- function(task, worker) {
   queue_id <- worker$keys$queue_id
   worker_id <- worker$name
   task_id <- task$id
+  key_cancel <- worker$keys$task_cancel
+  con <- worker$con
+
   worker$log("REMOTE", task_id)
-  callr::r(function(redis_config, queue_id, worker_id, task_id)
+  px <- callr::r_bg(function(redis_config, queue_id, worker_id, task_id)
     remote_run_task(redis_config, queue_id, worker_id, task_id),
     list(redis_config, queue_id, worker_id, task_id),
     package = "rrq", supervise = TRUE)
+
+  timeout_poll <- 10
+
+  ## TODO: We can also to a timeout check here since we have a
+  ## sensible loop. We might want to rejig the statuses below though
+  ## (TASK_CANCELLED, TASK_TIMEOUT, TASK_ORPHAN/TASK_DIED)
+
+  repeat {
+    ## TODO: What happens on task death here? We can write out a pid
+    ## to file and kill the task to find out, but it will be really
+    ## similar to the below, *but* it's not handled because we'll end
+    ## up on the first branch.
+    result <- px$poll_io(timeout_poll)[["process"]]
+    if (result == "ready") {
+      return(px$get_result())
+    }
+    if (!is.null(con$HGET(key_cancel, task_id))) {
+      px$kill()
+      ## Technically we *might* have completed here (i.e., during the
+      ## time taken to compare result == "ready" and HGET on
+      ## key_cancel but it's extremely unlikely and marking the task
+      ## as failed is fine.
+      worker$log("CANCEL")
+      return(list(value = NULL, status = TASK_CANCELLED))
+    }
+  }
 }
 
 
@@ -60,7 +96,13 @@ worker_run_task_start <- function(worker, task_id) {
     redis$HSET(keys$task_status,   task_id,   TASK_RUNNING),
     redis$HGET(keys$task_complete, task_id),
     redis$HGET(keys$task_local,    task_id),
-    redis$HGET(keys$task_expr,     task_id))
+    redis$HGET(keys$task_expr,     task_id),
+    redis$HGET(keys$task_cancel,   task_id))
+
+  ## This will be hard to sort out and really hard to trigger!
+  if (!is.null(dat[[9]])) {
+    stop("FIX THIS RACE CONDITION")
+  }
 
   ## This holds the bits of worker state we might need to refer to
   ## later for a running task:

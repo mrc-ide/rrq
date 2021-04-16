@@ -80,3 +80,9 @@ dirty_double <- function(value) {
   .GlobalEnv$.rrq_dirty_double <- value
   list(prev, value * 2)
 }
+
+
+pid_and_sleep <- function(path, timeout) {
+  writeLines(as.character(Sys.getpid()), path)
+  Sys.sleep(timeout)
+}

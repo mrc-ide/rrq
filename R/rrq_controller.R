@@ -149,6 +149,7 @@ rrq_controller_ <- R6::R6Class(
       self$keys <- rrq_keys(self$queue_id)
       self$worker_config_save("localhost", overwrite = FALSE)
       self$db <- rrq_db(self$con, self$keys)
+      private$scripts <- rrq_scripts_load(self$con)
       info <- object_to_bin(controller_info())
       rpush_max_length(self$con, self$keys$controller, info, 10)
     },
@@ -704,14 +705,23 @@ rrq_controller_ <- R6::R6Class(
     },
 
     ##' @description Cancel a single task. If the task is `PENDING` it
-    ##' will be deleted. If `RUNNING` then the worker will be
-    ##' interrupted if it supports this.
+    ##' will be deleted. If `RUNNING` then the task will be stopped if
+    ##' it was set to run in a separate process (i.e., queued with
+    ##' `separate_process = TRUE`). Dependent tasks will be marked as
+    ##' impossible.
     ##'
     ##' @param task_id Id of the task to cancel
-    ##' @return TRUE if successfully cancelled, otherwise throws an error with
-    ##' task_id and status e.g. Task 123 is not running (MISSING)
-    task_cancel = function(task_id) {
-      task_cancel(self$con, self$keys, task_id)
+    ##'
+    ##' @param wait Wait for the task to be stopped, if it was running. If
+    ##'   `delete` is `TRUE`, then we will always wait for the task to stop.
+    ##'
+    ##' @param delete Delete the task after cancelling (if cancelling
+    ##'   was successful).
+    ##'
+    ##' @return Nothing if successfully cancelled, otherwise throws an
+    ##' error with task_id and status e.g. Task 123 is not running (MISSING)
+    task_cancel = function(task_id, wait = TRUE, delete = TRUE) {
+      task_cancel(self$con, self$keys, private$scripts, task_id, wait, delete)
     },
 
     ##' @description Fetch internal data about a task from Redis
@@ -1070,6 +1080,10 @@ rrq_controller_ <- R6::R6Class(
       message_send_and_wait(self$con, self$keys, command, args, worker_ids,
                             named, delete, timeout, time_poll, progress)
     }
+  ),
+
+  private = list(
+    scripts = NULL
   ))
 
 task_status <- function(con, keys, task_ids) {
@@ -1180,74 +1194,56 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
   invisible()
 }
 
-## This is tricky because we need to ensure that the workers involved
-## do not pick up any extra work, so we'll pause them, then check.  We
-## need to assume that due to the possibility of a race condition that
-## at any point between adjacent redis operations the state of the
-## worker might change (it could finish the task for example).
-##
-## The steps are
-##
-## 1. identify the worker that the task is being run on and its state
-##    - confirming that the task is actually running
-##
-## 2. pause the worker so that it won't pick up any extra tasks (that
-##    stops us accidentally interrupting the next job in the queue if
-##    the worker finishes immediately after step 1
-##
-## 3. confirm that the worker is actually busy and that it is working
-##    on the expected task
-##
-## 4. find the heartbeat key, confirming that worker actually supports
-##    heartbeat
-##
-## 5. send an interrupt signal
-##
-## 6. resume the worker so that it can start with new tasks
-task_cancel <- function(con, keys, task_id) {
+## TODO: at some point we might want an efficient way of cancelling
+## many tasks.
+task_cancel <- function(con, keys, scripts, task_id, wait = FALSE,
+                        delete = TRUE) {
+  ## There are several steps here, which will all be executed in one
+  ## block which removes the possibility of race conditions:
+  ##
+  ## * Remove the task_id from its queue (whichever it is in) so that
+  ##   it cannot be picked up by any worker (prevents status moving
+  ##   from PENDING -> RUNNING)
+  ##
+  ## * Mark the job as cancelled so that if it is running on a
+  ##   separate process it will be eligible to be stopped as soon as
+  ##   possible.
+  ##
+  ## * Determine if it is a local or a separate process task so we
+  ## * know if it will be cancelled if it was running.
+  ##
+  ## * Retrieve the status so that we know the task status before any
+  ##   change can happen.
   dat <- con$pipeline(
-    worker = redis$HGET(keys$task_worker, task_id),
-    status = redis$HGET(keys$task_status, task_id))
+    dropped = redis$EVALSHA(scripts$queue_delete, 1L, keys$task_queue, task_id),
+    cancel = redis$HSET(keys$task_cancel, task_id, "TRUE"),
+    status = redis$HGET(keys$task_status, task_id),
+    local = redis$HGET(keys$task_local, task_id))
 
-  if (is.null(dat$status)) {
-    dat$status <- TASK_MISSING
+  task_status <- dat$status %||% TASK_MISSING
+
+  if (!(task_status %in% c(TASK_PENDING, TASK_DEFERRED, TASK_RUNNING))) {
+    stop(sprintf("Task %s is not cancelable (%s)", task_id, task_status))
   }
 
-  if (dat$status %in% c(TASK_PENDING, TASK_DEFERRED)) {
-    cancel_dependencies(con, keys, task_id)
-    task_delete(con, keys, task_id, FALSE)
-    dat <- con$pipeline(
-      worker = redis$HGET(keys$task_worker, task_id),
-      status = redis$HGET(keys$task_status, task_id))
-    if (is.null(dat$status)) {
-      return(TRUE)
+  cancel_dependencies(con, keys, task_id)
+
+  if (task_status == TASK_RUNNING) {
+    if (dat$local != "FALSE") {
+      stop(sprintf(
+        "Can't cancel running task '%s' as not in separate process", task_id))
+    }
+    if (delete || wait) {
+      message("Waiting for task to end")
+      wait_status_change(con, keys, task_id, TASK_RUNNING)
     }
   }
 
-  if (dat$status != TASK_RUNNING) {
-    stop(sprintf("Task %s is not running (%s)", task_id, dat$status))
+  if (delete) {
+    task_delete(con, keys, task_id, FALSE)
   }
 
-  worker_id <- dat$worker
-  message_send(con, keys, "PAUSE", worker_ids = worker_id)
-  on.exit(message_send(con, keys, "RESUME", worker_ids = worker_id))
-  dat <- con$pipeline(
-    task = redis$HGET(keys$worker_task, worker_id),
-    status = redis$HGET(keys$worker_status, worker_id),
-    info = redis$HGET(keys$worker_info, worker_id))
-
-  if (dat$status != WORKER_BUSY || dat$task != task_id) {
-    stop("Task finished during check")
-  }
-
-  heartbeat_key <- bin_to_object_safe(dat$info)$heartbeat_key
-  if (is.null(heartbeat_key)) {
-    stop("Worker does not have heartbeat enabled")
-  }
-
-  heartbeat_send_signal(con, heartbeat_key, tools::SIGINT)
-  cancel_dependencies(con, keys, task_id)
-  invisible(TRUE)
+  invisible(NULL)
 }
 
 
