@@ -105,11 +105,6 @@ worker_run_task_start <- function(worker, task_id) {
     redis$HGET(keys$task_expr,     task_id),
     redis$HGET(keys$task_cancel,   task_id))
 
-  ## This will be hard to sort out and really hard to trigger!
-  if (!is.null(dat[[9]])) {
-    stop("FIX THIS RACE CONDITION")
-  }
-
   ## This holds the bits of worker state we might need to refer to
   ## later for a running task:
   worker$active_task <- list(task_id = task_id, key_complete = dat[[6]])

@@ -1234,7 +1234,6 @@ task_cancel <- function(con, keys, scripts, task_id, wait = FALSE,
         "Can't cancel running task '%s' as not in separate process", task_id))
     }
     if (delete || wait) {
-      message("Waiting for task to end")
       wait_status_change(con, keys, task_id, TASK_RUNNING)
     }
   }

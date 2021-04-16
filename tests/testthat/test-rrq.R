@@ -355,6 +355,18 @@ test_that("can't cancel nonexistant task", {
 })
 
 
+test_that("can't cancel running in-process task", {
+  obj <- test_rrq()
+  w <- test_worker_spawn(obj)
+  t <- obj$enqueue(Sys.sleep(20))
+  wait_status(t, obj)
+  expect_error(
+    obj$task_cancel(t, wait = TRUE, delete = FALSE),
+    "Can't cancel running task '[[:xdigit:]]{32}' as not in separate process")
+  obj$worker_stop(w, "kill_local")
+})
+
+
 test_that("get task info", {
   obj <- test_rrq()
 
