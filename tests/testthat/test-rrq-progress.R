@@ -166,6 +166,8 @@ test_that("Separate process leaves global env clean", {
 
   ## Running in separate process is unaffected by global environment
   ## and does not affect it:
+  expect_equal(obj$task_status(t3),
+               set_names(TASK_COMPLETE, t3))
   expect_equal(obj$task_result(t3), list(NULL, 6))
   expect_equal(obj$task_result(t4), list(NULL, 8))
   expect_equal(.GlobalEnv$.rrq_dirty_double, 2)
