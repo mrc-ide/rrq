@@ -179,8 +179,8 @@ test_that("handle startup failure", {
   skip_if_no_redis()
   config <- redux::redis_config()
   key <- sprintf("rrq:heartbeat:basic:%s", ids::random_id())
-  period <- 1
-  expire <- 2
+  period <- 5
+  expire <- 10
   obj <- heartbeat$new(key, period, expire = expire, start = FALSE)
 
   ## Then we'll break the config:

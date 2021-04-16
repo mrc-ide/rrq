@@ -124,6 +124,7 @@ heartbeat <- R6::R6Class(
       con <- redux::hiredis(private$config)
       wait_timeout("Did not start in time", private$timeout, function() {
         if (!private$process$is_alive()) {
+          ## Will cause an error
           private$process$get_result()
         }
         con$EXISTS(private$key) == 0

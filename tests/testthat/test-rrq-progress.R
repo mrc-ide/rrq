@@ -144,7 +144,7 @@ test_that("collect progress from signal", {
 })
 
 
-test_that("Separtate process leaves global env clean", {
+test_that("Separate process leaves global env clean", {
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
 
