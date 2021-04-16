@@ -40,7 +40,6 @@ run_with_progress <- function(n, wait) {
   n
 }
 
-
 run_with_progress_interactive <- function(path, poll = 0.01) {
   rrq::rrq_task_progress_update("Waiting for file")
   while (!file.exists(path)) {
@@ -59,6 +58,7 @@ run_with_progress_interactive <- function(path, poll = 0.01) {
     Sys.sleep(poll)
   }
   rrq::rrq_task_progress_update("Finishing")
+  "OK"
 }
 
 
