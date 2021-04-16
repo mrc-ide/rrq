@@ -48,7 +48,7 @@ worker_run_task_separate_process <- function(task, worker) {
 
   repeat {
     result <- process_poll(px, timeout_poll)
-    if (result == "ready") {
+    if (!px$is_alive() && result == "ready") {
       ## The only failure here I have identified is that if the task
       ## dies or is killed then we get an error of class
       ## callr_status_error saying something:
