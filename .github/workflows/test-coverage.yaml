@@ -55,5 +55,9 @@ jobs:
         shell: Rscript {0}
 
       - name: Test coverage
-        run: covr::codecov()
+        run: covr::codecov(clean = FALSE)
         shell: Rscript {0}
+
+      - name: Setup tmate session
+        # if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
