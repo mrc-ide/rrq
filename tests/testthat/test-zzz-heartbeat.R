@@ -122,7 +122,7 @@ test_that("Interrupt process", {
 
   expect_equal(readLines(path), "2")
   expect_true(px$is_alive())
-  px$kill()
+  px$signal(tools::SIGTERM
 })
 
 
@@ -145,7 +145,7 @@ test_that("dying process", {
   expect_true(px$is_alive())
 
   expect_equal(con$EXISTS(key), 1)
-  px$kill(0.5)
+  px$signal(tools::SIGTERM)
   wait_timeout("Process did not die in time", 5, px$is_alive)
   expect_equal(con$EXISTS(key), 1)
   Sys.sleep(2) # expire

@@ -62,7 +62,7 @@ worker_run_task_separate_process <- function(task, worker) {
         error = function(e) list(value = NULL, status = TASK_DIED)))
     }
     if (!is.null(con$HGET(key_cancel, task_id))) {
-      px$kill()
+      px$signal(tools::SIGTERM)
       ## Technically we *might* have completed here (i.e., during the
       ## time taken to compare result == "ready" and HGET on
       ## key_cancel but it's extremely unlikely and marking the task

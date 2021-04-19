@@ -60,7 +60,7 @@ test_rrq <- function(sources = NULL, root = tempfile()) {
 
   dir.create(root)
   if (length(sources) > 0) {
-    file.copy(sources, root)
+    stopifnot(all(file.copy(sources, root)))
     sources <- file.path(root, sources)
   }
 
