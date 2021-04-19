@@ -84,6 +84,7 @@ test_that("detecting output with clean exit is quiet", {
 
 test_that("detect killed worker (via heartbeat)", {
   skip_if_not_installed("callr")
+  skip_on_covr() # possibly causing corrupt covr output
   obj <- test_rrq("myfuns.R")
 
   ## We need to set time_poll to be fairly fast because BLPOP is not
