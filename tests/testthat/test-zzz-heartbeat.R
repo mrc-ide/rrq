@@ -122,7 +122,7 @@ test_that("Interrupt process", {
 
   expect_equal(readLines(path), "2")
   expect_true(px$is_alive())
-  px$signal(tools::SIGTERM
+  px$signal(tools::SIGTERM)
 })
 
 
