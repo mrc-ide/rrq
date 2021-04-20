@@ -43,9 +43,6 @@ worker_run_task_separate_process <- function(task, worker) {
 
   timeout_poll <- 1
 
-  ## TODO: We can also to a timeout check here since we have a
-  ## sensible loop here.
-
   repeat {
     result <- process_poll(px, timeout_poll)
     if (!px$is_alive() && result == "ready") {

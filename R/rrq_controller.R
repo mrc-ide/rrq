@@ -1194,8 +1194,6 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
   invisible()
 }
 
-## TODO: at some point we might want an efficient way of cancelling
-## many tasks.
 task_cancel <- function(con, keys, scripts, task_id, wait = FALSE,
                         delete = TRUE) {
   ## There are several steps here, which will all be executed in one
