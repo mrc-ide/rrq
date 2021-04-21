@@ -42,6 +42,7 @@ worker_run_task_separate_process <- function(task, worker) {
     package = "rrq", supervise = TRUE)
 
   timeout_poll <- 1
+  timeout_die <- 2
 
   repeat {
     result <- process_poll(px, timeout_poll)
@@ -59,13 +60,9 @@ worker_run_task_separate_process <- function(task, worker) {
         error = function(e) list(value = NULL, status = TASK_DIED)))
     }
     if (!is.null(con$HGET(key_cancel, task_id))) {
-      px$signal(tools::SIGTERM)
-      ## Technically we *might* have completed here (i.e., during the
-      ## time taken to compare result == "ready" and HGET on
-      ## key_cancel but it's extremely unlikely and marking the task
-      ## as failed is fine because that is what the user wanted
-      ## anyway.
       worker$log("CANCEL")
+      px$signal(tools::SIGTERM)
+      wait_timeout("Waiting for task to stop", timeout_die, px$is_alive)
       return(list(value = NULL, status = TASK_CANCELLED))
     }
   }

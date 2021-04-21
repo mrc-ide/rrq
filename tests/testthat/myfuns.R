@@ -47,7 +47,11 @@ run_with_progress_interactive <- function(path, poll = 0.01) {
   }
   last_write <- ""
   repeat {
-    contents <- readLines(path)
+    contents <- tryCatch(readLines(path),
+                         error = function(e) NULL)
+    if (is.null(contents)) {
+      next
+    }
     if (identical(contents, "STOP")) {
       break
     }
