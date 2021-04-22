@@ -33,8 +33,9 @@ priority. If not given, we listen on the "default" queue.}
 
 \item{time_poll}{Poll time.  Longer values here will reduce the
 impact on the database but make workers less responsive to being
-killed with an interrupt.  The default should be good for most
-uses, but shorter values are used for debugging.}
+killed with an interrupt (control-C or Escape).  The default
+should be good for most uses, but shorter values are used for
+debugging.}
 
 \item{timeout}{Optional timeout to set for the worker.  This is
 (roughly) equivalent to issuing a \code{TIMEOUT_SET} message

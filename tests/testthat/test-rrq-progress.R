@@ -47,8 +47,11 @@ test_that("update progress multiple times in task", {
   t <- obj$enqueue(run_with_progress_interactive(p))
   wait_status(t, obj)
 
-  expect_equal(obj$task_progress(t),
-               "Waiting for file")
+  testthat::try_again(5, {
+    Sys.sleep(0.5)
+    expect_equal(obj$task_progress(t),
+                 "Waiting for file")
+  })
 
   writeLines("something", p)
   Sys.sleep(0.2)
@@ -62,6 +65,7 @@ test_that("update progress multiple times in task", {
 
   writeLines("STOP", p)
   wait_status(t, obj, status = TASK_RUNNING)
+  expect_equal(obj$task_result(t), "OK")
   expect_equal(obj$task_status(t), set_names(TASK_COMPLETE, t))
   expect_equal(obj$task_progress(t),
                "Finishing")
@@ -144,7 +148,7 @@ test_that("collect progress from signal", {
 })
 
 
-test_that("Separtate process leaves global env clean", {
+test_that("Separate process leaves global env clean", {
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
 
@@ -166,6 +170,8 @@ test_that("Separtate process leaves global env clean", {
 
   ## Running in separate process is unaffected by global environment
   ## and does not affect it:
+  expect_equal(obj$task_status(t3),
+               set_names(TASK_COMPLETE, t3))
   expect_equal(obj$task_result(t3), list(NULL, 6))
   expect_equal(obj$task_result(t4), list(NULL, 8))
   expect_equal(.GlobalEnv$.rrq_dirty_double, 2)

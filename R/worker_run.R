@@ -5,18 +5,25 @@ worker_run_task <- function(worker, task_id) {
   } else {
     res <- worker_run_task_local(task, worker)
   }
-  task_status <- if (res$success) TASK_COMPLETE else TASK_ERROR
+  task_status <- res$status
   worker_queue_dependencies(worker, task_id, task_status)
   worker_run_task_cleanup(worker, task_status, res$value)
 }
 
 
+worker_run_task_result <- function(result) {
+  list(value = result$value,
+       status = if (result$success) TASK_COMPLETE else TASK_ERROR)
+}
+
+
 worker_run_task_local <- function(task, worker) {
   e <- expression_restore_locals(task, worker$envir, worker$db)
-  withCallingHandlers(
+  result <- withCallingHandlers(
     expression_eval_safely(task$expr, e),
     progress = function(e)
       task_progress_update(unclass(e), worker, FALSE))
+  worker_run_task_result(result)
 }
 
 
@@ -25,11 +32,40 @@ worker_run_task_separate_process <- function(task, worker) {
   queue_id <- worker$keys$queue_id
   worker_id <- worker$name
   task_id <- task$id
+  key_cancel <- worker$keys$task_cancel
+  con <- worker$con
+
   worker$log("REMOTE", task_id)
-  callr::r(function(redis_config, queue_id, worker_id, task_id)
+  px <- callr::r_bg(function(redis_config, queue_id, worker_id, task_id)
     remote_run_task(redis_config, queue_id, worker_id, task_id),
     list(redis_config, queue_id, worker_id, task_id),
     package = "rrq", supervise = TRUE)
+
+  timeout_poll <- 1
+  timeout_die <- 2
+
+  repeat {
+    result <- process_poll(px, timeout_poll)
+    if (!px$is_alive() && result == "ready") {
+      ## The only failure here I have identified is that if the task
+      ## dies or is killed then we get an error of class
+      ## callr_status_error saying something:
+      ##
+      ## callr subprocess failed: could not start R, exited with non-zero
+      ##   status, has crashed or was killed
+      ##
+      ## A look through the callr sources suggests this is correct.
+      return(tryCatch(
+        px$get_result(),
+        error = function(e) list(value = NULL, status = TASK_DIED)))
+    }
+    if (!is.null(con$HGET(key_cancel, task_id))) {
+      worker$log("CANCEL")
+      px$signal(tools::SIGTERM)
+      wait_timeout("Waiting for task to stop", timeout_die, px$is_alive)
+      return(list(value = NULL, status = TASK_CANCELLED))
+    }
+  }
 }
 
 
@@ -60,7 +96,8 @@ worker_run_task_start <- function(worker, task_id) {
     redis$HSET(keys$task_status,   task_id,   TASK_RUNNING),
     redis$HGET(keys$task_complete, task_id),
     redis$HGET(keys$task_local,    task_id),
-    redis$HGET(keys$task_expr,     task_id))
+    redis$HGET(keys$task_expr,     task_id),
+    redis$HGET(keys$task_cancel,   task_id))
 
   ## This holds the bits of worker state we might need to refer to
   ## later for a running task:
@@ -96,4 +133,9 @@ worker_run_task_cleanup <- function(worker, status, value) {
 
   worker$active_task <- NULL
   invisible()
+}
+
+
+process_poll <- function(px, timeout) {
+  processx::poll(list(px$get_poll_connection()), timeout * 1000)[[1L]]
 }
