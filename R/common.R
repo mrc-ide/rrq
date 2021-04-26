@@ -13,6 +13,8 @@ TASK_ERROR    <- "ERROR"
 TASK_CANCELLED <- "CANCELLED"
 ## task (or its worker) was killed or crashed
 TASK_DIED <- "DIED"
+## task took too long and was stopped due to timeout
+TASK_TIMEOUT <- "TIMEOUT"
 ## An unknown task
 TASK_MISSING  <- "MISSING"
 

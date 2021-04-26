@@ -469,6 +469,8 @@ test_that("Cancel job sent to new process", {
   expect_equal(log$command,
                c("ALIVE", "TASK_START", "REMOTE", "CANCEL", "TASK_CANCELLED"))
   expect_equal(obj$task_status(t), set_names(TASK_CANCELLED, t))
+  expect_equal(obj$task_result(t),
+               worker_task_failed(TASK_CANCELLED))
 })
 
 
@@ -869,4 +871,29 @@ test_that("can get deferred tasks", {
 
   tasks <- obj$deferred_list()
   expect_setequal(obj$deferred_list(), list())
+})
+
+
+test_that("submit a task with a timeout requires separate process", {
+  obj <- test_rrq("myfuns.R")
+  expect_error(
+    obj$enqueue(slowdouble(10), timeout = 1),
+    "Can't set timeout as 'separate_process' is FALSE")
+})
+
+
+test_that("submit a task with a timeout", {
+  obj <- test_rrq("myfuns.R")
+  t <- obj$enqueue(slowdouble(10), timeout = 1, separate_process = TRUE)
+  expect_equal(obj$con$HGET(obj$keys$task_timeout, t), "1")
+
+  w <- test_worker_blocking(obj)
+  w$step(TRUE)
+
+  expect_equal(obj$task_status(t), set_names(TASK_TIMEOUT, t))
+  expect_equal(obj$task_result(t),
+               worker_task_failed(TASK_TIMEOUT))
+
+  expect_equal(obj$worker_log_tail(w$name, Inf)$command,
+               c("ALIVE", "TASK_START", "REMOTE", "TIMEOUT", "TASK_TIMEOUT"))
 })

@@ -271,6 +271,7 @@ Queue an expression
   key_complete = NULL,
   queue = NULL,
   separate_process = FALSE,
+  timeout = NULL,
   at_front = FALSE,
   depends_on = NULL
 )}\if{html}{\out{</div>}}
@@ -304,6 +305,11 @@ clean, subsequent runs are not affected by preceeding ones.
 The downside of this approach is a considerable overhead in
 starting the extenal process and transferring data back.}
 
+\item{\code{timeout}}{Optionally, a maximum allowed running time, in
+seconds. This parameter only has an effect if \code{separate_process}
+is \code{TRUE}. If given, then if the task takes longer than this
+time it will be stopped and the task status set to \code{TIMEOUT}.}
+
 \item{\code{at_front}}{Logical, if TRUE then add the task to the front
 of the queue.}
 
@@ -328,6 +334,7 @@ Queue an expression
   key_complete = NULL,
   queue = NULL,
   separate_process = FALSE,
+  timeout = NULL,
   at_front = FALSE,
   depends_on = NULL
 )}\if{html}{\out{</div>}}
@@ -360,6 +367,9 @@ push jobs onto a queue with no worker, it will queue forever.}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
+\item{\code{timeout}}{Optionally, a maximum allowed running time, in
+seconds (see \verb{$enqueue} for details).}
+
 \item{\code{at_front}}{Logical, if TRUE then add the task to the front
 of the queue.}
 
@@ -387,8 +397,9 @@ equivalent to using \verb{$enqueue()} over each element in the list.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
+  task_timeout = NULL,
   depends_on = NULL,
-  timeout = Inf,
+  collect_timeout = Inf,
   time_poll = NULL,
   progress = NULL
 )}\if{html}{\out{</div>}}
@@ -416,6 +427,9 @@ details).}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
+\item{\code{task_timeout}}{Optionally, a maximum allowed running time, in
+seconds (see the \code{timeout} argument of \verb{$enqueue} for details).}
+
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
 completed before this job can be run. Once all dependent tasks
 have been successfully run, this task will get added to the
@@ -423,8 +437,10 @@ queue. If the dependent task fails then this task will be
 removed from the queue. Dependencies are applied to all
 tasks added to the queue.}
 
-\item{\code{timeout}}{Optional timeout, in seconds, after which an
-error will be thrown if the task has not completed.}
+\item{\code{collect_timeout}}{Optional timeout, in seconds, after which an
+error will be thrown if all tasks have not completed. If given  as
+\code{0}, then we return a handle that can be used to check for tasks
+using \code{bulk_wait}}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for
 completion.}
@@ -455,8 +471,9 @@ be copied over rather than using their names if possible.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
+  task_timeout = NULL,
   depends_on = NULL,
-  timeout = Inf,
+  collect_timeout = Inf,
   time_poll = NULL,
   progress = NULL
 )}\if{html}{\out{</div>}}
@@ -484,6 +501,9 @@ details).}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
+\item{\code{task_timeout}}{Optionally, a maximum allowed running time, in
+seconds (see the \code{timeout} argument of \verb{$enqueue} for details).}
+
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
 completed before this job can be run. Once all dependent tasks
 have been successfully run, this task will get added to the
@@ -491,10 +511,10 @@ queue. If the dependent task fails then this task will be
 removed from the queue. Dependencies are applied to all
 tasks added to the queue.}
 
-\item{\code{timeout}}{Optional timeout, in seconds, after which an
-error will be thrown if the task has not completed. If a
-timeout is given as \code{0}, then we return a handle that can be used
-to check for tasks using \code{bulk_wait}}
+\item{\code{collect_timeout}}{Optional timeout, in seconds, after which an
+error will be thrown if all tasks have not completed. If given  as
+\code{0}, then we return a handle that can be used to check for tasks
+using \code{bulk_wait}}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for
 completion.}
@@ -526,8 +546,9 @@ should feel intuitive.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
+  task_timeout = NULL,
   depends_on = NULL,
-  timeout = Inf,
+  collect_timeout = Inf,
   time_poll = NULL,
   progress = NULL
 )}\if{html}{\out{</div>}}
@@ -557,6 +578,9 @@ details).}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
+\item{\code{task_timeout}}{Optionally, a maximum allowed running time, in
+seconds (see the \code{timeout} argument of \verb{$enqueue} for details).}
+
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
 completed before this job can be run. Once all dependent tasks
 have been successfully run, this task will get added to the
@@ -564,8 +588,10 @@ queue. If the dependent task fails then this task will be
 removed from the queue. Dependencies are applied to all
 tasks added to the queue.}
 
-\item{\code{timeout}}{Optional timeout, in seconds, after which an
-error will be thrown if the task has not completed.}
+\item{\code{collect_timeout}}{Optional timeout, in seconds, after which an
+error will be thrown if all tasks have not completed. If given  as
+\code{0}, then we return a handle that can be used to check for tasks
+using \code{bulk_wait}}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for
 completion.}
@@ -596,8 +622,9 @@ be copied over rather than using their names if possible.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
+  task_timeout = NULL,
   depends_on = NULL,
-  timeout = Inf,
+  collect_timeout = Inf,
   time_poll = NULL,
   progress = NULL
 )}\if{html}{\out{</div>}}
@@ -627,6 +654,9 @@ details).}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
+\item{\code{task_timeout}}{Optionally, a maximum allowed running time, in
+seconds (see the \code{timeout} argument of \verb{$enqueue} for details).}
+
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
 completed before this job can be run. Once all dependent tasks
 have been successfully run, this task will get added to the
@@ -634,8 +664,10 @@ queue. If the dependent task fails then this task will be
 removed from the queue. Dependencies are applied to all
 tasks added to the queue.}
 
-\item{\code{timeout}}{Optional timeout, in seconds, after which an
-error will be thrown if the task has not completed.}
+\item{\code{collect_timeout}}{Optional timeout, in seconds, after which an
+error will be thrown if all tasks have not completed. If given  as
+\code{0}, then we return a handle that can be used to check for tasks
+using \code{bulk_wait}}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for
 completion.}

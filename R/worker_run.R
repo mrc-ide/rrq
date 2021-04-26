@@ -28,12 +28,13 @@ worker_run_task_local <- function(task, worker) {
 
 
 worker_run_task_separate_process <- function(task, worker) {
-  redis_config <- worker$con$config()
-  queue_id <- worker$keys$queue_id
+  con <- worker$con
+  keys <- worker$keys
+  redis_config <- con$config()
+  queue_id <- keys$queue_id
   worker_id <- worker$name
   task_id <- task$id
-  key_cancel <- worker$keys$task_cancel
-  con <- worker$con
+  key_cancel <- keys$task_cancel
 
   worker$log("REMOTE", task_id)
   px <- callr::r_bg(function(redis_config, queue_id, worker_id, task_id)
@@ -41,8 +42,21 @@ worker_run_task_separate_process <- function(task, worker) {
     list(redis_config, queue_id, worker_id, task_id),
     package = "rrq", supervise = TRUE)
 
+  ## Will make configurable in mrc-2357:
   timeout_poll <- 1
   timeout_die <- 2
+
+  timeout_task <- con$HGET(keys$task_timeout, task_id)
+  if (!is.null(timeout_task)) {
+    timeout_task <- Sys.time() + as.numeric(timeout_task)
+  }
+
+  task_terminate <- function(log, status) {
+    worker$log(log)
+    px$signal(tools::SIGTERM)
+    wait_timeout("Waiting for task to stop", timeout_die, px$is_alive)
+    list(value = worker_task_failed(status), status = status)
+  }
 
   repeat {
     result <- process_poll(px, timeout_poll)
@@ -57,13 +71,14 @@ worker_run_task_separate_process <- function(task, worker) {
       ## A look through the callr sources suggests this is correct.
       return(tryCatch(
         px$get_result(),
-        error = function(e) list(value = NULL, status = TASK_DIED)))
+        error = function(e)
+          list(value = worker_task_failed(TASK_DIED), status = TASK_DIED)))
     }
     if (!is.null(con$HGET(key_cancel, task_id))) {
-      worker$log("CANCEL")
-      px$signal(tools::SIGTERM)
-      wait_timeout("Waiting for task to stop", timeout_die, px$is_alive)
-      return(list(value = NULL, status = TASK_CANCELLED))
+      return(task_terminate("CANCEL", TASK_CANCELLED))
+    }
+    if (!is.null(timeout_task) && Sys.time() > timeout_task) {
+      return(task_terminate("TIMEOUT", TASK_TIMEOUT))
     }
   }
 }
@@ -138,4 +153,12 @@ worker_run_task_cleanup <- function(worker, status, value) {
 
 process_poll <- function(px, timeout) {
   processx::poll(list(px$get_poll_connection()), timeout * 1000)[[1L]]
+}
+
+
+worker_task_failed <- function(reason) {
+  ret <- list(message = sprintf("Task not successful: %s", reason),
+              reason = reason)
+  class(ret) <- c("rrq_task_error", "error", "condition")
+  ret
 }

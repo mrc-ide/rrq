@@ -6,7 +6,8 @@ test_that("lapply simple case", {
                          time_poll = 1, overwrite = TRUE)
   w <- test_worker_blocking(obj)
 
-  grp <- obj$lapply_(1:10, quote(log), dots = list(base = 2), timeout = 0)
+  grp <- obj$lapply_(1:10, quote(log), dots = list(base = 2),
+                     collect_timeout = 0)
   expect_is(grp, "rrq_bulk")
   expect_setequal(names(grp), c("task_ids", "key_complete", "names"))
 
@@ -32,7 +33,7 @@ test_that("lapply with anonymous function", {
   obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
                          time_poll = 1, overwrite = TRUE)
   w <- test_worker_blocking(obj)
-  grp <- obj$lapply_(1:10, function(x) x + 1, timeout = 0)
+  grp <- obj$lapply_(1:10, function(x) x + 1, collect_timeout = 0)
   w$loop(immediate = TRUE)
   res <- obj$bulk_wait(grp)
   expect_equal(res, as.list(2:11))
@@ -46,7 +47,7 @@ test_that("bulk add with ordinary function", {
   obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
                          time_poll = 1, overwrite = TRUE)
   w <- test_worker_blocking(obj)
-  grp <- obj$enqueue_bulk(p, sum, na.rm = TRUE, timeout = 0)
+  grp <- obj$enqueue_bulk(p, sum, na.rm = TRUE, collect_timeout = 0)
   w$loop(immediate = TRUE)
   res <- obj$bulk_wait(grp)
   expect_equal(res, as.list(rowSums(p, na.rm = TRUE)))
@@ -60,7 +61,7 @@ test_that("bulk add with anonymous functions", {
   obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
                          time_poll = 1, overwrite = TRUE)
   w <- test_worker_blocking(obj)
-  grp <- obj$enqueue_bulk_(p, function(a, b) a + b, timeout = 0)
+  grp <- obj$enqueue_bulk_(p, function(a, b) a + b, collect_timeout = 0)
   w$loop(immediate = TRUE)
   res <- obj$bulk_wait(grp)
   expect_equal(res, as.list(p$a + p$b))
@@ -72,7 +73,7 @@ test_that("NSE - use namespaced function", {
   obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
                          time_poll = 1, overwrite = TRUE)
   w <- test_worker_blocking(obj)
-  grp <- obj$lapply(1:10, ids::adjective_animal, timeout = 0)
+  grp <- obj$lapply(1:10, ids::adjective_animal, collect_timeout = 0)
 
   dat <- bin_to_object(obj$con$HGET(obj$keys$task_expr, grp$task_ids[[1]]))
   expect_equal(dat, list(expr = quote(ids::adjective_animal(1L))))
@@ -90,7 +91,8 @@ test_that("NSE - use namespaced function with lazy dots", {
                          time_poll = 1, overwrite = TRUE)
   w <- test_worker_blocking(obj)
   mystyle <- "camel"
-  grp <- obj$lapply(1:10, ids::adjective_animal, style = mystyle, timeout = 0)
+  grp <- obj$lapply(1:10, ids::adjective_animal, style = mystyle,
+                    collect_timeout = 0)
 
   dat <- bin_to_object(obj$con$HGET(obj$keys$task_expr, grp$task_ids[[1]]))
   expect_equal(dat,
@@ -107,7 +109,7 @@ test_that("NSE - use namespaced function with lazy dots", {
 test_that("lapply blocking", {
   obj <- test_rrq()
   w <- test_worker_spawn(obj)
-  res <- obj$lapply(1:10, sqrt, timeout = 1)
+  res <- obj$lapply(1:10, sqrt, collect_timeout = 1)
   expect_equal(res, as.list(sqrt(1:10)))
 })
 
@@ -117,7 +119,7 @@ test_that("enqueue bulk blocking", {
   p <- data.frame(a = runif(5), b = runif(5))
   f <- function(a, b) a + b
   w <- test_worker_spawn(obj)
-  res <- obj$enqueue_bulk(p, f, timeout = 1)
+  res <- obj$enqueue_bulk(p, f, collect_timeout = 1)
   expect_equal(res, as.list(rowSums(p)))
 })
 
@@ -128,8 +130,8 @@ test_that("lapply to alt queue", {
                          time_poll = 1, overwrite = TRUE, queue = "a")
   w <- test_worker_blocking(obj)
 
-  grp <- obj$lapply_(1:10, quote(log), dots = list(base = 2), timeout = 0,
-                     queue = "a")
+  grp <- obj$lapply_(1:10, quote(log), dots = list(base = 2),
+                     collect_timeout = 0, queue = "a")
   expect_equal(obj$queue_length("a"), 10)
   expect_equal(obj$queue_length(), 0)
 
@@ -145,7 +147,8 @@ test_that("bulk tasks can be queued with dependency", {
 
   t <- obj$enqueue(sin(0))
   t2 <- obj$enqueue(sin(pi / 2))
-  grp <- obj$lapply(c(0, pi / 2), sin, timeout = 0, depends_on = c(t, t2))
+  grp <- obj$lapply(c(0, pi / 2), sin, collect_timeout = 0,
+                    depends_on = c(t, t2))
   expect_equal(obj$queue_list(), c(t, t2))
   t3 <- obj$enqueue(sin(pi / 2), depends_on = grp$task_ids)
   ## t3 has not been added to main queue yet
