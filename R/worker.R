@@ -228,15 +228,6 @@ rrq_worker_stop <- function(worker, message) {
 }
 
 
-worker_send_signal <- function(con, keys, signal, worker_ids) {
-  if (length(worker_ids) > 0L) {
-    for (key in rrq_key_worker_heartbeat(keys$queue_id, worker_ids)) {
-      heartbeat_send_signal(con, key, signal)
-    }
-  }
-}
-
-
 ## One step of a worker life cycle; i.e., the least we can
 ## interestingly do
 worker_step <- function(worker, immediate) {

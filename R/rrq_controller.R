@@ -1501,7 +1501,7 @@ worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
            paste(worker_ids[is.na(heartbeat_key)], collapse = ", "))
     }
     for (key in heartbeat_key) {
-      heartbeat_send_signal(con, key, tools::SIGTERM)
+      heartbeat_kill(con, key, tools::SIGTERM)
     }
   } else { # kill_local
     info <- worker_info(con, keys, worker_ids)

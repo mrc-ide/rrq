@@ -87,7 +87,7 @@ heartbeat <- R6::R6Class(
       private$config <- redux::redis_config(config = config)
 
       private$key <- key
-      private$key_signal <- heartbeat_key_signal(key)
+      private$key_kill <- heartbeat_key_kill(key)
       private$value <- as.character(value)
 
       private$period <- as.integer(period)
@@ -144,7 +144,7 @@ heartbeat <- R6::R6Class(
       }
 
       con <- redux::hiredis(private$config)
-      con$RPUSH(private$key_signal, 0)
+      con$RPUSH(private$key_kill, 0)
 
       process <- private$process
       private$process <- NULL
@@ -175,7 +175,7 @@ heartbeat <- R6::R6Class(
     config = NULL,
     process = NULL,
     key = NULL,
-    key_signal = NULL,
+    key_kill = NULL,
     period = NULL,
     expire = NULL,
     timeout = NULL,
@@ -183,12 +183,24 @@ heartbeat <- R6::R6Class(
   ))
 
 
-##' Sends a signal to a heartbeat process that is using key `key`
-##' @title Send a signal
+##' Send a kill signal (typically `SIGTERM`) to terminate a process
+##' that is running a heartbeat. This is used by
+##' [rrq::rrq_controller()] in order to tear down workers, even if
+##' they are processing a task. When a heartbeat process is created,
+##' in its main loop it will listen for requests to kill via this
+##' function and will forward them to the worker. This is primarily
+##' useful where workers are on a different physical machine to the
+##' controller where [tools::pskill()] cannot be used.
+##'
+##' @title Kill a process running a heartbeat
+##'
 ##' @param key The heartbeat key
-##' @param signal A signal to send (e.g. `tools::SIGINT` or
-##'   `tools::SIGKILL`)
+##'
+##' @param signal A signal to send (typically `tools::SIGTERM` for a
+##'   "polite" shutdown)
+##'
 ##' @param con A hiredis object
+##'
 ##' @export
 ##' @examples
 ##' if (redux::redis_available()) {
@@ -199,19 +211,18 @@ heartbeat <- R6::R6Class(
 ##'   # this key:
 ##'   key <- sprintf("rrq:heartbeat:%s", rand_str())
 ##'
-##'   # We can send it an interrupt over redis using:
+##'   # We can send it a SIGTERM signal over redis using:
 ##'   con <- redux::hiredis()
-##'   rrq::heartbeat_send_signal(con, key, tools::SIGINT)
+##'   rrq::heartbeat_kill(con, key, tools::SIGTERM)
 ##' }
-heartbeat_send_signal <- function(con, key, signal) {
+heartbeat_kill <- function(con, key, signal = tools::SIGTERM) {
   assert_scalar_character(key)
-  con$RPUSH(heartbeat_key_signal(key), signal)
+  con$RPUSH(heartbeat_key_kill(key), signal)
   invisible()
 }
 
-
-heartbeat_key_signal <- function(key) {
-  paste0(key, ":signal")
+heartbeat_key_kill <- function(key) {
+  paste0(key, ":kill")
 }
 
 
@@ -227,16 +238,16 @@ heartbeat_thread <- function(config, key, value, period, expire, parent) {
   con <- redux::hiredis(config)
   con$SET(key, value)
   on.exit(con$DEL(key))
-  key_signal <- heartbeat_key_signal(key)
-  con$DEL(key_signal)
+  key_kill <- heartbeat_key_kill(key)
+  con$DEL(key_kill)
 
   repeat {
     con$EXPIRE(key, expire)
-    ans <- con$BLPOP(key_signal, period)
+    ans <- con$BLPOP(key_kill, period)
     if (!is.null(ans)) {
       value <- ans[[2L]]
       if (value %in% c(tools::SIGKILL, tools::SIGTERM)) {
-        con$DEL(c(key, key_signal))
+        con$DEL(c(key, key_kill))
         tools::pskill(parent, value)
       } else if (value == tools::SIGINT) {
         tools::pskill(parent, value)

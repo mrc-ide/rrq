@@ -1,3 +1,20 @@
+rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
+                                   worker_name = NULL, key_alive = NULL) {
+  con <- redux::hiredis()
+  keys <- rrq_keys(queue_id)
+  config <- worker_config_read(con, keys, worker_config)
+
+  rrq_worker_$new(con, queue_id,
+                  key_alive = key_alive,
+                  worker_name = worker_name,
+                  queue = config$queue,
+                  time_poll = config$time_poll,
+                  timeout = config$timeout,
+                  heartbeat_period = config$heartbeat_period,
+                  verbose = config$verbose)
+}
+
+
 rrq_worker_main <- function(args = commandArgs(TRUE)) {
   dat <- rrq_worker_main_args(args)
   worker <- rrq_worker_from_config(dat$queue_id, dat$config, dat$name,
@@ -21,23 +38,6 @@ Options:
        config = dat$config,
        name = dat$name,
        key_alive = dat[["key_alive"]])
-}
-
-
-rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
-                                   worker_name = NULL, key_alive = NULL) {
-  con <- redux::hiredis()
-  keys <- rrq_keys(queue_id)
-  config <- worker_config_read(con, keys, worker_config)
-
-  rrq_worker_$new(con, queue_id,
-                  key_alive = key_alive,
-                  worker_name = worker_name,
-                  queue = config$queue,
-                  time_poll = config$time_poll,
-                  timeout = config$timeout,
-                  heartbeat_period = config$heartbeat_period,
-                  verbose = config$verbose)
 }
 
 
