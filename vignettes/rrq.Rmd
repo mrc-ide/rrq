@@ -1,0 +1,131 @@
+---
+title: "rrq"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{rrq}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Getting started
+
+I assume here that you have a Redis server running. If not, see the bottom of the document for options you will have for installing this on your own system. You can test if your Redis server is behaving as expected by running
+
+```{r}
+redux::hiredis()$PING()
+```
+
+## Hello world
+
+Without any great explanation, here is the basic approach to using rrq to run a task on another R process, asynchronously . First, we create a "controller" object which you can use for queuing tasks.
+
+```{r}
+id <- paste0("rrq:", ids::random_id(bytes = 4))
+obj <- rrq::rrq_controller(id)
+```
+
+This controller uses an "identifier" (here, `r id`) which can be anything you want but acts like a folder within the Redis server, distinguishing your queue from any others hosted on the same server.
+
+Submit a task to the queue with the `$enqueue()` method, returning a key for that task
+
+```{r}
+t <- obj$enqueue(1 + 1)
+t
+```
+
+We'll also need some worker processes to carry out our tasks. Here, we'll spawn two for now (see the section below on alternatives to this)
+
+```{r}
+rrq::worker_spawn(obj, 2)
+```
+
+Retrive the result, polling if needed:
+
+```{r}
+obj$task_wait(t, progress = FALSE)
+```
+
+Things to note here:
+
+* Every task is given a unique identifier, which can be used to query the task later (much more on this below)
+* The process with the controller is not blocked during this operation and could carry out any other calculation it wanted (it could even be closed and the controller recreated later)
+* We submitted the tasks before we had workers ready; we could have done this in the other order, and workers can be added and removed at will regardless of the state of the queue (see below)
+
+## Running tasks
+
+Running tasks is a little different to many R-parallel backends, because we do not directly allocate tasks to our workers, but simply place it on first-in-first-out task queue
+
+## Scheduling options
+
+The `rrq` package does not aspire to be a fully fledged scheduler, but sometimes a little more control than first-in-first-out is required. There are a few options available that allow the user to control how tasks are run when needed. These involve:
+
+* multiple queues with different priorities, or that different workers subscribe to (e.g., fast/slow high-priority/low-priority tasks, or tasks that require a limited resource)
+* blocking tasks so that they run only after other tasks are completed (e.g., a set up task followed by a series of computational tasks, followed by an aggregation task)
+* put tasks in the front of the queue, allowing a last-in-first-out queue
+
+### Multiple queues
+
+
+
+### Tasks that depend on other tasks
+
+### Jump the queue
+
+
+
+## Running tasks in separate processes
+
+Running a task in a separate process offers some additional features at a cost.
+
+The cost is that we have to launch an additional process for every task run. We use [`callr`](https://callr.r-lib.org/) for this to smooth over a number of rough edges, but this does impose a minimum overhead of about 0.1s per task, plus the cost of loading any packages that your task might need (if you use packages that make heavy use of things like S4 classes this can easily extend to a few seconds).
+
+The additional features that it provides are:
+
+* Per-task isolation: because every task runs in a separate process it works in a fresh environment and is isolated from all other tasks
+* Cancellable tasks: you can stop a running task and the worker will gracefully pick up additional work
+* Per-task timeout: you can specify the maximum running time of any task and if the task exceeds it, it will be killed
+
+The sorts of tasks that benefit from this sort of approach are typically long-running (expected running times in the 10s of seconds or more) so that the overhead is low, but also the features of cancellation and timeouts become more useful. We have also seen this used usefully where the task may leak memory, or cache results agressively - over time this would cause the worker process to consume more memory until the worker process was killed by the operating system.
+
+## Orchestrating workers
+
+### Use (and limitations) of spawn
+
+### Use a scheduler
+
+### Use docker
+
+## Configuring workers
+
+## Fault tolerance
+
+## Getting a Redis server
+
+Installing Redis is not hard and there are several options that work well:
+
+### Use docker
+
+(Linux, macOS with [docker desktop](https://docs.docker.com/docker-for-mac/install/), Windows with [docker desktop](https://docs.docker.com/docker-for-windows/install/))
+
+This is how we develop rrq because it's easy to destroy and recreate the redis instance. Start the docker redis container like:
+
+```
+docker run --name redis --rm -d -p 127.0.0.1:6379:6379 redis
+```
+
+This will listen on port 6379 which is the Redis default. You can stop the container (deleting all data) with `docker stop redis`
+
+### Install Redis
+
+On Linux this is fairly straightforward, either by [downloading and building the source code](https://redis.io/download) or by installing via `apt` or `snap`
+
+On macOS the source will compile, or you can install a redis server via homebrew
+
+On Windows you can [install redis via WSL](https://redislabs.com/blog/redis-on-windows-10/). There have also been various ports.

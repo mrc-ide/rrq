@@ -17,8 +17,10 @@ Imports:
     redux (>= 1.0.0)
 Suggests:
     callr (>= 3.7.0),
+    knitr,
     mockery,
     processx,
+    rmarkdown,
     storr,
     testthat,
     withr
@@ -27,3 +29,4 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Language: en-GB
 Config/testthat/edition: 3
+VignetteBuilder: knitr
