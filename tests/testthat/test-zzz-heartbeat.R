@@ -77,7 +77,7 @@ test_that("Kill process", {
   wait_timeout("Process did not start up in time", 5, function()
     con$EXISTS(key) == 0 && px$is_alive(), poll = 0.2)
 
-  heartbeat_send_signal(con, key, tools::SIGTERM)
+  heartbeat_kill(con, key, tools::SIGTERM)
 
   wait_timeout("Process did stop in time", 5, function()
     px$is_alive(), poll = 0.2)
@@ -115,7 +115,7 @@ test_that("Interrupt process", {
     !file.exists(path), poll = 0.1)
   expect_equal(readLines(path), "1")
 
-  heartbeat_send_signal(con, key, tools::SIGINT)
+  heartbeat_kill(con, key, tools::SIGINT)
 
   wait_timeout("File did not update in time", 5, function()
     readLines(path) == "1" && px$is_alive(), poll = 0.1)

@@ -299,19 +299,6 @@ test_that("queue remove", {
 })
 
 
-test_that("worker_send_signal", {
-  obj <- test_rrq()
-  w1 <- test_worker_blocking(obj)
-  w2 <- test_worker_blocking(obj)
-  wid <- c(w1$name, w2$name)
-  worker_send_signal(obj$con, obj$keys, tools::SIGINT, c(w1$name, w2$name))
-
-  k <- paste0(rrq_key_worker_heartbeat(obj$keys$queue_id, wid), ":signal")
-  expect_equal(obj$con$LINDEX(k[[1]], 0), as.character(tools::SIGINT))
-  expect_equal(obj$con$LINDEX(k[[2]], 0), as.character(tools::SIGINT))
-})
-
-
 test_that("cancel queued task", {
   obj <- test_rrq()
   t <- obj$enqueue(sqrt(1))
