@@ -1,29 +1,31 @@
 rrq_lapply <- function(con, keys, db, x, fun, dots, envir, queue,
-                       separate_process, depends_on, timeout, time_poll,
-                       progress) {
+                       separate_process, task_timeout, depends_on,
+                       collect_timeout, time_poll, progress) {
   dat <- rrq_bulk_submit(con, keys, db, x, fun, dots, FALSE, envir, queue,
-                         separate_process, depends_on)
-  if (timeout == 0) {
+                         separate_process, task_timeout, depends_on)
+  if (collect_timeout == 0) {
     return(dat)
   }
-  rrq_bulk_wait(con, keys, dat, timeout, time_poll, progress)
+  rrq_bulk_wait(con, keys, dat, collect_timeout, time_poll, progress)
 }
 
 
 rrq_enqueue_bulk <- function(con, keys, db, x, fun, dots,
-                             envir, queue, separate_process, depends_on,
-                             timeout, time_poll, progress) {
+                             envir, queue, separate_process, task_timeout,
+                             depends_on, collect_timeout, time_poll, progress) {
   dat <- rrq_bulk_submit(con, keys, db, x, fun, dots, TRUE,
-                         envir, queue, separate_process, depends_on)
-  if (timeout == 0) {
+                         envir, queue, separate_process, task_timeout,
+                         depends_on)
+  if (collect_timeout == 0) {
     return(dat)
   }
-  rrq_bulk_wait(con, keys, dat, timeout, time_poll, progress)
+  rrq_bulk_wait(con, keys, dat, collect_timeout, time_poll, progress)
 }
 
 
 rrq_bulk_submit <- function(con, keys, db, x, fun, dots, do_call,
-                            envir, queue, separate_process, depends_on) {
+                            envir, queue, separate_process, task_timeout,
+                            depends_on) {
   fun <- match_fun_envir(fun, envir)
   if (do_call) {
     x <- rrq_bulk_prepare_call_x(x)
@@ -34,7 +36,8 @@ rrq_bulk_submit <- function(con, keys, db, x, fun, dots, do_call,
 
   key_complete <- rrq_key_task_complete(keys$queue_id)
   task_ids <- task_submit_n(con, keys, dat, key_complete, queue,
-                            separate_process, depends_on = depends_on)
+                            separate_process, task_timeout,
+                            depends_on = depends_on)
   ret <- list(task_ids = task_ids, key_complete = key_complete,
               names = names(x))
   class(ret) <- "rrq_bulk"

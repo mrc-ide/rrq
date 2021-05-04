@@ -233,6 +233,11 @@ rrq_controller_ <- R6::R6Class(
     ##'   The downside of this approach is a considerable overhead in
     ##'   starting the extenal process and transferring data back.
     ##'
+    ##' @param timeout Optionally, a maximum allowed running time, in
+    ##'   seconds. This parameter only has an effect if `separate_process`
+    ##'   is `TRUE`. If given, then if the task takes longer than this
+    ##'   time it will be stopped and the task status set to `TIMEOUT`.
+    ##'
     ##' @param at_front Logical, if TRUE then add the task to the front
     ##'   of the queue.
     ##'
@@ -242,10 +247,10 @@ rrq_controller_ <- R6::R6Class(
     ##'   queue. If the dependent task fails then this task will be
     ##'   removed from the queue.
     enqueue = function(expr, envir = parent.frame(), key_complete = NULL,
-                       queue = NULL, separate_process = FALSE,
+                       queue = NULL, separate_process = FALSE, timeout = NULL,
                        at_front = FALSE, depends_on = NULL) {
       self$enqueue_(substitute(expr), envir, key_complete, queue,
-                    separate_process, at_front, depends_on)
+                    separate_process, timeout, at_front, depends_on)
     },
 
     ##' @description Queue an expression
@@ -274,6 +279,9 @@ rrq_controller_ <- R6::R6Class(
     ##'   run in a separate process on the worker (see `$enqueue` for
     ##'   details).
     ##'
+    ##' @param timeout Optionally, a maximum allowed running time, in
+    ##'   seconds (see `$enqueue` for details).
+    ##'
     ##' @param at_front Logical, if TRUE then add the task to the front
     ##'   of the queue.
     ##'
@@ -283,12 +291,12 @@ rrq_controller_ <- R6::R6Class(
     ##'   queue. If the dependent task fails then this task will be
     ##'   removed from the queue.
     enqueue_ = function(expr, envir = parent.frame(), key_complete = NULL,
-                        queue = NULL, separate_process = FALSE,
+                        queue = NULL, separate_process = FALSE, timeout = NULL,
                         at_front = FALSE, depends_on = NULL) {
       dat <- expression_prepare(expr, envir, NULL, self$db)
       verify_dependencies_exist(self, depends_on)
       task_submit(self$con, self$keys, dat, key_complete, queue,
-                  separate_process, at_front, depends_on)
+                  separate_process, timeout, at_front, depends_on)
     },
 
     ##' @description Apply a function over a list of data. This is
@@ -306,8 +314,10 @@ rrq_controller_ <- R6::R6Class(
     ##'
     ##' @param envir The environment to use to try and find the function
     ##'
-    ##' @param timeout Optional timeout, in seconds, after which an
-    ##'   error will be thrown if the task has not completed.
+    ##' @param collect_timeout Optional timeout, in seconds, after which an
+    ##'   error will be thrown if all tasks have not completed. If given  as
+    ##'   `0`, then we return a handle that can be used to check for tasks
+    ##'   using `bulk_wait`
     ##'
     ##' @param time_poll Optional time with which to "poll" for
     ##'   completion.
@@ -324,6 +334,9 @@ rrq_controller_ <- R6::R6Class(
     ##'   run in a separate process on the worker (see `$enqueue` for
     ##'   details).
     ##'
+    ##' @param task_timeout Optionally, a maximum allowed running time, in
+    ##'   seconds (see the `timeout` argument of `$enqueue` for details).
+    ##'
     ##' @param depends_on Vector or list of IDs of tasks which must have
     ##'   completed before this job can be run. Once all dependent tasks
     ##'   have been successfully run, this task will get added to the
@@ -332,14 +345,17 @@ rrq_controller_ <- R6::R6Class(
     ##'   tasks added to the queue.
     lapply = function(x, fun, ..., dots = NULL,
                       envir = parent.frame(), queue = NULL,
-                      separate_process = FALSE, depends_on = NULL,
-                      timeout = Inf, time_poll = NULL, progress = NULL) {
+                      separate_process = FALSE, task_timeout = NULL,
+                      depends_on = NULL,
+                      collect_timeout = Inf, time_poll = NULL,
+                      progress = NULL) {
       if (is.null(dots)) {
         dots <- as.list(substitute(list(...)))[-1L]
       }
       self$lapply_(x, substitute(fun), dots = dots, envir = envir,
                    queue = queue, separate_process = separate_process,
-                   depends_on = depends_on, timeout = timeout,
+                   task_timeout = task_timeout,
+                   depends_on = depends_on, collect_timeout = collect_timeout,
                    time_poll = time_poll, progress = NULL)
     },
 
@@ -361,10 +377,10 @@ rrq_controller_ <- R6::R6Class(
     ##'
     ##' @param envir The environment to use to try and find the function
     ##'
-    ##' @param timeout Optional timeout, in seconds, after which an
-    ##'   error will be thrown if the task has not completed. If a
-    ##'   timeout is given as `0`, then we return a handle that can be used
-    ##'   to check for tasks using `bulk_wait`
+    ##' @param collect_timeout Optional timeout, in seconds, after which an
+    ##'   error will be thrown if all tasks have not completed. If given  as
+    ##'   `0`, then we return a handle that can be used to check for tasks
+    ##'   using `bulk_wait`
     ##'
     ##' @param time_poll Optional time with which to "poll" for
     ##'   completion.
@@ -381,6 +397,9 @@ rrq_controller_ <- R6::R6Class(
     ##'   run in a separate process on the worker (see `$enqueue` for
     ##'   details).
     ##'
+    ##' @param task_timeout Optionally, a maximum allowed running time, in
+    ##'   seconds (see the `timeout` argument of `$enqueue` for details).
+    ##'
     ##' @param depends_on Vector or list of IDs of tasks which must have
     ##'   completed before this job can be run. Once all dependent tasks
     ##'   have been successfully run, this task will get added to the
@@ -389,13 +408,15 @@ rrq_controller_ <- R6::R6Class(
     ##'   tasks added to the queue.
     lapply_ = function(x, fun, ..., dots = NULL,
                        envir = parent.frame(), queue = NULL,
-                       separate_process = FALSE, depends_on = NULL,
-                       timeout = Inf, time_poll = NULL, progress = NULL) {
+                       separate_process = FALSE, task_timeout = NULL,
+                       depends_on = NULL, collect_timeout = Inf,
+                       time_poll = NULL, progress = NULL) {
       if (is.null(dots)) {
         dots <- list(...)
       }
       rrq_lapply(self$con, self$keys, self$db, x, fun, dots, envir, queue,
-                 separate_process, depends_on, timeout, time_poll, progress)
+                 separate_process, task_timeout, depends_on,
+                 collect_timeout, time_poll, progress)
     },
 
     ##' @description Send a bulk set of tasks to your workers.
@@ -421,8 +442,10 @@ rrq_controller_ <- R6::R6Class(
     ##'
     ##' @param envir The environment to use to try and find the function
     ##'
-    ##' @param timeout Optional timeout, in seconds, after which an
-    ##'   error will be thrown if the task has not completed.
+    ##' @param collect_timeout Optional timeout, in seconds, after which an
+    ##'   error will be thrown if all tasks have not completed. If given  as
+    ##'   `0`, then we return a handle that can be used to check for tasks
+    ##'   using `bulk_wait`
     ##'
     ##' @param time_poll Optional time with which to "poll" for
     ##'   completion.
@@ -439,6 +462,9 @@ rrq_controller_ <- R6::R6Class(
     ##'   run in a separate process on the worker (see `$enqueue` for
     ##'   details).
     ##'
+    ##' @param task_timeout Optionally, a maximum allowed running time, in
+    ##'   seconds (see the `timeout` argument of `$enqueue` for details).
+    ##'
     ##' @param depends_on Vector or list of IDs of tasks which must have
     ##'   completed before this job can be run. Once all dependent tasks
     ##'   have been successfully run, this task will get added to the
@@ -447,14 +473,16 @@ rrq_controller_ <- R6::R6Class(
     ##'   tasks added to the queue.
     enqueue_bulk = function(x, fun, ..., dots = NULL,
                             envir = parent.frame(), queue = NULL,
-                            separate_process = FALSE, depends_on = NULL,
-                            timeout = Inf, time_poll = NULL, progress = NULL) {
+                            separate_process = FALSE, task_timeout = NULL,
+                            depends_on = NULL, collect_timeout = Inf,
+                            time_poll = NULL, progress = NULL) {
       if (is.null(dots)) {
         dots <- as.list(substitute(list(...)))[-1L]
       }
       self$enqueue_bulk_(x, substitute(fun), dots = dots, envir = envir,
                          queue = queue, separate_process = separate_process,
-                         depends_on = depends_on, timeout = timeout,
+                         task_timeout = task_timeout, depends_on = depends_on,
+                         collect_timeout = collect_timeout,
                          time_poll = time_poll, progress = progress)
     },
 
@@ -478,8 +506,10 @@ rrq_controller_ <- R6::R6Class(
     ##'
     ##' @param envir The environment to use to try and find the function
     ##'
-    ##' @param timeout Optional timeout, in seconds, after which an
-    ##'   error will be thrown if the task has not completed.
+    ##' @param collect_timeout Optional timeout, in seconds, after which an
+    ##'   error will be thrown if all tasks have not completed. If given  as
+    ##'   `0`, then we return a handle that can be used to check for tasks
+    ##'   using `bulk_wait`
     ##'
     ##' @param time_poll Optional time with which to "poll" for
     ##'   completion.
@@ -496,6 +526,9 @@ rrq_controller_ <- R6::R6Class(
     ##'   run in a separate process on the worker (see `$enqueue` for
     ##'   details).
     ##'
+    ##' @param task_timeout Optionally, a maximum allowed running time, in
+    ##'   seconds (see the `timeout` argument of `$enqueue` for details).
+    ##'
     ##' @param depends_on Vector or list of IDs of tasks which must have
     ##'   completed before this job can be run. Once all dependent tasks
     ##'   have been successfully run, this task will get added to the
@@ -504,14 +537,15 @@ rrq_controller_ <- R6::R6Class(
     ##'   tasks added to the queue.
     enqueue_bulk_ = function(x, fun, ..., dots = NULL,
                              envir = parent.frame(), queue = NULL,
-                             separate_process = FALSE, depends_on = NULL,
-                             timeout = Inf, time_poll = NULL, progress = NULL) {
+                             separate_process = FALSE, task_timeout = NULL,
+                             depends_on = NULL, collect_timeout = Inf,
+                             time_poll = NULL, progress = NULL) {
       if (is.null(dots)) {
         dots <- list(...)
       }
       rrq_enqueue_bulk(self$con, self$keys, self$db, x, fun, dots,
-                       envir, queue, separate_process, depends_on,
-                       timeout, time_poll, progress)
+                       envir, queue, separate_process, task_timeout, depends_on,
+                       collect_timeout, time_poll, progress)
     },
 
     ##' @description Wait for a group of tasks
@@ -1132,10 +1166,10 @@ task_preceeding <- function(con, keys, task_id, queue) {
 }
 
 task_submit <- function(con, keys, dat, key_complete, queue,
-                        separate_process, at_front = FALSE,
+                        separate_process, timeout, at_front = FALSE,
                         depends_on = NULL) {
   task_submit_n(con, keys, list(object_to_bin(dat)), key_complete, queue,
-                separate_process, at_front, depends_on)
+                separate_process, timeout, at_front, depends_on)
 }
 
 task_delete <- function(con, keys, task_ids, check = TRUE) {
@@ -1258,13 +1292,22 @@ task_data <- function(con, keys, db, task_id) {
 
 
 task_submit_n <- function(con, keys, dat, key_complete, queue,
-                          separate_process, at_front = FALSE,
+                          separate_process, timeout, at_front = FALSE,
                           depends_on = NULL) {
   n <- length(dat)
   task_ids <- ids::random_id(n)
   queue <- queue %||% QUEUE_DEFAULT
   key_queue <- rrq_key_queue(keys$queue_id, queue)
+
   local <- if (separate_process) "FALSE" else "TRUE"
+
+  if (!is.null(timeout)) {
+    if (!separate_process) {
+      stop("Can't set timeout as 'separate_process' is FALSE")
+    }
+    timeout <- list(
+      redis$HMSET(keys$task_timeout, task_ids, as.character(timeout)))
+  }
 
   original_deps_keys <- rrq_key_task_dependencies_original(
     keys$queue_id, task_ids)
@@ -1283,7 +1326,8 @@ task_submit_n <- function(con, keys, dat, key_complete, queue,
       redis$HMSET(keys$task_expr, task_ids, dat),
       redis$HMSET(keys$task_status, task_ids, rep_len(TASK_PENDING, n)),
       redis$HMSET(keys$task_queue, task_ids, rep_len(queue, n)),
-      redis$HMSET(keys$task_local, task_ids, rep_len(local, n))))
+      redis$HMSET(keys$task_local, task_ids, rep_len(local, n))),
+    timeout)
   if (length(depends_on) > 0) {
     cmds <- c(
       cmds,
