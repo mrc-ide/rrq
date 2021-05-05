@@ -44,7 +44,7 @@ test_that("eval safely - collect warnings", {
 test_that("store expression", {
   db <- storr::storr_environment()
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
-  res <- expression_prepare(quote(sin(1)), e, NULL, db)
+  res <- expression_prepare(quote(sin(1)), e, db)
   expect_equal(res, list(expr = quote(sin(1))))
   expect_equal(db$list(), character(0))
 })
@@ -53,7 +53,7 @@ test_that("store expression", {
 test_that("store locals", {
   db <- storr::storr_environment()
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
-  res <- expression_prepare(quote(sin(a) + cos(b)), e, NULL, db)
+  res <- expression_prepare(quote(sin(a) + cos(b)), e, db)
 
   h <- c(a = db$hash_object(1), b = db$hash_object(2))
   expect_equal(res$expr, quote(sin(a) + cos(b)))
@@ -66,58 +66,23 @@ test_that("store locals", {
 test_that("skip analysis", {
   db <- storr::storr_environment()
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
-  res <- expression_prepare(quote(sin(a) + cos(b)), e, NULL, db,
-                            analyse = FALSE)
+  res <- expression_prepare(quote(sin(a) + cos(b)), e, db,
+                            export = character(0))
   expect_equal(res, list(expr = quote(sin(a) + cos(b))))
   expect_equal(db$list(), character(0))
 })
 
 
-test_that("add variables", {
+test_that("export variables", {
   db <- storr::storr_environment()
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
-  res <- expression_prepare(quote(sin(a) + cos(b)), e, NULL, db,
-                            analyse = FALSE, include = "a")
-
+  res <- expression_prepare(quote(sin(a) + cos(b)), e, db,
+                            export = "a")
   h <- db$hash_object(1)
   expect_equal(res$expr, quote(sin(a) + cos(b)))
   expect_equal(res$objects, c(a = h))
   expect_equal(db$list(), h)
   expect_equal(db$get(h), 1)
-})
-
-
-test_that("exclude variables", {
-  db <- storr::storr_environment()
-  e <- list2env(list(a = 1, b = 2), parent = baseenv())
-  res <- expression_prepare(quote(sin(a) + cos(b)), e, NULL, db,
-                            exclude = "a")
-
-  h <- db$hash_object(2)
-  expect_equal(res$expr, quote(sin(a) + cos(b)))
-  expect_equal(res$objects, c(b = h))
-  expect_equal(db$list(), h)
-  expect_equal(db$get(h), 2)
-})
-
-
-test_that("recognise base variables", {
-  db <- storr::storr_environment()
-  e1 <- list2env(list(a = 1), parent = baseenv())
-  e2 <- list2env(list(b = 2), parent = baseenv())
-  e3 <- new.env(parent = e2)
-
-  res <- expression_prepare(quote(sin(a) + cos(b)), e1, e2, db)
-
-  h <- db$hash_object(1)
-  expect_equal(res$expr, quote(sin(a) + cos(b)))
-  expect_equal(res$objects, c(a = h))
-  expect_equal(db$list(), h)
-  expect_equal(db$get(h), 1)
-
-  expect_equal(expression_prepare(quote(sin(a) + cos(b)), e1, e3, db), res)
-  expect_error(expression_prepare(quote(sin(a) + cos(b)), e1, e1, db),
-               "not all objects found: b")
 })
 
 
@@ -141,7 +106,7 @@ test_that("can store special function values", {
   ## Can't compute the hash with db$hash_object because we get a
   ## different one each time in a local environment due to the local
   ## environment.
-  res <- expression_prepare(quote(.(a, b)), e, NULL, db,
+  res <- expression_prepare(quote(.(a, b)), e, db,
                             function_value = f)
   expect_match(res$function_hash, "^[[:xdigit:]]+$")
   e2 <- expression_restore_locals(res, emptyenv(), db)
@@ -156,7 +121,7 @@ test_that("can restore function even with no variables", {
   db <- storr::storr_environment()
   e <- emptyenv()
   f <- function(a, b) f(a + b)
-  res <- expression_prepare(quote(.(1, 2)), e, NULL, db,
+  res <- expression_prepare(quote(.(1, 2)), e, db,
                             function_value = f)
   expect_match(res$function_hash, "^[[:xdigit:]]+$")
   e2 <- expression_restore_locals(res, emptyenv(), db)
@@ -168,8 +133,8 @@ test_that("can restore function even with no variables", {
 
 test_that("require a call to prepre", {
   db <- storr::storr_environment()
-  expect_error(expression_prepare(quote(a), emptyenv(), NULL, db),
+  expect_error(expression_prepare(quote(a), emptyenv(), db),
                "Expected a call")
-  expect_error(expression_prepare(quote(1), emptyenv(), NULL, db),
+  expect_error(expression_prepare(quote(1), emptyenv(), db),
                "Expected a call")
 })

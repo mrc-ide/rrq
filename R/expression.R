@@ -35,22 +35,19 @@ expression_eval_safely <- function(expr, envir) {
 ##
 ## The future package takes a similar approach - analyse an expression
 ## and work out what is likely to be present.  It allows specification
-## of a "globals" argument to fine tune this.
+## of a "globals" argument to fine tune this.0
 ##
-## For a nice mix of flexibility here, we should offer a few modes I think:
+## This version is fairy basic:
 ##
-## * do no analysis of the expression
-## * export an explicit list of variables to the environment
-## * ignore a specific list of variables
+## * accept a list of objects to export (or their names), or
 ## * automatically analyse an expression
 ##
-## This function was derived from context::prepare_expression
+## The only complication is if the function value also needs exporting
+## (e.g., in the case of an anonymous function).
 ##
-## Once this works we will split it apart for use within the call()
-## and then bulk functions too.
-expression_prepare <- function(expr, envir_call, envir_base, db,
-                               analyse = TRUE, include = NULL, exclude = NULL,
-                               function_value = NULL) {
+## This function was derived from context::prepare_expression
+expression_prepare <- function(expr, envir_call, db,
+                               function_value = NULL, export = NULL) {
   ret <- list(expr = expr)
 
   if (!is.null(function_value)) {
@@ -60,43 +57,32 @@ expression_prepare <- function(expr, envir_call, envir_base, db,
     ret$expr[[1L]] <- as.name(hash)
   }
 
-  objects <- list()
-  if (analyse) {
+  if (is.null(export)) {
     symbols <- expression_find_symbols(expr)
     if (length(symbols) > 0L) {
       is_local <- vlapply(symbols, exists, envir_call, inherits = FALSE,
                           USE.NAMES = FALSE)
 
-      if (!is.null(envir_base) && any(!is_local)) {
-        test <- symbols[!is_local]
-        is_in_base <- vlapply(test, exists, envir_base, USE.NAMES = FALSE)
-        if (any(!is_in_base)) {
-          stop("not all objects found: ",
-               paste(test[!is_in_base], collapse = ", "))
-        }
-      }
-
       if (any(is_local)) {
         collect <- symbols[is_local]
-        objects <- set_names(
+        export <- set_names(
           lapply(collect, get, envir_call, inherits = FALSE),
           collect)
       }
     }
+  } else {
+    if (is.character(export)) {
+      export <- set_names(lapply(export, get, envir_call, inherits = FALSE),
+                          export)
+    } else {
+      assert_is(export, "list")
+      assert_named(export, TRUE)
+    }
   }
 
-  if (length(include) > 0L) {
-    msg <- setdiff(include, names(objects))
-    objects[msg] <- lapply(msg, get, envir_call, inherits = TRUE)
-  }
-
-  if (length(exclude) > 0L) {
-    objects <- objects[!(names(objects) %in% exclude)]
-  }
-
-  if (length(objects) > 0L) {
-    h <- db$mset_by_value(objects, "objects")
-    ret$objects <- set_names(h, names(objects))
+  if (length(export) > 0L) {
+    h <- db$mset_by_value(export, "objects")
+    ret$objects <- set_names(h, names(export))
   }
 
   ret

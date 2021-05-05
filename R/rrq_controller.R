@@ -246,11 +246,24 @@ rrq_controller_ <- R6::R6Class(
     ##'   have been successfully run, this task will get added to the
     ##'   queue. If the dependent task fails then this task will be
     ##'   removed from the queue.
+    ##'
+    ##' @param export Optionally a list of variables to export for the
+    ##'   calculation. If given then no automatic analysis of the
+    ##'   expression is done. It should be either a named list (name
+    ##'   being the variable name, value being the value) or a
+    ##'   character vector of variables that can be found immediately
+    ##'   within `envir`. Use this where you have already done analysis
+    ##'   of the expression (e.g., with the future package / globals)
+    ##'   or where you want to avoid moving large objects through Redis
+    ##'   that will be available on the remote workers due to how you
+    ##'   have configured your worker environment.
     enqueue = function(expr, envir = parent.frame(), key_complete = NULL,
                        queue = NULL, separate_process = FALSE, timeout = NULL,
-                       at_front = FALSE, depends_on = NULL) {
+                       at_front = FALSE, depends_on = NULL,
+                       export = NULL) {
       self$enqueue_(substitute(expr), envir, key_complete, queue,
-                    separate_process, timeout, at_front, depends_on)
+                    separate_process, timeout, at_front, depends_on,
+                    export)
     },
 
     ##' @description Queue an expression
@@ -290,10 +303,13 @@ rrq_controller_ <- R6::R6Class(
     ##'   have been successfully run, this task will get added to the
     ##'   queue. If the dependent task fails then this task will be
     ##'   removed from the queue.
+    ##'
+    ##' @param export Optionally a list of variables to export for the
+    ##'   calculation. See `$enqueue` for details.
     enqueue_ = function(expr, envir = parent.frame(), key_complete = NULL,
                         queue = NULL, separate_process = FALSE, timeout = NULL,
-                        at_front = FALSE, depends_on = NULL) {
-      dat <- expression_prepare(expr, envir, NULL, self$db)
+                        at_front = FALSE, depends_on = NULL, export = NULL) {
+      dat <- expression_prepare(expr, envir, self$db, export = export)
       verify_dependencies_exist(self, depends_on)
       task_submit(self$con, self$keys, dat, key_complete, queue,
                   separate_process, timeout, at_front, depends_on)

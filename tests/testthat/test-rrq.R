@@ -884,3 +884,30 @@ test_that("submit a task with a timeout", {
   expect_equal(obj$worker_log_tail(w$name, Inf)$command,
                c("ALIVE", "TASK_START", "REMOTE", "TIMEOUT", "TASK_TIMEOUT"))
 })
+
+
+test_that("manual control over environment", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  e <- new.env(parent = environment())
+  e$a <- 10
+
+  t <- obj$enqueue(sqrt(a), e, export = character(0))
+  w$step(TRUE)
+  expect_equal(obj$task_status(t), set_names(TASK_ERROR, t))
+  expect_length(obj$task_data(t)$objects, 0)
+
+  w$envir$a <- 2
+  t <- obj$enqueue(sqrt(a), e, export = character(0))
+  w$step(TRUE)
+  expect_equal(obj$task_status(t), set_names(TASK_COMPLETE, t))
+  expect_length(obj$task_data(t)$objects, 0)
+  expect_equal(obj$task_result(t), sqrt(2))
+
+  t <- obj$enqueue(sqrt(a), e, export = "a")
+  w$step(TRUE)
+  expect_equal(obj$task_status(t), set_names(TASK_COMPLETE, t))
+  expect_length(obj$task_data(t)$objects, 1)
+  expect_equal(obj$task_result(t), sqrt(10))
+})

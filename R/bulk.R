@@ -52,7 +52,7 @@ rrq_bulk_prepare_lapply <- function(db, x, fun, dots, envir) {
     dat$expr[2L] <- x
     object_to_bin(dat)
   }
-  dat <- expression_prepare(template, envir, NULL, db,
+  dat <- expression_prepare(template, envir, db,
                             function_value = if (is.null(fun$name)) fun$value)
   lapply(x, rewrite, dat)
 }
@@ -70,7 +70,7 @@ rrq_bulk_prepare_call <- function(db, x, fun, dots, envir) {
   template <- as.call(c(list(fun$name), args, dots))
   idx <- seq_len(len) + 1L
 
-  dat <- expression_prepare(template, envir, NULL, db,
+  dat <- expression_prepare(template, envir, db,
                             function_value = if (is.null(fun$name)) fun$value)
   rewrite <- function(x) {
     dat$expr[idx] <- x
