@@ -39,6 +39,12 @@ test_that("assertions", {
   expect_silent(assert_valid_timeout(1))
 
   expect_error(assert_is(1, "R6"), "must inherit from R6")
+
+  expect_silent(assert_named(list(a = 1)))
+  expect_error(assert_named(list(a = 1, a = 2), TRUE),
+               "must have unique names")
+  expect_error(assert_named(list(1, 2)),
+               "must be named")
 })
 
 

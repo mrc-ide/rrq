@@ -86,6 +86,19 @@ test_that("export variables", {
 })
 
 
+test_that("export variables", {
+  db <- storr::storr_environment()
+  e <- list2env(list(a = 1, b = 2), parent = baseenv())
+  res <- expression_prepare(quote(sin(a) + cos(b)), e, db,
+                            export = list(a = 10))
+  h <- db$hash_object(10)
+  expect_equal(res$expr, quote(sin(a) + cos(b)))
+  expect_equal(res$objects, c(a = h))
+  expect_equal(db$list(), h)
+  expect_equal(db$get(h), 10)
+})
+
+
 test_that("restore locals", {
   e <- new.env()
   db <- storr::storr_environment()
