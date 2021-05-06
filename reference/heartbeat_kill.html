@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Post task update — rrq_task_progress_update • rrq</title>
+<title>Kill a process running a heartbeat — heartbeat_kill • rrq</title>
 
 
 <!-- jquery -->
@@ -39,11 +39,15 @@
 
 
 
-<meta property="og:title" content="Post task update — rrq_task_progress_update" />
-<meta property="og:description" content="Post a task progress update.  The progress system in rrq is
-agnostic about how you are going to render your progress, and so
-it just a convention - see Details below.  Any R object can be
-sent as a progress value (e.g., a string, a list, etc)." />
+<meta property="og:title" content="Kill a process running a heartbeat — heartbeat_kill" />
+<meta property="og:description" content="Send a kill signal (typically SIGTERM) to terminate a process
+that is running a heartbeat. This is used by
+rrq_controller() in order to tear down workers, even if
+they are processing a task. When a heartbeat process is created,
+in its main loop it will listen for requests to kill via this
+function and will forward them to the worker. This is primarily
+useful where workers are on a different physical machine to the
+controller where tools::pskill() cannot be used." />
 
 
 
@@ -114,70 +118,57 @@ sent as a progress value (e.g., a string, a list, etc)." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Post task update</h1>
-    <small class="dont-index">Source: <a href='https://github.com/mrc-ide/rrq/blob/master/R/progress.R'><code>R/progress.R</code></a></small>
-    <div class="hidden name"><code>rrq_task_progress_update.Rd</code></div>
+    <h1>Kill a process running a heartbeat</h1>
+    <small class="dont-index">Source: <a href='https://github.com/mrc-ide/rrq/blob/master/R/heartbeat_impl.R'><code>R/heartbeat_impl.R</code></a></small>
+    <div class="hidden name"><code>heartbeat_kill.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Post a task progress update.  The progress system in <code>rrq</code> is
-agnostic about how you are going to render your progress, and so
-it just a convention - see Details below.  Any R object can be
-sent as a progress value (e.g., a string, a list, etc).</p>
+    <p>Send a kill signal (typically <code>SIGTERM</code>) to terminate a process
+that is running a heartbeat. This is used by
+<code><a href='rrq_controller.html'>rrq_controller()</a></code> in order to tear down workers, even if
+they are processing a task. When a heartbeat process is created,
+in its main loop it will listen for requests to kill via this
+function and will forward them to the worker. This is primarily
+useful where workers are on a different physical machine to the
+controller where <code><a href='https://rdrr.io/r/tools/pskill.html'>tools::pskill()</a></code> cannot be used.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>rrq_task_progress_update</span><span class='op'>(</span><span class='va'>value</span>, error <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>heartbeat_kill</span><span class='op'>(</span><span class='va'>con</span>, <span class='va'>key</span>, signal <span class='op'>=</span> <span class='fu'>tools</span><span class='fu'>::</span><span class='va'><a href='https://rdrr.io/r/tools/pskill.html'>SIGTERM</a></span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>value</th>
-      <td><p>An R object with the contents of the update. This
-will overwrite any previous progress value, and can be retrieved
-from a <code><a href='rrq_controller.html'>rrq_controller</a></code> with the
-<code>task_progress</code> method.  A value of <code>NULL</code> will appear
-to clear the status, as <code>NULL</code> will also be returned if no
-status is found for a task.</p></td>
+      <th>con</th>
+      <td><p>A hiredis object</p></td>
     </tr>
     <tr>
-      <th>error</th>
-      <td><p>Logical, indicating if we should throw an error if
-not running as an <code>rrq</code> task. Set this to <code>FALSE</code> if
-you want code to work without modification within and outside of
-an <code>rrq</code> job, or to <code>TRUE</code> if you want to be sure that
-progress messages have made it to the server.</p></td>
+      <th>key</th>
+      <td><p>The heartbeat key</p></td>
+    </tr>
+    <tr>
+      <th>signal</th>
+      <td><p>A signal to send (typically <code><a href='https://rdrr.io/r/tools/pskill.html'>tools::SIGTERM</a></code> for a
+"polite" shutdown)</p></td>
     </tr>
     </table>
 
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>In order to report on progress, a task may, in it's code, write</p>
-<pre>
-rrq::rrq_task_progress_update("task is 90&lt;!-- % done") --&gt;
-</pre>
+    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='fu'>redux</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/redux/man/hiredis.html'>redis_available</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>{</span>
+  <span class='va'>rand_str</span> <span class='op'>&lt;-</span> <span class='kw'>function</span><span class='op'>(</span><span class='op'>)</span> <span class='op'>{</span>
+    <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span><span class='op'>(</span><span class='va'>letters</span>, <span class='fl'>20</span>, <span class='cn'>TRUE</span><span class='op'>)</span>, collapse <span class='op'>=</span> <span class='st'>""</span><span class='op'>)</span>
+  <span class='op'>}</span>
+  <span class='co'># Suppose we have a process that exposes a heartbeat running on</span>
+  <span class='co'># this key:</span>
+  <span class='va'>key</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/sprintf.html'>sprintf</a></span><span class='op'>(</span><span class='st'>"rrq:heartbeat:%s"</span>, <span class='fu'>rand_str</span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span>
 
-<p>and this information will be fetchable from <code>rrq_controller</code>
-using the <code>task_progress</code> method and providing the
-<code>task_id</code>.</p>
-<p>It is also possible to register progress <em>without</em> acquiring
-a dependency on <code>rrq</code>.  If your package/script includes code
-like:</p>
-<pre>
-<span class='va'>progress</span> <span class='op'>&lt;-</span> <span class='kw'>function</span><span class='op'>(</span><span class='va'>message</span><span class='op'>)</span> <span class='op'>{</span>
-  <span class='fu'><a href='https://rdrr.io/r/base/conditions.html'>signalCondition</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/structure.html'>structure</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>message <span class='op'>=</span> <span class='va'>message</span><span class='op'>)</span>,
-                            class <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"progress"</span>, <span class='st'>"condition"</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
+  <span class='co'># We can send it a SIGTERM signal over redis using:</span>
+  <span class='va'>con</span> <span class='op'>&lt;-</span> <span class='fu'>redux</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/redux/man/hiredis.html'>hiredis</a></span><span class='op'>(</span><span class='op'>)</span>
+  <span class='fu'>rrq</span><span class='fu'>::</span><span class='fu'>heartbeat_kill</span><span class='op'>(</span><span class='va'>con</span>, <span class='va'>key</span>, <span class='fu'>tools</span><span class='fu'>::</span><span class='va'><a href='https://rdrr.io/r/tools/pskill.html'>SIGTERM</a></span><span class='op'>)</span>
 <span class='op'>}</span>
-</pre>
-
-<p>(this function can be called anything - the important bit is the
-body function body - you must return an object with a
-<code>message</code> element and the two class attributes
-<code>progress</code> and <code>condition</code>).</p>
-<p>then you can use this in the same way as
-<code>rrq::rrq_task_progress_update</code> above in your code.  When run
-without using rrq, this function will appear to do nothing.</p>
-
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

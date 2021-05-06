@@ -73,7 +73,7 @@ sit and poll a queue for jobs." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.19</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.3.0</span>
       </span>
     </div>
 
@@ -165,8 +165,9 @@ priority. If not given, we listen on the "default" queue.</p></td>
       <th>time_poll</th>
       <td><p>Poll time.  Longer values here will reduce the
 impact on the database but make workers less responsive to being
-killed with an interrupt.  The default should be good for most
-uses, but shorter values are used for debugging.</p></td>
+killed with an interrupt (control-C or Escape).  The default
+should be good for most uses, but shorter values are used for
+debugging.</p></td>
     </tr>
     <tr>
       <th>timeout</th>
@@ -178,8 +179,8 @@ run by all workers.</p></td>
     <tr>
       <th>heartbeat_period</th>
       <td><p>Optional period for the heartbeat.  If
-non-NULL then a heartbeat process will be started (using the
-<code>heartbeatr</code> package) which can be used to build fault
+non-NULL then a heartbeat process will be started (using
+<code><a href='heartbeat.html'>heartbeat</a></code>) which can be used to build fault
 tolerant queues.</p></td>
     </tr>
     <tr>

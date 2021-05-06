@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.19</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.3.0</span>
       </span>
     </div>
 
@@ -146,10 +146,10 @@ your use case (e.g. <code>rrq:&lt;user&gt;:&lt;id&gt;</code>)</p></td>
 <li><p>Once a worker selects the task to run, it becomes <code>RUNNING</code></p></li>
 <li><p>If the task completes successfully without error it becomes <code>COMPLETE</code></p></li>
 <li><p>If the task throws an error, it becomes <code>ERROR</code></p></li>
-<li><p>If the worker was interrupted (e.g., by a message) the task
-becomes <code>INTERRUPTED</code></p></li>
-<li><p>If the worker crashes, possibly due to the task, <em>and</em> the worker runs
-a heartbeat the task becomes <code>ORPHAN</code></p></li>
+<li><p>If the task was cancelled (e.g., via <code>$task_cancel()</code>) it becomes
+<code>CANCELLED</code></p></li>
+<li><p>If the task is killed by an external process, crashes or the worker
+dies (and is running a heartbeat) then the task becomes <code>DIED</code>.</p></li>
 <li><p>The status of an unknown task is <code>MISSING</code></p></li>
 </ul>
 
@@ -369,6 +369,7 @@ message to all workers to update their environment.</p></dd>
   key_complete <span class='op'>=</span> <span class='cn'>NULL</span>,
   queue <span class='op'>=</span> <span class='cn'>NULL</span>,
   separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  timeout <span class='op'>=</span> <span class='cn'>NULL</span>,
   at_front <span class='op'>=</span> <span class='cn'>FALSE</span>,
   depends_on <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
@@ -400,6 +401,11 @@ clean, subsequent runs are not affected by preceeding ones.
 The downside of this approach is a considerable overhead in
 starting the extenal process and transferring data back.</p></dd>
 
+<dt><code>timeout</code></dt><dd><p>Optionally, a maximum allowed running time, in
+seconds. This parameter only has an effect if <code>separate_process</code>
+is <code>TRUE</code>. If given, then if the task takes longer than this
+time it will be stopped and the task status set to <code>TIMEOUT</code>.</p></dd>
+
 <dt><code>at_front</code></dt><dd><p>Logical, if TRUE then add the task to the front
 of the queue.</p></dd>
 
@@ -419,6 +425,7 @@ removed from the queue.</p></dd>
   key_complete <span class='op'>=</span> <span class='cn'>NULL</span>,
   queue <span class='op'>=</span> <span class='cn'>NULL</span>,
   separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  timeout <span class='op'>=</span> <span class='cn'>NULL</span>,
   at_front <span class='op'>=</span> <span class='cn'>FALSE</span>,
   depends_on <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
@@ -449,6 +456,9 @@ push jobs onto a queue with no worker, it will queue forever.</p></dd>
 run in a separate process on the worker (see <code>$enqueue</code> for
 details).</p></dd>
 
+<dt><code>timeout</code></dt><dd><p>Optionally, a maximum allowed running time, in
+seconds (see <code>$enqueue</code> for details).</p></dd>
+
 <dt><code>at_front</code></dt><dd><p>Logical, if TRUE then add the task to the front
 of the queue.</p></dd>
 
@@ -471,8 +481,9 @@ equivalent to using <code>$enqueue()</code> over each element in the list.</p><h
   envir <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>parent.frame</a></span><span class='op'>(</span><span class='op'>)</span>,
   queue <span class='op'>=</span> <span class='cn'>NULL</span>,
   separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  task_timeout <span class='op'>=</span> <span class='cn'>NULL</span>,
   depends_on <span class='op'>=</span> <span class='cn'>NULL</span>,
-  timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
+  collect_timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
   time_poll <span class='op'>=</span> <span class='cn'>NULL</span>,
   progress <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
@@ -498,6 +509,9 @@ details).</p></dd>
 run in a separate process on the worker (see <code>$enqueue</code> for
 details).</p></dd>
 
+<dt><code>task_timeout</code></dt><dd><p>Optionally, a maximum allowed running time, in
+seconds (see the <code>timeout</code> argument of <code>$enqueue</code> for details).</p></dd>
+
 <dt><code>depends_on</code></dt><dd><p>Vector or list of IDs of tasks which must have
 completed before this job can be run. Once all dependent tasks
 have been successfully run, this task will get added to the
@@ -505,8 +519,10 @@ queue. If the dependent task fails then this task will be
 removed from the queue. Dependencies are applied to all
 tasks added to the queue.</p></dd>
 
-<dt><code>timeout</code></dt><dd><p>Optional timeout, in seconds, after which an
-error will be thrown if the task has not completed.</p></dd>
+<dt><code>collect_timeout</code></dt><dd><p>Optional timeout, in seconds, after which an
+error will be thrown if all tasks have not completed. If given  as
+<code>0</code>, then we return a handle that can be used to check for tasks
+using <code>bulk_wait</code></p></dd>
 
 <dt><code>time_poll</code></dt><dd><p>Optional time with which to "poll" for
 completion.</p></dd>
@@ -532,8 +548,9 @@ be copied over rather than using their names if possible.</p><h4 class='hasAncho
   envir <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>parent.frame</a></span><span class='op'>(</span><span class='op'>)</span>,
   queue <span class='op'>=</span> <span class='cn'>NULL</span>,
   separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  task_timeout <span class='op'>=</span> <span class='cn'>NULL</span>,
   depends_on <span class='op'>=</span> <span class='cn'>NULL</span>,
-  timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
+  collect_timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
   time_poll <span class='op'>=</span> <span class='cn'>NULL</span>,
   progress <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
@@ -559,6 +576,9 @@ details).</p></dd>
 run in a separate process on the worker (see <code>$enqueue</code> for
 details).</p></dd>
 
+<dt><code>task_timeout</code></dt><dd><p>Optionally, a maximum allowed running time, in
+seconds (see the <code>timeout</code> argument of <code>$enqueue</code> for details).</p></dd>
+
 <dt><code>depends_on</code></dt><dd><p>Vector or list of IDs of tasks which must have
 completed before this job can be run. Once all dependent tasks
 have been successfully run, this task will get added to the
@@ -566,10 +586,10 @@ queue. If the dependent task fails then this task will be
 removed from the queue. Dependencies are applied to all
 tasks added to the queue.</p></dd>
 
-<dt><code>timeout</code></dt><dd><p>Optional timeout, in seconds, after which an
-error will be thrown if the task has not completed. If a
-timeout is given as <code>0</code>, then we return a handle that can be used
-to check for tasks using <code>bulk_wait</code></p></dd>
+<dt><code>collect_timeout</code></dt><dd><p>Optional timeout, in seconds, after which an
+error will be thrown if all tasks have not completed. If given  as
+<code>0</code>, then we return a handle that can be used to check for tasks
+using <code>bulk_wait</code></p></dd>
 
 <dt><code>time_poll</code></dt><dd><p>Optional time with which to "poll" for
 completion.</p></dd>
@@ -596,8 +616,9 @@ should feel intuitive.</p><h4 class='hasAnchor' id='arguments'><a class='anchor'
   envir <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>parent.frame</a></span><span class='op'>(</span><span class='op'>)</span>,
   queue <span class='op'>=</span> <span class='cn'>NULL</span>,
   separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  task_timeout <span class='op'>=</span> <span class='cn'>NULL</span>,
   depends_on <span class='op'>=</span> <span class='cn'>NULL</span>,
-  timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
+  collect_timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
   time_poll <span class='op'>=</span> <span class='cn'>NULL</span>,
   progress <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
@@ -625,6 +646,9 @@ details).</p></dd>
 run in a separate process on the worker (see <code>$enqueue</code> for
 details).</p></dd>
 
+<dt><code>task_timeout</code></dt><dd><p>Optionally, a maximum allowed running time, in
+seconds (see the <code>timeout</code> argument of <code>$enqueue</code> for details).</p></dd>
+
 <dt><code>depends_on</code></dt><dd><p>Vector or list of IDs of tasks which must have
 completed before this job can be run. Once all dependent tasks
 have been successfully run, this task will get added to the
@@ -632,8 +656,10 @@ queue. If the dependent task fails then this task will be
 removed from the queue. Dependencies are applied to all
 tasks added to the queue.</p></dd>
 
-<dt><code>timeout</code></dt><dd><p>Optional timeout, in seconds, after which an
-error will be thrown if the task has not completed.</p></dd>
+<dt><code>collect_timeout</code></dt><dd><p>Optional timeout, in seconds, after which an
+error will be thrown if all tasks have not completed. If given  as
+<code>0</code>, then we return a handle that can be used to check for tasks
+using <code>bulk_wait</code></p></dd>
 
 <dt><code>time_poll</code></dt><dd><p>Optional time with which to "poll" for
 completion.</p></dd>
@@ -659,8 +685,9 @@ be copied over rather than using their names if possible.</p><h4 class='hasAncho
   envir <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>parent.frame</a></span><span class='op'>(</span><span class='op'>)</span>,
   queue <span class='op'>=</span> <span class='cn'>NULL</span>,
   separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  task_timeout <span class='op'>=</span> <span class='cn'>NULL</span>,
   depends_on <span class='op'>=</span> <span class='cn'>NULL</span>,
-  timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
+  collect_timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
   time_poll <span class='op'>=</span> <span class='cn'>NULL</span>,
   progress <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
@@ -688,6 +715,9 @@ details).</p></dd>
 run in a separate process on the worker (see <code>$enqueue</code> for
 details).</p></dd>
 
+<dt><code>task_timeout</code></dt><dd><p>Optionally, a maximum allowed running time, in
+seconds (see the <code>timeout</code> argument of <code>$enqueue</code> for details).</p></dd>
+
 <dt><code>depends_on</code></dt><dd><p>Vector or list of IDs of tasks which must have
 completed before this job can be run. Once all dependent tasks
 have been successfully run, this task will get added to the
@@ -695,8 +725,10 @@ queue. If the dependent task fails then this task will be
 removed from the queue. Dependencies are applied to all
 tasks added to the queue.</p></dd>
 
-<dt><code>timeout</code></dt><dd><p>Optional timeout, in seconds, after which an
-error will be thrown if the task has not completed.</p></dd>
+<dt><code>collect_timeout</code></dt><dd><p>Optional timeout, in seconds, after which an
+error will be thrown if all tasks have not completed. If given  as
+<code>0</code>, then we return a handle that can be used to check for tasks
+using <code>bulk_wait</code></p></dd>
 
 <dt><code>time_poll</code></dt><dd><p>Optional time with which to "poll" for
 completion.</p></dd>
@@ -942,18 +974,26 @@ desirable behaviour.</p></dd>
 <p><hr>
 <a id="method-task_cancel"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>task_cancel()</code></h3>
 <p>Cancel a single task. If the task is <code>PENDING</code> it
-will be deleted. If <code>RUNNING</code> then the worker will be
-interrupted if it supports this.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>rrq_controller_</span><span class='op'>$</span><span class='fu'>task_cancel</span><span class='op'>(</span><span class='va'>task_id</span><span class='op'>)</span></pre><p></div></p>
+will be deleted. If <code>RUNNING</code> then the task will be stopped if
+it was set to run in a separate process (i.e., queued with
+<code>separate_process = TRUE</code>). Dependent tasks will be marked as
+impossible.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_controller_</span><span class='op'>$</span><span class='fu'>task_cancel</span><span class='op'>(</span><span class='va'>task_id</span>, wait <span class='op'>=</span> <span class='cn'>TRUE</span>, delete <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
 <p><div class="arguments"></p><dl>
 <dt><code>task_id</code></dt><dd><p>Id of the task to cancel</p></dd>
 
+<dt><code>wait</code></dt><dd><p>Wait for the task to be stopped, if it was running. If
+<code>delete</code> is <code>TRUE</code>, then we will always wait for the task to stop.</p></dd>
+
+<dt><code>delete</code></dt><dd><p>Delete the task after cancelling (if cancelling
+was successful).</p></dd>
+
 </dl><p></div></p>
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
-<p>TRUE if successfully cancelled, otherwise throws an error with
-task_id and status e.g. Task 123 is not running (MISSING)</p>
+<p>Nothing if successfully cancelled, otherwise throws an
+error with task_id and status e.g. Task 123 is not running (MISSING)</p>
 <p><hr>
 <a id="method-task_data"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>task_data()</code></h3>
 <p>Fetch internal data about a task from Redis
@@ -1133,7 +1173,7 @@ running task (if <code>RUNNING</code>; <code>IDLE</code> workers will stop immed
 <li><p><code>kill</code>, in which case a kill signal will be sent via the heartbeat
 (if the worker is using one). This will kill the worker even if
 is currently working on a task, eventually leaving that task with
-a status of <code>ORPHAN</code>.</p></li>
+a status of <code>DIED</code>.</p></li>
 <li><p><code>kill_local</code>, in which case a kill signal is sent using operating
 system signals, which requires that the worker is on the same
 machine as the controller.</p></li>
@@ -1196,9 +1236,8 @@ and jobs put onto these queues with <code>$enqueue()</code> will have
 the "default" queue (e.g., <code>queue = c("high", "default", "low")</code>) to set the position of the default queue.</p></dd>
 
 <dt><code>heartbeat_period</code></dt><dd><p>Optional period for the heartbeat.  If
-non-NULL then a heartbeat process will be started (using the
-<code>heartbeatr</code> package) which can be used to build fault
-tolerant queues.</p></dd>
+non-NULL then a heartbeat process will be started (using
+<code><a href='heartbeat.html'>heartbeat</a></code> which can be used to build fault tolerant queues.</p></dd>
 
 <dt><code>verbose</code></dt><dd><p>Logical, indicating if the worker should print
 logging output to the screen.  Logging to screen has a small but
