@@ -60,7 +60,7 @@ test_rrq <- function(sources = NULL, root = tempfile()) {
 
   dir.create(root)
   if (length(sources) > 0) {
-    file.copy(sources, root)
+    stopifnot(all(file.copy(sources, root)))
     sources <- file.path(root, sources)
   }
 
@@ -92,11 +92,6 @@ test_worker_spawn <- function(obj, ..., timeout = 10) {
 
 test_worker_blocking <- function(obj, worker_config = "localhost", ...) {
   rrq_worker_from_config(obj$queue_id, worker_config, ...)
-}
-
-
-interrupt <- function() {
-  structure(list(), class = c("interrupt", "condition"))
 }
 
 

@@ -1,10 +1,9 @@
-heartbeat <- function(con, keys, period, verbose) {
+worker_heartbeat <- function(con, keys, period, verbose) {
   if (!is.null(period)) {
     key <- keys$worker_heartbeat
     worker_log(con, keys, "HEARTBEAT", key, verbose)
-    loadNamespace("heartbeatr")
     config <- con$config()
-    ret <- heartbeatr::heartbeat(key, period, config = config)
+    ret <- heartbeat$new(key, period, config = config)
     worker_log(con, keys, "HEARTBEAT", "OK", verbose)
     ret
   }
@@ -47,7 +46,7 @@ cleanup_orphans <- function(obj, time) {
       length(task_id), ngettext(sum(i), "task", "tasks"),
       paste0("  - ", task_id, collapse = "\n")))
     obj$con$HMSET(obj$keys$task_status, task_id[i],
-                  rep(TASK_ORPHAN, sum(i)))
+                  rep(TASK_DIED, sum(i)))
   }
 
   obj$con$HMSET(obj$keys$worker_status, worker_id,

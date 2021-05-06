@@ -33,8 +33,9 @@ priority. If not given, we listen on the "default" queue.}
 
 \item{time_poll}{Poll time.  Longer values here will reduce the
 impact on the database but make workers less responsive to being
-killed with an interrupt.  The default should be good for most
-uses, but shorter values are used for debugging.}
+killed with an interrupt (control-C or Escape).  The default
+should be good for most uses, but shorter values are used for
+debugging.}
 
 \item{timeout}{Optional timeout to set for the worker.  This is
 (roughly) equivalent to issuing a \code{TIMEOUT_SET} message
@@ -42,8 +43,8 @@ after initialising the worker, except that it's guaranteed to be
 run by all workers.}
 
 \item{heartbeat_period}{Optional period for the heartbeat.  If
-non-NULL then a heartbeat process will be started (using the
-\code{heartbeatr} package) which can be used to build fault
+non-NULL then a heartbeat process will be started (using
+\code{\link{heartbeat}}) which can be used to build fault
 tolerant queues.}
 
 \item{verbose}{Logical, indicating if the worker should print

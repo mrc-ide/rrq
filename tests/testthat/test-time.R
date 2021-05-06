@@ -102,3 +102,14 @@ test_that("progress - timeout", {
   expect_silent(p$tick())
   expect_true(p$tick())
 })
+
+
+test_that("status change timeout", {
+  obj <- test_rrq()
+  t <- obj$enqueue(identity(1))
+  expect_error(
+    wait_status_change(obj$con, obj$keys, t, TASK_PENDING, 0.01, 0.005),
+    "Did not change status from 'PENDING' in time")
+  expect_silent(
+    wait_status_change(obj$con, obj$keys, t, TASK_RUNNING, 0.01, 0.005))
+})

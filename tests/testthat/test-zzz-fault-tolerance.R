@@ -1,7 +1,7 @@
 context("fault tolerance")
 
 test_that("heartbeat", {
-  skip_if_not_installed("heartbeatr")
+  skip_if_not_installed("callr")
   obj <- test_rrq()
 
   res <- obj$worker_config_save("localhost", heartbeat_period = 3)
@@ -24,171 +24,6 @@ test_that("heartbeat", {
   w$shutdown()
   expect_equal(obj$con$EXISTS(dat$heartbeat_key), 0)
   expect_equal(obj$worker_list(), character(0))
-})
-
-test_that("interrupt stuck worker (local)", {
-  ## This one tests that if a worker is stuck on a long running task
-  ## that we can shunt them off it.  It will not work on windows
-  ## because there is no concept of interrupt that we can easily use.
-  skip_on_os("windows")
-  ## This fails on covr with the worker disappearing
-  skip_on_covr()
-  ## Fails on CI too, at least for ubuntu/R-devel; mrc-2094
-  skip_on_ci()
-
-  obj <- test_rrq("myfuns.R")
-
-  ## We need to set time_poll to be fairly fast because BLPOP is not
-  ## interruptable; the interrupt will only be handled _after_ R gets
-  ## control back.
-  res <- obj$worker_config_save("localhost", time_poll = 1)
-
-  wid <- test_worker_spawn(obj)
-  pid <- obj$worker_info()[[wid]]$pid
-
-  expect_equal(obj$message_send_and_wait("PING", timeout = 10),
-               setNames(list("PONG"), wid))
-
-  t <- obj$enqueue(slowdouble(10000))
-  wait_status(t, obj, status = TASK_PENDING)
-  expect_equal(obj$task_status(t), setNames(TASK_RUNNING, t))
-  expect_equal(obj$worker_status(wid), setNames(WORKER_BUSY, wid))
-
-  tools::pskill(pid, tools::SIGINT)
-  wait_status(t, obj, status = TASK_RUNNING)
-
-  expect_equal(obj$task_status(t), setNames(TASK_INTERRUPTED, t))
-  expect_equal(obj$worker_status(wid), setNames(WORKER_IDLE, wid))
-
-  expect_equal(obj$message_send_and_wait("PING", timeout = 10),
-               setNames(list("PONG"), wid))
-
-  ## Then try the interrupt _during_ a string of messages and be sure
-  ## that the messages get requeued correctly.
-  tools::pskill(pid, tools::SIGINT)
-  expect_equal(obj$message_send_and_wait("PING", timeout = 10),
-               setNames(list("PONG"), wid))
-
-  tmp <- obj$worker_log_tail(wid, 3L)
-  expect_equal(tmp$command,
-               c("REQUEUE", "MESSAGE", "RESPONSE"))
-})
-
-test_that("interrupt stuck worker (via heartbeat)", {
-  skip_if_not_installed("heartbeatr")
-  ## Basically the same test as above, but we'll do it via the
-  ## heartbeat thread.  These might be worth merging.
-  skip_on_os("windows")
-  skip_on_os("mac")
-  ## This fails on covr with the worker disappearing
-  skip_on_covr()
-
-  obj <- test_rrq("myfuns.R")
-
-  ## We need to set time_poll to be fairly fast because BLPOP is not
-  ## interruptable; the interrupt will only be handled _after_ R gets
-  ## control back.
-  res <- obj$worker_config_save("localhost", time_poll = 1,
-                                heartbeat_period = 3)
-
-  wid <- test_worker_spawn(obj)
-
-  expect_equal(obj$message_send_and_wait("PING", timeout = 10),
-               setNames(list("PONG"), wid))
-
-  t <- obj$enqueue(slowdouble(10000))
-  wait_status(t, obj, status = TASK_PENDING)
-  expect_equal(obj$task_status(t), setNames(TASK_RUNNING, t))
-  expect_equal(obj$worker_status(wid), setNames(WORKER_BUSY, wid))
-
-  worker_send_signal(obj$con, obj$keys, tools::SIGINT, wid)
-  wait_status(t, obj, status = TASK_RUNNING)
-
-  expect_equal(obj$task_status(t), setNames(TASK_INTERRUPTED, t))
-  expect_equal(obj$worker_status(wid), setNames(WORKER_IDLE, wid))
-
-  expect_equal(obj$message_send_and_wait("PING", timeout = 10),
-               setNames(list("PONG"), wid))
-
-  ## Then try the interrupt _during_ a string of messages and be sure
-  ## that the messages get requeued correctly.
-  worker_send_signal(obj$con, obj$keys, tools::SIGINT, wid)
-  expect_equal(obj$message_send_and_wait("PING", timeout = 10),
-               setNames(list("PONG"), wid))
-
-  tmp <- obj$worker_log_tail(wid, 3L)
-  expect_equal(tmp$command,
-               c("REQUEUE", "MESSAGE", "RESPONSE"))
-})
-
-
-test_that("Stop task with interrupt", {
-  skip_if_not_installed("heartbeatr")
-  skip_on_os("windows")
-  obj <- test_rrq("myfuns.R")
-
-  ## We need to set time_poll to be fairly fast because BLPOP is not
-  ## interruptable; the interrupt will only be handled _after_ R gets
-  ## control back.
-  res <- obj$worker_config_save("localhost", time_poll = 1,
-                                heartbeat_period = 1)
-
-  wid <- test_worker_spawn(obj)
-  pid <- obj$worker_info()[[wid]]$pid
-
-  t <- obj$enqueue(slowdouble(10000))
-  wait_status(t, obj, status = TASK_PENDING)
-  expect_equal(obj$task_status(t), setNames(TASK_RUNNING, t))
-  expect_equal(obj$worker_status(wid), setNames(WORKER_BUSY, wid))
-
-  res <- obj$task_cancel(t)
-  expect_true(res)
-  wait_status(t, obj, status = TASK_RUNNING)
-  wait_worker_status(wid, obj, status = WORKER_BUSY)
-  wait_worker_status(wid, obj, status = WORKER_PAUSED)
-
-  expect_equal(obj$task_status(t), setNames(TASK_INTERRUPTED, t))
-  expect_equal(obj$worker_status(wid), setNames(WORKER_IDLE, wid))
-
-  ## These checks don't work for covr for unknown reasons, probably to
-  ## do with signal handling.
-  skip_on_covr()
-  log <- obj$worker_log_tail(wid, Inf)
-  expect_equal(log$command, c("ALIVE",
-                              "TASK_START", "INTERRUPT", "TASK_INTERRUPTED",
-                              "MESSAGE", "RESPONSE", "MESSAGE", "RESPONSE"))
-  expect_equal(log$message, c("", t, "", t,
-                              "PAUSE", "PAUSE", "RESUME", "RESUME"))
-})
-
-
-test_that("race conditioning handling when cancelling tasks", {
-  skip_if_not_installed("heartbeatr")
-  skip_on_os("windows")
-
-  obj <- test_rrq("myfuns.R")
-
-  ## We need to set time_poll to be fairly fast because BLPOP is not
-  ## interruptable; the interrupt will only be handled _after_ R gets
-  ## control back.
-  res <- obj$worker_config_save("localhost", time_poll = 1,
-                                heartbeat_period = 1)
-  w <- test_worker_blocking(obj)
-  w$heartbeat$stop() # don't *actually* do the interrupt!
-
-  t <- obj$enqueue(slowdouble(10))
-  w$poll(TRUE)
-  worker_run_task_start(w, t)
-
-  info <- w$info()
-  info$heartbeat_key <- NULL
-  w$con$HSET(w$keys$worker_info, w$name, object_to_bin(info))
-
-  ## We can do this test too while we're here.
-  expect_error(obj$task_cancel(t), "Worker does not have heartbeat enabled")
-
-  obj$con$HSET(obj$keys$worker_status, w$name, WORKER_IDLE)
-  expect_error(obj$task_cancel(t), "Task finished during check")
 })
 
 
@@ -216,7 +51,7 @@ test_that("detecting workers with no heartbeat is quiet", {
 
 
 test_that("detecting output with clean exit is quiet", {
-  skip_if_not_installed("heartbeatr")
+  skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")
 
   ## We need to set time_poll to be fairly fast because BLPOP is not
@@ -248,7 +83,8 @@ test_that("detecting output with clean exit is quiet", {
 
 
 test_that("detect killed worker (via heartbeat)", {
-  skip_if_not_installed("heartbeatr")
+  skip_if_not_installed("callr")
+  skip_on_covr() # possibly causing corrupt covr output
   obj <- test_rrq("myfuns.R")
 
   ## We need to set time_poll to be fairly fast because BLPOP is not
@@ -297,7 +133,7 @@ test_that("detect killed worker (via heartbeat)", {
 
 ## See https://github.com/mrc-ide/rrq/issues/22
 test_that("detect multiple killed workers", {
-  skip_if_not_installed("heartbeatr")
+  skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")
 
   res <- obj$worker_config_save("localhost", time_poll = 1,
@@ -325,4 +161,26 @@ test_that("detect multiple killed workers", {
 
   expect_silent(res <- obj$worker_detect_exited())
   expect_null(res)
+})
+
+
+test_that("Cope with dying subprocess task", {
+  obj <- test_rrq("myfuns.R")
+  wid <- test_worker_spawn(obj)
+
+  path <- tempfile()
+  t <- obj$enqueue(pid_and_sleep(path, 600), separate_process = TRUE)
+
+  wait_status(t, obj)
+  wait_timeout("File did not appear", 5, function() !file.exists(path))
+
+  pid_sub <- as.integer(readLines(path))
+  tools::pskill(pid_sub)
+  wait_status(t, obj, status = TASK_RUNNING)
+  expect_equal(obj$task_status(t), set_names(TASK_DIED, t))
+  expect_equal(obj$task_result(t), worker_task_failed(TASK_DIED))
+
+  log <- obj$worker_log_tail(wid, Inf)
+  expect_equal(log$command,
+               c("ALIVE", "TASK_START", "REMOTE", "TASK_DIED"))
 })

@@ -299,32 +299,25 @@ test_that("queue remove", {
 })
 
 
-## This is not ideal, but should do for now. The worker_send_signal
-## function is not yet widely used from the controller, but will be at
-## some point. We depend on a implementation detail of heartbeatr, but
-## it's one that I think I have documented. The alternative would be
-## to mock this and ensure that heartbeatr::heartbeat_send_signal is
-## called as expected but given how simple the function is it seems
-## like the test really just implements the function like that.
-test_that("worker_send_signal", {
-  skip_if_not_installed("heartbeatr")
-  obj <- test_rrq()
-  w1 <- test_worker_blocking(obj)
-  w2 <- test_worker_blocking(obj)
-  wid <- c(w1$name, w2$name)
-  worker_send_signal(obj$con, obj$keys, tools::SIGINT, c(w1$name, w2$name))
-
-  k <- paste0(rrq_key_worker_heartbeat(obj$keys$queue_id, wid), ":signal")
-  expect_equal(obj$con$LINDEX(k[[1]], 0), as.character(tools::SIGINT))
-  expect_equal(obj$con$LINDEX(k[[2]], 0), as.character(tools::SIGINT))
-})
-
-
 test_that("cancel queued task", {
   obj <- test_rrq()
   t <- obj$enqueue(sqrt(1))
-  expect_true(obj$task_cancel(t))
-  expect_equal(obj$task_status(t), setNames(TASK_MISSING, t))
+  expect_equal(obj$task_status(t), set_names(TASK_PENDING, t))
+  obj$task_cancel(t)
+  expect_equal(obj$task_status(t), set_names(TASK_MISSING, t))
+  expect_equal(obj$queue_list(), character(0))
+})
+
+
+test_that("cancel queued task from alternative queue", {
+  obj <- test_rrq()
+  t1 <- obj$enqueue(sqrt(1), queue = "other")
+  t2 <- obj$enqueue(sqrt(1), queue = "other")
+  t3 <- obj$enqueue(sqrt(1), queue = "other")
+  expect_equal(obj$queue_list("other"), c(t1, t2, t3))
+  obj$task_cancel(t2)
+  expect_equal(obj$queue_list("other"), c(t1, t3))
+  expect_equal(obj$task_status(t2), set_names(TASK_MISSING, t2))
 })
 
 
@@ -335,7 +328,7 @@ test_that("can't cancel completed task", {
   w$step(TRUE)
   expect_error(
     obj$task_cancel(t),
-    "Task [[:xdigit:]]{32} is not running \\(COMPLETE\\)")
+    "Task [[:xdigit:]]{32} is not cancelable \\(COMPLETE\\)")
 })
 
 
@@ -344,7 +337,19 @@ test_that("can't cancel nonexistant task", {
   id <- ids::random_id()
   expect_error(
     obj$task_cancel(id),
-    "Task [[:xdigit:]]{32} is not running \\(MISSING\\)")
+    "Task [[:xdigit:]]{32} is not cancelable \\(MISSING\\)")
+})
+
+
+test_that("can't cancel running in-process task", {
+  obj <- test_rrq()
+  w <- test_worker_spawn(obj)
+  t <- obj$enqueue(Sys.sleep(20))
+  wait_status(t, obj)
+  expect_error(
+    obj$task_cancel(t, wait = TRUE, delete = FALSE),
+    "Can't cancel running task '[[:xdigit:]]{32}' as not in separate process")
+  obj$worker_stop(w, "kill_local")
 })
 
 
@@ -430,6 +435,46 @@ test_that("Send job to new process", {
   w$step(TRUE)
   expect_equal(obj$task_wait(t, 2), 0.2)
   expect_equal(obj$task_result(t), 0.2)
+})
+
+
+## Doing this version does require that we spawn a worker because we
+## need to interrupt the secondary worker loop. However, we could do
+## an in-process version by being a bit sneaky and writing a job that
+## will cancel itself.
+test_that("Cancel job sent to new process", {
+  skip_if_not_installed("callr")
+  obj <- test_rrq("myfuns.R")
+
+  w <- test_worker_spawn(obj)
+
+  t <- obj$enqueue(slowdouble(50), separate_process = TRUE)
+  wait_status(t, obj)
+  obj$task_cancel(t, wait = TRUE, delete = FALSE)
+  st <- obj$task_status(t)
+  log <- obj$worker_log_tail(w, Inf)
+  expect_equal(log$command,
+               c("ALIVE", "TASK_START", "REMOTE", "CANCEL", "TASK_CANCELLED"))
+  expect_equal(obj$task_status(t), set_names(TASK_CANCELLED, t))
+  expect_equal(obj$task_result(t),
+               worker_task_failed(TASK_CANCELLED))
+})
+
+
+test_that("Delete job after cancellation", {
+  skip_if_not_installed("callr")
+  obj <- test_rrq("myfuns.R")
+
+  w <- test_worker_spawn(obj)
+
+  t <- obj$enqueue(slowdouble(50), separate_process = TRUE)
+  wait_status(t, obj)
+  obj$task_cancel(t, wait = TRUE, delete = TRUE)
+  st <- obj$task_status(t)
+  log <- obj$worker_log_tail(w, Inf)
+  expect_equal(log$command,
+               c("ALIVE", "TASK_START", "REMOTE", "CANCEL", "TASK_CANCELLED"))
+  expect_equal(obj$task_status(t), set_names(TASK_MISSING, t))
 })
 
 
@@ -813,4 +858,29 @@ test_that("can get deferred tasks", {
 
   tasks <- obj$deferred_list()
   expect_setequal(obj$deferred_list(), list())
+})
+
+
+test_that("submit a task with a timeout requires separate process", {
+  obj <- test_rrq("myfuns.R")
+  expect_error(
+    obj$enqueue(slowdouble(10), timeout = 1),
+    "Can't set timeout as 'separate_process' is FALSE")
+})
+
+
+test_that("submit a task with a timeout", {
+  obj <- test_rrq("myfuns.R")
+  t <- obj$enqueue(slowdouble(10), timeout = 1, separate_process = TRUE)
+  expect_equal(obj$con$HGET(obj$keys$task_timeout, t), "1")
+
+  w <- test_worker_blocking(obj)
+  w$step(TRUE)
+
+  expect_equal(obj$task_status(t), set_names(TASK_TIMEOUT, t))
+  expect_equal(obj$task_result(t),
+               worker_task_failed(TASK_TIMEOUT))
+
+  expect_equal(obj$worker_log_tail(w$name, Inf)$command,
+               c("ALIVE", "TASK_START", "REMOTE", "TIMEOUT", "TASK_TIMEOUT"))
 })

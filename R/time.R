@@ -52,7 +52,7 @@ progress_timeout <- function(total, show, label, timeout, ...) {
     }
     list(tick = tick, terminate = p$terminate)
   } else {
-    tick <- function(...) {
+    tick <- function(len = 1, ...) {
       time_left() <= 0
     }
     list(tick = tick, terminate = function() NULL)
@@ -62,4 +62,17 @@ progress_timeout <- function(total, show, label, timeout, ...) {
 
 show_progress <- function(show) {
   show %||% getOption("rrq.progress", interactive())
+}
+
+
+wait_status_change <- function(con, keys, task_id, status,
+                               timeout = 2, time_poll = 0.05) {
+  remaining <- time_checker(timeout)
+  while (remaining() > 0) {
+    if (all(task_status(con, keys, task_id) != status)) {
+      return()
+    }
+    Sys.sleep(time_poll)
+  }
+  stop(sprintf("Did not change status from '%s' in time", status))
 }

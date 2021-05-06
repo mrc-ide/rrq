@@ -14,8 +14,9 @@
 ##'
 ##' @param time_poll Poll time.  Longer values here will reduce the
 ##'   impact on the database but make workers less responsive to being
-##'   killed with an interrupt.  The default should be good for most
-##'   uses, but shorter values are used for debugging.
+##'   killed with an interrupt (control-C or Escape).  The default
+##'   should be good for most uses, but shorter values are used for
+##'   debugging.
 ##'
 ##' @param timeout Optional timeout to set for the worker.  This is
 ##'   (roughly) equivalent to issuing a \code{TIMEOUT_SET} message
@@ -23,8 +24,8 @@
 ##'   run by all workers.
 ##'
 ##' @param heartbeat_period Optional period for the heartbeat.  If
-##'   non-NULL then a heartbeat process will be started (using the
-##'   \code{heartbeatr} package) which can be used to build fault
+##'   non-NULL then a heartbeat process will be started (using
+##'   [`rrq::heartbeat`]) which can be used to build fault
 ##'   tolerant queues.
 ##'
 ##' @param verbose Logical, indicating if the worker should print
@@ -196,7 +197,8 @@ worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
   con <- worker$con
   keys <- worker$keys
 
-  worker$heartbeat <- heartbeat(con, keys, heartbeat_period, worker$verbose)
+  worker$heartbeat <- worker_heartbeat(con, keys, heartbeat_period,
+                                       worker$verbose)
 
   worker$con$pipeline(
     redis$SADD(keys$worker_name,   worker$name),
@@ -223,15 +225,6 @@ worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
 rrq_worker_stop <- function(worker, message) {
   structure(list(worker = worker, message = message),
             class = c("rrq_worker_stop", "error", "condition"))
-}
-
-
-worker_send_signal <- function(con, keys, signal, worker_ids) {
-  if (length(worker_ids) > 0L) {
-    for (key in rrq_key_worker_heartbeat(keys$queue_id, worker_ids)) {
-      heartbeatr::heartbeat_send_signal(con, key, signal)
-    }
-  }
 }
 
 
@@ -272,12 +265,10 @@ worker_loop <- function(worker, immediate = FALSE) {
 
   worker$loop_continue <- TRUE
   while (worker$loop_continue) {
-    tryCatch({
-      tryCatch(worker$step(immediate),
-               interrupt = worker_catch_interrupt(worker))
-    },
-    rrq_worker_stop = worker_catch_stop(worker),
-    error = worker_catch_error(worker))
+    tryCatch(
+      worker$step(immediate),
+      rrq_worker_stop = worker_catch_stop(worker),
+      error = worker_catch_error(worker))
   }
   if (worker$verbose) {
     message(paste0(worker_banner("stop"), collapse = "\n"))
@@ -308,49 +299,6 @@ worker_catch_error <- function(worker) {
     worker$shutdown("ERROR", FALSE)
     message("This is an uncaught error in rrq, probably a bug!")
     stop(e)
-  }
-}
-
-
-worker_catch_interrupt <- function(worker) {
-  force(worker)
-
-  queue_type <- set_names(
-    c("message", rep("queue", length(worker$queue))),
-    c(worker$keys$worker_message, worker$queue))
-
-  function(e) {
-    ## NOTE: this won't recursively catch interrupts.  Especially
-    ## on a high-latency connection this might be long enough for
-    ## a second interrupt to arrive.  We don't deal with that and
-    ## it will be about the same as a SIGTERM - we'll just die.
-    ## But that will disable the heartbeat so it should all end up
-    ## OK.
-    worker$log("INTERRUPT")
-
-    active <- worker$active_task
-    if (!is.null(active)) {
-      worker_run_task_cleanup(worker, TASK_INTERRUPTED, NULL)
-    }
-
-    ## There are two ways that interrupt happens (ignoring the
-    ## race condition where it comes in neither)
-    ##
-    ## 1. Interrupt a job; in that case, we have task data in 'active'
-    ##    above and everything is all OK; we just mark this as done.
-    ##
-    ## 2. During BLPOP.  In that case we need to re-queue the
-    ##    message or the job or it is lost from the queue
-    ##    entirely.  This would include things like a STOP
-    ##    message, or a new task to run.
-    ##
-    ## NOTE that a SIGTERM signal might result in lost messages.
-    task <- worker$loop_task
-    if (!is.null(task[[2]]) && !identical(task[[2]], active$task_id)) {
-      label <- sprintf("%s:%s", queue_type[[task[[1]]]], task[[2]])
-      worker$log("REQUEUE", label)
-      worker$con$LPUSH(task[[1]], task[[2]])
-    }
   }
 }
 

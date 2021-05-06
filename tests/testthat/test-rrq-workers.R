@@ -86,58 +86,6 @@ test_that("worker catch naked error", {
 })
 
 
-test_that("worker catch interrupt on an idle worker", {
-  obj <- test_rrq()
-  w <- test_worker_blocking(obj)
-
-  e <- structure(list(), class = c("interrupt", "condition"))
-  expect_message(
-    worker_catch_interrupt(w)(interrupt()),
-    "INTERRUPT")
-})
-
-
-test_that("worker catch interrupt with collected, but unstarted, task", {
-  obj <- test_rrq()
-  w <- test_worker_blocking(obj)
-
-  id1 <- obj$enqueue(sin(1))
-  id2 <- obj$enqueue(sin(2))
-  expect_equal(obj$queue_list(), c(id1, id2))
-
-  w$poll(TRUE)
-  expect_equal(obj$queue_list(), id2)
-  id3 <- obj$enqueue(sin(3))
-  expect_equal(obj$queue_list(), c(id2, id3))
-
-  expect_message(
-    worker_catch_interrupt(w)(interrupt()),
-    "REQUEUE queue:")
-
-  expect_equal(obj$queue_list(), c(id1, id2, id3))
-})
-
-
-test_that("worker catch interrupt with started task", {
-  obj <- test_rrq()
-  w <- test_worker_blocking(obj)
-
-  id1 <- obj$enqueue(sin(1))
-  w$poll(TRUE)
-  worker_run_task_start(w, id1)
-
-  expect_equal(obj$task_status(id1), set_names(TASK_RUNNING, id1))
-
-  expect_message(
-    worker_catch_interrupt(w)(interrupt()),
-    "TASK_INTERRUPTED")
-
-  expect_equal(obj$task_status(id1), set_names(TASK_INTERRUPTED, id1))
-  expect_equal(obj$worker_status(w$name), set_names(WORKER_IDLE, w$name))
-  expect_equal(obj$queue_list(), character(0))
-})
-
-
 test_that("create worker", {
   obj <- test_rrq()
   name <- ids::random_id()
@@ -177,7 +125,7 @@ test_that("Timer is recreated after task run", {
 
 
 test_that("kill worker with a signal", {
-  skip_if_not_installed("heartbeatr")
+  skip_if_not_installed("callr")
   skip_on_os("windows")
 
   obj <- test_rrq()

@@ -40,7 +40,6 @@ run_with_progress <- function(n, wait) {
   n
 }
 
-
 run_with_progress_interactive <- function(path, poll = 0.01) {
   rrq::rrq_task_progress_update("Waiting for file")
   while (!file.exists(path)) {
@@ -48,7 +47,11 @@ run_with_progress_interactive <- function(path, poll = 0.01) {
   }
   last_write <- ""
   repeat {
-    contents <- readLines(path)
+    contents <- tryCatch(readLines(path),
+                         error = function(e) NULL)
+    if (is.null(contents)) {
+      next
+    }
     if (identical(contents, "STOP")) {
       break
     }
@@ -59,6 +62,7 @@ run_with_progress_interactive <- function(path, poll = 0.01) {
     Sys.sleep(poll)
   }
   rrq::rrq_task_progress_update("Finishing")
+  "OK"
 }
 
 
@@ -79,4 +83,10 @@ dirty_double <- function(value) {
   prev <- .GlobalEnv$.rrq_dirty_double
   .GlobalEnv$.rrq_dirty_double <- value
   list(prev, value * 2)
+}
+
+
+pid_and_sleep <- function(path, timeout) {
+  writeLines(as.character(Sys.getpid()), path)
+  Sys.sleep(timeout)
 }
