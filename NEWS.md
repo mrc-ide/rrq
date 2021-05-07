@@ -1,3 +1,7 @@
+# rrq 0.3.2
+
+* All tasks get a key that can be checked with a blocking wait (mrc-2392)
+
 # rrq 0.3.1
 
 * Direct control over environment export for `$enqueue()` with new argument `export` (mrc-2369)

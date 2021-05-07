@@ -215,10 +215,6 @@ rrq_controller_ <- R6::R6Class(
     ##'   For example, if your expression is `sum(1 + a)`, we will also send
     ##'   the value of `a` to the worker along with the expression.
     ##
-    ##' @param key_complete The name of a Redis key to write to once the
-    ##'   task is complete. You can use this with `$task_wait` to efficiently
-    ##'   wait for the task to complete (i.e., without using a busy loop).
-    ##'
     ##' @param queue The queue to add the task to; if not specified the
     ##'   "default" queue (which all workers listen to) will be
     ##'   used. If you have configured workers to listen to more than
@@ -257,11 +253,11 @@ rrq_controller_ <- R6::R6Class(
     ##'   or where you want to avoid moving large objects through Redis
     ##'   that will be available on the remote workers due to how you
     ##'   have configured your worker environment.
-    enqueue = function(expr, envir = parent.frame(), key_complete = NULL,
-                       queue = NULL, separate_process = FALSE, timeout = NULL,
+    enqueue = function(expr, envir = parent.frame(), queue = NULL,
+                       separate_process = FALSE, timeout = NULL,
                        at_front = FALSE, depends_on = NULL,
                        export = NULL) {
-      self$enqueue_(substitute(expr), envir, key_complete, queue,
+      self$enqueue_(substitute(expr), envir, queue,
                     separate_process, timeout, at_front, depends_on,
                     export)
     },
@@ -277,11 +273,6 @@ rrq_controller_ <- R6::R6Class(
     ##'   For example, if your expression is `sum(1 + a)`, we will also send
     ##'   the value of `a` to the worker along with the expression.
     ##
-    ##' @param key_complete The name of a Redis key to write to once the
-    ##'   task is complete. You can use this in conjunction with something
-    ##'   like `BLPOP` to wait until a task is complete without a busy (sleep)
-    ##'   loop.
-    ##'
     ##' @param queue The queue to add the task to; if not specified the
     ##'   "default" queue (which all workers listen to) will be
     ##'   used. If you have configured workers to listen to more than
@@ -306,12 +297,12 @@ rrq_controller_ <- R6::R6Class(
     ##'
     ##' @param export Optionally a list of variables to export for the
     ##'   calculation. See `$enqueue` for details.
-    enqueue_ = function(expr, envir = parent.frame(), key_complete = NULL,
+    enqueue_ = function(expr, envir = parent.frame(),
                         queue = NULL, separate_process = FALSE, timeout = NULL,
                         at_front = FALSE, depends_on = NULL, export = NULL) {
       dat <- expression_prepare(expr, envir, self$db, export = export)
       verify_dependencies_exist(self, depends_on)
-      task_submit(self$con, self$keys, dat, key_complete, queue,
+      task_submit(self$con, self$keys, dat, queue,
                   separate_process, timeout, at_front, depends_on)
     },
 
@@ -336,7 +327,7 @@ rrq_controller_ <- R6::R6Class(
     ##'   using `bulk_wait`
     ##'
     ##' @param time_poll Optional time with which to "poll" for
-    ##'   completion.
+    ##'   completion (default is 1s, see `$task_wait()` for details)
     ##'
     ##' @param progress Optional logical indicating if a progress bar
     ##'   should be displayed. If `NULL` we fall back on the value of the
@@ -363,7 +354,7 @@ rrq_controller_ <- R6::R6Class(
                       envir = parent.frame(), queue = NULL,
                       separate_process = FALSE, task_timeout = NULL,
                       depends_on = NULL,
-                      collect_timeout = Inf, time_poll = NULL,
+                      collect_timeout = Inf, time_poll = 1,
                       progress = NULL) {
       if (is.null(dots)) {
         dots <- as.list(substitute(list(...)))[-1L]
@@ -399,7 +390,7 @@ rrq_controller_ <- R6::R6Class(
     ##'   using `bulk_wait`
     ##'
     ##' @param time_poll Optional time with which to "poll" for
-    ##'   completion.
+    ##'   completion (default is 1s, see `$task_wait()` for details)
     ##'
     ##' @param progress Optional logical indicating if a progress bar
     ##'   should be displayed. If `NULL` we fall back on the value of the
@@ -426,7 +417,7 @@ rrq_controller_ <- R6::R6Class(
                        envir = parent.frame(), queue = NULL,
                        separate_process = FALSE, task_timeout = NULL,
                        depends_on = NULL, collect_timeout = Inf,
-                       time_poll = NULL, progress = NULL) {
+                       time_poll = 1, progress = NULL) {
       if (is.null(dots)) {
         dots <- list(...)
       }
@@ -464,7 +455,7 @@ rrq_controller_ <- R6::R6Class(
     ##'   using `bulk_wait`
     ##'
     ##' @param time_poll Optional time with which to "poll" for
-    ##'   completion.
+    ##'   completion (default is 1s, see `$task_wait()` for details)
     ##'
     ##' @param progress Optional logical indicating if a progress bar
     ##'   should be displayed. If `NULL` we fall back on the value of the
@@ -491,7 +482,7 @@ rrq_controller_ <- R6::R6Class(
                             envir = parent.frame(), queue = NULL,
                             separate_process = FALSE, task_timeout = NULL,
                             depends_on = NULL, collect_timeout = Inf,
-                            time_poll = NULL, progress = NULL) {
+                            time_poll = 1, progress = NULL) {
       if (is.null(dots)) {
         dots <- as.list(substitute(list(...)))[-1L]
       }
@@ -528,7 +519,7 @@ rrq_controller_ <- R6::R6Class(
     ##'   using `bulk_wait`
     ##'
     ##' @param time_poll Optional time with which to "poll" for
-    ##'   completion.
+    ##'   completion (default is 1s, see `$task_wait()` for details)
     ##'
     ##' @param progress Optional logical indicating if a progress bar
     ##'   should be displayed. If `NULL` we fall back on the value of the
@@ -555,7 +546,7 @@ rrq_controller_ <- R6::R6Class(
                              envir = parent.frame(), queue = NULL,
                              separate_process = FALSE, task_timeout = NULL,
                              depends_on = NULL, collect_timeout = Inf,
-                             time_poll = NULL, progress = NULL) {
+                             time_poll = 1, progress = NULL) {
       if (is.null(dots)) {
         dots <- list(...)
       }
@@ -572,13 +563,13 @@ rrq_controller_ <- R6::R6Class(
     ##'   error will be thrown if the task has not completed.
     ##'
     ##' @param time_poll Optional time with which to "poll" for
-    ##'   completion.
+    ##'   completion (default is 1s, see `$task_wait()` for details)
     ##'
     ##' @param progress Optional logical indicating if a progress bar
     ##'   should be displayed. If `NULL` we fall back on the value of the
     ##'   global option `rrq.progress`, and if that is unset display a
     ##'   progress bar if in an interactive session.
-    bulk_wait = function(x, timeout = Inf, time_poll = NULL,
+    bulk_wait = function(x, timeout = Inf, time_poll = 1,
                          progress = NULL) {
       rrq_bulk_wait(self$con, self$keys, x, timeout, time_poll, progress)
     },
@@ -685,35 +676,23 @@ rrq_controller_ <- R6::R6Class(
     ##' @param timeout Optional timeout, in seconds, after which an
     ##'   error will be thrown if the task has not completed.
     ##'
-    ##' @param time_poll Optional time with which to "poll" for
-    ##'   completion. The default and behaviour depend on `key_complete` -
-    ##'   see the details section.
+    ##' @param time_poll Optional time with which to "poll" for completion.
+    ##'   By default this will be 1 second; this is the time that each
+    ##'   request for a completed task may block for (however, if the task
+    ##'   is finished before this, the actual time waited for will be less).
+    ##'   Increasing this will reduce the responsiveness of your R session
+    ##'   to interrupting, but will cause slightly less network load.
+    ##'   Values less than 1s are not currently supported as this requires
+    ##'   a very recent Redis server.
     ##'
     ##' @param progress Optional logical indicating if a progress bar
     ##'   should be displayed. If `NULL` we fall back on the value of the
     ##'   global option `rrq.progress`, and if that is unset display a
     ##'   progress bar if in an interactive session.
-    ##'
-    ##' @param key_complete Optional key used when `enqueing` the tasks
-    ##'   that will be written to on completion.
-    ##'
-    ##' @details The polling behaviour depends on `key_complete`. If
-    ##' `key_complete` is `NULL` then we use a busy-loop, sleeping for
-    ##' `time_poll` seconds between polls of Redis. As such, the smaller
-    ##' the `time_poll` the faster you will get your result, as it may
-    ##' be delayed by up to `time_poll`, but the heavier the network and
-    ##' Redis load (the default is 0.05s). Alternatively, if
-    ##' `key_complete` is given then your task will be returned as soon
-    ##' as it is written into Redis, and `time_poll` is the time between
-    ##' subsequent calls to the Redis function that enables
-    ##' this. Shorter values of `time_poll` then make R more responsive
-    ##' to being interrupted and longer values reduce network load (the
-    ##' default is 1s)
-    task_wait = function(task_id, timeout = Inf, time_poll = NULL,
-                       progress = NULL, key_complete = NULL) {
+    task_wait = function(task_id, timeout = Inf, time_poll = 1,
+                         progress = NULL) {
       assert_scalar_character(task_id)
-      self$tasks_wait(task_id, timeout, time_poll,
-                      progress, key_complete)[[1L]]
+      self$tasks_wait(task_id, timeout, time_poll, progress)[[1L]]
     },
 
     ##' @description Poll for a group of tasks to complete, returning the
@@ -726,21 +705,15 @@ rrq_controller_ <- R6::R6Class(
     ##'   error will be thrown if the task has not completed.
     ##'
     ##' @param time_poll Optional time with which to "poll" for
-    ##'   completion. The default and behaviour depend on `key_complete` -
-    ##'   see the details section of `$task_wait`
+    ##'   completion (default is 1s, see `$task_wait()` for details)
     ##'
     ##' @param progress Optional logical indicating if a progress bar
     ##'   should be displayed. If `NULL` we fall back on the value of the
     ##'   global option `rrq.progress`, and if that is unset display a
     ##'   progress bar if in an interactive session.
-    ##'
-    ##' @param key_complete Optional key used when `enqueing` the tasks
-    ##'   that will be written to on completion. If used, then all tasks
-    ##'   must share the same completion key.
-    tasks_wait = function(task_ids, timeout = Inf, time_poll = NULL,
-                          progress = NULL, key_complete = NULL) {
-      tasks_wait(self$con, self$keys, task_ids, timeout, time_poll, progress,
-                 key_complete)
+    tasks_wait = function(task_ids, timeout = Inf, time_poll = 1,
+                          progress = NULL) {
+      tasks_wait(self$con, self$keys, task_ids, timeout, time_poll, progress)
     },
 
     ##' @description Delete one or more tasks
@@ -1181,10 +1154,10 @@ task_preceeding <- function(con, keys, task_id, queue) {
   queue_contents[seq_len(task_position - 1)]
 }
 
-task_submit <- function(con, keys, dat, key_complete, queue,
+task_submit <- function(con, keys, dat, queue,
                         separate_process, timeout, at_front = FALSE,
                         depends_on = NULL) {
-  task_submit_n(con, keys, list(object_to_bin(dat)), key_complete, queue,
+  task_submit_n(con, keys, list(object_to_bin(dat)), NULL, queue,
                 separate_process, timeout, at_front, depends_on)
 }
 
@@ -1491,7 +1464,7 @@ worker_delete_exited <- function(con, keys, worker_ids = NULL) {
 }
 
 worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
-                        timeout = 0, time_poll = 1, progress = NULL) {
+                        timeout = 0, time_poll = NULL, progress = NULL) {
   type <- match.arg(type, c("message", "kill", "kill_local"))
   if (is.null(worker_ids)) {
     worker_ids <- worker_list(con, keys)
@@ -1597,25 +1570,32 @@ mean.worker_load <- function(x, time = c(1, 5, 15, Inf), ...) {
 }
 
 
-tasks_wait <- function(con, keys, task_ids, timeout, time_poll = NULL,
+tasks_wait <- function(con, keys, task_ids, timeout, time_poll,
                        progress = NULL, key_complete = NULL) {
+  ## This can be relaxed in recent Redis >= 6.0.0 as we then interpret
+  ## time_poll as a double. To do this efficiently we'll want to get
+  ## the version information stored into the redux client, which is
+  ## not hard as we already do some negotiation
+  assert_integer_like(time_poll)
+  if (time_poll < 1L) {
+    stop("time_poll cannot be less than 1")
+  }
+  done <- set_names(
+    hash_exists(con, keys$task_result, task_ids, TRUE),
+    task_ids)
+
   if (is.null(key_complete)) {
-    done <- rep(FALSE, length(task_ids))
+    key_complete <- rrq_key_task_complete(keys$queue_id, task_ids)
     fetch <- function() {
-      done[!done] <<- hash_exists(con, keys$task_result, task_ids[!done], TRUE)
+      if (!all(done)) {
+        tmp <- con$BLPOP(key_complete[!done], time_poll)
+        if (!is.null(tmp)) {
+          done[[tmp[[2L]]]] <<- TRUE
+        }
+      }
       done
     }
-    general_poll(fetch, time_poll %||% 0.05, timeout, "tasks", TRUE, progress)
   } else {
-    time_poll <- time_poll %||% 1
-    assert_integer_like(time_poll)
-    if (time_poll < 1L) {
-      stop("time_poll cannot be less than 1 if using key_complete")
-    }
-    done <- set_names(
-      hash_exists(con, keys$task_result, task_ids, TRUE),
-      task_ids)
-
     fetch <- function() {
       tmp <- con$BLPOP(key_complete, time_poll)
       if (!is.null(tmp)) {
@@ -1623,9 +1603,9 @@ tasks_wait <- function(con, keys, task_ids, timeout, time_poll = NULL,
       }
       done
     }
-    general_poll(fetch, 0, timeout, "tasks", TRUE, progress)
   }
 
+  general_poll(fetch, 0, timeout, "tasks", TRUE, progress)
   task_results(con, keys, task_ids)
 }
 

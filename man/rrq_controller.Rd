@@ -268,7 +268,6 @@ Queue an expression
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$enqueue(
   expr,
   envir = parent.frame(),
-  key_complete = NULL,
   queue = NULL,
   separate_process = FALSE,
   timeout = NULL,
@@ -287,10 +286,6 @@ Queue an expression
 locally. This will be used to copy across any dependent variables.
 For example, if your expression is \code{sum(1 + a)}, we will also send
 the value of \code{a} to the worker along with the expression.}
-
-\item{\code{key_complete}}{The name of a Redis key to write to once the
-task is complete. You can use this with \verb{$task_wait} to efficiently
-wait for the task to complete (i.e., without using a busy loop).}
 
 \item{\code{queue}}{The queue to add the task to; if not specified the
 "default" queue (which all workers listen to) will be
@@ -343,7 +338,6 @@ Queue an expression
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$enqueue_(
   expr,
   envir = parent.frame(),
-  key_complete = NULL,
   queue = NULL,
   separate_process = FALSE,
   timeout = NULL,
@@ -364,11 +358,6 @@ directly (e.g., \code{bquote(log(.(x)), list(x = 10))}}
 locally. This will be used to copy across any dependent variables.
 For example, if your expression is \code{sum(1 + a)}, we will also send
 the value of \code{a} to the worker along with the expression.}
-
-\item{\code{key_complete}}{The name of a Redis key to write to once the
-task is complete. You can use this in conjunction with something
-like \code{BLPOP} to wait until a task is complete without a busy (sleep)
-loop.}
 
 \item{\code{queue}}{The queue to add the task to; if not specified the
 "default" queue (which all workers listen to) will be
@@ -416,7 +405,7 @@ equivalent to using \verb{$enqueue()} over each element in the list.
   task_timeout = NULL,
   depends_on = NULL,
   collect_timeout = Inf,
-  time_poll = NULL,
+  time_poll = 1,
   progress = NULL
 )}\if{html}{\out{</div>}}
 }
@@ -459,7 +448,7 @@ error will be thrown if all tasks have not completed. If given  as
 using \code{bulk_wait}}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for
-completion.}
+completion (default is 1s, see \verb{$task_wait()} for details)}
 
 \item{\code{progress}}{Optional logical indicating if a progress bar
 should be displayed. If \code{NULL} we fall back on the value of the
@@ -490,7 +479,7 @@ be copied over rather than using their names if possible.
   task_timeout = NULL,
   depends_on = NULL,
   collect_timeout = Inf,
-  time_poll = NULL,
+  time_poll = 1,
   progress = NULL
 )}\if{html}{\out{</div>}}
 }
@@ -533,7 +522,7 @@ error will be thrown if all tasks have not completed. If given  as
 using \code{bulk_wait}}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for
-completion.}
+completion (default is 1s, see \verb{$task_wait()} for details)}
 
 \item{\code{progress}}{Optional logical indicating if a progress bar
 should be displayed. If \code{NULL} we fall back on the value of the
@@ -565,7 +554,7 @@ should feel intuitive.
   task_timeout = NULL,
   depends_on = NULL,
   collect_timeout = Inf,
-  time_poll = NULL,
+  time_poll = 1,
   progress = NULL
 )}\if{html}{\out{</div>}}
 }
@@ -610,7 +599,7 @@ error will be thrown if all tasks have not completed. If given  as
 using \code{bulk_wait}}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for
-completion.}
+completion (default is 1s, see \verb{$task_wait()} for details)}
 
 \item{\code{progress}}{Optional logical indicating if a progress bar
 should be displayed. If \code{NULL} we fall back on the value of the
@@ -641,7 +630,7 @@ be copied over rather than using their names if possible.
   task_timeout = NULL,
   depends_on = NULL,
   collect_timeout = Inf,
-  time_poll = NULL,
+  time_poll = 1,
   progress = NULL
 )}\if{html}{\out{</div>}}
 }
@@ -686,7 +675,7 @@ error will be thrown if all tasks have not completed. If given  as
 using \code{bulk_wait}}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for
-completion.}
+completion (default is 1s, see \verb{$task_wait()} for details)}
 
 \item{\code{progress}}{Optional logical indicating if a progress bar
 should be displayed. If \code{NULL} we fall back on the value of the
@@ -702,7 +691,7 @@ progress bar if in an interactive session.}
 \subsection{Method \code{bulk_wait()}}{
 Wait for a group of tasks
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$bulk_wait(x, timeout = Inf, time_poll = NULL, progress = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$bulk_wait(x, timeout = Inf, time_poll = 1, progress = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -714,7 +703,7 @@ Wait for a group of tasks
 error will be thrown if the task has not completed.}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for
-completion.}
+completion (default is 1s, see \verb{$task_wait()} for details)}
 
 \item{\code{progress}}{Optional logical indicating if a progress bar
 should be displayed. If \code{NULL} we fall back on the value of the
@@ -912,9 +901,8 @@ efficient way of doing this for a group of tasks.
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_wait(
   task_id,
   timeout = Inf,
-  time_poll = NULL,
-  progress = NULL,
-  key_complete = NULL
+  time_poll = 1,
+  progress = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -926,35 +914,22 @@ efficient way of doing this for a group of tasks.
 \item{\code{timeout}}{Optional timeout, in seconds, after which an
 error will be thrown if the task has not completed.}
 
-\item{\code{time_poll}}{Optional time with which to "poll" for
-completion. The default and behaviour depend on \code{key_complete} -
-see the details section.}
+\item{\code{time_poll}}{Optional time with which to "poll" for completion.
+By default this will be 1 second; this is the time that each
+request for a completed task may block for (however, if the task
+is finished before this, the actual time waited for will be less).
+Increasing this will reduce the responsiveness of your R session
+to interrupting, but will cause slightly less network load.
+Values less than 1s are not currently supported as this requires
+a very recent Redis server.}
 
 \item{\code{progress}}{Optional logical indicating if a progress bar
 should be displayed. If \code{NULL} we fall back on the value of the
 global option \code{rrq.progress}, and if that is unset display a
 progress bar if in an interactive session.}
-
-\item{\code{key_complete}}{Optional key used when \code{enqueing} the tasks
-that will be written to on completion.}
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Details}{
-The polling behaviour depends on \code{key_complete}. If
-\code{key_complete} is \code{NULL} then we use a busy-loop, sleeping for
-\code{time_poll} seconds between polls of Redis. As such, the smaller
-the \code{time_poll} the faster you will get your result, as it may
-be delayed by up to \code{time_poll}, but the heavier the network and
-Redis load (the default is 0.05s). Alternatively, if
-\code{key_complete} is given then your task will be returned as soon
-as it is written into Redis, and \code{time_poll} is the time between
-subsequent calls to the Redis function that enables
-this. Shorter values of \code{time_poll} then make R more responsive
-to being interrupted and longer values reduce network load (the
-default is 1s)
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-tasks_wait"></a>}}
@@ -967,9 +942,8 @@ this is roughly equivalent to \code{tasks_result}.
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$tasks_wait(
   task_ids,
   timeout = Inf,
-  time_poll = NULL,
-  progress = NULL,
-  key_complete = NULL
+  time_poll = 1,
+  progress = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -982,17 +956,12 @@ this is roughly equivalent to \code{tasks_result}.
 error will be thrown if the task has not completed.}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for
-completion. The default and behaviour depend on \code{key_complete} -
-see the details section of \verb{$task_wait}}
+completion (default is 1s, see \verb{$task_wait()} for details)}
 
 \item{\code{progress}}{Optional logical indicating if a progress bar
 should be displayed. If \code{NULL} we fall back on the value of the
 global option \code{rrq.progress}, and if that is unset display a
 progress bar if in an interactive session.}
-
-\item{\code{key_complete}}{Optional key used when \code{enqueing} the tasks
-that will be written to on completion. If used, then all tasks
-must share the same completion key.}
 }
 \if{html}{\out{</div>}}
 }

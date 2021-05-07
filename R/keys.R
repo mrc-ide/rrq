@@ -34,6 +34,8 @@ rrq_keys_common <- function(queue_id) {
        task_timeout   = sprintf("%s:task:timeout",   queue_id),
        task_progress  = sprintf("%s:task:progress",  queue_id),
        task_result    = sprintf("%s:task:result",    queue_id),
+       ## This is the key where we store the extra complete key we
+       ## might push to at.
        task_complete  = sprintf("%s:task:complete",  queue_id),
        task_cancel    = sprintf("%s:task:cancel",    queue_id),
 
@@ -68,9 +70,9 @@ rrq_key_queue <- function(queue, name) {
   sprintf("%s:queue:%s", queue, name %||% QUEUE_DEFAULT)
 }
 
-## Randomly generated keys:
-rrq_key_task_complete <- function(queue) {
-  sprintf("%s:tasks:complete:%s", queue, ids::random_id())
+## (Potentially) randomly generated keys:
+rrq_key_task_complete <- function(queue, id = NULL) {
+  sprintf("%s:tasks:complete:%s", queue, id %||% ids::random_id())
 }
 
 rrq_key_worker_alive <- function(queue_id) {
