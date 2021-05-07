@@ -899,9 +899,9 @@ rrq_controller_ <- R6::R6Class(
     ##'    system signals, which requires that the worker is on the same
     ##'    machine as the controller.
     worker_stop = function(worker_ids = NULL, type = "message",
-                           timeout = 0, time_poll = 1, progress = NULL) {
+                           timeout = 0, time_poll = 0.05, progress = NULL) {
       worker_stop(self$con, self$keys, worker_ids, type,
-                   timeout, time_poll, progress)
+                  timeout, time_poll, progress)
     },
 
     ##' @description Detects exited workers through a lapsed heartbeat
@@ -1054,7 +1054,7 @@ rrq_controller_ <- R6::R6Class(
     ##'   progress bar if in an interactive session.
     message_get_response = function(message_id, worker_ids = NULL, named = TRUE,
                                     delete = FALSE, timeout = 0,
-                                    time_poll = 1, progress = NULL) {
+                                    time_poll = 0.05, progress = NULL) {
       message_get_response(self$con, self$keys, message_id, worker_ids, named,
                            delete, timeout, time_poll, progress)
     },
@@ -1099,7 +1099,7 @@ rrq_controller_ <- R6::R6Class(
     ##'   progress bar if in an interactive session.
     message_send_and_wait = function(command, args = NULL, worker_ids = NULL,
                                      named = TRUE, delete = TRUE, timeout = 600,
-                                     time_poll = 1, progress = NULL) {
+                                     time_poll = 0.05, progress = NULL) {
       message_send_and_wait(self$con, self$keys, command, args, worker_ids,
                             named, delete, timeout, time_poll, progress)
     }
@@ -1464,7 +1464,7 @@ worker_delete_exited <- function(con, keys, worker_ids = NULL) {
 }
 
 worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
-                        timeout = 0, time_poll = NULL, progress = NULL) {
+                        timeout = 0, time_poll = 0.1, progress = NULL) {
   type <- match.arg(type, c("message", "kill", "kill_local"))
   if (is.null(worker_ids)) {
     worker_ids <- worker_list(con, keys)
@@ -1478,7 +1478,6 @@ worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
     if (timeout > 0L) {
       message_get_response(con, keys, message_id, worker_ids,
                            delete = FALSE, timeout = timeout,
-                           time_poll = time_poll,
                            progress = progress)
     }
   } else if (type == "kill") {
