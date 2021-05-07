@@ -1478,6 +1478,7 @@ worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
     if (timeout > 0L) {
       message_get_response(con, keys, message_id, worker_ids,
                            delete = FALSE, timeout = timeout,
+                           time_poll = time_poll,
                            progress = progress)
     }
   } else if (type == "kill") {
