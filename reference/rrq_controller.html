@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.3.1</span>
       </span>
     </div>
 
@@ -371,7 +371,8 @@ message to all workers to update their environment.</p></dd>
   separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
   timeout <span class='op'>=</span> <span class='cn'>NULL</span>,
   at_front <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  depends_on <span class='op'>=</span> <span class='cn'>NULL</span>
+  depends_on <span class='op'>=</span> <span class='cn'>NULL</span>,
+  export <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
@@ -415,6 +416,17 @@ have been successfully run, this task will get added to the
 queue. If the dependent task fails then this task will be
 removed from the queue.</p></dd>
 
+<dt><code>export</code></dt><dd><p>Optionally a list of variables to export for the
+calculation. If given then no automatic analysis of the
+expression is done. It should be either a named list (name
+being the variable name, value being the value) or a
+character vector of variables that can be found immediately
+within <code>envir</code>. Use this where you have already done analysis
+of the expression (e.g., with the future package / globals)
+or where you want to avoid moving large objects through Redis
+that will be available on the remote workers due to how you
+have configured your worker environment.</p></dd>
+
 </dl><p></div></p>
 <p><hr>
 <a id="method-enqueue_"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>enqueue_()</code></h3>
@@ -427,7 +439,8 @@ removed from the queue.</p></dd>
   separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
   timeout <span class='op'>=</span> <span class='cn'>NULL</span>,
   at_front <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  depends_on <span class='op'>=</span> <span class='cn'>NULL</span>
+  depends_on <span class='op'>=</span> <span class='cn'>NULL</span>,
+  export <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
@@ -467,6 +480,9 @@ completed before this job can be run. Once all dependent tasks
 have been successfully run, this task will get added to the
 queue. If the dependent task fails then this task will be
 removed from the queue.</p></dd>
+
+<dt><code>export</code></dt><dd><p>Optionally a list of variables to export for the
+calculation. See <code>$enqueue</code> for details.</p></dd>
 
 </dl><p></div></p>
 <p><hr>
