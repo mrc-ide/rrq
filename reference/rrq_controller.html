@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.3.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.3.2</span>
       </span>
     </div>
 
@@ -366,7 +366,6 @@ message to all workers to update their environment.</p></dd>
 <p><div class="r"></p><pre><span class='va'>rrq_controller_</span><span class='op'>$</span><span class='fu'>enqueue</span><span class='op'>(</span>
   <span class='va'>expr</span>,
   envir <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>parent.frame</a></span><span class='op'>(</span><span class='op'>)</span>,
-  key_complete <span class='op'>=</span> <span class='cn'>NULL</span>,
   queue <span class='op'>=</span> <span class='cn'>NULL</span>,
   separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
   timeout <span class='op'>=</span> <span class='cn'>NULL</span>,
@@ -383,10 +382,6 @@ message to all workers to update their environment.</p></dd>
 locally. This will be used to copy across any dependent variables.
 For example, if your expression is <code><a href='https://rdrr.io/r/base/sum.html'>sum(1 + a)</a></code>, we will also send
 the value of <code>a</code> to the worker along with the expression.</p></dd>
-
-<dt><code>key_complete</code></dt><dd><p>The name of a Redis key to write to once the
-task is complete. You can use this with <code>$task_wait</code> to efficiently
-wait for the task to complete (i.e., without using a busy loop).</p></dd>
 
 <dt><code>queue</code></dt><dd><p>The queue to add the task to; if not specified the
 "default" queue (which all workers listen to) will be
@@ -434,7 +429,6 @@ have configured your worker environment.</p></dd>
 <p><div class="r"></p><pre><span class='va'>rrq_controller_</span><span class='op'>$</span><span class='fu'>enqueue_</span><span class='op'>(</span>
   <span class='va'>expr</span>,
   envir <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>parent.frame</a></span><span class='op'>(</span><span class='op'>)</span>,
-  key_complete <span class='op'>=</span> <span class='cn'>NULL</span>,
   queue <span class='op'>=</span> <span class='cn'>NULL</span>,
   separate_process <span class='op'>=</span> <span class='cn'>FALSE</span>,
   timeout <span class='op'>=</span> <span class='cn'>NULL</span>,
@@ -453,11 +447,6 @@ directly (e.g., <code><a href='https://rdrr.io/r/base/bquote.html'>bquote(log(.(
 locally. This will be used to copy across any dependent variables.
 For example, if your expression is <code><a href='https://rdrr.io/r/base/sum.html'>sum(1 + a)</a></code>, we will also send
 the value of <code>a</code> to the worker along with the expression.</p></dd>
-
-<dt><code>key_complete</code></dt><dd><p>The name of a Redis key to write to once the
-task is complete. You can use this in conjunction with something
-like <code>BLPOP</code> to wait until a task is complete without a busy (sleep)
-loop.</p></dd>
 
 <dt><code>queue</code></dt><dd><p>The queue to add the task to; if not specified the
 "default" queue (which all workers listen to) will be
@@ -500,7 +489,7 @@ equivalent to using <code>$enqueue()</code> over each element in the list.</p><h
   task_timeout <span class='op'>=</span> <span class='cn'>NULL</span>,
   depends_on <span class='op'>=</span> <span class='cn'>NULL</span>,
   collect_timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
-  time_poll <span class='op'>=</span> <span class='cn'>NULL</span>,
+  time_poll <span class='op'>=</span> <span class='fl'>1</span>,
   progress <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
 
@@ -541,7 +530,7 @@ error will be thrown if all tasks have not completed. If given  as
 using <code>bulk_wait</code></p></dd>
 
 <dt><code>time_poll</code></dt><dd><p>Optional time with which to "poll" for
-completion.</p></dd>
+completion (default is 1s, see <code>$task_wait()</code> for details)</p></dd>
 
 <dt><code>progress</code></dt><dd><p>Optional logical indicating if a progress bar
 should be displayed. If <code>NULL</code> we fall back on the value of the
@@ -567,7 +556,7 @@ be copied over rather than using their names if possible.</p><h4 class='hasAncho
   task_timeout <span class='op'>=</span> <span class='cn'>NULL</span>,
   depends_on <span class='op'>=</span> <span class='cn'>NULL</span>,
   collect_timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
-  time_poll <span class='op'>=</span> <span class='cn'>NULL</span>,
+  time_poll <span class='op'>=</span> <span class='fl'>1</span>,
   progress <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
 
@@ -608,7 +597,7 @@ error will be thrown if all tasks have not completed. If given  as
 using <code>bulk_wait</code></p></dd>
 
 <dt><code>time_poll</code></dt><dd><p>Optional time with which to "poll" for
-completion.</p></dd>
+completion (default is 1s, see <code>$task_wait()</code> for details)</p></dd>
 
 <dt><code>progress</code></dt><dd><p>Optional logical indicating if a progress bar
 should be displayed. If <code>NULL</code> we fall back on the value of the
@@ -635,7 +624,7 @@ should feel intuitive.</p><h4 class='hasAnchor' id='arguments'><a class='anchor'
   task_timeout <span class='op'>=</span> <span class='cn'>NULL</span>,
   depends_on <span class='op'>=</span> <span class='cn'>NULL</span>,
   collect_timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
-  time_poll <span class='op'>=</span> <span class='cn'>NULL</span>,
+  time_poll <span class='op'>=</span> <span class='fl'>1</span>,
   progress <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
 
@@ -678,7 +667,7 @@ error will be thrown if all tasks have not completed. If given  as
 using <code>bulk_wait</code></p></dd>
 
 <dt><code>time_poll</code></dt><dd><p>Optional time with which to "poll" for
-completion.</p></dd>
+completion (default is 1s, see <code>$task_wait()</code> for details)</p></dd>
 
 <dt><code>progress</code></dt><dd><p>Optional logical indicating if a progress bar
 should be displayed. If <code>NULL</code> we fall back on the value of the
@@ -704,7 +693,7 @@ be copied over rather than using their names if possible.</p><h4 class='hasAncho
   task_timeout <span class='op'>=</span> <span class='cn'>NULL</span>,
   depends_on <span class='op'>=</span> <span class='cn'>NULL</span>,
   collect_timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
-  time_poll <span class='op'>=</span> <span class='cn'>NULL</span>,
+  time_poll <span class='op'>=</span> <span class='fl'>1</span>,
   progress <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
 
@@ -747,7 +736,7 @@ error will be thrown if all tasks have not completed. If given  as
 using <code>bulk_wait</code></p></dd>
 
 <dt><code>time_poll</code></dt><dd><p>Optional time with which to "poll" for
-completion.</p></dd>
+completion (default is 1s, see <code>$task_wait()</code> for details)</p></dd>
 
 <dt><code>progress</code></dt><dd><p>Optional logical indicating if a progress bar
 should be displayed. If <code>NULL</code> we fall back on the value of the
@@ -758,7 +747,7 @@ progress bar if in an interactive session.</p></dd>
 <p><hr>
 <a id="method-bulk_wait"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>bulk_wait()</code></h3>
 <p>Wait for a group of tasks</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>rrq_controller_</span><span class='op'>$</span><span class='fu'>bulk_wait</span><span class='op'>(</span><span class='va'>x</span>, timeout <span class='op'>=</span> <span class='cn'>Inf</span>, time_poll <span class='op'>=</span> <span class='cn'>NULL</span>, progress <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></pre><p></div></p>
+<p><div class="r"></p><pre><span class='va'>rrq_controller_</span><span class='op'>$</span><span class='fu'>bulk_wait</span><span class='op'>(</span><span class='va'>x</span>, timeout <span class='op'>=</span> <span class='cn'>Inf</span>, time_poll <span class='op'>=</span> <span class='fl'>1</span>, progress <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
 <p><div class="arguments"></p><dl>
@@ -768,7 +757,7 @@ progress bar if in an interactive session.</p></dd>
 error will be thrown if the task has not completed.</p></dd>
 
 <dt><code>time_poll</code></dt><dd><p>Optional time with which to "poll" for
-completion.</p></dd>
+completion (default is 1s, see <code>$task_wait()</code> for details)</p></dd>
 
 <dt><code>progress</code></dt><dd><p>Optional logical indicating if a progress bar
 should be displayed. If <code>NULL</code> we fall back on the value of the
@@ -900,9 +889,8 @@ efficient way of doing this for a group of tasks.</p><h4 class='hasAnchor' id='a
 <p><div class="r"></p><pre><span class='va'>rrq_controller_</span><span class='op'>$</span><span class='fu'>task_wait</span><span class='op'>(</span>
   <span class='va'>task_id</span>,
   timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
-  time_poll <span class='op'>=</span> <span class='cn'>NULL</span>,
-  progress <span class='op'>=</span> <span class='cn'>NULL</span>,
-  key_complete <span class='op'>=</span> <span class='cn'>NULL</span>
+  time_poll <span class='op'>=</span> <span class='fl'>1</span>,
+  progress <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
@@ -912,33 +900,21 @@ efficient way of doing this for a group of tasks.</p><h4 class='hasAnchor' id='a
 <dt><code>timeout</code></dt><dd><p>Optional timeout, in seconds, after which an
 error will be thrown if the task has not completed.</p></dd>
 
-<dt><code>time_poll</code></dt><dd><p>Optional time with which to "poll" for
-completion. The default and behaviour depend on <code>key_complete</code> -
-see the details section.</p></dd>
+<dt><code>time_poll</code></dt><dd><p>Optional time with which to "poll" for completion.
+By default this will be 1 second; this is the time that each
+request for a completed task may block for (however, if the task
+is finished before this, the actual time waited for will be less).
+Increasing this will reduce the responsiveness of your R session
+to interrupting, but will cause slightly less network load.
+Values less than 1s are not currently supported as this requires
+a very recent Redis server.</p></dd>
 
 <dt><code>progress</code></dt><dd><p>Optional logical indicating if a progress bar
 should be displayed. If <code>NULL</code> we fall back on the value of the
 global option <code>rrq.progress</code>, and if that is unset display a
 progress bar if in an interactive session.</p></dd>
 
-<dt><code>key_complete</code></dt><dd><p>Optional key used when <code>enqueing</code> the tasks
-that will be written to on completion.</p></dd>
-
 </dl><p></div></p>
-<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
-<p>The polling behaviour depends on <code>key_complete</code>. If
-<code>key_complete</code> is <code>NULL</code> then we use a busy-loop, sleeping for
-<code>time_poll</code> seconds between polls of Redis. As such, the smaller
-the <code>time_poll</code> the faster you will get your result, as it may
-be delayed by up to <code>time_poll</code>, but the heavier the network and
-Redis load (the default is 0.05s). Alternatively, if
-<code>key_complete</code> is given then your task will be returned as soon
-as it is written into Redis, and <code>time_poll</code> is the time between
-subsequent calls to the Redis function that enables
-this. Shorter values of <code>time_poll</code> then make R more responsive
-to being interrupted and longer values reduce network load (the
-default is 1s)</p>
-
 <p><hr>
 <a id="method-tasks_wait"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>tasks_wait()</code></h3>
 <p>Poll for a group of tasks to complete, returning the
@@ -947,9 +923,8 @@ this is roughly equivalent to <code>tasks_result</code>.</p><h4 class='hasAnchor
 <p><div class="r"></p><pre><span class='va'>rrq_controller_</span><span class='op'>$</span><span class='fu'>tasks_wait</span><span class='op'>(</span>
   <span class='va'>task_ids</span>,
   timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
-  time_poll <span class='op'>=</span> <span class='cn'>NULL</span>,
-  progress <span class='op'>=</span> <span class='cn'>NULL</span>,
-  key_complete <span class='op'>=</span> <span class='cn'>NULL</span>
+  time_poll <span class='op'>=</span> <span class='fl'>1</span>,
+  progress <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
@@ -960,17 +935,12 @@ this is roughly equivalent to <code>tasks_result</code>.</p><h4 class='hasAnchor
 error will be thrown if the task has not completed.</p></dd>
 
 <dt><code>time_poll</code></dt><dd><p>Optional time with which to "poll" for
-completion. The default and behaviour depend on <code>key_complete</code> -
-see the details section of <code>$task_wait</code></p></dd>
+completion (default is 1s, see <code>$task_wait()</code> for details)</p></dd>
 
 <dt><code>progress</code></dt><dd><p>Optional logical indicating if a progress bar
 should be displayed. If <code>NULL</code> we fall back on the value of the
 global option <code>rrq.progress</code>, and if that is unset display a
 progress bar if in an interactive session.</p></dd>
-
-<dt><code>key_complete</code></dt><dd><p>Optional key used when <code>enqueing</code> the tasks
-that will be written to on completion. If used, then all tasks
-must share the same completion key.</p></dd>
 
 </dl><p></div></p>
 <p><hr>
