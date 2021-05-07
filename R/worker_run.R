@@ -141,6 +141,7 @@ worker_run_task_cleanup <- function(worker, status, value) {
     redis$HSET(keys$task_status,    task_id,  status),
     redis$HSET(keys$worker_status,  name,     WORKER_IDLE),
     redis$HDEL(keys$worker_task,    name),
+    redis$RPUSH(rrq_key_task_complete(keys$queue_id, task_id), task_id),
     if (!is.null(key_complete)) {
       redis$RPUSH(key_complete, task_id)
     },
