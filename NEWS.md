@@ -1,3 +1,7 @@
+# rrq 0.3.1
+
+* Direct control over environment export for `$enqueue()` with new argument `export` (mrc-2369)
+
 # rrq 0.2.19
 
 * Add new `enqueue_bulk` method (previously deleted in 0.2.0) (mrc-2261)

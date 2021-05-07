@@ -273,7 +273,8 @@ Queue an expression
   separate_process = FALSE,
   timeout = NULL,
   at_front = FALSE,
-  depends_on = NULL
+  depends_on = NULL,
+  export = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -318,6 +319,17 @@ completed before this job can be run. Once all dependent tasks
 have been successfully run, this task will get added to the
 queue. If the dependent task fails then this task will be
 removed from the queue.}
+
+\item{\code{export}}{Optionally a list of variables to export for the
+calculation. If given then no automatic analysis of the
+expression is done. It should be either a named list (name
+being the variable name, value being the value) or a
+character vector of variables that can be found immediately
+within \code{envir}. Use this where you have already done analysis
+of the expression (e.g., with the future package / globals)
+or where you want to avoid moving large objects through Redis
+that will be available on the remote workers due to how you
+have configured your worker environment.}
 }
 \if{html}{\out{</div>}}
 }
@@ -336,7 +348,8 @@ Queue an expression
   separate_process = FALSE,
   timeout = NULL,
   at_front = FALSE,
-  depends_on = NULL
+  depends_on = NULL,
+  export = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -378,6 +391,9 @@ completed before this job can be run. Once all dependent tasks
 have been successfully run, this task will get added to the
 queue. If the dependent task fails then this task will be
 removed from the queue.}
+
+\item{\code{export}}{Optionally a list of variables to export for the
+calculation. See \verb{$enqueue} for details.}
 }
 \if{html}{\out{</div>}}
 }
