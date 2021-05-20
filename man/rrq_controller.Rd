@@ -1245,7 +1245,7 @@ Stop workers.
   worker_ids = NULL,
   type = "message",
   timeout = 0,
-  time_poll = 1,
+  time_poll = 0.05,
   progress = NULL
 )}\if{html}{\out{</div>}}
 }
@@ -1500,7 +1500,7 @@ message has been responded to.
   named = TRUE,
   delete = FALSE,
   timeout = 0,
-  time_poll = 1,
+  time_poll = 0.05,
   progress = NULL
 )}\if{html}{\out{</div>}}
 }
@@ -1570,7 +1570,7 @@ This is a helper function around \code{message_send} and
   named = TRUE,
   delete = TRUE,
   timeout = 600,
-  time_poll = 1,
+  time_poll = 0.05,
   progress = NULL
 )}\if{html}{\out{</div>}}
 }
