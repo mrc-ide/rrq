@@ -12,6 +12,7 @@ Imports:
     R6,
     docopt,
     ids,
+    openssl,
     progress,
     redux (>= 1.0.0)
 Suggests:
