@@ -89,9 +89,7 @@ before saving into Redis}
 \item{\code{config}}{Configuration parameters passed through to
 \code{redux::redis_config}.  Provide as either a named list or a
 \code{redis_config} object.  This allows host, port, password,
-db, etc all to be set.  Socket connections (i.e., using
-\code{path} to access Redis over a socket) are not currently
-supported.}
+db, etc all to be set.}
 
 \item{\code{start}}{Should the heartbeat be started immediately?}
 

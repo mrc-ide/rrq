@@ -161,3 +161,16 @@ test_that("prevent use of offload if disabled", {
   expect_error(s1$mget(h), "offload is not supported")
   expect_error(s1$drop(t), "offload is not supported")
 })
+
+
+test_that("set multiple tags at once", {
+  con <- redux::hiredis()
+  prefix <- ids::random_id(1, 4)
+
+  s <- object_store$new(con, prefix)
+
+  t <- ids::random_id(2)
+  h <- s$set(1, t)
+  expect_setequal(s$tags(), t)
+  expect_equal(s$list(), h)
+})

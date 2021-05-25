@@ -226,6 +226,7 @@ long as they share a common filesystem.
 \itemize{
 \item \href{#method-new}{\code{object_store$new()}}
 \item \href{#method-list}{\code{object_store$list()}}
+\item \href{#method-tags}{\code{object_store$tags()}}
 \item \href{#method-get}{\code{object_store$get()}}
 \item \href{#method-mget}{\code{object_store$mget()}}
 \item \href{#method-set}{\code{object_store$set()}}
@@ -274,6 +275,16 @@ an error will be thrown.}
 List all hashes of data known to this data store
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{object_store$list()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-tags"></a>}}
+\if{latex}{\out{\hypertarget{method-tags}{}}}
+\subsection{Method \code{tags()}}{
+List all tags known to this data store
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{object_store$tags()}\if{html}{\out{</div>}}
 }
 
 }

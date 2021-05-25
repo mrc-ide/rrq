@@ -114,6 +114,13 @@ object_store <- R6::R6Class(
         private$offload$list())
     },
 
+    ##' @description List all tags known to this data store
+    tags = function() {
+      pattern <- sprintf(private$keys$tag_hash, "*")
+      res <- redux::scan_find(private$con, pattern)
+      substr(res, nchar(pattern), nchar(res))
+    },
+
     ##' @description Get a single object by its hash
     ##'
     ##' @param hash a single hash to use
@@ -168,7 +175,6 @@ object_store <- R6::R6Class(
     ##' The same tag is used for all objects.
     mset = function(value, tag) {
       assert_is(value, "list")
-      assert_scalar_character(tag)
       if (length(value) == 0) {
         return(character(0))
       }
@@ -195,11 +201,11 @@ object_store <- R6::R6Class(
         cmd_loc <- redis$HMSET(keys$location, hash[i], loc)
       }
 
-      ## And associate data with a tag
-      cmd_tag <- redis$SADD(sprintf(keys$tag_hash, tag), hash)
+      ## And associate data with tag(s)
+      cmd_tag <- lapply(sprintf(keys$tag_hash, tag), redis$SADD, hash)
       cmd_hash <- lapply(sprintf(keys$hash_tag, hash), redis$SADD, tag)
 
-      cmds <- c(list(cmd_set, cmd_loc, cmd_tag), cmd_hash)
+      cmds <- c(list(cmd_set, cmd_loc), cmd_tag, cmd_hash)
       private$con$pipeline(.commands = cmds)
 
       hash

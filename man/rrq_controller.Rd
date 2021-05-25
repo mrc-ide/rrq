@@ -122,8 +122,6 @@ ans <- obj$lapply_(1:10, quote(log), base = quote(b))
 \item{\code{queue_id}}{The queue id used on creation}
 
 \item{\code{keys}}{Internally used keys}
-
-\item{\code{db}}{Internally used storr database}
 }
 \if{html}{\out{</div>}}
 }
@@ -691,7 +689,13 @@ progress bar if in an interactive session.}
 \subsection{Method \code{bulk_wait()}}{
 Wait for a group of tasks
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$bulk_wait(x, timeout = Inf, time_poll = 1, progress = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$bulk_wait(
+  x,
+  timeout = Inf,
+  time_poll = 1,
+  progress = NULL,
+  delete = TRUE
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -709,6 +713,10 @@ completion (default is 1s, see \verb{$task_wait()} for details)}
 should be displayed. If \code{NULL} we fall back on the value of the
 global option \code{rrq.progress}, and if that is unset display a
 progress bar if in an interactive session.}
+
+\item{\code{delete}}{Optional logical, indicating if the tasks
+should be deleted after collection. Typically this is \code{TRUE}
+to prevent build-up of lots of task information in Redis.}
 }
 \if{html}{\out{</div>}}
 }
