@@ -144,3 +144,13 @@ test_that("wait timeout errors informatively", {
   expect_gt(length(mockery::mock_args(callback)), 1)
   expect_equal(mockery::mock_args(callback)[[1]], list())
 })
+
+
+test_that("Hash large data", {
+  skip_on_cran() # slow, possibly problematic?
+  d <- raw(2^31)
+  h <- hash_data(d)
+  expect_equal(
+    h,
+    "a7c744c13cc101ed66c29f672f92455547889cc586ce6d44fe76ae824958ea51")
+})

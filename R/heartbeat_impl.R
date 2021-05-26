@@ -60,9 +60,7 @@ heartbeat <- R6::R6Class(
     ##' @param config Configuration parameters passed through to
     ##'   `redux::redis_config`.  Provide as either a named list or a
     ##'   `redis_config` object.  This allows host, port, password,
-    ##'   db, etc all to be set.  Socket connections (i.e., using
-    ##'   `path` to access Redis over a socket) are not currently
-    ##'   supported.
+    ##'   db, etc all to be set.
     ##'
     ##' @param start Should the heartbeat be started immediately?
     ##'

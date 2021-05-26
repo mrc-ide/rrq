@@ -162,3 +162,25 @@ wait_timeout <- function(explanation, timeout, keep_going,
     Sys.sleep(poll)
   }
 }
+
+
+hash_data <- function(data) {
+  if (length(data) >= 2^31) {
+    con <- rawConnection(data)
+    on.exit(close(con))
+    hash <- openssl::sha256(con)
+  } else {
+    hash <- openssl::sha256(data)
+  }
+  paste0(unclass(hash), collapse = "")
+}
+
+
+write_bin <- function(object, path) {
+  parent <- dirname(path)
+  dir.create(parent, FALSE, TRUE)
+  tmp <- tempfile(".rrq_object", parent)
+  on.exit(unlink(tmp))
+  writeBin(object, tmp)
+  file.rename(tmp, path)
+}
