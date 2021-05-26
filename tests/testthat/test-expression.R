@@ -141,7 +141,7 @@ test_that("can store special function values", {
   tag <- ids::random_id()
 
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
-  f <- function(a, b) f(a + b)
+  f <- function(a, b) a + b
   ## Can't compute the hash directly because we get a different one
   ## each time in a local environment due to the local environment.
   res <- expression_prepare(quote(.(a, b)), e, store, tag,
@@ -149,7 +149,7 @@ test_that("can store special function values", {
   expect_match(res$function_hash, "^[[:xdigit:]]+$")
   e2 <- expression_restore_locals(res, emptyenv(), store)
   expect_equal(sort(names(e2)), sort(c("a", "b", res$function_hash)))
-  expect_equal(e2[[res$function_hash]], f)
+  expect_equal(e2[[res$function_hash]](1, 2), 3)
   expect_equal(e2$a, 1)
   expect_equal(e2$b, 2)
 })
@@ -160,7 +160,7 @@ test_that("can restore function even with no variables", {
   on.exit(store$destroy())
 
   e <- emptyenv()
-  f <- function(a, b) f(a + b)
+  f <- function(a, b) a + b
   tag <- ids::random_id()
 
   res <- expression_prepare(quote(.(1, 2)), e, store, tag,
@@ -168,7 +168,7 @@ test_that("can restore function even with no variables", {
   expect_match(res$function_hash, "^[[:xdigit:]]+$")
   e2 <- expression_restore_locals(res, emptyenv(), store)
   expect_equal(names(e2), res$function_hash)
-  expect_equal(e2[[res$function_hash]], f)
+  expect_equal(e2[[res$function_hash]](1, 2), 3)
   expect_equal(deparse(res$expr[[1]]), res$function_hash)
 })
 
