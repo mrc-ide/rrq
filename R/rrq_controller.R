@@ -137,9 +137,6 @@ rrq_controller_ <- R6::R6Class(
     ##' @field keys Internally used keys
     keys = NULL,
 
-    ##' @field db Internally used storr database
-    db = NULL,
-
     ##' @description Constructor (called by `rrq_controller()`)
     ##' @param queue_id An identifier for the queue
     ##' @param con A redis connection
@@ -148,7 +145,8 @@ rrq_controller_ <- R6::R6Class(
       self$queue_id <- queue_id
       self$keys <- rrq_keys(self$queue_id)
       self$worker_config_save("localhost", overwrite = FALSE)
-      self$db <- rrq_db(self$con, self$keys)
+
+      private$store <- rrq_object_store(self$con, self$keys)
       private$scripts <- rrq_scripts_load(self$con)
       info <- object_to_bin(controller_info())
       rpush_max_length(self$con, self$keys$controller, info, 10)
@@ -300,9 +298,11 @@ rrq_controller_ <- R6::R6Class(
     enqueue_ = function(expr, envir = parent.frame(),
                         queue = NULL, separate_process = FALSE, timeout = NULL,
                         at_front = FALSE, depends_on = NULL, export = NULL) {
-      dat <- expression_prepare(expr, envir, self$db, export = export)
+      task_id <- ids::random_id()
       verify_dependencies_exist(self, depends_on)
-      task_submit(self$con, self$keys, dat, queue,
+      dat <- expression_prepare(expr, envir, private$store, task_id,
+                                export = export)
+      task_submit(self$con, self$keys, task_id, dat, queue,
                   separate_process, timeout, at_front, depends_on)
     },
 
@@ -421,7 +421,7 @@ rrq_controller_ <- R6::R6Class(
       if (is.null(dots)) {
         dots <- list(...)
       }
-      rrq_lapply(self$con, self$keys, self$db, x, fun, dots, envir, queue,
+      rrq_lapply(self$con, self$keys, private$store, x, fun, dots, envir, queue,
                  separate_process, task_timeout, depends_on,
                  collect_timeout, time_poll, progress)
     },
@@ -550,7 +550,7 @@ rrq_controller_ <- R6::R6Class(
       if (is.null(dots)) {
         dots <- list(...)
       }
-      rrq_enqueue_bulk(self$con, self$keys, self$db, x, fun, dots,
+      rrq_enqueue_bulk(self$con, self$keys, private$store, x, fun, dots,
                        envir, queue, separate_process, task_timeout, depends_on,
                        collect_timeout, time_poll, progress)
     },
@@ -569,9 +569,14 @@ rrq_controller_ <- R6::R6Class(
     ##'   should be displayed. If `NULL` we fall back on the value of the
     ##'   global option `rrq.progress`, and if that is unset display a
     ##'   progress bar if in an interactive session.
+    ##'
+    ##' @param delete Optional logical, indicating if the tasks
+    ##'   should be deleted after collection. Typically this is `TRUE`
+    ##'   to prevent build-up of lots of task information in Redis.
     bulk_wait = function(x, timeout = Inf, time_poll = 1,
-                         progress = NULL) {
-      rrq_bulk_wait(self$con, self$keys, x, timeout, time_poll, progress)
+                         progress = NULL, delete = TRUE) {
+      rrq_bulk_wait(self$con, self$keys, private$store, x, timeout,
+                    time_poll, progress, delete = TRUE)
     },
 
     ##' @description List ids of all tasks known to this rrq controller
@@ -724,7 +729,7 @@ rrq_controller_ <- R6::R6Class(
     ##'   are not running. Deleting running tasks is unlikely to result in
     ##'   desirable behaviour.
     task_delete = function(task_ids, check = TRUE) {
-      task_delete(self$con, self$keys, task_ids, check)
+      task_delete(self$con, self$keys, private$store, task_ids, check)
     },
 
     ##' @description Cancel a single task. If the task is `PENDING` it
@@ -744,7 +749,8 @@ rrq_controller_ <- R6::R6Class(
     ##' @return Nothing if successfully cancelled, otherwise throws an
     ##' error with task_id and status e.g. Task 123 is not running (MISSING)
     task_cancel = function(task_id, wait = TRUE, delete = TRUE) {
-      task_cancel(self$con, self$keys, private$scripts, task_id, wait, delete)
+      task_cancel(self$con, self$keys, private$store, private$scripts,
+                  task_id, wait, delete)
     },
 
     ##' @description Fetch internal data about a task from Redis
@@ -752,7 +758,7 @@ rrq_controller_ <- R6::R6Class(
     ##'
     ##' @param task_id The id of the task
     task_data = function(task_id) {
-      task_data(self$con, self$keys, self$db, task_id)
+      task_data(self$con, self$keys, private$store, task_id)
     },
 
     ##' @description Returns the number of tasks in the queue (waiting for
@@ -1106,7 +1112,8 @@ rrq_controller_ <- R6::R6Class(
   ),
 
   private = list(
-    scripts = NULL
+    scripts = NULL,
+    store = NULL
   ))
 
 task_status <- function(con, keys, task_ids) {
@@ -1154,14 +1161,14 @@ task_preceeding <- function(con, keys, task_id, queue) {
   queue_contents[seq_len(task_position - 1)]
 }
 
-task_submit <- function(con, keys, dat, queue,
+task_submit <- function(con, keys, task_id, dat, queue,
                         separate_process, timeout, at_front = FALSE,
                         depends_on = NULL) {
-  task_submit_n(con, keys, list(object_to_bin(dat)), NULL, queue,
+  task_submit_n(con, keys, task_id, list(object_to_bin(dat)), NULL, queue,
                 separate_process, timeout, at_front, depends_on)
 }
 
-task_delete <- function(con, keys, task_ids, check = TRUE) {
+task_delete <- function(con, keys, store, task_ids, check = TRUE) {
   if (check) {
     st <- from_redis_hash(con, keys$task_status, task_ids,
                           missing = TASK_MISSING)
@@ -1191,8 +1198,11 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
     lapply(dependency_keys, redis$DEL),
     lapply(dependent_keys, redis$DEL)
     ))
+
   queue <- list_to_character(con$HMGET(keys$task_queue, task_ids))
   queue_remove(con, keys, task_ids, queue)
+
+  store$drop(task_ids)
 
   ## We only want to cancel dependencies i.e. set status to IMPOSSIBLE when
   ## A. They are dependents of a task which is PENDING or DEFERRED AND
@@ -1217,7 +1227,7 @@ task_delete <- function(con, keys, task_ids, check = TRUE) {
   invisible()
 }
 
-task_cancel <- function(con, keys, scripts, task_id, wait = FALSE,
+task_cancel <- function(con, keys, store, scripts, task_id, wait = FALSE,
                         delete = TRUE) {
   ## There are several steps here, which will all be executed in one
   ## block which removes the possibility of race conditions:
@@ -1261,30 +1271,29 @@ task_cancel <- function(con, keys, scripts, task_id, wait = FALSE,
   }
 
   if (delete) {
-    task_delete(con, keys, task_id, FALSE)
+    task_delete(con, keys, store, task_id, FALSE)
   }
 
   invisible(NULL)
 }
 
 
-task_data <- function(con, keys, db, task_id) {
+task_data <- function(con, keys, store, task_id) {
   expr <- con$HGET(keys$task_expr, task_id)
   if (is.null(expr)) {
     stop(sprintf("Task '%s' not found", task_id))
   }
   task <- bin_to_object(expr)
-  data <- as.list(expression_restore_locals(task, emptyenv(), db))
+  data <- as.list(expression_restore_locals(task, emptyenv(), store))
   task$objects <- data[names(task$objects)]
   task
 }
 
 
-task_submit_n <- function(con, keys, dat, key_complete, queue,
+task_submit_n <- function(con, keys, task_ids, dat, key_complete, queue,
                           separate_process, timeout, at_front = FALSE,
                           depends_on = NULL) {
   n <- length(dat)
-  task_ids <- ids::random_id(n)
   queue <- queue %||% QUEUE_DEFAULT
   key_queue <- rrq_key_queue(keys$queue_id, queue)
 
@@ -1612,6 +1621,18 @@ tasks_wait <- function(con, keys, task_ids, timeout, time_poll,
 
 rrq_db <- function(con, keys) {
   redux::storr_redis_api(keys$db_prefix, con)
+}
+
+
+rrq_object_store <- function(con, keys) {
+  config <- rrq_configure_read(con, keys)
+  if (is.null(config$offload_path)) {
+    offload <- object_store_offload_null$new()
+  } else {
+    offload <- object_store_offload_disk$new(config$offload_path)
+  }
+  object_store$new(con, keys$object_store,
+                   config$store_max_size, offload)
 }
 
 

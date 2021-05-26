@@ -18,7 +18,7 @@ worker_run_task_result <- function(result) {
 
 
 worker_run_task_local <- function(task, worker) {
-  e <- expression_restore_locals(task, worker$envir, worker$db)
+  e <- expression_restore_locals(task, worker$envir, worker$store)
   result <- withCallingHandlers(
     expression_eval_safely(task$expr, e),
     progress = function(e)

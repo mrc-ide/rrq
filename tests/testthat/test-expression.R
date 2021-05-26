@@ -42,70 +42,93 @@ test_that("eval safely - collect warnings", {
 
 
 test_that("store expression", {
-  db <- storr::storr_environment()
+  store <- test_store()
+  on.exit(store$destroy())
+  tag <- ids::random_id()
+
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
-  res <- expression_prepare(quote(sin(1)), e, db)
+  res <- expression_prepare(quote(sin(1)), e, store, tag)
+
   expect_equal(res, list(expr = quote(sin(1))))
-  expect_equal(db$list(), character(0))
+  expect_equal(store$list(), character(0))
 })
 
 
 test_that("store locals", {
-  db <- storr::storr_environment()
-  e <- list2env(list(a = 1, b = 2), parent = baseenv())
-  res <- expression_prepare(quote(sin(a) + cos(b)), e, db)
+  store <- test_store()
+  on.exit(store$destroy())
+  tag <- ids::random_id()
 
-  h <- c(a = db$hash_object(1), b = db$hash_object(2))
+  e <- list2env(list(a = 1, b = 2), parent = baseenv())
+  res <- expression_prepare(quote(sin(a) + cos(b)), e, store, tag)
+
+  hash_object <- function(x) {
+    hash_data(object_to_bin(x))
+  }
+  h <- c(a = hash_object(1), b = hash_object(2))
+
   expect_equal(res$expr, quote(sin(a) + cos(b)))
   expect_equal(res$objects, h)
-  expect_equal(sort(db$list()), sort(unname(h)))
-  expect_equal(db$mget(h), list(1, 2))
+  expect_setequal(store$list(), h)
+  expect_equal(store$mget(h), list(1, 2))
 })
 
 
 test_that("skip analysis", {
-  db <- storr::storr_environment()
+  store <- test_store()
+  on.exit(store$destroy())
+  tag <- ids::random_id()
+
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
-  res <- expression_prepare(quote(sin(a) + cos(b)), e, db,
+  res <- expression_prepare(quote(sin(a) + cos(b)), e, store, tag,
                             export = character(0))
   expect_equal(res, list(expr = quote(sin(a) + cos(b))))
-  expect_equal(db$list(), character(0))
+  expect_equal(store$list(), character(0))
 })
 
 
 test_that("export variables", {
-  db <- storr::storr_environment()
+  store <- test_store()
+  on.exit(store$destroy())
+  tag <- ids::random_id()
+
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
-  res <- expression_prepare(quote(sin(a) + cos(b)), e, db,
+  res <- expression_prepare(quote(sin(a) + cos(b)), e, store, tag,
                             export = "a")
-  h <- db$hash_object(1)
+  h <- hash_data(object_to_bin(1))
   expect_equal(res$expr, quote(sin(a) + cos(b)))
   expect_equal(res$objects, c(a = h))
-  expect_equal(db$list(), h)
-  expect_equal(db$get(h), 1)
+  expect_equal(store$list(), h)
+  expect_equal(store$get(h), 1)
 })
 
 
 test_that("export variables", {
-  db <- storr::storr_environment()
+  store <- test_store()
+  on.exit(store$destroy())
+  tag <- ids::random_id()
+
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
-  res <- expression_prepare(quote(sin(a) + cos(b)), e, db,
+  res <- expression_prepare(quote(sin(a) + cos(b)), e, store, tag,
                             export = list(a = 10))
-  h <- db$hash_object(10)
+  h <- hash_data(object_to_bin(10))
   expect_equal(res$expr, quote(sin(a) + cos(b)))
   expect_equal(res$objects, c(a = h))
-  expect_equal(db$list(), h)
-  expect_equal(db$get(h), 10)
+  expect_equal(store$list(), h)
+  expect_equal(store$get(h), 10)
 })
 
 
 test_that("restore locals", {
-  e <- new.env()
-  db <- storr::storr_environment()
-  h1 <- db$set_by_value(1)
-  h2 <- db$set_by_value(2)
+  store <- test_store()
+  on.exit(store$destroy())
+  tag <- ids::random_id()
 
-  res <- expression_restore_locals(list(objects = c(a = h1)), e, db)
+  h1 <- store$set(1, tag)
+  h2 <- store$set(2, tag)
+
+  e <- new.env()
+  res <- expression_restore_locals(list(objects = c(a = h1)), e, store)
   expect_equal(ls(res), "a")
   expect_equal(res$a, 1)
   expect_identical(parent.env(res), e)
@@ -113,16 +136,18 @@ test_that("restore locals", {
 
 
 test_that("can store special function values", {
-  db <- storr::storr_environment()
+  store <- test_store()
+  on.exit(store$destroy())
+  tag <- ids::random_id()
+
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
   f <- function(a, b) f(a + b)
-  ## Can't compute the hash with db$hash_object because we get a
-  ## different one each time in a local environment due to the local
-  ## environment.
-  res <- expression_prepare(quote(.(a, b)), e, db,
+  ## Can't compute the hash directly because we get a different one
+  ## each time in a local environment due to the local environment.
+  res <- expression_prepare(quote(.(a, b)), e, store, tag,
                             function_value = f)
   expect_match(res$function_hash, "^[[:xdigit:]]+$")
-  e2 <- expression_restore_locals(res, emptyenv(), db)
+  e2 <- expression_restore_locals(res, emptyenv(), store)
   expect_equal(sort(names(e2)), sort(c("a", "b", res$function_hash)))
   expect_equal(e2[[res$function_hash]], f)
   expect_equal(e2$a, 1)
@@ -131,13 +156,17 @@ test_that("can store special function values", {
 
 
 test_that("can restore function even with no variables", {
-  db <- storr::storr_environment()
+  store <- test_store()
+  on.exit(store$destroy())
+
   e <- emptyenv()
   f <- function(a, b) f(a + b)
-  res <- expression_prepare(quote(.(1, 2)), e, db,
+  tag <- ids::random_id()
+
+  res <- expression_prepare(quote(.(1, 2)), e, store, tag,
                             function_value = f)
   expect_match(res$function_hash, "^[[:xdigit:]]+$")
-  e2 <- expression_restore_locals(res, emptyenv(), db)
+  e2 <- expression_restore_locals(res, emptyenv(), store)
   expect_equal(names(e2), res$function_hash)
   expect_equal(e2[[res$function_hash]], f)
   expect_equal(deparse(res$expr[[1]]), res$function_hash)
@@ -145,9 +174,12 @@ test_that("can restore function even with no variables", {
 
 
 test_that("require a call to prepre", {
-  db <- storr::storr_environment()
-  expect_error(expression_prepare(quote(a), emptyenv(), db),
+  store <- test_store()
+  on.exit(store$destroy())
+  tag <- ids::random_id()
+
+  expect_error(expression_prepare(quote(a), emptyenv(), store, tag),
                "Expected a call")
-  expect_error(expression_prepare(quote(1), emptyenv(), db),
+  expect_error(expression_prepare(quote(1), emptyenv(), store, tag),
                "Expected a call")
 })

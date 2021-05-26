@@ -59,7 +59,7 @@ rrq_worker_ <- R6::R6Class(
     queue = NULL,
     deferred_set = NULL,
     con = NULL,
-    db = NULL,
+    store = NULL,
     paused = FALSE,
     time_poll = NULL,
     timeout = NULL,
@@ -91,7 +91,7 @@ rrq_worker_ <- R6::R6Class(
         stop("Looks like this worker exists already...")
       }
 
-      self$db <- rrq_db(self$con, self$keys)
+      self$store <- rrq_object_store(self$con, self$keys)
       self$time_poll <- time_poll %||% 60
 
       self$load_envir()

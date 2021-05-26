@@ -97,7 +97,7 @@ test_that("NSE - use namespaced function with lazy dots", {
   dat <- bin_to_object(obj$con$HGET(obj$keys$task_expr, grp$task_ids[[1]]))
   expect_equal(dat,
                list(expr = quote(ids::adjective_animal(1L, style = mystyle)),
-                    objects = c(mystyle = obj$db$hash_object(mystyle))))
+                    objects = c(mystyle = hash_data(object_to_bin(mystyle)))))
 
   w$loop(immediate = TRUE)
   res <- obj$bulk_wait(grp)
@@ -235,4 +235,27 @@ test_that("bulk tasks can be queued with dependency", {
   obj$task_wait(t3, 2)
   expect_equivalent(obj$task_status(t3), "COMPLETE")
   expect_equal(obj$queue_list(), character(0))
+})
+
+
+test_that("Can offload storage for bulk tasks", {
+  name <- sprintf("rrq:%s", ids::random_id())
+
+  path <- tempfile()
+  rrq_configure(name, store_max_size = 100, offload_path = path)
+
+  obj <- rrq_controller(name)
+  obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
+                         time_poll = 1, overwrite = TRUE)
+
+  ## test_worker_spawn(obj)
+  a <- 10
+  b <- runif(20)
+  t <- obj$lapply(1:10, function(a, b) sum(b) / a, b, collect_timeout = 0)
+
+  w <- test_worker_blocking(obj)
+  w$loop(TRUE)
+
+  res <- obj$bulk_wait(t)
+  expect_equal(res, as.list(sum(b) / (1:10)))
 })

@@ -54,6 +54,12 @@ test_hiredis <- function() {
 }
 
 
+test_store <- function() {
+  con <- test_hiredis()
+  object_store$new(con, sprintf("rrq:test-store:%s", ids::random_id()))
+}
+
+
 test_rrq <- function(sources = NULL, root = tempfile()) {
   skip_if_no_redis()
   Sys.setenv(R_TESTS = "")
@@ -114,6 +120,11 @@ with_options <- function(opts, code) {
 
 skip_on_windows <- function() {
   testthat::skip_on_os("windows")
+}
+
+
+r6_private <- function(x) {
+  x[[".__enclos_env__"]]$private
 }
 
 

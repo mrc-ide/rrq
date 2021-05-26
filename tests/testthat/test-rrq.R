@@ -879,3 +879,36 @@ test_that("manual control over environment", {
   expect_length(obj$task_data(t)$objects, 1)
   expect_equal(obj$task_result(t), sqrt(10))
 })
+
+
+test_that("can offload storage", {
+  skip_if_no_redis()
+  name <- sprintf("rrq:%s", ids::random_id())
+
+  path <- tempfile()
+  rrq_configure(name, store_max_size = 100, offload_path = path)
+
+  obj <- rrq_controller(name)
+  a <- 10
+  b <- runif(20)
+  t <- obj$enqueue(sum(b) / a)
+
+  w <- test_worker_blocking(obj)
+  w$step(TRUE)
+
+  expect_equal(obj$task_result(t), sum(b) / a)
+
+  ## Did successfully offload data:
+  store <- r6_private(obj)$store
+  h <- store$list()
+  expect_length(h, 2)
+  expect_setequal(store$location(h), c("redis", "offload"))
+  expect_equal(store$tags(), t)
+  expect_length(dir(path), 1L)
+  expect_true(dir(path) %in% h)
+
+  obj$task_delete(t)
+
+  expect_equal(store$list(), character(0))
+  expect_equal(dir(path), character(0))
+})
