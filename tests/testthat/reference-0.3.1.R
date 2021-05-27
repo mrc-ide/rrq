@@ -20,17 +20,16 @@ grp <- rrq$lapply_(1:3, function(x) sqrt(x), collect_timeout = 0)
 value <- set_names(c(list(1 + 1, a / b), lapply(1:3, sqrt)),
                    c(t1, t2, grp$task_ids))
 
-bin_to_object(rrq$con$HGET(rrq$keys$task_expr, t1))
-bin_to_object(rrq$con$HGET(rrq$keys$task_expr, t2))
-bin_to_object(rrq$con$HGET(rrq$keys$task_expr, grp$task_ids[[1]]))
-
 w$loop(TRUE)
 
 keys <- redux::scan_find(rrq$con, paste0(rrq$queue_id, "*"))
-data <- list(queue_id = rrq$queue_id,
-             data = set_names(lapply(keys, rrq$con$DUMP), keys),
-             tasks = value)
 
+## We can't use DUMP here because that won't survive different
+## versions.
+data <- list(queue_id = rrq$queue_id,
+             data = set_names(lapply(keys, redis_dump, rrq$con), keys),
+             tasks = value)
 
 dir.create("migrate", FALSE, TRUE)
 saveRDS(data, "migrate/0.3.1.rds", version = 2)
+saveRDS(data, "~/Documents/src/rrq/tests/testthat/migrate/0.3.1.rds", version = 2)

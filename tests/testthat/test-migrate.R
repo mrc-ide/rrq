@@ -8,7 +8,8 @@ test_that("Can migrate storage", {
 
   ## Ensure that the db does not exist, then refresh
   redux::scan_del(con, paste0(dat$queue_id, ":*"))
-  invisible(Map(con$RESTORE, names(dat$data), 0, dat$data))
+
+  invisible(lapply(dat$data, redis_restore, con))
 
   expect_error(
     rrq_controller(dat$queue_id),
