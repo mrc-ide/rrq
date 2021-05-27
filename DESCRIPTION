@@ -16,7 +16,7 @@ Imports:
     progress,
     redux (>= 1.0.0)
 Suggests:
-    callr,
+    callr (>= 3.7.0),
     mockery,
     processx,
     storr,
