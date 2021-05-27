@@ -184,3 +184,10 @@ write_bin <- function(object, path) {
   writeBin(object, tmp)
   file.rename(tmp, path)
 }
+
+
+is_serialized_object <- function(x) {
+  is.raw(x) &&
+    length(x) >= 14 &&
+    identical(x[1:2], as.raw(c(0x42, 0x0a)))
+}

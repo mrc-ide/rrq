@@ -174,3 +174,32 @@ test_that("set multiple tags at once", {
   expect_setequal(s$tags(), t)
   expect_equal(s$list(), h)
 })
+
+
+test_that("skip serialisation", {
+  con <- redux::hiredis()
+  prefix <- ids::random_id(1, 4)
+  s <- object_store$new(con, prefix)
+  t <- ids::random_id(2)
+  x <- runif(10)
+  d <- object_to_bin(x)
+  h <- s$set(d, t, FALSE)
+  expect_equal(h, hash_data(d))
+  expect_equal(s$list(), h)
+  expect_equal(s$get(h), x)
+})
+
+
+test_that("skip serialisation detects invalid input:", {
+  con <- redux::hiredis()
+  prefix <- ids::random_id(1, 4)
+  s <- object_store$new(con, prefix)
+
+  t <- ids::random_id(2)
+
+  expect_error(s$set(1, t, FALSE), "All values must be raw vectors")
+  expect_error(s$mset(list(object_to_bin(1), 1), t, FALSE),
+               "All values must be raw vectors")
+  
+  expect_equal(s$list(), character(0))
+})
