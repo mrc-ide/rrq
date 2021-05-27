@@ -32,4 +32,3 @@ data <- list(queue_id = rrq$queue_id,
 
 dir.create("migrate", FALSE, TRUE)
 saveRDS(data, "migrate/0.3.1.rds", version = 2)
-saveRDS(data, "~/Documents/src/rrq/tests/testthat/migrate/0.3.1.rds", version = 2)
