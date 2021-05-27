@@ -5,14 +5,14 @@ test_that("Can set and retrieve a configuration", {
   name <- sprintf("rrq:%s", ids::random_id())
   config <- rrq_configure(name, store_max_size = 100)
   expect_equal(config, list(store_max_size = 100, offload_path = NULL))
-  expect_equal(rrq_configure_read(redux::hiredis(), rrq_keys_common(name)),
+  expect_equal(rrq_configure_read(test_hiredis(), rrq_keys_common(name)),
                config)
 })
 
 
 test_that("Reading default configuration sets it", {
   skip_if_no_redis()
-  con <- redux::hiredis()
+  con <- test_hiredis()
   name <- sprintf("rrq:%s", ids::random_id())
   keys <- rrq_keys_common(name)
   config <- rrq_configure_read(con, keys)
@@ -32,7 +32,7 @@ test_that("Can't set a conflicting configuration", {
   expect_error(
     rrq_configure(name, store_max_size = Inf, offload_path = tempfile()),
     "Can't set configuration for queue '.+' as it already exists")
-  expect_equal(rrq_configure_read(redux::hiredis(), rrq_keys_common(name)),
+  expect_equal(rrq_configure_read(test_hiredis(), rrq_keys_common(name)),
                config)
 })
 

@@ -1,7 +1,7 @@
 context("object_store")
 
 test_that("Fast noop operations behave as expected", {
-  con <- redux::hiredis()
+  con <- test_hiredis()
   prefix <- ids::random_id(1, 4)
   s <- object_store$new(con, prefix)
   on.exit(s$destroy())
@@ -15,7 +15,7 @@ test_that("Fast noop operations behave as expected", {
 
 
 test_that("Full redis-based storage", {
-  con <- redux::hiredis()
+  con <- test_hiredis()
   prefix <- ids::random_id(1, 4)
 
   s <- object_store$new(con, prefix)
@@ -57,7 +57,7 @@ test_that("Full redis-based storage", {
 
 
 test_that("Can offload storage", {
-  con <- redux::hiredis()
+  con <- test_hiredis()
   prefix <- ids::random_id(1, 4)
   path <- tempfile()
   offload <- object_store_offload_disk$new(path)
@@ -97,7 +97,7 @@ test_that("Can offload storage", {
 
 
 test_that("Drop multiple tags", {
-  con <- redux::hiredis()
+  con <- test_hiredis()
   prefix <- ids::random_id(1, 4)
   s <- object_store$new(con, prefix)
   t <- ids::random_id(2)
@@ -110,7 +110,7 @@ test_that("Drop multiple tags", {
 
 
 test_that("scalar helper functions return single values", {
-  con <- redux::hiredis()
+  con <- test_hiredis()
   prefix <- ids::random_id(1, 4)
   s <- object_store$new(con, prefix)
   on.exit(s$destroy())
@@ -124,7 +124,7 @@ test_that("scalar helper functions return single values", {
 
 
 test_that("destroying a store removes everything, including offload", {
-  con <- redux::hiredis()
+  con <- test_hiredis()
   prefix <- ids::random_id(1, 4)
   path <- tempfile()
   offload <- object_store_offload_disk$new(path)
@@ -142,7 +142,7 @@ test_that("destroying a store removes everything, including offload", {
 
 
 test_that("prevent use of offload if disabled", {
-  con <- redux::hiredis()
+  con <- test_hiredis()
   prefix <- ids::random_id(1, 4)
   path <- tempfile()
   offload <- object_store_offload_disk$new(path)
@@ -164,7 +164,7 @@ test_that("prevent use of offload if disabled", {
 
 
 test_that("set multiple tags at once", {
-  con <- redux::hiredis()
+  con <- test_hiredis()
   prefix <- ids::random_id(1, 4)
 
   s <- object_store$new(con, prefix)
@@ -177,7 +177,7 @@ test_that("set multiple tags at once", {
 
 
 test_that("skip serialisation", {
-  con <- redux::hiredis()
+  con <- test_hiredis()
   prefix <- ids::random_id(1, 4)
   s <- object_store$new(con, prefix)
   t <- ids::random_id(2)
@@ -191,7 +191,7 @@ test_that("skip serialisation", {
 
 
 test_that("skip serialisation detects invalid input:", {
-  con <- redux::hiredis()
+  con <- test_hiredis()
   prefix <- ids::random_id(1, 4)
   s <- object_store$new(con, prefix)
 

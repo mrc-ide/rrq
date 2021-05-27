@@ -7,6 +7,7 @@ has_internet <- function() {
 }
 
 skip_if_no_internet <- function() {
+  skip_on_cran()
   if (has_internet()) {
     return()
   }
@@ -14,6 +15,7 @@ skip_if_no_internet <- function() {
 }
 
 skip_if_no_redis <- function() {
+  skip_on_cran()
   tryCatch(
     redux::hiredis()$PING(),
     error = function(e) testthat::skip("redis not available"))
