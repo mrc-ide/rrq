@@ -82,6 +82,8 @@ rrq_worker_ <- R6::R6Class(
       self$keys <- rrq_keys(queue_id, self$name)
       self$verbose <- verbose
 
+      rrq_migrate_check(self$con, self$keys, TRUE)
+
       queue <- worker_queue(queue)
       self$queue <- rrq_key_queue(queue_id, queue)
       self$deferred_set <- self$keys$deferred_set

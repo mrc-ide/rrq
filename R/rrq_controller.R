@@ -146,6 +146,8 @@ rrq_controller_ <- R6::R6Class(
       self$keys <- rrq_keys(self$queue_id)
       self$worker_config_save("localhost", overwrite = FALSE)
 
+      rrq_migrate_check(self$con, self$keys, TRUE)
+
       private$store <- rrq_object_store(self$con, self$keys)
       private$scripts <- rrq_scripts_load(self$con)
       info <- object_to_bin(controller_info())
