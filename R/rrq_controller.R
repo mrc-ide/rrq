@@ -668,7 +668,7 @@ rrq_controller_ <- R6::R6Class(
     ##' @param task_ids A vector of task ids for which the task result
     ##' is wanted.
     tasks_result = function(task_ids) {
-      task_results(self$con, self$keys, task_ids)
+      task_results(self$con, self$keys, private$store, task_ids)
     },
 
     ##' @description Poll for a task to complete, returning the result
@@ -718,7 +718,8 @@ rrq_controller_ <- R6::R6Class(
     ##'   progress bar if in an interactive session.
     tasks_wait = function(task_ids, timeout = Inf, time_poll = 1,
                           progress = NULL) {
-      tasks_wait(self$con, self$keys, task_ids, timeout, time_poll, progress)
+      tasks_wait(self$con, self$keys, private$store, task_ids,
+                 timeout, time_poll, progress)
     },
 
     ##' @description Delete one or more tasks
@@ -1370,13 +1371,13 @@ task_submit_n <- function(con, keys, task_ids, dat, key_complete, queue,
 }
 
 
-task_results <- function(con, keys, task_ids) {
-  res <- from_redis_hash(con, keys$task_result, task_ids, identity, NULL)
-  err <- lengths(res) == 0L
+task_results <- function(con, keys, store, task_ids) {
+  res <- from_redis_hash(con, keys$task_result, task_ids)
+  err <- is.na(res)
   if (any(err)) {
     stop("Missing some results")
   }
-  lapply(res, bin_to_object)
+  set_names(store$mget(res), task_ids)
 }
 
 worker_len <- function(con, keys) {
@@ -1579,7 +1580,7 @@ mean.worker_load <- function(x, time = c(1, 5, 15, Inf), ...) {
 }
 
 
-tasks_wait <- function(con, keys, task_ids, timeout, time_poll,
+tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
                        progress = NULL, key_complete = NULL) {
   ## This can be relaxed in recent Redis >= 6.0.0 as we then interpret
   ## time_poll as a double. To do this efficiently we'll want to get
@@ -1615,12 +1616,7 @@ tasks_wait <- function(con, keys, task_ids, timeout, time_poll,
   }
 
   general_poll(fetch, 0, timeout, "tasks", TRUE, progress)
-  task_results(con, keys, task_ids)
-}
-
-
-rrq_db <- function(con, keys) {
-  redux::storr_redis_api(keys$db_prefix, con)
+  task_results(con, keys, store, task_ids)
 }
 
 

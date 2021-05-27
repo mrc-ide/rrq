@@ -127,8 +127,8 @@ rrq_bulk_prepare_call_x <- function(x) {
 rrq_bulk_wait <- function(con, keys, store, dat, timeout, time_poll, progress,
                           delete = TRUE) {
   assert_is(dat, "rrq_bulk")
-  ret <- tasks_wait(con, keys, dat$task_ids, timeout, time_poll, progress,
-                    dat$key_complete)
+  ret <- tasks_wait(con, keys, store, dat$task_ids, timeout,
+                    time_poll, progress, dat$key_complete)
   if (delete) {
     task_delete(con, keys, store, dat$task_ids, FALSE)
   }
