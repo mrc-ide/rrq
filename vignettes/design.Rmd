@@ -53,3 +53,4 @@ At the other end of the scale, HPC systems with their schedulers can avoid all t
 * Supports optionally running each task in a separate process, allowing for strong isolation between tasks as well as per-task timeouts and cancellability
 * Allows rich querying of task status and progress and worker history
 * Exposes both low-level primatives for working with individual tasks as well as higher level interfaces that mimic functions like `lapply`
+
