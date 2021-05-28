@@ -5,7 +5,7 @@ test_that("basic use", {
   w <- test_worker_blocking(obj)
   t <- obj$enqueue(sin(1))
   w$poll(TRUE)
-  worker_run_task_start(w, t)
+  worker_run_task_start(w, r6_private(w), t)
 
   ## Status is NULL by default (actually missing in Redis)
   expect_null(obj$task_progress(t))
@@ -19,7 +19,7 @@ test_that("basic use", {
   expect_equal(obj$task_progress(t), "status2")
 
   ## Completing a task retains its status
-  worker_run_task(w, t)
+  worker_run_task(w, r6_private(w), t)
   expect_equal(obj$task_progress(t), "status2")
 
   ## Deleting a task removes its status

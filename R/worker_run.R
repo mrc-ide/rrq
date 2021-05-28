@@ -1,13 +1,13 @@
-worker_run_task <- function(worker, task_id) {
-  task <- worker_run_task_start(worker, task_id)
+worker_run_task <- function(worker, private, task_id) {
+  task <- worker_run_task_start(worker, private, task_id)
   if (task$separate_process) {
     res <- worker_run_task_separate_process(task, worker)
   } else {
-    res <- worker_run_task_local(task, worker)
+    res <- worker_run_task_local(task, worker, private)
   }
   task_status <- res$status
   worker_queue_dependencies(worker, task_id, task_status)
-  worker_run_task_cleanup(worker, task_status, res$value)
+  worker_run_task_cleanup(worker, private, task_status, res$value)
 }
 
 
@@ -17,8 +17,8 @@ worker_run_task_result <- function(result) {
 }
 
 
-worker_run_task_local <- function(task, worker) {
-  e <- expression_restore_locals(task, worker$envir, worker$store)
+worker_run_task_local <- function(task, worker, private) {
+  e <- expression_restore_locals(task, worker$envir, private$store)
   result <- withCallingHandlers(
     expression_eval_safely(task$expr, e),
     progress = function(e)
@@ -96,11 +96,14 @@ remote_run_task <- function(redis_config, queue_id, worker_id, task_id) {
   cache$active_worker <- worker
   worker$active_task <- list(task_id = task_id)
 
-  worker_run_task_local(task, worker)
+  ## A hack for now, later we'll move this into a method on the object?
+  private <- worker[[".__enclos_env__"]]$private
+
+  worker_run_task_local(task, worker, private)
 }
 
 
-worker_run_task_start <- function(worker, task_id) {
+worker_run_task_start <- function(worker, private, task_id) {
   keys <- worker$keys
   name <- worker$name
   dat <- worker$con$pipeline(
@@ -127,7 +130,7 @@ worker_run_task_start <- function(worker, task_id) {
 }
 
 
-worker_run_task_cleanup <- function(worker, status, value) {
+worker_run_task_cleanup <- function(worker, private, status, value) {
   task <- worker$active_task
   task_id <- task$task_id
   key_complete <- task$key_complete
@@ -136,7 +139,7 @@ worker_run_task_cleanup <- function(worker, status, value) {
   name <- worker$name
   log_status <- paste0("TASK_", status)
 
-  task_result <- worker$store$set(value, task_id)
+  task_result <- private$store$set(value, task_id)
 
   worker$con$pipeline(
     redis$HSET(keys$task_result,    task_id,  task_result),

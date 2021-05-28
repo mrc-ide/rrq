@@ -22,9 +22,6 @@ rrq_worker <- R6::R6Class(
     ##' @field con Redis connection
     con = NULL,
 
-    ##' @field store Object store
-    store = NULL,
-
     verbose = NULL,
 
     active_task = NULL,
@@ -94,7 +91,7 @@ rrq_worker <- R6::R6Class(
         stop("Looks like this worker exists already...")
       }
 
-      self$store <- rrq_object_store(self$con, self$keys)
+      private$store <- rrq_object_store(self$con, self$keys)
       private$time_poll <- time_poll %||% 60
 
       self$load_envir()
@@ -174,21 +171,6 @@ rrq_worker <- R6::R6Class(
       worker_loop(self, private, immediate)
     },
 
-    ##' @description Run a single task, given a task id
-    ##'
-    ##' @param task_id The id of the task to run
-    run_task = function(task_id) {
-      worker_run_task(self, task_id)
-    },
-
-    ##' @description Run a single message, given a message
-    ##'
-    ##' @param msg The message to run; this will be a raw vector
-    ##'   representing a serialised object.
-    run_message = function(msg) {
-      run_message(self, private, msg)
-    },
-
     ##' @description Create a nice string representation of the worker.
     ##'   Used automatically to print the worker by R6.
     format = function() {
@@ -231,6 +213,7 @@ rrq_worker <- R6::R6Class(
     timeout = NULL,
     ## Constants
     heartbeat = NULL,
+    store = NULL,
     time_poll = NULL
   ))
 
@@ -300,9 +283,9 @@ worker_step <- function(worker, private, immediate) {
 
   if (!is.null(task)) {
     if (task[[1L]] == keys$worker_message) {
-      worker$run_message(task[[2L]])
+      run_message(worker, private, task[[2]])
     } else {
-      worker$run_task(task[[2L]])
+      worker_run_task(worker, private, task[[2]])
       private$timer <- NULL
     }
   }

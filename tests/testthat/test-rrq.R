@@ -205,7 +205,7 @@ test_that("Can't delete running tasks", {
   w <- test_worker_blocking(obj)
   id <- obj$enqueue(sin(1))
   w$poll(TRUE)
-  worker_run_task_start(w, id)
+  worker_run_task_start(w, r6_private(w), id)
   expect_error(
     obj$task_delete(id),
     "Can't delete running tasks")
