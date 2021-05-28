@@ -49,13 +49,13 @@ test_that("log parse", {
 })
 
 
-test_that("worker catch gracefull stop", {
+test_that("worker catch graceful stop", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
 
-  worker_catch_stop(w)(rrq_worker_stop(w, "message"))
+  worker_catch_stop(w, r6_private(w))(rrq_worker_stop(w, "message"))
 
-  expect_false(w$loop_continue)
+  expect_false(r6_private(w)$loop_continue)
   log <- obj$worker_log_tail(w$name)
   expect_equal(log$command, "STOP")
   expect_equal(log$message, "OK (message)")
@@ -70,14 +70,14 @@ test_that("worker catch naked error", {
 
   res <- evaluate_promise(
     expect_error(
-      worker_catch_error(w)(simpleError("Some error")),
+      worker_catch_error(w, r6_private(w))(simpleError("Some error")),
       "Some error"))
 
   expect_match(res$messages,
                "This is an uncaught error in rrq, probably a bug",
                all = FALSE)
 
-  expect_false(w$loop_continue)
+  expect_false(r6_private(w)$loop_continue)
   log <- obj$worker_log_tail(w$name)
   expect_equal(log$command, "STOP")
   expect_equal(log$message, "ERROR")

@@ -7,19 +7,28 @@ rrq_worker <- R6::R6Class(
   "rrq_worker",
 
   public = list(
+    ##' @field name The name of the worker
     name = NULL,
+
+    ##' @field envir The environment that the worker uses for calculations
     envir = NULL,
+
+    ##' @field keys Internally used keys
     keys = NULL,
+
+    ##' @field queue The queue(s) that the worker is listening on
     queue = NULL,
-    deferred_set = NULL,
+
+    ##' @field con Redis connection
     con = NULL,
+
+    ##' @field store Object store
     store = NULL,
-    paused = FALSE,
+
     time_poll = NULL,
     timeout = NULL,
     timer = NULL,
     heartbeat = NULL,
-    loop_continue = NULL,
     verbose = NULL,
 
     loop_task = NULL,
@@ -84,7 +93,6 @@ rrq_worker <- R6::R6Class(
 
       queue <- worker_queue(queue)
       self$queue <- rrq_key_queue(queue_id, queue)
-      self$deferred_set <- self$keys$deferred_set
       self$log("QUEUE", queue)
 
       if (self$con$SISMEMBER(self$keys$worker_name, self$name) == 1L) {
@@ -98,7 +106,7 @@ rrq_worker <- R6::R6Class(
       if (register) {
         withCallingHandlers(
           worker_initialise(self, key_alive, timeout, heartbeat_period),
-          error = worker_catch_error(self))
+          error = worker_catch_error(self, private))
       }
     },
 
@@ -138,7 +146,7 @@ rrq_worker <- R6::R6Class(
     ##'   zero. Intended primarily for use in the tests.
     poll = function(immediate = FALSE) {
       keys <- self$keys
-      if (self$paused) {
+      if (private$paused) {
         keys <- keys$worker_message
       } else {
         keys <- c(keys$worker_message, self$queue)
@@ -167,7 +175,7 @@ rrq_worker <- R6::R6Class(
     ##'   do a blocking wait on the queue but instead reducing the timeout to
     ##'   zero. Intended primarily for use in the tests.
     loop = function(immediate = FALSE) {
-      worker_loop(self, immediate)
+      worker_loop(self, private, immediate)
     },
 
     ##' @description Run a single task, given a task id
@@ -182,7 +190,7 @@ rrq_worker <- R6::R6Class(
     ##' @param msg The message to run; this will be a raw vector
     ##'   representing a serialised object.
     run_message = function(msg) {
-      run_message(self, msg)
+      run_message(self, private, msg)
     },
 
     ##' @description Create a nice string representation of the worker.
@@ -218,6 +226,11 @@ rrq_worker <- R6::R6Class(
       self$con$HSET(self$keys$worker_status, self$name, WORKER_EXITED)
       self$log("STOP", status)
     }
+  ),
+
+  private = list(
+    paused = FALSE,
+    loop_continue = FALSE
   ))
 
 
@@ -303,7 +316,7 @@ worker_step <- function(worker, immediate) {
 }
 
 
-worker_loop <- function(worker, immediate = FALSE) {
+worker_loop <- function(worker, private, immediate = FALSE) {
   cache$active_worker <- worker
   on.exit(cache$active_worker <- NULL)
 
@@ -312,12 +325,12 @@ worker_loop <- function(worker, immediate = FALSE) {
     message(paste0(worker$format(), collapse = "\n"))
   }
 
-  worker$loop_continue <- TRUE
-  while (worker$loop_continue) {
+  private$loop_continue <- TRUE
+  while (private$loop_continue) {
     tryCatch(
       worker$step(immediate),
-      rrq_worker_stop = worker_catch_stop(worker),
-      error = worker_catch_error(worker))
+      rrq_worker_stop = worker_catch_stop(worker, private),
+      error = worker_catch_error(worker, private))
   }
   if (worker$verbose) {
     message(paste0(worker_banner("stop"), collapse = "\n"))
@@ -332,19 +345,21 @@ worker_banner <- function(name) {
 }
 
 
-worker_catch_stop <- function(worker) {
+worker_catch_stop <- function(worker, private) {
   force(worker)
+  force(private)
   function(e) {
-    worker$loop_continue <- FALSE
+    private$loop_continue <- FALSE
     worker$shutdown(sprintf("OK (%s)", e$message), TRUE)
   }
 }
 
 
-worker_catch_error <- function(worker) {
+worker_catch_error <- function(worker, private) {
   force(worker)
+  force(private)
   function(e) {
-    worker$loop_continue <- FALSE
+    private$loop_continue <- FALSE
     worker$shutdown("ERROR", FALSE)
     message("This is an uncaught error in rrq, probably a bug!")
     stop(e)

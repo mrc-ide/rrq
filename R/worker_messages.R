@@ -1,5 +1,5 @@
 ## Pulled out because otherwise they clutter the place up.
-run_message <- function(worker, msg) {
+run_message <- function(worker, private, msg) {
   ## TODO: these can be unserialised...
   content <- bin_to_object(msg)
   message_id <- content$id
@@ -15,8 +15,8 @@ run_message <- function(worker, msg) {
                 EVAL = run_message_eval(args),
                 STOP = run_message_stop(worker, message_id, args), # noreturn
                 INFO = run_message_info(worker),
-                PAUSE = run_message_pause(worker),
-                RESUME = run_message_resume(worker),
+                PAUSE = run_message_pause(worker, private),
+                RESUME = run_message_resume(worker, private),
                 REFRESH = run_message_refresh(worker),
                 TIMEOUT_SET = run_message_timeout_set(worker, args),
                 TIMEOUT_GET = run_message_timeout_get(worker),
@@ -61,19 +61,19 @@ run_message_refresh <- function(worker) {
   "OK"
 }
 
-run_message_pause <- function(worker) {
-  if (worker$paused) {
+run_message_pause <- function(worker, private) {
+  if (private$paused) {
     "NOOP"
   } else {
-    worker$paused <- TRUE
+    private$paused <- TRUE
     worker$con$HSET(worker$keys$worker_status, worker$name, WORKER_PAUSED)
     "OK"
   }
 }
 
-run_message_resume <- function(worker, args) {
-  if (worker$paused) {
-    worker$paused <- FALSE
+run_message_resume <- function(worker, private) {
+  if (private$paused) {
+    private$paused <- FALSE
     worker$con$HSET(worker$keys$worker_status, worker$name, WORKER_IDLE)
     "OK"
   } else {
