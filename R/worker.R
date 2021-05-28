@@ -25,10 +25,8 @@ rrq_worker <- R6::R6Class(
     ##' @field store Object store
     store = NULL,
 
-    heartbeat = NULL,
     verbose = NULL,
 
-    loop_task = NULL,
     active_task = NULL,
 
     ##' @description Constructor
@@ -111,7 +109,7 @@ rrq_worker <- R6::R6Class(
     ##' @description Return information about this worker, a list of
     ##'   key-value pairs.
     info = function() {
-      worker_info_collect(self)
+      worker_info_collect(self, private)
     },
 
     ##' @description Create a log entry. This will print a human readable
@@ -149,7 +147,7 @@ rrq_worker <- R6::R6Class(
       } else {
         keys <- c(keys$worker_message, self$queue)
       }
-      self$loop_task <- blpop(self$con, keys, private$time_poll, immediate)
+      blpop(self$con, keys, private$time_poll, immediate)
     },
 
     ##' @description Take a single "step". This consists of
@@ -214,10 +212,10 @@ rrq_worker <- R6::R6Class(
     ##' @param graceful Logical, indicating if we should request a
     ##'   graceful shutdown of the heartbeat, if running.
     shutdown = function(status = "OK", graceful = TRUE) {
-      if (!is.null(self$heartbeat)) {
+      if (!is.null(private$heartbeat)) {
         self$log("HEARTBEAT", "stopping")
         tryCatch(
-          self$heartbeat$stop(graceful),
+          private$heartbeat$stop(graceful),
           error = function(e) message("Could not stop heartbeat"))
       }
       self$con$SREM(self$keys$worker_name,   self$name)
@@ -232,11 +230,12 @@ rrq_worker <- R6::R6Class(
     timer = NULL,
     timeout = NULL,
     ## Constants
+    heartbeat = NULL,
     time_poll = NULL
   ))
 
 
-worker_info_collect <- function(worker) {
+worker_info_collect <- function(worker, private) {
   sys <- sessionInfo()
   redis_config <- worker$con$config()
   dat <- list(worker = worker$name,
@@ -250,7 +249,7 @@ worker_info_collect <- function(worker) {
               pid = process_id(),
               redis_host = redis_config$host,
               redis_port = redis_config$port)
-  if (!is.null(worker$heartbeat)) {
+  if (!is.null(private$heartbeat)) {
     dat$heartbeat_key <- worker$keys$worker_heartbeat
   }
   dat
@@ -262,8 +261,8 @@ worker_initialise <- function(worker, private, key_alive, timeout,
   con <- worker$con
   keys <- worker$keys
 
-  worker$heartbeat <- worker_heartbeat(con, keys, heartbeat_period,
-                                       worker$verbose)
+  private$heartbeat <- worker_heartbeat(con, keys, heartbeat_period,
+                                        worker$verbose)
 
   worker$con$pipeline(
     redis$SADD(keys$worker_name,   worker$name),
