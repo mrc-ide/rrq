@@ -16,10 +16,6 @@ but will sit and poll a queue for jobs.
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
 \item{\code{name}}{The name of the worker}
-
-\item{\code{keys}}{Internally used keys}
-
-\item{\code{con}}{Redis connection}
 }
 \if{html}{\out{</div>}}
 }
