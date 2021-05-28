@@ -18,8 +18,8 @@ run_message <- function(worker, private, msg) {
                 PAUSE = run_message_pause(worker, private),
                 RESUME = run_message_resume(worker, private),
                 REFRESH = run_message_refresh(worker),
-                TIMEOUT_SET = run_message_timeout_set(worker, args),
-                TIMEOUT_GET = run_message_timeout_get(worker),
+                TIMEOUT_SET = run_message_timeout_set(worker, private, args),
+                TIMEOUT_GET = run_message_timeout_get(worker, private),
                 run_message_unknown(cmd, args))
 
   message_respond(worker, message_id, cmd, res)
@@ -81,9 +81,9 @@ run_message_resume <- function(worker, private) {
   }
 }
 
-run_message_timeout_set <- function(worker, args) {
+run_message_timeout_set <- function(worker, private, args) {
   if (is.numeric(args) || is.null(args)) {
-    worker$timeout <- args
+    private$timeout <- args
     worker$timer_start()
     "OK"
   } else {
@@ -91,8 +91,8 @@ run_message_timeout_set <- function(worker, args) {
   }
 }
 
-run_message_timeout_get <- function(worker) {
-  if (is.null(worker$timeout)) {
+run_message_timeout_get <- function(worker, private) {
+  if (is.null(private$timeout)) {
     c(timeout = Inf, remaining = Inf)
   } else {
     ## NOTE: This is a slightly odd construction; it arises because
@@ -102,12 +102,12 @@ run_message_timeout_get <- function(worker) {
     ## through one BLPOP cycle.  So, if a TIMEOUT_GET message is
     ## issued _immediately_ after running a task then there will be
     ## no timer here.
-    if (is.null(worker$timer)) {
-      remaining <- worker$timeout
+    if (is.null(private$timer)) {
+      remaining <- private$timeout
     } else {
-      remaining <- worker$timer()
+      remaining <- private$timer()
     }
-    c(timeout = worker$timeout, remaining = remaining)
+    c(timeout = private$timeout, remaining = remaining)
   }
 }
 

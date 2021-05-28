@@ -25,9 +25,6 @@ rrq_worker <- R6::R6Class(
     ##' @field store Object store
     store = NULL,
 
-    time_poll = NULL,
-    timeout = NULL,
-    timer = NULL,
     heartbeat = NULL,
     verbose = NULL,
 
@@ -100,12 +97,13 @@ rrq_worker <- R6::R6Class(
       }
 
       self$store <- rrq_object_store(self$con, self$keys)
-      self$time_poll <- time_poll %||% 60
+      private$time_poll <- time_poll %||% 60
 
       self$load_envir()
       if (register) {
         withCallingHandlers(
-          worker_initialise(self, key_alive, timeout, heartbeat_period),
+          worker_initialise(self, private,
+                            key_alive, timeout, heartbeat_period),
           error = worker_catch_error(self, private))
       }
     },
@@ -151,7 +149,7 @@ rrq_worker <- R6::R6Class(
       } else {
         keys <- c(keys$worker_message, self$queue)
       }
-      self$loop_task <- blpop(self$con, keys, self$time_poll, immediate)
+      self$loop_task <- blpop(self$con, keys, private$time_poll, immediate)
     },
 
     ##' @description Take a single "step". This consists of
@@ -164,7 +162,7 @@ rrq_worker <- R6::R6Class(
     ##'   do a blocking wait on the queue but instead reducing the timeout to
     ##'   zero. Intended primarily for use in the tests.
     step = function(immediate = FALSE) {
-      worker_step(self, immediate)
+      worker_step(self, private, immediate)
     },
 
     ##' @description The main worker loop. Use this to set up the main
@@ -201,10 +199,10 @@ rrq_worker <- R6::R6Class(
 
     ##' @description Start the timer
     timer_start = function() {
-      if (is.null(self$timeout)) {
-        self$timer <- NULL
+      if (is.null(private$timeout)) {
+        private$timer <- NULL
       } else {
-        self$timer <- time_checker(self$timeout)
+        private$timer <- time_checker(private$timeout)
       }
     },
 
@@ -230,7 +228,11 @@ rrq_worker <- R6::R6Class(
 
   private = list(
     paused = FALSE,
-    loop_continue = FALSE
+    loop_continue = FALSE,
+    timer = NULL,
+    timeout = NULL,
+    ## Constants
+    time_poll = NULL
   ))
 
 
@@ -255,7 +257,8 @@ worker_info_collect <- function(worker) {
 }
 
 
-worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
+worker_initialise <- function(worker, private, key_alive, timeout,
+                              heartbeat_period) {
   con <- worker$con
   keys <- worker$keys
 
@@ -270,7 +273,7 @@ worker_initialise <- function(worker, key_alive, timeout, heartbeat_period) {
     redis$HSET(keys$worker_info,   worker$name, object_to_bin(worker$info())))
 
   if (!is.null(timeout)) {
-    run_message_timeout_set(worker, timeout)
+    run_message_timeout_set(worker, private, timeout)
   }
 
   worker$log("ALIVE")
@@ -292,7 +295,7 @@ rrq_worker_stop <- function(worker, message) {
 
 ## One step of a worker life cycle; i.e., the least we can
 ## interestingly do
-worker_step <- function(worker, immediate) {
+worker_step <- function(worker, private, immediate) {
   task <- worker$poll(immediate)
   keys <- worker$keys
 
@@ -301,15 +304,15 @@ worker_step <- function(worker, immediate) {
       worker$run_message(task[[2L]])
     } else {
       worker$run_task(task[[2L]])
-      worker$timer <- NULL
+      private$timer <- NULL
     }
   }
 
-  if (is.null(task) && !is.null(worker$timeout)) {
-    if (is.null(worker$timer)) {
+  if (is.null(task) && !is.null(private$timeout)) {
+    if (is.null(private$timer)) {
       worker$timer_start()
     }
-    if (worker$timer() <= 0L) {
+    if (private$timer() <= 0L) {
       stop(rrq_worker_stop(worker, "TIMEOUT"))
     }
   }

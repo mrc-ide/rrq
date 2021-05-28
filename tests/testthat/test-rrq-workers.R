@@ -103,14 +103,14 @@ test_that("Timer is recreated after task run", {
   w <- test_worker_blocking(obj)
   obj$message_send("TIMEOUT_SET", 10)
   w$step(TRUE)
-  expect_is(w$timer, "function")
+  expect_is(r6_private(w)$timer, "function")
 
   obj$enqueue(sin(1))
   w$step(TRUE)
-  expect_null(w$timer)
+  expect_null(r6_private(w)$timer)
 
   w$step(TRUE)
-  expect_is(w$timer, "function")
+  expect_is(r6_private(w)$timer, "function")
 })
 
 
