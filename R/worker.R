@@ -1,3 +1,47 @@
+##' Create a worker based on a named configuration. This is a wrapper
+##' around directly constructing a [`rrq::rrq_worker`]. Create new
+##' configurations by running `$worker_config_save` from the
+##' [`rrq::rrq_controller`] object.
+##'
+##' @title Create a worker
+##'
+##' @param queue_id The name of the queue
+##'
+##' @param worker_config Optional name of the configuration. The
+##'   default "localhost" configuration always exists.
+##'
+##' @param worker_name The name of the worker (if not given a random
+##'   name is used)
+##'
+##' @param key_alive Optional key to write to, indicating that the
+##'   worker is alive. This can be passed to
+##'   [`rrq::rrq_expect_worker`] so that a controlling process can
+##'   wait for workers to come up.
+##'
+##' @param con Redis configuration
+##'
+##' @return A [`rrq::rrq_worker`] object. If you want to "run" the
+##'   worker, you would want to use the `$loop()` method of this
+##'   object. Other methods are for advanced use.
+##'
+##' @export
+rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
+                                   worker_name = NULL, key_alive = NULL,
+                                   con = redux::hiredis()) {
+  keys <- rrq_keys(queue_id)
+  config <- worker_config_read(con, keys, worker_config)
+
+  rrq_worker$new(queue_id, con,
+                 key_alive = key_alive,
+                 worker_name = worker_name,
+                 queue = config$queue,
+                 time_poll = config$time_poll,
+                 timeout = config$timeout,
+                 heartbeat_period = config$heartbeat_period,
+                 verbose = config$verbose)
+}
+
+
 ##' A rrq queue worker.  These are not typically for interacting with
 ##' but will sit and poll a queue for jobs.
 ##'
