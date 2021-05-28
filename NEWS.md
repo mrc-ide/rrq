@@ -1,3 +1,7 @@
+# rrq 0.4.1
+
+* Expose `rrq::rrq_worker_from_config`, which is a simpler way of constructing worker objects. The worker object itself (`rrq::rrq_worker`) loses its helper constructor function and is documented (mrc-2297)
+
 # rrq 0.3.2
 
 * All tasks get a key that can be checked with a blocking wait (mrc-2392)
