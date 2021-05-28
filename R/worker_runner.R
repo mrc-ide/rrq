@@ -4,14 +4,14 @@ rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
   keys <- rrq_keys(queue_id)
   config <- worker_config_read(con, keys, worker_config)
 
-  rrq_worker_$new(con, queue_id,
-                  key_alive = key_alive,
-                  worker_name = worker_name,
-                  queue = config$queue,
-                  time_poll = config$time_poll,
-                  timeout = config$timeout,
-                  heartbeat_period = config$heartbeat_period,
-                  verbose = config$verbose)
+  rrq_worker$new(queue_id, con,
+                 key_alive = key_alive,
+                 worker_name = worker_name,
+                 queue = config$queue,
+                 time_poll = config$time_poll,
+                 timeout = config$timeout,
+                 heartbeat_period = config$heartbeat_period,
+                 verbose = config$verbose)
 }
 
 

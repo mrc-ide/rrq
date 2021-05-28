@@ -239,6 +239,7 @@ test_that("bulk tasks can be queued with dependency", {
 
 
 test_that("Can offload storage for bulk tasks", {
+  skip_if_no_redis()
   name <- sprintf("rrq:%s", ids::random_id())
 
   path <- tempfile()

@@ -87,8 +87,8 @@ worker_run_task_separate_process <- function(task, worker) {
 remote_run_task <- function(redis_config, queue_id, worker_id, task_id) {
   worker_name <- sprintf("%s_%s", worker_id, ids::random_id(bytes = 4))
   con <- redux::hiredis(config = redis_config)
-  worker <- rrq_worker_$new(con, queue_id, worker_name = worker_name,
-                            register = FALSE)
+  worker <- rrq_worker$new(queue_id, con, worker_name = worker_name,
+                           register = FALSE)
   task <- bin_to_object(con$HGET(worker$keys$task_expr, task_id))
 
   ## Ensures that the worker and task will be found by

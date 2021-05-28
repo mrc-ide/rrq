@@ -1,55 +1,9 @@
-##' A rrq queue worker.  These are not for interacting with but will
-##' sit and poll a queue for jobs.
+##' A rrq queue worker.  These are not typically for interacting with
+##' but will sit and poll a queue for jobs.
+##'
 ##' @title rrq queue worker
-##' @inheritParams rrq_controller
-##'
-##' @param queue_id Name of the queue to connect to.  This will be the
-##'   prefix to all the keys in the redis database
-##'
-##' @param key_alive Optional key that will be written once the
-##'   worker is alive.
-##'
-##' @param worker_name Optional worker name.  If omitted, a random
-##'   name will be created.
-##'
-##' @param time_poll Poll time.  Longer values here will reduce the
-##'   impact on the database but make workers less responsive to being
-##'   killed with an interrupt (control-C or Escape).  The default
-##'   should be good for most uses, but shorter values are used for
-##'   debugging.
-##'
-##' @param timeout Optional timeout to set for the worker.  This is
-##'   (roughly) equivalent to issuing a \code{TIMEOUT_SET} message
-##'   after initialising the worker, except that it's guaranteed to be
-##'   run by all workers.
-##'
-##' @param heartbeat_period Optional period for the heartbeat.  If
-##'   non-NULL then a heartbeat process will be started (using
-##'   [`rrq::heartbeat`]) which can be used to build fault
-##'   tolerant queues.
-##'
-##' @param verbose Logical, indicating if the worker should print
-##'   logging output to the screen.  Logging to screen has a small but
-##'   measurable performance cost, and if you will not collect system
-##'   logs from the worker then it is wasted time.  Logging to the
-##'   redis server is always enabled.
-##'
-##' @param queue Queues to listen on, listed in decreasing order of
-##'   priority. If not given, we listen on the "default" queue.
-##'
 ##' @export
-rrq_worker <- function(queue_id, con = redux::hiredis(), key_alive = NULL,
-                       worker_name = NULL, queue = NULL,
-                       time_poll = NULL, timeout = NULL,
-                       heartbeat_period = NULL, verbose = TRUE) {
-  w <- rrq_worker_$new(con, queue_id, key_alive, worker_name, queue,
-                       time_poll, timeout, heartbeat_period, verbose)
-  w$loop()
-  invisible()
-}
-
-
-rrq_worker_ <- R6::R6Class(
+rrq_worker <- R6::R6Class(
   "rrq_worker",
 
   public = list(
@@ -71,7 +25,51 @@ rrq_worker_ <- R6::R6Class(
     loop_task = NULL,
     active_task = NULL,
 
-    initialize = function(con, queue_id, key_alive = NULL, worker_name = NULL,
+    ##' @description Constructor
+    ##'
+    ##' @param queue_id Name of the queue to connect to.  This will be the
+    ##'   prefix to all the keys in the redis database
+    ##'
+    ##' @param con A redis connection
+    ##'
+    ##' @param key_alive Optional key that will be written once the
+    ##'   worker is alive.
+    ##'
+    ##' @param worker_name Optional worker name.  If omitted, a random
+    ##'   name will be created.
+    ##'
+    ##' @param time_poll Poll time.  Longer values here will reduce the
+    ##'   impact on the database but make workers less responsive to being
+    ##'   killed with an interrupt (control-C or Escape).  The default
+    ##'   should be good for most uses, but shorter values are used for
+    ##'   debugging.
+    ##'
+    ##' @param timeout Optional timeout to set for the worker.  This is
+    ##'   (roughly) equivalent to issuing a \code{TIMEOUT_SET} message
+    ##'   after initialising the worker, except that it's guaranteed to be
+    ##'   run by all workers.
+    ##'
+    ##' @param heartbeat_period Optional period for the heartbeat.  If
+    ##'   non-NULL then a heartbeat process will be started (using
+    ##'   [`rrq::heartbeat`]) which can be used to build fault
+    ##'   tolerant queues.
+    ##'
+    ##' @param verbose Logical, indicating if the worker should print
+    ##'   logging output to the screen.  Logging to screen has a small but
+    ##'   measurable performance cost, and if you will not collect system
+    ##'   logs from the worker then it is wasted time.  Logging to the
+    ##'   redis server is always enabled.
+    ##'
+    ##' @param queue Queues to listen on, listed in decreasing order of
+    ##'   priority. If not given, we listen on the "default" queue.
+    ##'
+    ##' @param register Logical, indicating if the worker should be
+    ##'   registered with the controller. Typically this is `TRUE`, but
+    ##'   set to `FALSE` if you need to impersonate a worker, or create a
+    ##'   temporary worker. This is passed as `FALSE` when running a task
+    ##'   in a separate process.
+    initialize = function(queue_id, con = redux::hiredis(),
+                          key_alive = NULL, worker_name = NULL,
                           queue = NULL, time_poll = NULL, timeout = NULL,
                           heartbeat_period = NULL, verbose = TRUE,
                           register = TRUE) {
@@ -104,14 +102,25 @@ rrq_worker_ <- R6::R6Class(
       }
     },
 
+    ##' @description Return information about this worker, a list of
+    ##'   key-value pairs.
     info = function() {
       worker_info_collect(self)
     },
 
+    ##' @description Create a log entry. This will print a human readable
+    ##'   format to screen and a parseable format to the redis database.
+    ##'
+    ##' @param label Scalar character, the title of the log entry
+    ##'
+    ##' @param value Character vector (or null) with log values
     log = function(label, value = NULL) {
       worker_log(self$con, self$keys, label, value, self$verbose)
     },
 
+    ##' @description Load the worker environment by creating a new
+    ##'   environment object and running the create hook (if configured).
+    ##'   See `$envir` on [`rrq::rrq_controller`] for details.
     load_envir = function() {
       self$log("ENVIR", "new")
       self$envir <- new.env(parent = .GlobalEnv)
@@ -122,6 +131,11 @@ rrq_worker_ <- R6::R6Class(
       }
     },
 
+    ##' @description Poll for work
+    ##'
+    ##' @param immediate Logical, indicating if we should *not*
+    ##'   do a blocking wait on the queue but instead reducing the timeout to
+    ##'   zero. Intended primarily for use in the tests.
     poll = function(immediate = FALSE) {
       keys <- self$keys
       if (self$paused) {
@@ -132,26 +146,52 @@ rrq_worker_ <- R6::R6Class(
       self$loop_task <- blpop(self$con, keys, self$time_poll, immediate)
     },
 
+    ##' @description Take a single "step". This consists of
+    ##'
+    ##' 1. Poll for work (`$poll()`)
+    ##' 2. If work found, run it (either a task or a message)
+    ##' 3. If work not found, check the timeout
+    ##'
+    ##' @param immediate Logical, indicating if we should *not*
+    ##'   do a blocking wait on the queue but instead reducing the timeout to
+    ##'   zero. Intended primarily for use in the tests.
     step = function(immediate = FALSE) {
       worker_step(self, immediate)
     },
 
+    ##' @description The main worker loop. Use this to set up the main
+    ##'  w orker event loop, which will continue until exiting (via a timeout
+    ##'  or message).
+    ##'
+    ##' @param immediate Logical, indicating if we should *not*
+    ##'   do a blocking wait on the queue but instead reducing the timeout to
+    ##'   zero. Intended primarily for use in the tests.
     loop = function(immediate = FALSE) {
       worker_loop(self, immediate)
     },
 
+    ##' @description Run a single task, given a task id
+    ##'
+    ##' @param task_id The id of the task to run
     run_task = function(task_id) {
       worker_run_task(self, task_id)
     },
 
+    ##' @description Run a single message, given a message
+    ##'
+    ##' @param msg The message to run; this will be a raw vector
+    ##'   representing a serialised object.
     run_message = function(msg) {
       run_message(self, msg)
     },
 
+    ##' @description Create a nice string representation of the worker.
+    ##'   Used automatically to print the worker by R6.
     format = function() {
       worker_format(self)
     },
 
+    ##' @description Start the timer
     timer_start = function() {
       if (is.null(self$timeout)) {
         self$timer <- NULL
@@ -160,6 +200,13 @@ rrq_worker_ <- R6::R6Class(
       }
     },
 
+    ##' @description Stop the worker
+    ##'
+    ##' @param status the worker status; typically be one of `OK` or `ERROR`
+    ##'   but can be any string
+    ##'
+    ##' @param graceful Logical, indicating if we should request a
+    ##'   graceful shutdown of the heartbeat, if running.
     shutdown = function(status = "OK", graceful = TRUE) {
       if (!is.null(self$heartbeat)) {
         self$log("HEARTBEAT", "stopping")
