@@ -243,11 +243,11 @@ test_that("change environment", {
   obj <- test_rrq()
   obj$envir(create(1))
   w <- test_worker_blocking(obj)
-  expect_equal(w$envir$x, 1)
+  expect_equal(r6_private(w)$envir$x, 1)
 
   obj$envir(NULL)
   expect_message(w$step(TRUE), "REFRESH")
-  expect_equal(ls(w$envir), character(0))
+  expect_equal(ls(r6_private(w)$envir), character(0))
 })
 
 
@@ -866,7 +866,8 @@ test_that("manual control over environment", {
   expect_equal(obj$task_status(t), set_names(TASK_ERROR, t))
   expect_length(obj$task_data(t)$objects, 0)
 
-  w$envir$a <- 2
+  w_envir <- r6_private(w)$envir
+  w_envir$a <- 2
   t <- obj$enqueue(sqrt(a), e, export = character(0))
   w$step(TRUE)
   expect_equal(obj$task_status(t), set_names(TASK_COMPLETE, t))

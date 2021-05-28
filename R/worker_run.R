@@ -18,7 +18,7 @@ worker_run_task_result <- function(result) {
 
 
 worker_run_task_local <- function(task, worker, private) {
-  e <- expression_restore_locals(task, worker$envir, private$store)
+  e <- expression_restore_locals(task, private$envir, private$store)
   result <- withCallingHandlers(
     expression_eval_safely(task$expr, e),
     progress = function(e)
@@ -107,7 +107,7 @@ worker_run_task_start <- function(worker, private, task_id) {
   keys <- worker$keys
   name <- worker$name
   dat <- worker$con$pipeline(
-    worker_log(redis, keys, "TASK_START", task_id, worker$verbose),
+    worker_log(redis, keys, "TASK_START", task_id, private$verbose),
     redis$HSET(keys$worker_status, name,      WORKER_BUSY),
     redis$HSET(keys$worker_task,   name,      task_id),
     redis$HSET(keys$task_worker,   task_id,   name),
@@ -150,7 +150,7 @@ worker_run_task_cleanup <- function(worker, private, status, value) {
     if (!is.null(key_complete)) {
       redis$RPUSH(key_complete, task_id)
     },
-    worker_log(redis, keys, log_status, task_id, worker$verbose))
+    worker_log(redis, keys, log_status, task_id, private$verbose))
 
   worker$active_task <- NULL
   invisible()

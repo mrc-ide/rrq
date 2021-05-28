@@ -10,9 +10,6 @@ rrq_worker <- R6::R6Class(
     ##' @field name The name of the worker
     name = NULL,
 
-    ##' @field envir The environment that the worker uses for calculations
-    envir = NULL,
-
     ##' @field keys Internally used keys
     keys = NULL,
 
@@ -21,8 +18,6 @@ rrq_worker <- R6::R6Class(
 
     ##' @field con Redis connection
     con = NULL,
-
-    verbose = NULL,
 
     active_task = NULL,
 
@@ -79,7 +74,7 @@ rrq_worker <- R6::R6Class(
       self$con <- con
       self$name <- worker_name %||% ids::adjective_animal()
       self$keys <- rrq_keys(queue_id, self$name)
-      self$verbose <- verbose
+      private$verbose <- verbose
 
       rrq_migrate_check(self$con, self$keys, TRUE)
 
@@ -116,7 +111,7 @@ rrq_worker <- R6::R6Class(
     ##'
     ##' @param value Character vector (or null) with log values
     log = function(label, value = NULL) {
-      worker_log(self$con, self$keys, label, value, self$verbose)
+      worker_log(self$con, self$keys, label, value, private$verbose)
     },
 
     ##' @description Load the worker environment by creating a new
@@ -124,11 +119,11 @@ rrq_worker <- R6::R6Class(
     ##'   See `$envir` on [`rrq::rrq_controller`] for details.
     load_envir = function() {
       self$log("ENVIR", "new")
-      self$envir <- new.env(parent = .GlobalEnv)
+      private$envir <- new.env(parent = .GlobalEnv)
       create <- self$con$GET(self$keys$envir)
       if (!is.null(create)) {
         self$log("ENVIR", "create")
-        bin_to_object(create)(self$envir)
+        bin_to_object(create)(private$envir)
       }
     },
 
@@ -207,14 +202,16 @@ rrq_worker <- R6::R6Class(
   ),
 
   private = list(
-    paused = FALSE,
+    envir = NULL,
     loop_continue = FALSE,
+    paused = FALSE,
     timer = NULL,
     timeout = NULL,
     ## Constants
     heartbeat = NULL,
     store = NULL,
-    time_poll = NULL
+    time_poll = NULL,
+    verbose = NULL
   ))
 
 
@@ -245,7 +242,7 @@ worker_initialise <- function(worker, private, key_alive, timeout,
   keys <- worker$keys
 
   private$heartbeat <- worker_heartbeat(con, keys, heartbeat_period,
-                                        worker$verbose)
+                                        private$verbose)
 
   worker$con$pipeline(
     redis$SADD(keys$worker_name,   worker$name),
@@ -305,7 +302,7 @@ worker_loop <- function(worker, private, immediate = FALSE) {
   cache$active_worker <- worker
   on.exit(cache$active_worker <- NULL)
 
-  if (worker$verbose) {
+  if (private$verbose) {
     message(paste0(worker_banner("start"), collapse = "\n"))
     message(paste0(worker$format(), collapse = "\n"))
   }
@@ -317,7 +314,7 @@ worker_loop <- function(worker, private, immediate = FALSE) {
       rrq_worker_stop = worker_catch_stop(worker, private),
       error = worker_catch_error(worker, private))
   }
-  if (worker$verbose) {
+  if (private$verbose) {
     message(paste0(worker_banner("stop"), collapse = "\n"))
   }
 }
