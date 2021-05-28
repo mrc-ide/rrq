@@ -13,8 +13,8 @@ run_message <- function(worker, private, msg) {
                 PING = run_message_ping(),
                 ECHO = run_message_echo(args),
                 EVAL = run_message_eval(args),
-                STOP = run_message_stop(worker, message_id, args), # noreturn
-                INFO = run_message_info(worker),
+                STOP = run_message_stop(worker, private, message_id, args),
+                INFO = run_message_info(worker, private),
                 PAUSE = run_message_pause(worker, private),
                 RESUME = run_message_resume(worker, private),
                 REFRESH = run_message_refresh(worker),
@@ -22,7 +22,7 @@ run_message <- function(worker, private, msg) {
                 TIMEOUT_GET = run_message_timeout_get(worker, private),
                 run_message_unknown(cmd, args))
 
-  message_respond(worker, message_id, cmd, res)
+  message_respond(worker, private, message_id, cmd, res)
 }
 
 run_message_ping <- function() {
@@ -42,17 +42,17 @@ run_message_eval <- function(args) {
   print(try(eval(args, .GlobalEnv)))
 }
 
-run_message_stop <- function(worker, message_id, args) {
-  message_respond(worker, message_id, "STOP", "BYE")
+run_message_stop <- function(worker, private, message_id, args) {
+  message_respond(worker, private, message_id, "STOP", "BYE")
   if (is.null(args)) {
     args <- "BYE"
   }
   stop(rrq_worker_stop(worker, args))
 }
 
-run_message_info <- function(worker) {
+run_message_info <- function(worker, private) {
   info <- worker$info()
-  worker$con$HSET(worker$keys$worker_info, worker$name, object_to_bin(info))
+  private$con$HSET(private$keys$worker_info, worker$name, object_to_bin(info))
   info
 }
 
@@ -66,7 +66,7 @@ run_message_pause <- function(worker, private) {
     "NOOP"
   } else {
     private$paused <- TRUE
-    worker$con$HSET(worker$keys$worker_status, worker$name, WORKER_PAUSED)
+    private$con$HSET(private$keys$worker_status, worker$name, WORKER_PAUSED)
     "OK"
   }
 }
@@ -74,7 +74,7 @@ run_message_pause <- function(worker, private) {
 run_message_resume <- function(worker, private) {
   if (private$paused) {
     private$paused <- FALSE
-    worker$con$HSET(worker$keys$worker_status, worker$name, WORKER_IDLE)
+    private$con$HSET(private$keys$worker_status, worker$name, WORKER_IDLE)
     "OK"
   } else {
     "NOOP"
@@ -213,8 +213,8 @@ message_response_ids <- function(con, keys, worker_id) {
 }
 
 
-message_respond <- function(worker, message_id, cmd, result) {
+message_respond <- function(worker, private, message_id, cmd, result) {
   worker$log("RESPONSE", cmd)
   response <- response_prepare(message_id, cmd, result)
-  worker$con$HSET(worker$keys$worker_response, message_id, response)
+  private$con$HSET(private$keys$worker_response, message_id, response)
 }

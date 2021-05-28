@@ -6,7 +6,7 @@ worker_run_task <- function(worker, private, task_id) {
     res <- worker_run_task_local(task, worker, private)
   }
   task_status <- res$status
-  worker_queue_dependencies(worker, task_id, task_status)
+  worker_queue_dependencies(private$con, private$keys, task_id, task_status)
   worker_run_task_cleanup(worker, private, task_status, res$value)
 }
 
@@ -22,8 +22,8 @@ worker_run_task_local <- function(task, worker, private) {
 
 
 worker_run_task_separate_process <- function(task, worker, private) {
-  con <- worker$con
-  keys <- worker$keys
+  con <- private$con
+  keys <- private$keys
   redis_config <- con$config()
   queue_id <- keys$queue_id
   worker_id <- worker$name
@@ -88,9 +88,9 @@ remote_run_task <- function(redis_config, queue_id, worker_id, task_id) {
 
 
 worker_run_task_start <- function(worker, private, task_id) {
-  keys <- worker$keys
+  keys <- private$keys
   name <- worker$name
-  dat <- worker$con$pipeline(
+  dat <- private$con$pipeline(
     worker_log(redis, keys, "TASK_START", task_id, private$verbose),
     redis$HSET(keys$worker_status, name,      WORKER_BUSY),
     redis$HSET(keys$worker_task,   name,      task_id),
@@ -119,13 +119,13 @@ worker_run_task_cleanup <- function(worker, private, status, value) {
   task_id <- task$task_id
   key_complete <- task$key_complete
 
-  keys <- worker$keys
+  keys <- private$keys
   name <- worker$name
   log_status <- paste0("TASK_", status)
 
   task_result <- private$store$set(value, task_id)
 
-  worker$con$pipeline(
+  private$con$pipeline(
     redis$HSET(keys$task_result,    task_id,  task_result),
     redis$HSET(keys$task_status,    task_id,  status),
     redis$HSET(keys$worker_status,  name,     WORKER_IDLE),
