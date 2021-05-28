@@ -12,6 +12,17 @@ rrq queue worker
 A rrq queue worker.  These are not typically for interacting with
 but will sit and poll a queue for jobs.
 }
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{name}}{The name of the worker}
+
+\item{\code{keys}}{Internally used keys}
+
+\item{\code{con}}{Redis connection}
+}
+\if{html}{\out{</div>}}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
@@ -22,10 +33,10 @@ but will sit and poll a queue for jobs.
 \item \href{#method-poll}{\code{rrq_worker$poll()}}
 \item \href{#method-step}{\code{rrq_worker$step()}}
 \item \href{#method-loop}{\code{rrq_worker$loop()}}
-\item \href{#method-run_task}{\code{rrq_worker$run_task()}}
-\item \href{#method-run_message}{\code{rrq_worker$run_message()}}
 \item \href{#method-format}{\code{rrq_worker$format()}}
 \item \href{#method-timer_start}{\code{rrq_worker$timer_start()}}
+\item \href{#method-progress}{\code{rrq_worker$progress()}}
+\item \href{#method-task_eval}{\code{rrq_worker$task_eval()}}
 \item \href{#method-shutdown}{\code{rrq_worker$shutdown()}}
 \item \href{#method-clone}{\code{rrq_worker$clone()}}
 }
@@ -206,41 +217,6 @@ zero. Intended primarily for use in the tests.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-run_task"></a>}}
-\if{latex}{\out{\hypertarget{method-run_task}{}}}
-\subsection{Method \code{run_task()}}{
-Run a single task, given a task id
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$run_task(task_id)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{task_id}}{The id of the task to run}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-run_message"></a>}}
-\if{latex}{\out{\hypertarget{method-run_message}{}}}
-\subsection{Method \code{run_message()}}{
-Run a single message, given a message
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$run_message(msg)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{msg}}{The message to run; this will be a raw vector
-representing a serialised object.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-format"></a>}}
 \if{latex}{\out{\hypertarget{method-format}{}}}
 \subsection{Method \code{format()}}{
@@ -260,6 +236,53 @@ Start the timer
 \if{html}{\out{<div class="r">}}\preformatted{rrq_worker$timer_start()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-progress"></a>}}
+\if{latex}{\out{\hypertarget{method-progress}{}}}
+\subsection{Method \code{progress()}}{
+Submit a progress message. See
+\code{\link[=rrq_task_progress_update]{rrq_task_progress_update()}} for details of this mechanism.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$progress(value, error = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{value}}{An R object with the contents of the update. This
+will overwrite any previous progress value, and can be retrieved
+from a \link{rrq_controller} with the
+\verb{$task_progress} method.  A value of \code{NULL} will appear
+to clear the status, as \code{NULL} will also be returned if no
+status is found for a task.}
+
+\item{\code{error}}{Logical, indicating if we should throw an error if
+not running as an \code{rrq} task. Set this to \code{FALSE} if
+you want code to work without modification within and outside of
+an \code{rrq} job, or to \code{TRUE} if you want to be sure that
+progress messages have made it to the server.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-task_eval"></a>}}
+\if{latex}{\out{\hypertarget{method-task_eval}{}}}
+\subsection{Method \code{task_eval()}}{
+Evaluate a task
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$task_eval(task_id)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{task_id}}{A task identifier. It is undefined what happens if
+this identifier does not exist.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-shutdown"></a>}}

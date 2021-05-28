@@ -1,7 +1,7 @@
 worker_run_task <- function(worker, private, task_id) {
   task <- worker_run_task_start(worker, private, task_id)
   if (task$separate_process) {
-    res <- worker_run_task_separate_process(task, worker)
+    res <- worker_run_task_separate_process(task, worker, private)
   } else {
     res <- worker_run_task_local(task, worker, private)
   }
@@ -11,22 +11,17 @@ worker_run_task <- function(worker, private, task_id) {
 }
 
 
-worker_run_task_result <- function(result) {
-  list(value = result$value,
-       status = if (result$success) TASK_COMPLETE else TASK_ERROR)
-}
-
-
 worker_run_task_local <- function(task, worker, private) {
   e <- expression_restore_locals(task, private$envir, private$store)
   result <- withCallingHandlers(
     expression_eval_safely(task$expr, e),
     progress = function(e) worker$progress(unclass(e), FALSE))
-  worker_run_task_result(result)
+  list(value = result$value,
+       status = if (result$success) TASK_COMPLETE else TASK_ERROR)
 }
 
 
-worker_run_task_separate_process <- function(task, worker) {
+worker_run_task_separate_process <- function(task, worker, private) {
   con <- worker$con
   keys <- worker$keys
   redis_config <- con$config()
@@ -84,23 +79,11 @@ worker_run_task_separate_process <- function(task, worker) {
 
 
 remote_run_task <- function(redis_config, queue_id, worker_id, task_id) {
-  
   worker_name <- sprintf("%s_%s", worker_id, ids::random_id(bytes = 4))
   con <- redux::hiredis(config = redis_config)
   worker <- rrq_worker$new(queue_id, con, worker_name = worker_name,
                            register = FALSE)
-  task <- bin_to_object(con$HGET(worker$keys$task_expr, task_id))
-
-  ## Ensures that the worker and task will be found by
-  ## rrq_task_progress_update
-  cache$active_worker <- worker
-
-  ## A hack for now, later we'll move this into a method on the object?
-  private <- worker[[".__enclos_env__"]]$private
-  
-  private$active_task <- list(task_id = task_id)
-
-  worker_run_task_local(task, worker, private)
+  worker$task_eval(task_id)
 }
 
 

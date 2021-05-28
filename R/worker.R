@@ -204,6 +204,18 @@ rrq_worker <- R6::R6Class(
       invisible()
     },
 
+    ##' @description Evaluate a task
+    ##'
+    ##' @param task_id A task identifier. It is undefined what happens if
+    ##'   this identifier does not exist.
+    task_eval = function(task_id) {
+      cache$active_worker <- self
+      on.exit(cache$active_worker <- NULL)
+      task <- bin_to_object(self$con$HGET(self$keys$task_expr, task_id))
+      private$active_task <- list(task_id = task_id)
+      worker_run_task_local(task, self, private)
+    },
+
     ##' @description Stop the worker
     ##'
     ##' @param status the worker status; typically be one of `OK` or `ERROR`
