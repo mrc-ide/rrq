@@ -6,7 +6,7 @@
 ##' objects will be saved (using [`rrq::object_store`].
 ##'
 ##' @section Storage:
-##' 
+##'
 ##' Every time that a task is saved, or a task is completed, results
 ##'   are saved into the Redis database. Because Redis is an in-memory
 ##'   database, it's not a great idea to save very large objects into
@@ -54,7 +54,7 @@
 ##'   created if it does not exist. If not given (or `NULL`) but
 ##'   `store_max_size` is finite, then trying to save large objects
 ##'   will throw an error.
-##' 
+##'
 ##' @return Invisibly, a list with processed configuration information
 ##' @export
 rrq_configure <- function(queue_id, con = redux::hiredis(), ...,
