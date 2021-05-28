@@ -58,20 +58,5 @@ rrq_task_progress_update <- function(value, error = FALSE) {
       return(invisible())
     }
   }
-  task_progress_update(value, worker, error)
-}
-
-
-task_progress_update <- function(value, worker, error) {
-  assert_is(worker, "rrq_worker")
-  task_id <- worker$active_task$task_id
-  if (is.null(task_id)) {
-    if (error) {
-      stop("rrq_task_progress_update called with no active task")
-    } else {
-      return(invisible())
-    }
-  }
-  worker$con$HSET(worker$keys$task_progress, task_id, object_to_bin(value))
-  invisible()
+  worker$progress(value, error)
 }

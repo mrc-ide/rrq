@@ -13,13 +13,8 @@ rrq_worker <- R6::R6Class(
     ##' @field keys Internally used keys
     keys = NULL,
 
-    ##' @field queue The queue(s) that the worker is listening on
-    queue = NULL,
-
     ##' @field con Redis connection
     con = NULL,
-
-    active_task = NULL,
 
     ##' @description Constructor
     ##'
@@ -79,7 +74,7 @@ rrq_worker <- R6::R6Class(
       rrq_migrate_check(self$con, self$keys, TRUE)
 
       queue <- worker_queue(queue)
-      self$queue <- rrq_key_queue(queue_id, queue)
+      private$queue <- rrq_key_queue(queue_id, queue)
       self$log("QUEUE", queue)
 
       if (self$con$SISMEMBER(self$keys$worker_name, self$name) == 1L) {
@@ -137,7 +132,7 @@ rrq_worker <- R6::R6Class(
       if (private$paused) {
         keys <- keys$worker_message
       } else {
-        keys <- c(keys$worker_message, self$queue)
+        keys <- c(keys$worker_message, private$queue)
       }
       blpop(self$con, keys, private$time_poll, immediate)
     },
@@ -181,6 +176,34 @@ rrq_worker <- R6::R6Class(
       }
     },
 
+    ##' @description Submit a progress message. See
+    ##' [rrq::rrq_task_progress_update()] for details of this mechanism.
+    ##'
+    ##' @param value An R object with the contents of the update. This
+    ##'   will overwrite any previous progress value, and can be retrieved
+    ##'   from a [rrq::rrq_controller] with the
+    ##'   `$task_progress` method.  A value of `NULL` will appear
+    ##'   to clear the status, as `NULL` will also be returned if no
+    ##'   status is found for a task.
+    ##'
+    ##' @param error Logical, indicating if we should throw an error if
+    ##'   not running as an `rrq` task. Set this to `FALSE` if
+    ##'   you want code to work without modification within and outside of
+    ##'   an `rrq` job, or to `TRUE` if you want to be sure that
+    ##'   progress messages have made it to the server.
+    progress = function(value, error = TRUE) {
+      task_id <- private$active_task$task_id
+      if (is.null(task_id)) {
+        if (error) {
+          stop("rrq_task_progress_update called with no active task")
+        } else {
+          return(invisible())
+        }
+      }
+      self$con$HSET(self$keys$task_progress, task_id, object_to_bin(value))
+      invisible()
+    },
+
     ##' @description Stop the worker
     ##'
     ##' @param status the worker status; typically be one of `OK` or `ERROR`
@@ -202,6 +225,7 @@ rrq_worker <- R6::R6Class(
   ),
 
   private = list(
+    active_task = NULL,
     envir = NULL,
     loop_continue = FALSE,
     paused = FALSE,
@@ -209,6 +233,7 @@ rrq_worker <- R6::R6Class(
     timeout = NULL,
     ## Constants
     heartbeat = NULL,
+    queue = NULL,
     store = NULL,
     time_poll = NULL,
     verbose = NULL
@@ -224,7 +249,7 @@ worker_info_collect <- function(worker, private) {
               running = sys$running,
               hostname = hostname(),
               username = username(),
-              queue = worker$queue,
+              queue = private$queue,
               wd = getwd(),
               pid = process_id(),
               redis_host = redis_config$host,

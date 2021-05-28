@@ -11,11 +11,11 @@ test_that("basic use", {
   expect_null(obj$task_progress(t))
 
   ## Status can be set
-  expect_null(task_progress_update("status1", w, TRUE))
+  expect_null(w$progress("status1", TRUE))
   expect_equal(obj$task_progress(t), "status1")
 
   ## Status can be updated
-  expect_null(task_progress_update("status2", w, TRUE))
+  expect_null(w$progress("status2", TRUE))
   expect_equal(obj$task_progress(t), "status2")
 
   ## Completing a task retains its status
@@ -86,10 +86,10 @@ test_that("can't register progress with no active task", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
   expect_error(
-    task_progress_update("value", w, TRUE),
+    w$progress("value", TRUE),
     "rrq_task_progress_update called with no active task")
   expect_silent(
-    task_progress_update("value", w, FALSE))
+    w$progress("value", FALSE))
 })
 
 
@@ -103,6 +103,7 @@ test_that("collect progress from signal", {
 })
 
 
+## TODO: this test is sli[ghly flakey, and I don't see why.
 test_that("collect progress from separate process", {
   skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")

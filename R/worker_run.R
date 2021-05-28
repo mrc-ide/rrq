@@ -21,8 +21,7 @@ worker_run_task_local <- function(task, worker, private) {
   e <- expression_restore_locals(task, private$envir, private$store)
   result <- withCallingHandlers(
     expression_eval_safely(task$expr, e),
-    progress = function(e)
-      task_progress_update(unclass(e), worker, FALSE))
+    progress = function(e) worker$progress(unclass(e), FALSE))
   worker_run_task_result(result)
 }
 
@@ -85,6 +84,7 @@ worker_run_task_separate_process <- function(task, worker) {
 
 
 remote_run_task <- function(redis_config, queue_id, worker_id, task_id) {
+  
   worker_name <- sprintf("%s_%s", worker_id, ids::random_id(bytes = 4))
   con <- redux::hiredis(config = redis_config)
   worker <- rrq_worker$new(queue_id, con, worker_name = worker_name,
@@ -94,10 +94,11 @@ remote_run_task <- function(redis_config, queue_id, worker_id, task_id) {
   ## Ensures that the worker and task will be found by
   ## rrq_task_progress_update
   cache$active_worker <- worker
-  worker$active_task <- list(task_id = task_id)
 
   ## A hack for now, later we'll move this into a method on the object?
   private <- worker[[".__enclos_env__"]]$private
+  
+  private$active_task <- list(task_id = task_id)
 
   worker_run_task_local(task, worker, private)
 }
@@ -119,7 +120,7 @@ worker_run_task_start <- function(worker, private, task_id) {
 
   ## This holds the bits of worker state we might need to refer to
   ## later for a running task:
-  worker$active_task <- list(task_id = task_id, key_complete = dat[[6]])
+  private$active_task <- list(task_id = task_id, key_complete = dat[[6]])
 
   ## And this holds the data used in worker_run_task_to actually run
   ## the task
@@ -131,7 +132,7 @@ worker_run_task_start <- function(worker, private, task_id) {
 
 
 worker_run_task_cleanup <- function(worker, private, status, value) {
-  task <- worker$active_task
+  task <- private$active_task
   task_id <- task$task_id
   key_complete <- task$key_complete
 
@@ -152,7 +153,7 @@ worker_run_task_cleanup <- function(worker, private, status, value) {
     },
     worker_log(redis, keys, log_status, task_id, private$verbose))
 
-  worker$active_task <- NULL
+  private$active_task <- NULL
   invisible()
 }
 
