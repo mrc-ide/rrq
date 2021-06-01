@@ -210,7 +210,7 @@ test_that("can pass --key-alive", {
 
 test_that("write worker script", {
   p <- tempfile()
-  res <- write_rrq_worker(p)
+  res <- rrq_worker_script(p)
   expect_equal(normalizePath(dirname(res)), normalizePath(p))
   expect_equal(basename(res), "rrq_worker")
   expect_equal(readLines(res)[[1]], "#!/usr/bin/env Rscript")
@@ -218,6 +218,18 @@ test_that("write worker script", {
 
 
 test_that("write versioned worker script", {
-  res <- write_rrq_worker(versioned = TRUE)
+  skip_on_cran()
+  res <- rrq_worker_script(tempfile(), versioned = TRUE)
   expect_match(readLines(res)[[1]], R.home(), fixed = TRUE)
+})
+
+
+test_that("write_rrq_workers is deprecated", {
+  skip_if_not_installed("mockery")
+  mock_worker_script <- mockery::mock()
+  mockery::stub(write_rrq_worker, "rrq_worker_script", mock_worker_script)
+  path <- tempfile()
+  expect_warning(write_rrq_worker(path)) # deprecation warning
+  mockery::expect_called(mock_worker_script, 1)
+  expect_equal(mockery::mock_args(mock_worker_script)[[1]], list(path))
 })

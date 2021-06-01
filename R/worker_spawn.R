@@ -42,7 +42,7 @@ worker_spawn <- function(obj, n = 1, logdir = NULL,
     stop(sprintf("Invalid rrq worker configuration key '%s'", worker_config))
   }
 
-  rrq_worker <- write_rrq_worker(versioned = TRUE)
+  rrq_worker <- rrq_worker_script(tempfile(), versioned = TRUE)
   env <- paste0("RLIBS=", paste(.libPaths(), collapse = ":"),
                 ' R_TESTS=""')
   worker_name_base <- worker_name_base %||% ids::adjective_animal()

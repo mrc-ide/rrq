@@ -17,5 +17,5 @@ RUN install_packages --repo=https://mrc-ide.github.io/drat \
 
 COPY . /src
 RUN R CMD INSTALL /src && \
-        Rscript -e 'rrq:::write_rrq_worker("/usr/local/bin")' && \
+        Rscript -e 'rrq:::rrq_worker_script("/usr/local/bin")' && \
         rm -rf /src
