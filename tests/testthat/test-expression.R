@@ -43,7 +43,6 @@ test_that("eval safely - collect warnings", {
 
 test_that("store expression", {
   store <- test_store()
-  on.exit(store$destroy())
   tag <- ids::random_id()
 
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
@@ -56,7 +55,6 @@ test_that("store expression", {
 
 test_that("store locals", {
   store <- test_store()
-  on.exit(store$destroy())
   tag <- ids::random_id()
 
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
@@ -76,7 +74,6 @@ test_that("store locals", {
 
 test_that("skip analysis", {
   store <- test_store()
-  on.exit(store$destroy())
   tag <- ids::random_id()
 
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
@@ -89,7 +86,6 @@ test_that("skip analysis", {
 
 test_that("export variables", {
   store <- test_store()
-  on.exit(store$destroy())
   tag <- ids::random_id()
 
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
@@ -105,7 +101,6 @@ test_that("export variables", {
 
 test_that("export variables", {
   store <- test_store()
-  on.exit(store$destroy())
   tag <- ids::random_id()
 
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
@@ -121,7 +116,6 @@ test_that("export variables", {
 
 test_that("restore locals", {
   store <- test_store()
-  on.exit(store$destroy())
   tag <- ids::random_id()
 
   h1 <- store$set(1, tag)
@@ -137,7 +131,6 @@ test_that("restore locals", {
 
 test_that("can store special function values", {
   store <- test_store()
-  on.exit(store$destroy())
   tag <- ids::random_id()
 
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
@@ -157,7 +150,6 @@ test_that("can store special function values", {
 
 test_that("can restore function even with no variables", {
   store <- test_store()
-  on.exit(store$destroy())
 
   e <- emptyenv()
   f <- function(a, b) a + b
@@ -175,7 +167,6 @@ test_that("can restore function even with no variables", {
 
 test_that("require a call to prepre", {
   store <- test_store()
-  on.exit(store$destroy())
   tag <- ids::random_id()
 
   expect_error(expression_prepare(quote(a), emptyenv(), store, tag),

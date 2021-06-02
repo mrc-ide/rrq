@@ -56,9 +56,12 @@ test_hiredis <- function() {
 }
 
 
-test_store <- function() {
+test_store <- function(...) {
   con <- test_hiredis()
-  object_store$new(con, sprintf("rrq:test-store:%s", ids::random_id()))
+  st <- object_store$new(con, sprintf("rrq:test-store:%s", ids::random_id()),
+                         ...)
+  withr::defer_parent(st$destroy())
+  st
 }
 
 

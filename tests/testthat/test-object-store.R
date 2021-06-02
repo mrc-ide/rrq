@@ -1,10 +1,7 @@
 context("object_store")
 
 test_that("Fast noop operations behave as expected", {
-  con <- test_hiredis()
-  prefix <- ids::random_id(1, 4)
-  s <- object_store$new(con, prefix)
-  on.exit(s$destroy())
+  s <- test_store()
 
   expect_equal(s$mget(character(0)), list())
   expect_equal(s$mset(list(), "tag"), character(0))
@@ -15,10 +12,7 @@ test_that("Fast noop operations behave as expected", {
 
 
 test_that("Full redis-based storage", {
-  con <- test_hiredis()
-  prefix <- ids::random_id(1, 4)
-
-  s <- object_store$new(con, prefix)
+  s <- test_store()
 
   t1 <- ids::random_id()
   t2 <- ids::random_id()
@@ -57,11 +51,9 @@ test_that("Full redis-based storage", {
 
 
 test_that("Can offload storage", {
-  con <- test_hiredis()
-  prefix <- ids::random_id(1, 4)
   path <- tempfile()
   offload <- object_store_offload_disk$new(path)
-  s <- object_store$new(con, prefix, 100, offload)
+  s <- test_store(100, offload)
 
   t1 <- ids::random_id()
   t2 <- ids::random_id()
@@ -97,9 +89,7 @@ test_that("Can offload storage", {
 
 
 test_that("Drop multiple tags", {
-  con <- test_hiredis()
-  prefix <- ids::random_id(1, 4)
-  s <- object_store$new(con, prefix)
+  s <- test_store()
   t <- ids::random_id(2)
   s$mset(list(1), t[[1]])
   s$mset(list(2), t[[2]])
@@ -110,10 +100,7 @@ test_that("Drop multiple tags", {
 
 
 test_that("scalar helper functions return single values", {
-  con <- test_hiredis()
-  prefix <- ids::random_id(1, 4)
-  s <- object_store$new(con, prefix)
-  on.exit(s$destroy())
+  s <- test_store()
 
   t <- ids::random_id()
   h <- s$set(pi, t)
@@ -124,11 +111,9 @@ test_that("scalar helper functions return single values", {
 
 
 test_that("destroying a store removes everything, including offload", {
-  con <- test_hiredis()
-  prefix <- ids::random_id(1, 4)
   path <- tempfile()
   offload <- object_store_offload_disk$new(path)
-  s <- object_store$new(con, prefix, 100, offload)
+  s <- test_store(100, offload)
 
   t <- ids::random_id()
   x <- runif(20)
@@ -164,10 +149,7 @@ test_that("prevent use of offload if disabled", {
 
 
 test_that("set multiple tags at once", {
-  con <- test_hiredis()
-  prefix <- ids::random_id(1, 4)
-
-  s <- object_store$new(con, prefix)
+  s <- test_store()
 
   t <- ids::random_id(2)
   h <- s$set(1, t)
@@ -177,9 +159,7 @@ test_that("set multiple tags at once", {
 
 
 test_that("skip serialisation", {
-  con <- test_hiredis()
-  prefix <- ids::random_id(1, 4)
-  s <- object_store$new(con, prefix)
+  s <- test_store()
   t <- ids::random_id(2)
   x <- runif(10)
   d <- object_to_bin(x)
@@ -191,9 +171,7 @@ test_that("skip serialisation", {
 
 
 test_that("skip serialisation detects invalid input:", {
-  con <- test_hiredis()
-  prefix <- ids::random_id(1, 4)
-  s <- object_store$new(con, prefix)
+  s <- test_store()
 
   t <- ids::random_id(2)
 
