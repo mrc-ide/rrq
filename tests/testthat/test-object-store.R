@@ -56,7 +56,7 @@ test_that("Can offload storage", {
   path <- tempfile()
   offload <- object_store_offload_disk$new(path)
   prefix <- sprintf("rrq:test-store:%s", ids::random_id(1, 4))
-  s <- test_store(prefix = prefix)
+  s <- test_store(100, offload, prefix = prefix)
 
   t1 <- ids::random_id()
   t2 <- ids::random_id()
