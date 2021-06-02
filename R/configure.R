@@ -71,7 +71,7 @@ rrq_configure <- function(queue_id, con = redux::hiredis(), ...,
       queue_id))
   }
 
-  assert_scalar_integer_like(store_max_size)
+  assert_scalar_numeric(store_max_size)
   assert_scalar_character(offload_path)
 
   config <- list(store_max_size = store_max_size,
