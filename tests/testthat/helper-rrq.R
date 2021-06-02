@@ -57,6 +57,7 @@ test_hiredis <- function() {
 
 
 test_store <- function(..., prefix = NULL) {
+  skip_if_not_installed("withr")
   prefix <- prefix %||% sprintf("rrq:test-store:%s", ids::random_id(1, 4))
   con <- test_hiredis()
   st <- object_store$new(con, prefix, ...)
