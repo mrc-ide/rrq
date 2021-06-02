@@ -144,3 +144,27 @@ test_that("wait timeout errors informatively", {
   expect_gt(length(mockery::mock_args(callback)), 1)
   expect_equal(mockery::mock_args(callback)[[1]], list())
 })
+
+
+test_that("Hash large data", {
+  skip_on_cran() # slow, possibly problematic?
+  d <- raw(2^31)
+  h <- hash_data(d)
+  expect_equal(
+    h,
+    "a7c744c13cc101ed66c29f672f92455547889cc586ce6d44fe76ae824958ea51")
+})
+
+
+test_that("Detect serialised objects", {
+  skip_on_cran()
+  expect_true(is_serialized_object(object_to_bin(NULL)))
+
+  ## This is not true because we use non-xdr serialisation always
+  expect_false(is_serialized_object(serialize(NULL, NULL, xdr = TRUE)))
+
+  expect_false(is_serialized_object(1))
+  expect_false(is_serialized_object(as.raw(0:100)))
+  expect_false(is_serialized_object(as.raw(integer(0))))
+  expect_false(is_serialized_object(as.raw(as.raw(c(0x42, 0x0a, 0:10)))))
+})

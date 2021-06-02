@@ -7,6 +7,7 @@ has_internet <- function() {
 }
 
 skip_if_no_internet <- function() {
+  skip_on_cran()
   if (has_internet()) {
     return()
   }
@@ -14,6 +15,7 @@ skip_if_no_internet <- function() {
 }
 
 skip_if_no_redis <- function() {
+  skip_on_cran()
   tryCatch(
     redux::hiredis()$PING(),
     error = function(e) testthat::skip("redis not available"))
@@ -51,6 +53,16 @@ wait_worker_status <- function(w, obj, status, timeout = 2,
 test_hiredis <- function() {
   skip_if_no_redis()
   redux::hiredis()
+}
+
+
+test_store <- function(..., prefix = NULL) {
+  skip_if_not_installed("withr")
+  prefix <- prefix %||% sprintf("rrq:test-store:%s", ids::random_id(1, 4))
+  con <- test_hiredis()
+  st <- object_store$new(con, prefix, ...)
+  withr::defer_parent(st$destroy())
+  st
 }
 
 
@@ -114,6 +126,11 @@ with_options <- function(opts, code) {
 
 skip_on_windows <- function() {
   testthat::skip_on_os("windows")
+}
+
+
+r6_private <- function(x) {
+  x[[".__enclos_env__"]]$private
 }
 
 

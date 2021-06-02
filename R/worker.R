@@ -59,7 +59,7 @@ rrq_worker_ <- R6::R6Class(
     queue = NULL,
     deferred_set = NULL,
     con = NULL,
-    db = NULL,
+    store = NULL,
     paused = FALSE,
     time_poll = NULL,
     timeout = NULL,
@@ -82,6 +82,8 @@ rrq_worker_ <- R6::R6Class(
       self$keys <- rrq_keys(queue_id, self$name)
       self$verbose <- verbose
 
+      rrq_migrate_check(self$con, self$keys, TRUE)
+
       queue <- worker_queue(queue)
       self$queue <- rrq_key_queue(queue_id, queue)
       self$deferred_set <- self$keys$deferred_set
@@ -91,7 +93,7 @@ rrq_worker_ <- R6::R6Class(
         stop("Looks like this worker exists already...")
       }
 
-      self$db <- rrq_db(self$con, self$keys)
+      self$store <- rrq_object_store(self$con, self$keys)
       self$time_poll <- time_poll %||% 60
 
       self$load_envir()

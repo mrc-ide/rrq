@@ -14,8 +14,9 @@ rrq_keys_common <- function(queue_id) {
   list(queue_id       = queue_id,
 
        controller     = sprintf("%s:controller",     queue_id),
+       configuration  = sprintf("%s:configuration",  queue_id),
 
-       db_prefix      = sprintf("%s:db:",            queue_id),
+       object_store   = sprintf("%s:object_store",   queue_id),
        envir          = sprintf("%s:envir",          queue_id),
 
        worker_config  = sprintf("%s:worker:config",  queue_id),
