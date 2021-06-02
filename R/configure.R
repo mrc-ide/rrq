@@ -70,7 +70,10 @@ rrq_configure <- function(queue_id, con = redux::hiredis(), ...,
       "Can't set configuration for queue '%s' as it already exists",
       queue_id))
   }
-  ## TODO: we should probably validate these.
+
+  assert_scalar_integer_like(store_max_size)
+  assert_scalar_character(offload_path)
+
   config <- list(store_max_size = store_max_size,
                  offload_path = offload_path)
   con$SET(keys$configuration, object_to_bin(config))
