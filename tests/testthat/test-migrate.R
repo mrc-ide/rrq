@@ -17,7 +17,7 @@ test_that("Can migrate storage", {
   expect_error(
     rrq_worker_from_config(dat$queue_id, "localhost"),
     "rrq database needs migrating; please run")
-  
+
   expect_message(
     rrq_migrate(dat$queue_id),
     "Migrating rrq database")

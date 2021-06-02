@@ -182,6 +182,6 @@ test_that("skip serialisation detects invalid input:", {
   expect_error(s$set(1, t, FALSE), "All values must be raw vectors")
   expect_error(s$mset(list(object_to_bin(1), 1), t, FALSE),
                "All values must be raw vectors")
-  
+
   expect_equal(s$list(), character(0))
 })

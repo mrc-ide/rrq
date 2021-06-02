@@ -28,7 +28,7 @@ test_that("Can't set a conflicting configuration", {
   config <- rrq_configure(name, store_max_size = 100)
   expect_error(
     rrq_configure(name, store_max_size = 100),
-    "Can't set configuration for queue '.+' as it already exists") 
+    "Can't set configuration for queue '.+' as it already exists")
   expect_error(
     rrq_configure(name, store_max_size = Inf, offload_path = tempfile()),
     "Can't set configuration for queue '.+' as it already exists")
