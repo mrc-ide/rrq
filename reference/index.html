@@ -71,7 +71,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.3.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.4.0</span>
       </span>
     </div>
 
@@ -148,6 +148,95 @@
       </tr><tr>
         
         <td>
+          <p><code><a href="object_store.html">object_store</a></code> </p>
+        </td>
+        <td><p>rrq object store
+
+Create an object store. Typically this is not used by end-users,
+and is used internally by rrq_controller
+
+When you create a task with rrq and that task uses local variables
+these need to be copied over to the worker that will evaluate the
+task. So, if we had<pre><span class='va'>obj</span><span class='op'>$</span><span class='fu'>enqueue</span><span class='op'>(</span><span class='fu'>f</span><span class='op'>(</span><span class='va'>a</span>, <span class='va'>b</span><span class='op'>)</span><span class='op'>)</span>
+</pre>
+
+that would be the objects <code>a</code> and <code>b</code> from the context where
+<code>enqueue</code> was called. There are a few considerations here:
+<ul>
+<li><p>The names <code>a</code> and <code>b</code> are only useful in the immediate context
+of the controller at the point the task is sent and so we need
+to store the <em>values</em> referenced by <code>a</code> and <code>b</code> without
+reference to the names - we do this by naming the new values
+after their value. That is, the name becomes the hash of the
+object, computed by <code>openssl::sha256()</code> after serialisation, as
+a form of <a href='https://en.wikipedia.org/wiki/Content-addressable_storage'>content-addressible storage</a>.</p></li>
+<li><p>When doing this we note that we might end up using the value
+referenced by <code>a</code> or <code>b</code> many times in different tasks so we
+should not re-save the data more than needed, and we should not
+necessarily delete it when a task is deleted unless nothing else
+uses that value.</p></li>
+<li><p>The objects might tiny or could be large; if small we tend to
+care about how quickly they can be resolved (i.e., latency) and
+if large we need to be careful not to overfull Redis' database
+as it's a memory-based system.</p></li>
+</ul>
+
+To make this robust and flexible, we use a <code>object_store</code> object,
+which will allow objects to be stored either directly in Redis, or
+offloaded onto some "large" data store based on their
+size. Currently, we provide support only for offloading to disk,
+but in future hope to expand this.
+
+When we create a value in the store (or reference a value that
+already exists) we assign a tag into the database; this means that
+we have for a value with hash <code>abc123</code> and tag <code>def789</code>
+<ul>
+<li><p><code>prefix:data["abc123"] =&gt; [1] f5 26 a5 b7 26 93 b3 41 b7 d0 b0...</code>
+(the data stored, serialised into a redis hash by its hash, as a
+binary object.</p></li>
+<li><p><code>prefix:tag_hash:def789 =&gt; {abc123}</code> (a set of hashes used by our tag)</p></li>
+<li><p><code>prefix:hash_tag:abc123 =&gt; {def789}</code> (a set of tags that
+reference our hash)</p></li>
+</ul>
+
+If we also used the value with hash <code>abc123</code> with tag <code>fed987</code>
+this would look like
+<ul>
+<li><p><code>prefix:data[abc123] =&gt; [1] f5 26 a5 b7 26 93 b3 41 b7 d0 b0...</code>
+hash, as a binary object.</p></li>
+<li><p><code>prefix:tag_hash:def789 =&gt; {abc123}</code></p></li>
+<li><p><code>prefix:tag_hash:fed987 =&gt; {abc123}</code></p></li>
+<li><p><code>prefix:hash_tag:abc123 =&gt; {def789, fed987}</code></p></li>
+</ul>
+
+As tags are dropped, then the references are dropped from the set
+<code>prefix:hash_tag:abc123</code> and when that set becomes empty then we
+can delete <code>prefix:data[abc123]</code> as simple form of <a href='https://en.wikipedia.org/wiki/Reference_counting'>reference counting</a>.
+
+For <code>rrq</code> we will use <code>task_id</code>s as a tag.
+
+For dealing with large data, we "offload" large data into a
+secondary store. This replaces the redis hash of <code>hash =&gt; value</code>
+with something else. Currently the only alternative we offer is
+<code>object_store_offload_disk</code> which will save the binary
+representation of the object at the path <code>&lt;path&gt;/&lt;hash&gt;</code> and will
+allow large values to be shared between controller and worker so
+long as they share a common filesystem.</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="object_store_offload_disk.html">object_store_offload_disk</a></code> </p>
+        </td>
+        <td><p>Disk-based offload</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="rrq_configure.html">rrq_configure()</a></code> </p>
+        </td>
+        <td><p>Configure rrq</p></td>
+      </tr><tr>
+        
+        <td>
           <p><code><a href="rrq_controller.html">rrq_controller()</a></code> </p>
         </td>
         <td><p>rrq queue controller</p></td>
@@ -157,6 +246,12 @@
           <p><code><a href="rrq_expect_worker.html">rrq_expect_worker()</a></code> </p>
         </td>
         <td><p>Register expected workers</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="rrq_migrate.html">rrq_migrate()</a></code> </p>
+        </td>
+        <td><p>Migrate rrq's internal database and storage</p></td>
       </tr><tr>
         
         <td>

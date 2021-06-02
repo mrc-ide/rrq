@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.3.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.4.0</span>
       </span>
     </div>
 
@@ -243,8 +243,6 @@ expected, so you can use the names directly:</p><pre><span class='va'>b</span> <
 <dt><code>queue_id</code></dt><dd><p>The queue id used on creation</p></dd>
 
 <dt><code>keys</code></dt><dd><p>Internally used keys</p></dd>
-
-<dt><code>db</code></dt><dd><p>Internally used storr database</p></dd>
 
 </dl><p></div></p>
     <h2 class="hasAnchor" id="methods"><a class="anchor" href="#methods"></a>Methods</h2>
@@ -747,7 +745,13 @@ progress bar if in an interactive session.</p></dd>
 <p><hr>
 <a id="method-bulk_wait"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>bulk_wait()</code></h3>
 <p>Wait for a group of tasks</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>rrq_controller_</span><span class='op'>$</span><span class='fu'>bulk_wait</span><span class='op'>(</span><span class='va'>x</span>, timeout <span class='op'>=</span> <span class='cn'>Inf</span>, time_poll <span class='op'>=</span> <span class='fl'>1</span>, progress <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></pre><p></div></p>
+<p><div class="r"></p><pre><span class='va'>rrq_controller_</span><span class='op'>$</span><span class='fu'>bulk_wait</span><span class='op'>(</span>
+  <span class='va'>x</span>,
+  timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
+  time_poll <span class='op'>=</span> <span class='fl'>1</span>,
+  progress <span class='op'>=</span> <span class='cn'>NULL</span>,
+  delete <span class='op'>=</span> <span class='cn'>TRUE</span>
+<span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
 <p><div class="arguments"></p><dl>
@@ -763,6 +767,10 @@ completion (default is 1s, see <code>$task_wait()</code> for details)</p></dd>
 should be displayed. If <code>NULL</code> we fall back on the value of the
 global option <code>rrq.progress</code>, and if that is unset display a
 progress bar if in an interactive session.</p></dd>
+
+<dt><code>delete</code></dt><dd><p>Optional logical, indicating if the tasks
+should be deleted after collection. Typically this is <code>TRUE</code>
+to prevent build-up of lots of task information in Redis.</p></dd>
 
 </dl><p></div></p>
 <p><hr>
@@ -1121,7 +1129,7 @@ rrq looks for exited workers.</p></dd>
   worker_ids <span class='op'>=</span> <span class='cn'>NULL</span>,
   type <span class='op'>=</span> <span class='st'>"message"</span>,
   timeout <span class='op'>=</span> <span class='fl'>0</span>,
-  time_poll <span class='op'>=</span> <span class='fl'>1</span>,
+  time_poll <span class='op'>=</span> <span class='fl'>0.05</span>,
   progress <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
 
@@ -1318,7 +1326,7 @@ message has been responded to.</p><h4 class='hasAnchor' id='arguments'><a class=
   named <span class='op'>=</span> <span class='cn'>TRUE</span>,
   delete <span class='op'>=</span> <span class='cn'>FALSE</span>,
   timeout <span class='op'>=</span> <span class='fl'>0</span>,
-  time_poll <span class='op'>=</span> <span class='fl'>1</span>,
+  time_poll <span class='op'>=</span> <span class='fl'>0.05</span>,
   progress <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
 
@@ -1374,7 +1382,7 @@ This is a helper function around <code>message_send</code> and
   named <span class='op'>=</span> <span class='cn'>TRUE</span>,
   delete <span class='op'>=</span> <span class='cn'>TRUE</span>,
   timeout <span class='op'>=</span> <span class='fl'>600</span>,
-  time_poll <span class='op'>=</span> <span class='fl'>1</span>,
+  time_poll <span class='op'>=</span> <span class='fl'>0.05</span>,
   progress <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
 

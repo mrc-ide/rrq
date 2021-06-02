@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Post task update — rrq_task_progress_update • rrq</title>
+<title>Configure rrq — rrq_configure • rrq</title>
 
 
 <!-- jquery -->
@@ -39,11 +39,13 @@
 
 
 
-<meta property="og:title" content="Post task update — rrq_task_progress_update" />
-<meta property="og:description" content="Post a task progress update.  The progress system in rrq is
-agnostic about how you are going to render your progress, and so
-it just a convention - see Details below.  Any R object can be
-sent as a progress value (e.g., a string, a list, etc)." />
+<meta property="og:title" content="Configure rrq — rrq_configure" />
+<meta property="og:description" content="Configure rrq options. This function must be called before either
+a controller or worker connects to a queue, as the options will
+apply to both. The function may only be called once on a given
+queue as there is no facility (yet) to update options. Currently
+the options concern only storage, and specifically how larger
+objects will be saved (using object_store." />
 
 
 
@@ -114,69 +116,94 @@ sent as a progress value (e.g., a string, a list, etc)." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Post task update</h1>
-    <small class="dont-index">Source: <a href='https://github.com/mrc-ide/rrq/blob/master/R/progress.R'><code>R/progress.R</code></a></small>
-    <div class="hidden name"><code>rrq_task_progress_update.Rd</code></div>
+    <h1>Configure rrq</h1>
+    <small class="dont-index">Source: <a href='https://github.com/mrc-ide/rrq/blob/master/R/configure.R'><code>R/configure.R</code></a></small>
+    <div class="hidden name"><code>rrq_configure.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Post a task progress update.  The progress system in <code>rrq</code> is
-agnostic about how you are going to render your progress, and so
-it just a convention - see Details below.  Any R object can be
-sent as a progress value (e.g., a string, a list, etc).</p>
+    <p>Configure rrq options. This function must be called before either
+a controller or worker connects to a queue, as the options will
+apply to both. The function may only be called once on a given
+queue as there is no facility (yet) to update options. Currently
+the options concern only storage, and specifically how larger
+objects will be saved (using <code><a href='object_store.html'>object_store</a></code>.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>rrq_task_progress_update</span><span class='op'>(</span><span class='va'>value</span>, error <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>rrq_configure</span><span class='op'>(</span>
+  <span class='va'>queue_id</span>,
+  con <span class='op'>=</span> <span class='fu'>redux</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/redux/man/hiredis.html'>hiredis</a></span><span class='op'>(</span><span class='op'>)</span>,
+  <span class='va'>...</span>,
+  store_max_size <span class='op'>=</span> <span class='cn'>Inf</span>,
+  offload_path <span class='op'>=</span> <span class='cn'>NULL</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>value</th>
-      <td><p>An R object with the contents of the update. This
-will overwrite any previous progress value, and can be retrieved
-from a <code><a href='rrq_controller.html'>rrq_controller</a></code> with the
-<code>task_progress</code> method.  A value of <code>NULL</code> will appear
-to clear the status, as <code>NULL</code> will also be returned if no
-status is found for a task.</p></td>
+      <th>queue_id</th>
+      <td><p>The queue id; the same as you would pass to
+<a href='rrq_controller.html'>rrq_controller</a></p></td>
     </tr>
     <tr>
-      <th>error</th>
-      <td><p>Logical, indicating if we should throw an error if
-not running as an <code>rrq</code> task. Set this to <code>FALSE</code> if
-you want code to work without modification within and outside of
-an <code>rrq</code> job, or to <code>TRUE</code> if you want to be sure that
-progress messages have made it to the server.</p></td>
+      <th>con</th>
+      <td><p>A redis connection</p></td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td><p>Additional arguments - this must be empty. This
+argument exists so that all additional arguments must be passed
+by name.</p></td>
+    </tr>
+    <tr>
+      <th>store_max_size</th>
+      <td><p>The maximum object size, in bytes, before
+being moved to the offload store. If given, then larger data
+will be saved in <code>offload_path</code> (using
+<code><a href='object_store_offload_disk.html'>object_store_offload_disk</a></code>)</p></td>
+    </tr>
+    <tr>
+      <th>offload_path</th>
+      <td><p>The path to create an offload store at (passed
+to <code><a href='object_store_offload_disk.html'>object_store_offload_disk</a></code>). The directory will be
+created if it does not exist. If not given (or <code>NULL</code>) but
+<code>store_max_size</code> is finite, then trying to save large objects
+will throw an error.</p></td>
     </tr>
     </table>
 
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>In order to report on progress, a task may, in it's code, write</p>
-<pre>
-rrq::rrq_task_progress_update("task is 90&lt;!-- % done") --&gt;
-</pre>
+    <p>Invisibly, a list with processed configuration information</p>
+    <h2 class="hasAnchor" id="storage"><a class="anchor" href="#storage"></a>Storage</h2>
 
-<p>and this information will be fetchable from <code>rrq_controller</code>
-using the <code>task_progress</code> method and providing the
-<code>task_id</code>.</p>
-<p>It is also possible to register progress <em>without</em> acquiring
-a dependency on <code>rrq</code>.  If your package/script includes code
-like:</p>
-<pre>
-<span class='va'>progress</span> <span class='op'>&lt;-</span> <span class='kw'>function</span><span class='op'>(</span><span class='va'>message</span><span class='op'>)</span> <span class='op'>{</span>
-  <span class='fu'><a href='https://rdrr.io/r/base/conditions.html'>signalCondition</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/structure.html'>structure</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>message <span class='op'>=</span> <span class='va'>message</span><span class='op'>)</span>,
-                            class <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"progress"</span>, <span class='st'>"condition"</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
-<span class='op'>}</span>
-</pre>
+    
 
-<p>(this function can be called anything - the important bit is the
-body function body - you must return an object with a
-<code>message</code> element and the two class attributes
-<code>progress</code> and <code>condition</code>).</p>
-<p>then you can use this in the same way as
-<code>rrq::rrq_task_progress_update</code> above in your code.  When run
-without using rrq, this function will appear to do nothing.</p>
+
+<p>Every time that a task is saved, or a task is completed, results
+are saved into the Redis database. Because Redis is an in-memory
+database, it's not a great idea to save very large objects into
+it (if you ran 100 jobs in parallel and each saved a 2GB object
+you'd likely take down your redis server). In addition, <code>redux</code>
+does not support directly saving objects larger than <code>2^31 - 1</code>
+bytes into Redis. So, for some use cases we need to consider
+where to store larger objects.</p>
+<p>The strategy here is to "offload" the larger objects - bigger than
+some user-given size - onto some other storage system. Currently
+the only alternative supported is a disk store
+(<code><a href='object_store_offload_disk.html'>object_store_offload_disk</a></code>) but we hope to expand this
+later.  So if your task returns a 3GB object then we will spill
+that to disk rather than failing to save that into
+Redis.</p>
+<p>How big is an object? We serialise the object
+(<code><a href='https://rdrr.io/pkg/redux/man/object_to_string.html'>redux::object_to_bin</a></code> just wraps <code><a href='https://rdrr.io/r/base/serialize.html'>serialize</a></code>) which creates
+a vector of bytes and that is saved into the database. To get an
+idea of how large things are you can do:
+<code><a href='https://rdrr.io/r/base/length.html'>length(redux::object_to_bin(your_object))</a></code>.  At the time this
+documentation was written, <code>mtcars</code> was <code>3807</code> bytes, and a
+million random numbers was <code>8,000,031</code> bytes. It's unlikely that
+a <code>store_max_size</code> of less than 1MB will be sensible.</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
