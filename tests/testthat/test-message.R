@@ -1,13 +1,10 @@
-context("messaging")
-
-
 test_that("TIMEOUT_SET causes worker exit on idle worker", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
   obj$message_send("TIMEOUT_SET", 0)
   w$step(TRUE)
   expect_equal(r6_private(w)$timeout, 0)
-  expect_is(r6_private(w)$timer, "function")
+  expect_type(r6_private(w)$timer, "function")
   expect_lt(r6_private(w)$timer(), 0)
   expect_error(w$step(TRUE), "TIMEOUT", class = "rrq_worker_stop")
 })
@@ -32,7 +29,7 @@ test_that("TIMEOUT_SET with null clears a timer", {
   obj$message_send("TIMEOUT_SET", 1)
   w$step(TRUE)
   expect_equal(r6_private(w)$timeout, 1)
-  expect_is(r6_private(w)$timer, "function")
+  expect_type(r6_private(w)$timer, "function")
   obj$message_send("TIMEOUT_SET", NULL)
   w$step(TRUE)
   expect_null(r6_private(w)$timeout)
@@ -59,14 +56,14 @@ test_that("TIMEOUT_GET returns time remaining", {
 
   obj$message_send("TIMEOUT_SET", 100)
   w$step(TRUE)
-  expect_is(r6_private(w)$timer, "function")
+  expect_type(r6_private(w)$timer, "function")
 
   Sys.sleep(0.1)
   id <- obj$message_send("TIMEOUT_GET")
   w$step(TRUE)
 
   response <- obj$message_get_response(id, w$name)
-  expect_is(response, "list")
+  expect_type(response, "list")
   expect_equal(names(response), w$name)
   expect_equal(response[[1]][["timeout"]], 100)
   expect_lt(response[[1]][["remaining"]], 100)
@@ -94,7 +91,7 @@ test_that("TIMEOUT_GET restores a timer", {
   expect_null(r6_private(w)$timer)
 
   w$step(TRUE)
-  expect_is(r6_private(w)$timer, "function")
+  expect_type(r6_private(w)$timer, "function")
 })
 
 
@@ -102,8 +99,8 @@ test_that("message response getting", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
   id <- obj$message_send("PING")
-  expect_is(id, "character")
-  expect_is(redux::redis_time_to_r(id), "POSIXct")
+  expect_type(id, "character")
+  expect_s3_class(redux::redis_time_to_r(id), "POSIXct")
 
   ## Not yet a response:
   expect_equal(obj$message_has_response(id, w$name), set_names(FALSE, w$name))
@@ -381,7 +378,7 @@ test_that("send and wait", {
   expect_equal(res[[1]], "PONG")
   expect_equal(names(res), wid[[1]])
   id <- attr(res, "message_id")
-  expect_is(id, "character")
+  expect_type(id, "character")
   expect_equal(obj$message_get_response(id, wid[[1]]),
                set_names(list("PONG"), wid[[1]]))
 

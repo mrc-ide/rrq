@@ -1,5 +1,3 @@
-context("fault tolerance")
-
 test_that("heartbeat", {
   skip_if_not_installed("callr")
   obj <- test_rrq()

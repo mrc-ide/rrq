@@ -1,5 +1,3 @@
-context("progress")
-
 test_that("basic use", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)

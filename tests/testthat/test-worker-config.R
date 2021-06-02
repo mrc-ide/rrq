@@ -1,5 +1,3 @@
-context("worker_config")
-
 test_that("rrq_default configuration", {
   ## (this is actually the *test* default configuration, which is
   ## possibly not what is wanted)
@@ -26,9 +24,9 @@ test_that("create short-lived worker", {
   ## Remote:
   logs <- tempfile()
   wid <- test_worker_spawn(obj, worker_config = key, logdir = logs)
-  expect_is(wid, "character")
+  expect_type(wid, "character")
   log <- obj$worker_log_tail(wid, Inf)
-  expect_is(log, "data.frame")
+  expect_s3_class(log, "data.frame")
   expect_true(nrow(log) >= 1)
 
   remaining <- time_checker(3)

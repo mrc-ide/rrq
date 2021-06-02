@@ -88,7 +88,7 @@ test_rrq <- function(sources = NULL, root = tempfile()) {
   environment(create) <- create_env
 
   obj <- rrq_controller(name)
-  obj$worker_config_save("localhost", time_poll = 1)
+  obj$worker_config_save("localhost", time_poll = 1, verbose = FALSE)
   obj$envir(create)
   reg.finalizer(obj, function(e) obj$destroy())
   obj
@@ -98,7 +98,7 @@ test_rrq <- function(sources = NULL, root = tempfile()) {
 test_worker_spawn <- function(obj, ..., timeout = 10) {
   skip_on_cran()
   skip_on_windows()
-  worker_spawn(obj, ..., timeout = timeout)
+  suppressMessages(worker_spawn(obj, ..., timeout = timeout))
 }
 
 

@@ -1,5 +1,3 @@
-context("bulk support")
-
 test_that("match_fun_envir can find functions by name", {
   add <- function(a, b) a + b
   expected <- list(name = NULL, value = add)

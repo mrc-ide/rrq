@@ -1,5 +1,3 @@
-context("object_store")
-
 test_that("Fast noop operations behave as expected", {
   s <- test_store()
 

@@ -1,5 +1,3 @@
-context("utils")
-
 test_that("rstrip", {
   expect_equal(rstrip("  "), "")
   expect_equal(rstrip("a  "), "a")

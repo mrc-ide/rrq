@@ -1,6 +1,3 @@
-context("migrate")
-
-
 test_that("Can migrate storage", {
   skip_if_no_redis()
   dat <- readRDS("migrate/0.3.1.rds")
