@@ -10,7 +10,7 @@ test_that("basic interaction with heartbeat works", {
   expect_is(obj, "heartbeat")
   expect_is(obj, "R6")
 
-  con <- redux::hiredis()
+  con <- test_hiredis()
   expect_equal(con$EXISTS(key), 0)
   on.exit(con$DEL(key))
   expect_false(obj$is_running())
@@ -43,7 +43,7 @@ test_that("Garbage collection", {
   key <- sprintf("rrq:heartbeat:gc%s", ids::random_id())
   period <- 1
   expire <- 2
-  con <- redux::hiredis()
+  con <- test_hiredis()
 
   obj <- heartbeat$new(key, period, expire = expire)
   expect_equal(con$EXISTS(key), 1)
@@ -73,7 +73,7 @@ test_that("Kill process", {
   }, list(key = key), package = "rrq")
   pid <- px$get_pid()
 
-  con <- redux::hiredis()
+  con <- test_hiredis()
   wait_timeout("Process did not start up in time", 5, function()
     con$EXISTS(key) == 0 && px$is_alive(), poll = 0.2)
 
@@ -104,7 +104,7 @@ test_that("Interrupt process", {
     Sys.sleep(120)
   }, list(key = key, path = path), package = "rrq")
 
-  con <- redux::hiredis()
+  con <- test_hiredis()
   wait_timeout("Process did not start up in time", 5, function()
     con$EXISTS(key) == 0 && px$is_alive(), poll = 0.2)
 
@@ -137,7 +137,7 @@ test_that("dying process", {
     Sys.sleep(120)
   }, list(key = key), package = "rrq")
 
-  con <- redux::hiredis()
+  con <- test_hiredis()
   wait_timeout("Process did not start up in time", 5, function()
     con$EXISTS(key) == 0 && px$is_alive(), poll = 0.2)
 
@@ -175,12 +175,8 @@ test_that("print", {
 })
 
 
-## Currently failing on R-devel because of changes that restrict
-## assignment of the traceback (currently used by callr); see
-## https://github.com/r-lib/callr/issues/196
 test_that("handle startup failure", {
   skip_if_no_redis()
-  skip_if(getRversion() > numeric_version("4.0.5"))
   config <- redux::redis_config()
   key <- sprintf("rrq:heartbeat:basic:%s", ids::random_id())
   period <- 5
@@ -195,5 +191,5 @@ test_that("handle startup failure", {
   expect_error(obj$start(), "value must be a scalar")
 
   expect_false(obj$is_running())
-  expect_equal(redux::hiredis()$EXISTS(key), 0)
+  expect_equal(test_hiredis()$EXISTS(key), 0)
 })

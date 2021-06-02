@@ -1,10 +1,7 @@
 context("object_store")
 
 test_that("Fast noop operations behave as expected", {
-  con <- redux::hiredis()
-  prefix <- ids::random_id(1, 4)
-  s <- object_store$new(con, prefix)
-  on.exit(s$destroy())
+  s <- test_store()
 
   expect_equal(s$mget(character(0)), list())
   expect_equal(s$mset(list(), "tag"), character(0))
@@ -15,10 +12,9 @@ test_that("Fast noop operations behave as expected", {
 
 
 test_that("Full redis-based storage", {
-  con <- redux::hiredis()
-  prefix <- ids::random_id(1, 4)
-
-  s <- object_store$new(con, prefix)
+  con <- test_hiredis()
+  prefix <- sprintf("rrq:test-store:%s", ids::random_id(1, 4))
+  s <- test_store(prefix = prefix)
 
   t1 <- ids::random_id()
   t2 <- ids::random_id()
@@ -57,11 +53,10 @@ test_that("Full redis-based storage", {
 
 
 test_that("Can offload storage", {
-  con <- redux::hiredis()
-  prefix <- ids::random_id(1, 4)
   path <- tempfile()
   offload <- object_store_offload_disk$new(path)
-  s <- object_store$new(con, prefix, 100, offload)
+  prefix <- sprintf("rrq:test-store:%s", ids::random_id(1, 4))
+  s <- test_store(100, offload, prefix = prefix)
 
   t1 <- ids::random_id()
   t2 <- ids::random_id()
@@ -88,6 +83,7 @@ test_that("Can offload storage", {
 
   s$drop(t2)
 
+  con <- test_hiredis()
   expect_setequal(s$list(), character(0))
   expect_equal(dir(path), character(0))
   expect_setequal(
@@ -97,9 +93,7 @@ test_that("Can offload storage", {
 
 
 test_that("Drop multiple tags", {
-  con <- redux::hiredis()
-  prefix <- ids::random_id(1, 4)
-  s <- object_store$new(con, prefix)
+  s <- test_store()
   t <- ids::random_id(2)
   s$mset(list(1), t[[1]])
   s$mset(list(2), t[[2]])
@@ -110,10 +104,7 @@ test_that("Drop multiple tags", {
 
 
 test_that("scalar helper functions return single values", {
-  con <- redux::hiredis()
-  prefix <- ids::random_id(1, 4)
-  s <- object_store$new(con, prefix)
-  on.exit(s$destroy())
+  s <- test_store()
 
   t <- ids::random_id()
   h <- s$set(pi, t)
@@ -124,11 +115,9 @@ test_that("scalar helper functions return single values", {
 
 
 test_that("destroying a store removes everything, including offload", {
-  con <- redux::hiredis()
-  prefix <- ids::random_id(1, 4)
   path <- tempfile()
   offload <- object_store_offload_disk$new(path)
-  s <- object_store$new(con, prefix, 100, offload)
+  s <- test_store(100, offload)
 
   t <- ids::random_id()
   x <- runif(20)
@@ -142,7 +131,7 @@ test_that("destroying a store removes everything, including offload", {
 
 
 test_that("prevent use of offload if disabled", {
-  con <- redux::hiredis()
+  con <- test_hiredis()
   prefix <- ids::random_id(1, 4)
   path <- tempfile()
   offload <- object_store_offload_disk$new(path)
@@ -164,13 +153,35 @@ test_that("prevent use of offload if disabled", {
 
 
 test_that("set multiple tags at once", {
-  con <- redux::hiredis()
-  prefix <- ids::random_id(1, 4)
-
-  s <- object_store$new(con, prefix)
+  s <- test_store()
 
   t <- ids::random_id(2)
   h <- s$set(1, t)
   expect_setequal(s$tags(), t)
   expect_equal(s$list(), h)
+})
+
+
+test_that("skip serialisation", {
+  s <- test_store()
+  t <- ids::random_id(2)
+  x <- runif(10)
+  d <- object_to_bin(x)
+  h <- s$set(d, t, FALSE)
+  expect_equal(h, hash_data(d))
+  expect_equal(s$list(), h)
+  expect_equal(s$get(h), x)
+})
+
+
+test_that("skip serialisation detects invalid input:", {
+  s <- test_store()
+
+  t <- ids::random_id(2)
+
+  expect_error(s$set(1, t, FALSE), "All values must be raw vectors")
+  expect_error(s$mset(list(object_to_bin(1), 1), t, FALSE),
+               "All values must be raw vectors")
+  
+  expect_equal(s$list(), character(0))
 })

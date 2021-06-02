@@ -158,8 +158,15 @@ object_store <- R6::R6Class(
     ##' @param tag A string used to associate with the object. When
     ##' all tags that point to a particular object value have been
     ##' removed, then the object will be deleted from the store.
-    set = function(value, tag) {
-      self$mset(list(value), tag)[[1L]]
+    ##'
+    ##' @param serialize Logical, indicating if the values should be
+    ##' serialised first. Typically this should be `TRUE`, but for
+    ##' advanced use if you already have a serialised object you can
+    ##' pass that in and set to `FALSE`. Note that only objects
+    ##' serialised with `redux::object_to_bin` (or with
+    ##' `serialize(..., xdr = FALSE)`) will be accepted.
+    set = function(value, tag, serialize = TRUE) {
+      self$mset(list(value), tag, serialize = serialize)[[1L]]
     },
 
     ##' @description Set a number of objects into the store. Unlike `$set()`,
@@ -173,14 +180,28 @@ object_store <- R6::R6Class(
     ##' all tags that point to a particular object value have been
     ##' removed, then the object will be deleted from the store.
     ##' The same tag is used for all objects.
-    mset = function(value, tag) {
+    ##'
+    ##' @param serialize Logical, indicating if the values should be
+    ##' serialised first. Typically this should be `TRUE`, but for
+    ##' advanced use if you already have a serialised object you can
+    ##' pass that in and set to `FALSE`. Note that only objects
+    ##' serialised with `redux::object_to_bin` (or with
+    ##' `serialize(..., xdr = FALSE)`) will be accepted.
+    mset = function(value, tag, serialize = TRUE) {
       assert_is(value, "list")
       if (length(value) == 0) {
         return(character(0))
       }
 
       keys <- private$keys
-      data <- lapply(value, object_to_bin)
+      if (serialize) {
+        data <- lapply(value, object_to_bin)
+      } else {
+        if (!all(vlapply(value, is_serialized_object))) {
+          stop("All values must be raw vectors (i.e., serialised R objects)")
+        }
+        data <- value
+      }
       hash <- vcapply(data, hash_data)
 
       cmd_set <- NULL

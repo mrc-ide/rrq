@@ -46,13 +46,13 @@ expression_eval_safely <- function(expr, envir) {
 ## (e.g., in the case of an anonymous function).
 ##
 ## This function was derived from context::prepare_expression
-expression_prepare <- function(expr, envir_call, db,
+expression_prepare <- function(expr, envir_call, store, tag,
                                function_value = NULL, export = NULL) {
   ret <- list(expr = expr)
 
   if (!is.null(function_value)) {
     assert_is(function_value, "function")
-    hash <- db$set_by_value(function_value, "objects")
+    hash <- store$set(function_value, tag)
     ret$function_hash <- hash
     ret$expr[[1L]] <- as.name(hash)
   }
@@ -81,7 +81,7 @@ expression_prepare <- function(expr, envir_call, db,
   }
 
   if (length(export) > 0L) {
-    h <- db$mset_by_value(export, "objects")
+    h <- store$mset(export, tag)
     ret$objects <- set_names(h, names(export))
   }
 
@@ -119,14 +119,14 @@ expression_find_symbols <- function(expr) {
 }
 
 
-expression_restore_locals <- function(dat, parent, db) {
+expression_restore_locals <- function(dat, parent, store) {
   e <- new.env(parent = parent)
   objects <- dat$objects
   if (!is.null(dat$function_hash)) {
     objects <- c(objects, set_names(dat$function_hash, dat$function_hash))
   }
   if (length(objects) > 0L) {
-    db$export(e, objects, "objects")
+    list2env(set_names(store$mget(objects), names(objects)), e)
   }
   e
 }

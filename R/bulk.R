@@ -1,44 +1,48 @@
-rrq_lapply <- function(con, keys, db, x, fun, dots, envir, queue,
+rrq_lapply <- function(con, keys, store, x, fun, dots, envir, queue,
                        separate_process, task_timeout, depends_on,
                        collect_timeout, time_poll, progress) {
-  dat <- rrq_bulk_submit(con, keys, db, x, fun, dots, FALSE, envir, queue,
+  dat <- rrq_bulk_submit(con, keys, store, x, fun, dots, FALSE, envir, queue,
                          separate_process, task_timeout, depends_on)
   if (collect_timeout == 0) {
     return(dat)
   }
-  rrq_bulk_wait(con, keys, dat, collect_timeout, time_poll, progress)
+  rrq_bulk_wait(con, keys, store, dat, collect_timeout, time_poll, progress)
 }
 
 
-rrq_enqueue_bulk <- function(con, keys, db, x, fun, dots,
+rrq_enqueue_bulk <- function(con, keys, store, x, fun, dots,
                              envir, queue, separate_process, task_timeout,
                              depends_on, collect_timeout, time_poll, progress) {
-  dat <- rrq_bulk_submit(con, keys, db, x, fun, dots, TRUE,
+  dat <- rrq_bulk_submit(con, keys, store, x, fun, dots, TRUE,
                          envir, queue, separate_process, task_timeout,
                          depends_on)
   if (collect_timeout == 0) {
     return(dat)
   }
-  rrq_bulk_wait(con, keys, dat, collect_timeout, time_poll, progress)
+  rrq_bulk_wait(con, keys, store, dat, collect_timeout, time_poll, progress)
 }
 
 
-rrq_bulk_submit <- function(con, keys, db, x, fun, dots, do_call,
+rrq_bulk_submit <- function(con, keys, store, x, fun, dots, do_call,
                             envir, queue, separate_process, task_timeout,
                             depends_on) {
   fun <- match_fun_envir(fun, envir)
+  n <- if (do_call && is.data.frame(x)) nrow(x) else length(x)
+  task_ids <- ids::random_id(n)
+
   if (do_call) {
     x <- rrq_bulk_prepare_call_x(x)
-    dat <- rrq_bulk_prepare_call(db, x, fun, dots, envir)
+    dat <- rrq_bulk_prepare_call(store, task_ids, x, fun, dots, envir)
   } else {
-    dat <- rrq_bulk_prepare_lapply(db, x, fun, dots, envir)
+    dat <- rrq_bulk_prepare_lapply(store, task_ids, x, fun, dots, envir)
   }
 
   key_complete <- rrq_key_task_complete(keys$queue_id)
-  task_ids <- task_submit_n(con, keys, dat, key_complete, queue,
-                            separate_process, task_timeout,
-                            depends_on = depends_on)
-  ret <- list(task_ids = task_ids, key_complete = key_complete,
+  task_submit_n(con, keys, task_ids, dat, key_complete, queue,
+                separate_process, task_timeout,
+                depends_on = depends_on)
+  ret <- list(task_ids = task_ids,
+              key_complete = key_complete,
               names = names(x))
   class(ret) <- "rrq_bulk"
   ret
@@ -46,13 +50,13 @@ rrq_bulk_submit <- function(con, keys, db, x, fun, dots, do_call,
 
 
 ## As in lapply(X, FUN, ...) => [FUN(X[[1]], ...), FUN(X[[2]], ...), ...]
-rrq_bulk_prepare_lapply <- function(db, x, fun, dots, envir) {
+rrq_bulk_prepare_lapply <- function(store, task_ids, x, fun, dots, envir) {
   template <- as.call(c(list(fun$name, NULL), dots))
   rewrite <- function(x, dat) {
     dat$expr[2L] <- x
     object_to_bin(dat)
   }
-  dat <- expression_prepare(template, envir, db,
+  dat <- expression_prepare(template, envir, store, task_ids,
                             function_value = if (is.null(fun$name)) fun$value)
   lapply(x, rewrite, dat)
 }
@@ -61,16 +65,14 @@ rrq_bulk_prepare_lapply <- function(db, x, fun, dots, envir) {
 ## Bulk lapply(X, FUN, ...) => [FUN(X[[1]][[1]], X[[1]][[2]], ...),
 ##                              FUN(X[[2]][[2]], X[[2]][[2]], ...),
 ##                              ...]
-rrq_bulk_prepare_call <- function(db, x, fun, dots, envir) {
-
-
+rrq_bulk_prepare_call <- function(store, task_ids, x, fun, dots, envir) {
   len <- length(x[[1L]])
   nms <- names(x[[1L]])
   args <- set_names(rep(list(NULL), len), nms)
   template <- as.call(c(list(fun$name), args, dots))
   idx <- seq_len(len) + 1L
 
-  dat <- expression_prepare(template, envir, db,
+  dat <- expression_prepare(template, envir, store, task_ids,
                             function_value = if (is.null(fun$name)) fun$value)
   rewrite <- function(x) {
     dat$expr[idx] <- x
@@ -122,13 +124,13 @@ rrq_bulk_prepare_call_x <- function(x) {
 }
 
 
-rrq_bulk_wait <- function(con, keys, dat, timeout, time_poll, progress,
+rrq_bulk_wait <- function(con, keys, store, dat, timeout, time_poll, progress,
                           delete = TRUE) {
   assert_is(dat, "rrq_bulk")
-  ret <- tasks_wait(con, keys, dat$task_ids, timeout, time_poll, progress,
-                    dat$key_complete)
+  ret <- tasks_wait(con, keys, store, dat$task_ids, timeout,
+                    time_poll, progress, dat$key_complete)
   if (delete) {
-    task_delete(con, keys, dat$task_ids, FALSE)
+    task_delete(con, keys, store, dat$task_ids, FALSE)
   }
   set_names(ret, dat$names)
 }
@@ -144,6 +146,10 @@ rrq_bulk_wait <- function(con, keys, dat, timeout, time_poll, progress,
 match_fun_envir <- function(fun, envir = parent.frame()) {
   while (is_call(fun, quote(quote))) {
     fun <- fun[[2L]]
+  }
+
+  if (is_call(fun, quote(`function`))) {
+    fun <- eval(fun, envir)
   }
 
   fun_search <- if (is.symbol(fun)) deparse(fun) else fun
@@ -169,7 +175,7 @@ match_fun_envir <- function(fun, envir = parent.frame()) {
     }
   }
 
-  return(list(name = name, value = value))
+  list(name = name, value = value)
 }
 
 

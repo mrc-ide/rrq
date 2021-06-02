@@ -331,7 +331,7 @@ and returns a list of the same length.
 Set an object into the object store, returning the hash
 of that object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{object_store$set(value, tag)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{object_store$set(value, tag, serialize = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -342,6 +342,13 @@ of that object.
 \item{\code{tag}}{A string used to associate with the object. When
 all tags that point to a particular object value have been
 removed, then the object will be deleted from the store.}
+
+\item{\code{serialize}}{Logical, indicating if the values should be
+serialised first. Typically this should be \code{TRUE}, but for
+advanced use if you already have a serialised object you can
+pass that in and set to \code{FALSE}. Note that only objects
+serialised with \code{redux::object_to_bin} (or with
+\code{serialize(..., xdr = FALSE)}) will be accepted.}
 }
 \if{html}{\out{</div>}}
 }
@@ -355,7 +362,7 @@ this method sets a list of objects into the store at once,
 and returns a character vector of hashes the same length as the
 list of values.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{object_store$mset(value, tag)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{object_store$mset(value, tag, serialize = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -367,6 +374,13 @@ list of values.
 all tags that point to a particular object value have been
 removed, then the object will be deleted from the store.
 The same tag is used for all objects.}
+
+\item{\code{serialize}}{Logical, indicating if the values should be
+serialised first. Typically this should be \code{TRUE}, but for
+advanced use if you already have a serialised object you can
+pass that in and set to \code{FALSE}. Note that only objects
+serialised with \code{redux::object_to_bin} (or with
+\code{serialize(..., xdr = FALSE)}) will be accepted.}
 }
 \if{html}{\out{</div>}}
 }
