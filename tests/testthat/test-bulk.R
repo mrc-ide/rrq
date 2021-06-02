@@ -248,7 +248,6 @@ test_that("Can offload storage for bulk tasks", {
   obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
                          time_poll = 1, overwrite = TRUE)
 
-  ## test_worker_spawn(obj)
   a <- 10
   b <- runif(20)
   t <- obj$lapply(1:10, function(a, b) sum(b) / a, b, collect_timeout = 0)
