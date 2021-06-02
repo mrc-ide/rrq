@@ -12,7 +12,9 @@ test_that("Fast noop operations behave as expected", {
 
 
 test_that("Full redis-based storage", {
-  s <- test_store()
+  con <- test_hiredis()
+  prefix <- sprintf("rrq:test-store:%s", ids::random_id(1, 4))
+  s <- test_store(prefix = prefix)
 
   t1 <- ids::random_id()
   t2 <- ids::random_id()
@@ -53,7 +55,8 @@ test_that("Full redis-based storage", {
 test_that("Can offload storage", {
   path <- tempfile()
   offload <- object_store_offload_disk$new(path)
-  s <- test_store(100, offload)
+  prefix <- sprintf("rrq:test-store:%s", ids::random_id(1, 4))
+  s <- test_store(prefix = prefix)
 
   t1 <- ids::random_id()
   t2 <- ids::random_id()
@@ -80,6 +83,7 @@ test_that("Can offload storage", {
 
   s$drop(t2)
 
+  con <- test_hiredis()
   expect_setequal(s$list(), character(0))
   expect_equal(dir(path), character(0))
   expect_setequal(

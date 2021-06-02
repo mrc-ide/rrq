@@ -56,10 +56,10 @@ test_hiredis <- function() {
 }
 
 
-test_store <- function(...) {
+test_store <- function(..., prefix = NULL) {
+  prefix <- prefix %||% sprintf("rrq:test-store:%s", ids::random_id(1, 4))
   con <- test_hiredis()
-  st <- object_store$new(con, sprintf("rrq:test-store:%s", ids::random_id()),
-                         ...)
+  st <- object_store$new(con, prefix, ...)
   withr::defer_parent(st$destroy())
   st
 }

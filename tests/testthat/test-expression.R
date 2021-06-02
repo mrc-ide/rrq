@@ -135,6 +135,7 @@ test_that("can store special function values", {
 
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
   f <- function(a, b) a + b
+  environment(f) <- globalenv()
   ## Can't compute the hash directly because we get a different one
   ## each time in a local environment due to the local environment.
   res <- expression_prepare(quote(.(a, b)), e, store, tag,
@@ -153,6 +154,7 @@ test_that("can restore function even with no variables", {
 
   e <- emptyenv()
   f <- function(a, b) a + b
+  environment(f) <- globalenv()
   tag <- ids::random_id()
 
   res <- expression_prepare(quote(.(1, 2)), e, store, tag,
