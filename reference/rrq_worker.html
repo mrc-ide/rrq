@@ -40,8 +40,8 @@
 
 
 <meta property="og:title" content="rrq queue worker — rrq_worker" />
-<meta property="og:description" content="A rrq queue worker.  These are not for interacting with but will
-sit and poll a queue for jobs." />
+<meta property="og:description" content="rrq queue worker
+rrq queue worker" />
 
 
 
@@ -73,7 +73,7 @@ sit and poll a queue for jobs." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.4.1</span>
       </span>
     </div>
 
@@ -118,11 +118,46 @@ sit and poll a queue for jobs." />
     </div>
 
     <div class="ref-description">
-    <p>A rrq queue worker.  These are not for interacting with but will
-sit and poll a queue for jobs.</p>
+    <p>rrq queue worker</p>
+<p>rrq queue worker</p>
     </div>
 
-    <pre class="usage"><span class='fu'>rrq_worker</span><span class='op'>(</span>
+
+
+    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+
+    <p>A rrq queue worker.  These are not typically for interacting with
+but will sit and poll a queue for jobs.</p>
+    <h2 class="hasAnchor" id="public-fields"><a class="anchor" href="#public-fields"></a>Public fields</h2>
+
+    <p><div class="r6-fields"></p><dl>
+<dt><code>name</code></dt><dd><p>The name of the worker</p></dd>
+
+</dl><p></div></p>
+    <h2 class="hasAnchor" id="methods"><a class="anchor" href="#methods"></a>Methods</h2>
+
+    
+<h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Public methods</h3>
+
+<ul>
+<li><p><a href='#method-new'><code>rrq_worker$new()</code></a></p></li>
+<li><p><a href='#method-info'><code>rrq_worker$info()</code></a></p></li>
+<li><p><a href='#method-log'><code>rrq_worker$log()</code></a></p></li>
+<li><p><a href='#method-load_envir'><code>rrq_worker$load_envir()</code></a></p></li>
+<li><p><a href='#method-poll'><code>rrq_worker$poll()</code></a></p></li>
+<li><p><a href='#method-step'><code>rrq_worker$step()</code></a></p></li>
+<li><p><a href='#method-loop'><code>rrq_worker$loop()</code></a></p></li>
+<li><p><a href='#method-format'><code>rrq_worker$format()</code></a></p></li>
+<li><p><a href='#method-timer_start'><code>rrq_worker$timer_start()</code></a></p></li>
+<li><p><a href='#method-progress'><code>rrq_worker$progress()</code></a></p></li>
+<li><p><a href='#method-task_eval'><code>rrq_worker$task_eval()</code></a></p></li>
+<li><p><a href='#method-shutdown'><code>rrq_worker$shutdown()</code></a></p></li>
+<li><p><a href='#method-clone'><code>rrq_worker$clone()</code></a></p></li>
+</ul>
+<p><hr>
+<a id="method-new"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>new()</code></h3>
+<p>Constructor</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_worker</span><span class='op'>$</span><span class='fu'>new</span><span class='op'>(</span>
   <span class='va'>queue_id</span>,
   con <span class='op'>=</span> <span class='fu'>redux</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/redux/man/hiredis.html'>hiredis</a></span><span class='op'>(</span><span class='op'>)</span>,
   key_alive <span class='op'>=</span> <span class='cn'>NULL</span>,
@@ -131,67 +166,193 @@ sit and poll a queue for jobs.</p>
   time_poll <span class='op'>=</span> <span class='cn'>NULL</span>,
   timeout <span class='op'>=</span> <span class='cn'>NULL</span>,
   heartbeat_period <span class='op'>=</span> <span class='cn'>NULL</span>,
-  verbose <span class='op'>=</span> <span class='cn'>TRUE</span>
-<span class='op'>)</span></pre>
+  verbose <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  register <span class='op'>=</span> <span class='cn'>TRUE</span>
+<span class='op'>)</span></pre><p></div></p>
 
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
-    <table class="ref-arguments">
-    <colgroup><col class="name" /><col class="desc" /></colgroup>
-    <tr>
-      <th>queue_id</th>
-      <td><p>Name of the queue to connect to.  This will be the
-prefix to all the keys in the redis database</p></td>
-    </tr>
-    <tr>
-      <th>con</th>
-      <td><p>A redis connection</p></td>
-    </tr>
-    <tr>
-      <th>key_alive</th>
-      <td><p>Optional key that will be written once the
-worker is alive.</p></td>
-    </tr>
-    <tr>
-      <th>worker_name</th>
-      <td><p>Optional worker name.  If omitted, a random
-name will be created.</p></td>
-    </tr>
-    <tr>
-      <th>queue</th>
-      <td><p>Queues to listen on, listed in decreasing order of
-priority. If not given, we listen on the "default" queue.</p></td>
-    </tr>
-    <tr>
-      <th>time_poll</th>
-      <td><p>Poll time.  Longer values here will reduce the
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>queue_id</code></dt><dd><p>Name of the queue to connect to.  This will be the
+prefix to all the keys in the redis database</p></dd>
+
+<dt><code>con</code></dt><dd><p>A redis connection</p></dd>
+
+<dt><code>key_alive</code></dt><dd><p>Optional key that will be written once the
+worker is alive.</p></dd>
+
+<dt><code>worker_name</code></dt><dd><p>Optional worker name.  If omitted, a random
+name will be created.</p></dd>
+
+<dt><code>queue</code></dt><dd><p>Queues to listen on, listed in decreasing order of
+priority. If not given, we listen on the "default" queue.</p></dd>
+
+<dt><code>time_poll</code></dt><dd><p>Poll time.  Longer values here will reduce the
 impact on the database but make workers less responsive to being
 killed with an interrupt (control-C or Escape).  The default
 should be good for most uses, but shorter values are used for
-debugging.</p></td>
-    </tr>
-    <tr>
-      <th>timeout</th>
-      <td><p>Optional timeout to set for the worker.  This is
+debugging.</p></dd>
+
+<dt><code>timeout</code></dt><dd><p>Optional timeout to set for the worker.  This is
 (roughly) equivalent to issuing a <code>TIMEOUT_SET</code> message
 after initialising the worker, except that it's guaranteed to be
-run by all workers.</p></td>
-    </tr>
-    <tr>
-      <th>heartbeat_period</th>
-      <td><p>Optional period for the heartbeat.  If
+run by all workers.</p></dd>
+
+<dt><code>heartbeat_period</code></dt><dd><p>Optional period for the heartbeat.  If
 non-NULL then a heartbeat process will be started (using
 <code><a href='heartbeat.html'>heartbeat</a></code>) which can be used to build fault
-tolerant queues.</p></td>
-    </tr>
-    <tr>
-      <th>verbose</th>
-      <td><p>Logical, indicating if the worker should print
+tolerant queues.</p></dd>
+
+<dt><code>verbose</code></dt><dd><p>Logical, indicating if the worker should print
 logging output to the screen.  Logging to screen has a small but
 measurable performance cost, and if you will not collect system
 logs from the worker then it is wasted time.  Logging to the
-redis server is always enabled.</p></td>
-    </tr>
-    </table>
+redis server is always enabled.</p></dd>
+
+<dt><code>register</code></dt><dd><p>Logical, indicating if the worker should be
+registered with the controller. Typically this is <code>TRUE</code>, but
+set to <code>FALSE</code> if you need to impersonate a worker, or create a
+temporary worker. This is passed as <code>FALSE</code> when running a task
+in a separate process.</p></dd>
+
+</dl><p></div></p>
+<p><hr>
+<a id="method-info"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>info()</code></h3>
+<p>Return information about this worker, a list of
+key-value pairs.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_worker</span><span class='op'>$</span><span class='fu'>info</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
+
+<p><hr>
+<a id="method-log"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code><a href='https://rdrr.io/r/base/Log.html'>log()</a></code></h3>
+<p>Create a log entry. This will print a human readable
+format to screen and a parseable format to the redis database.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_worker</span><span class='op'>$</span><span class='fu'>log</span><span class='op'>(</span><span class='va'>label</span>, value <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>label</code></dt><dd><p>Scalar character, the title of the log entry</p></dd>
+
+<dt><code>value</code></dt><dd><p>Character vector (or null) with log values</p></dd>
+
+</dl><p></div></p>
+<p><hr>
+<a id="method-load_envir"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>load_envir()</code></h3>
+<p>Load the worker environment by creating a new
+environment object and running the create hook (if configured).
+See <code>$envir</code> on <code><a href='rrq_controller.html'>rrq_controller</a></code> for details.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_worker</span><span class='op'>$</span><span class='fu'>load_envir</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
+
+<p><hr>
+<a id="method-poll"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>poll()</code></h3>
+<p>Poll for work</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_worker</span><span class='op'>$</span><span class='fu'>poll</span><span class='op'>(</span>immediate <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>immediate</code></dt><dd><p>Logical, indicating if we should <em>not</em>
+do a blocking wait on the queue but instead reducing the timeout to
+zero. Intended primarily for use in the tests.</p></dd>
+
+</dl><p></div></p>
+<p><hr>
+<a id="method-step"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code><a href='https://rdrr.io/r/stats/step.html'>step()</a></code></h3>
+<p>Take a single "step". This consists of</p><ol>
+<li><p>Poll for work (<code>$poll()</code>)</p></li>
+<li><p>If work found, run it (either a task or a message)</p></li>
+<li><p>If work not found, check the timeout</p></li>
+</ol>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_worker</span><span class='op'>$</span><span class='fu'>step</span><span class='op'>(</span>immediate <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>immediate</code></dt><dd><p>Logical, indicating if we should <em>not</em>
+do a blocking wait on the queue but instead reducing the timeout to
+zero. Intended primarily for use in the tests.</p></dd>
+
+</dl><p></div></p>
+<p><hr>
+<a id="method-loop"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>loop()</code></h3>
+<p>The main worker loop. Use this to set up the main
+w orker event loop, which will continue until exiting (via a timeout
+or message).</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_worker</span><span class='op'>$</span><span class='fu'>loop</span><span class='op'>(</span>immediate <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>immediate</code></dt><dd><p>Logical, indicating if we should <em>not</em>
+do a blocking wait on the queue but instead reducing the timeout to
+zero. Intended primarily for use in the tests.</p></dd>
+
+</dl><p></div></p>
+<p><hr>
+<a id="method-format"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code><a href='https://rdrr.io/r/base/format.html'>format()</a></code></h3>
+<p>Create a nice string representation of the worker.
+Used automatically to print the worker by R6.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_worker</span><span class='op'>$</span><span class='fu'>format</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
+
+<p><hr>
+<a id="method-timer_start"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>timer_start()</code></h3>
+<p>Start the timer</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_worker</span><span class='op'>$</span><span class='fu'>timer_start</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
+
+<p><hr>
+<a id="method-progress"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>progress()</code></h3>
+<p>Submit a progress message. See
+<code><a href='rrq_task_progress_update.html'>rrq_task_progress_update()</a></code> for details of this mechanism.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_worker</span><span class='op'>$</span><span class='fu'>progress</span><span class='op'>(</span><span class='va'>value</span>, error <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>value</code></dt><dd><p>An R object with the contents of the update. This
+will overwrite any previous progress value, and can be retrieved
+from a <a href='rrq_controller.html'>rrq_controller</a> with the
+<code>$task_progress</code> method.  A value of <code>NULL</code> will appear
+to clear the status, as <code>NULL</code> will also be returned if no
+status is found for a task.</p></dd>
+
+<dt><code>error</code></dt><dd><p>Logical, indicating if we should throw an error if
+not running as an <code>rrq</code> task. Set this to <code>FALSE</code> if
+you want code to work without modification within and outside of
+an <code>rrq</code> job, or to <code>TRUE</code> if you want to be sure that
+progress messages have made it to the server.</p></dd>
+
+</dl><p></div></p>
+<p><hr>
+<a id="method-task_eval"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>task_eval()</code></h3>
+<p>Evaluate a task</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_worker</span><span class='op'>$</span><span class='fu'>task_eval</span><span class='op'>(</span><span class='va'>task_id</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>task_id</code></dt><dd><p>A task identifier. It is undefined what happens if
+this identifier does not exist.</p></dd>
+
+</dl><p></div></p>
+<p><hr>
+<a id="method-shutdown"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>shutdown()</code></h3>
+<p>Stop the worker</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_worker</span><span class='op'>$</span><span class='fu'>shutdown</span><span class='op'>(</span>status <span class='op'>=</span> <span class='st'>"OK"</span>, graceful <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>status</code></dt><dd><p>the worker status; typically be one of <code>OK</code> or <code>ERROR</code>
+but can be any string</p></dd>
+
+<dt><code>graceful</code></dt><dd><p>Logical, indicating if we should request a
+graceful shutdown of the heartbeat, if running.</p></dd>
+
+</dl><p></div></p>
+<p><hr>
+<a id="method-clone"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>clone()</code></h3>
+<p>The objects of this class are cloneable with this method.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rrq_worker</span><span class='op'>$</span><span class='fu'>clone</span><span class='op'>(</span>deep <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>deep</code></dt><dd><p>Whether to make a deep clone.</p></dd>
+
+</dl><p></div></p>
+
 
 
   </div>

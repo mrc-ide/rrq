@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Migrate rrq's internal database and storage — rrq_migrate • rrq</title>
+<title>Create a worker — rrq_worker_from_config • rrq</title>
 
 
 <!-- jquery -->
@@ -39,12 +39,11 @@
 
 
 
-<meta property="og:title" content="Migrate rrq's internal database and storage — rrq_migrate" />
-<meta property="og:description" content="Migrate the rrq internal format after breaking changes. We take a
-&quot;best-effort&quot; approach to migrate data, but generally one should
-not assume that the rrq data store is a persistent store. If you
-try to connect to a database that has not been migrated, an error
-will be thrown indicating how you can run this function." />
+<meta property="og:title" content="Create a worker — rrq_worker_from_config" />
+<meta property="og:description" content="Create a worker based on a named configuration. This is a wrapper
+around directly constructing a rrq_worker. Create new
+configurations by running $worker_config_save from the
+rrq_controller object." />
 
 
 
@@ -115,57 +114,61 @@ will be thrown indicating how you can run this function." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Migrate rrq's internal database and storage</h1>
-    <small class="dont-index">Source: <a href='https://github.com/mrc-ide/rrq/blob/master/R/migrate.R'><code>R/migrate.R</code></a></small>
-    <div class="hidden name"><code>rrq_migrate.Rd</code></div>
+    <h1>Create a worker</h1>
+    <small class="dont-index">Source: <a href='https://github.com/mrc-ide/rrq/blob/master/R/worker.R'><code>R/worker.R</code></a></small>
+    <div class="hidden name"><code>rrq_worker_from_config.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Migrate the rrq internal format after breaking changes. We take a
-"best-effort" approach to migrate data, but generally one should
-not assume that the rrq data store is a persistent store. If you
-try to connect to a database that has not been migrated, an error
-will be thrown indicating how you can run this function.</p>
+    <p>Create a worker based on a named configuration. This is a wrapper
+around directly constructing a <code><a href='rrq_worker.html'>rrq_worker</a></code>. Create new
+configurations by running <code>$worker_config_save</code> from the
+<code><a href='rrq_controller.html'>rrq_controller</a></code> object.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>rrq_migrate</span><span class='op'>(</span><span class='va'>queue_id</span>, con <span class='op'>=</span> <span class='fu'>redux</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/redux/man/hiredis.html'>hiredis</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>rrq_worker_from_config</span><span class='op'>(</span>
+  <span class='va'>queue_id</span>,
+  worker_config <span class='op'>=</span> <span class='st'>"localhost"</span>,
+  worker_name <span class='op'>=</span> <span class='cn'>NULL</span>,
+  key_alive <span class='op'>=</span> <span class='cn'>NULL</span>,
+  con <span class='op'>=</span> <span class='fu'>redux</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/redux/man/hiredis.html'>hiredis</a></span><span class='op'>(</span><span class='op'>)</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>queue_id</th>
-      <td><p>The name of the rrq queue (as passed to
-<a href='rrq_controller.html'>rrq_controller</a></p></td>
+      <td><p>The name of the queue</p></td>
+    </tr>
+    <tr>
+      <th>worker_config</th>
+      <td><p>Optional name of the configuration. The
+default "localhost" configuration always exists.</p></td>
+    </tr>
+    <tr>
+      <th>worker_name</th>
+      <td><p>The name of the worker (if not given a random
+name is used)</p></td>
+    </tr>
+    <tr>
+      <th>key_alive</th>
+      <td><p>Optional key to write to, indicating that the
+worker is alive. This can be passed to
+<code><a href='rrq_expect_worker.html'>rrq_expect_worker</a></code> so that a controlling process can
+wait for workers to come up.</p></td>
     </tr>
     <tr>
       <th>con</th>
-      <td><p>A redis connection</p></td>
+      <td><p>Redis configuration</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>Nothing, called for its side effects</p>
-    <h2 class="hasAnchor" id="compatibility"><a class="anchor" href="#compatibility"></a>Compatibility</h2>
-
-    
-
-
-<p>We can detect if a rrq database has been opened with a newer
-version of rrq and attempt to fix it. However, older versions do
-not now know when the database has become out of date. Using the
-same version of worker and controller will generally give good
-results though.</p>
-    <h2 class="hasAnchor" id="-to-"><a class="anchor" href="#-to-"></a>0.3.1 to 0.4.0</h2>
-
-    
-
-
-<p>We moved from an internal data store based on <code>storr</code> to one that
-allows offloading. This requires moving all data around to the
-new store and rewriting tasks to reference it (both task inputs
-and task outputs).</p>
+    <p>A <code><a href='rrq_worker.html'>rrq_worker</a></code> object. If you want to "run" the
+worker, you would want to use the <code>$loop()</code> method of this
+object. Other methods are for advanced use.</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

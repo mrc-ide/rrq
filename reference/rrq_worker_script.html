@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Migrate rrq's internal database and storage — rrq_migrate • rrq</title>
+<title>Write worker runner script — rrq_worker_script • rrq</title>
 
 
 <!-- jquery -->
@@ -39,12 +39,11 @@
 
 
 
-<meta property="og:title" content="Migrate rrq's internal database and storage — rrq_migrate" />
-<meta property="og:description" content="Migrate the rrq internal format after breaking changes. We take a
-&quot;best-effort&quot; approach to migrate data, but generally one should
-not assume that the rrq data store is a persistent store. If you
-try to connect to a database that has not been migrated, an error
-will be thrown indicating how you can run this function." />
+<meta property="og:title" content="Write worker runner script — rrq_worker_script" />
+<meta property="og:description" content="Write a small script that can be used to launch a rrq worker. The
+resulting script takes the same arguments as
+rrq_worker_from_config(), but from the command line. See
+Details." />
 
 
 
@@ -115,58 +114,74 @@ will be thrown indicating how you can run this function." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Migrate rrq's internal database and storage</h1>
-    <small class="dont-index">Source: <a href='https://github.com/mrc-ide/rrq/blob/master/R/migrate.R'><code>R/migrate.R</code></a></small>
-    <div class="hidden name"><code>rrq_migrate.Rd</code></div>
+    <h1>Write worker runner script</h1>
+    <small class="dont-index">Source: <a href='https://github.com/mrc-ide/rrq/blob/master/R/worker_runner.R'><code>R/worker_runner.R</code></a></small>
+    <div class="hidden name"><code>rrq_worker_script.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Migrate the rrq internal format after breaking changes. We take a
-"best-effort" approach to migrate data, but generally one should
-not assume that the rrq data store is a persistent store. If you
-try to connect to a database that has not been migrated, an error
-will be thrown indicating how you can run this function.</p>
+    <p>Write a small script that can be used to launch a rrq worker. The
+resulting script takes the same arguments as
+<code><a href='rrq_worker_from_config.html'>rrq_worker_from_config()</a></code>, but from the command line. See
+Details.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>rrq_migrate</span><span class='op'>(</span><span class='va'>queue_id</span>, con <span class='op'>=</span> <span class='fu'>redux</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/redux/man/hiredis.html'>hiredis</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>rrq_worker_script</span><span class='op'>(</span><span class='va'>path</span>, versioned <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>queue_id</th>
-      <td><p>The name of the rrq queue (as passed to
-<a href='rrq_controller.html'>rrq_controller</a></p></td>
+      <th>path</th>
+      <td><p>The path to write to. Should be a directory (or one
+will be created if it does not yet exist). The final script will
+be <code><a href='https://rdrr.io/r/base/file.path.html'>file.path(path, "rrq_worker")</a></code></p></td>
     </tr>
     <tr>
-      <th>con</th>
-      <td><p>A redis connection</p></td>
+      <th>versioned</th>
+      <td><p>Logical, indicating if we should write a
+versioned R script that will use the same path to <code>Rscript</code> as
+the running session. If <code>FALSE</code> we use <code>#!/usr/bin/env Rscript</code>
+which will pick up <code>Rscript</code> from the path. You may want to use
+a versioned script in tests or if you have mulitple R versions
+installed simultaneously.</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>Nothing, called for its side effects</p>
-    <h2 class="hasAnchor" id="compatibility"><a class="anchor" href="#compatibility"></a>Compatibility</h2>
+    <p>Invisibly, the path to the script</p>
+    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    
+    <p>If you need to launch rrq workers from a script, it's convenient
+not to have to embed R code like:</p><pre>Rscript -e 'rrq::worker_from_config("myqueue")'
+</pre>
+
+<p>as this is error-prone and unpleasant to read. You can use the
+function <code>rrq_worker_script</code> to write out a small helper script
+which lets you write:</p><pre>./path/rrq_worker myqueue
+</pre>
+
+<p>instead.</p>
+<p>The helper script supports the same arguments as
+<code>[rrq::rrq_worker_from_config()]</code>:</p><ul>
+<li><p><code>queue_id</code> as the sole positional argument</p></li>
+<li><p><code>worker_config</code> as <code>--config</code></p></li>
+<li><p><code>worker_name</code> as <code>--name</code></p></li>
+<li><p><code>key_alive</code> as <code>--key-alive</code></p></li>
+</ul>
+
+<p>To change the redis connection settings, set the <code>REDIS_URL</code>
+environment variable (see <code><a href='https://rdrr.io/pkg/redux/man/hiredis.html'>redux::hiredis()</a></code> for details).</p>
+<p>For example to create a worker <code>myworker</code> with configuration
+<code>myconfig</code> on queue <code>myqueue</code> you might use</p><pre>./rrq_worker --config=myconfig --name=myworker myqueue
+</pre>
 
 
-<p>We can detect if a rrq database has been opened with a newer
-version of rrq and attempt to fix it. However, older versions do
-not now know when the database has become out of date. Using the
-same version of worker and controller will generally give good
-results though.</p>
-    <h2 class="hasAnchor" id="-to-"><a class="anchor" href="#-to-"></a>0.3.1 to 0.4.0</h2>
-
-    
-
-
-<p>We moved from an internal data store based on <code>storr</code> to one that
-allows offloading. This requires moving all data around to the
-new store and rewriting tasks to reference it (both task inputs
-and task outputs).</p>
-
+    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
+    <pre class="examples"><div class='input'><span class='va'>path</span> <span class='op'>&lt;-</span> <span class='fu'>rrq</span><span class='fu'>::</span><span class='fu'>rrq_worker_script</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/tempfile.html'>tempfile</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/readLines.html'>readLines</a></span><span class='op'>(</span><span class='va'>path</span><span class='op'>)</span>
+</div><div class='output co'>#&gt; [1] "#!/usr/bin/env Rscript"  "rrq:::rrq_worker_main()"</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
