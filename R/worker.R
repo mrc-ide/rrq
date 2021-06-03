@@ -190,7 +190,7 @@ rrq_worker <- R6::R6Class(
     },
 
     ##' @description The main worker loop. Use this to set up the main
-    ##'  w orker event loop, which will continue until exiting (via a timeout
+    ##'  worker event loop, which will continue until exiting (via a timeout
     ##'  or message).
     ##'
     ##' @param immediate Logical, indicating if we should *not*
