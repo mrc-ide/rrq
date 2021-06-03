@@ -3,8 +3,47 @@
 \name{rrq_worker}
 \alias{rrq_worker}
 \title{rrq queue worker}
-\usage{
-rrq_worker(
+\description{
+rrq queue worker
+
+rrq queue worker
+}
+\details{
+A rrq queue worker.  These are not typically for interacting with
+but will sit and poll a queue for jobs.
+}
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{name}}{The name of the worker}
+}
+\if{html}{\out{</div>}}
+}
+\section{Methods}{
+\subsection{Public methods}{
+\itemize{
+\item \href{#method-new}{\code{rrq_worker$new()}}
+\item \href{#method-info}{\code{rrq_worker$info()}}
+\item \href{#method-log}{\code{rrq_worker$log()}}
+\item \href{#method-load_envir}{\code{rrq_worker$load_envir()}}
+\item \href{#method-poll}{\code{rrq_worker$poll()}}
+\item \href{#method-step}{\code{rrq_worker$step()}}
+\item \href{#method-loop}{\code{rrq_worker$loop()}}
+\item \href{#method-format}{\code{rrq_worker$format()}}
+\item \href{#method-timer_start}{\code{rrq_worker$timer_start()}}
+\item \href{#method-progress}{\code{rrq_worker$progress()}}
+\item \href{#method-task_eval}{\code{rrq_worker$task_eval()}}
+\item \href{#method-shutdown}{\code{rrq_worker$shutdown()}}
+\item \href{#method-clone}{\code{rrq_worker$clone()}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-new"></a>}}
+\if{latex}{\out{\hypertarget{method-new}{}}}
+\subsection{Method \code{new()}}{
+Constructor
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$new(
   queue_id,
   con = redux::hiredis(),
   key_alive = NULL,
@@ -13,47 +52,270 @@ rrq_worker(
   time_poll = NULL,
   timeout = NULL,
   heartbeat_period = NULL,
-  verbose = TRUE
-)
+  verbose = TRUE,
+  register = TRUE
+)}\if{html}{\out{</div>}}
 }
-\arguments{
-\item{queue_id}{Name of the queue to connect to.  This will be the
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{queue_id}}{Name of the queue to connect to.  This will be the
 prefix to all the keys in the redis database}
 
-\item{con}{A redis connection}
+\item{\code{con}}{A redis connection}
 
-\item{key_alive}{Optional key that will be written once the
+\item{\code{key_alive}}{Optional key that will be written once the
 worker is alive.}
 
-\item{worker_name}{Optional worker name.  If omitted, a random
+\item{\code{worker_name}}{Optional worker name.  If omitted, a random
 name will be created.}
 
-\item{queue}{Queues to listen on, listed in decreasing order of
+\item{\code{queue}}{Queues to listen on, listed in decreasing order of
 priority. If not given, we listen on the "default" queue.}
 
-\item{time_poll}{Poll time.  Longer values here will reduce the
+\item{\code{time_poll}}{Poll time.  Longer values here will reduce the
 impact on the database but make workers less responsive to being
 killed with an interrupt (control-C or Escape).  The default
 should be good for most uses, but shorter values are used for
 debugging.}
 
-\item{timeout}{Optional timeout to set for the worker.  This is
+\item{\code{timeout}}{Optional timeout to set for the worker.  This is
 (roughly) equivalent to issuing a \code{TIMEOUT_SET} message
 after initialising the worker, except that it's guaranteed to be
 run by all workers.}
 
-\item{heartbeat_period}{Optional period for the heartbeat.  If
+\item{\code{heartbeat_period}}{Optional period for the heartbeat.  If
 non-NULL then a heartbeat process will be started (using
 \code{\link{heartbeat}}) which can be used to build fault
 tolerant queues.}
 
-\item{verbose}{Logical, indicating if the worker should print
+\item{\code{verbose}}{Logical, indicating if the worker should print
 logging output to the screen.  Logging to screen has a small but
 measurable performance cost, and if you will not collect system
 logs from the worker then it is wasted time.  Logging to the
 redis server is always enabled.}
+
+\item{\code{register}}{Logical, indicating if the worker should be
+registered with the controller. Typically this is \code{TRUE}, but
+set to \code{FALSE} if you need to impersonate a worker, or create a
+temporary worker. This is passed as \code{FALSE} when running a task
+in a separate process.}
 }
-\description{
-A rrq queue worker.  These are not for interacting with but will
-sit and poll a queue for jobs.
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-info"></a>}}
+\if{latex}{\out{\hypertarget{method-info}{}}}
+\subsection{Method \code{info()}}{
+Return information about this worker, a list of
+key-value pairs.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$info()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-log"></a>}}
+\if{latex}{\out{\hypertarget{method-log}{}}}
+\subsection{Method \code{log()}}{
+Create a log entry. This will print a human readable
+format to screen and a parseable format to the redis database.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$log(label, value = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{label}}{Scalar character, the title of the log entry}
+
+\item{\code{value}}{Character vector (or null) with log values}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-load_envir"></a>}}
+\if{latex}{\out{\hypertarget{method-load_envir}{}}}
+\subsection{Method \code{load_envir()}}{
+Load the worker environment by creating a new
+environment object and running the create hook (if configured).
+See \verb{$envir} on \code{\link{rrq_controller}} for details.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$load_envir()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-poll"></a>}}
+\if{latex}{\out{\hypertarget{method-poll}{}}}
+\subsection{Method \code{poll()}}{
+Poll for work
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$poll(immediate = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{immediate}}{Logical, indicating if we should \emph{not}
+do a blocking wait on the queue but instead reducing the timeout to
+zero. Intended primarily for use in the tests.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-step"></a>}}
+\if{latex}{\out{\hypertarget{method-step}{}}}
+\subsection{Method \code{step()}}{
+Take a single "step". This consists of
+\enumerate{
+\item Poll for work (\verb{$poll()})
+\item If work found, run it (either a task or a message)
+\item If work not found, check the timeout
+}
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$step(immediate = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{immediate}}{Logical, indicating if we should \emph{not}
+do a blocking wait on the queue but instead reducing the timeout to
+zero. Intended primarily for use in the tests.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-loop"></a>}}
+\if{latex}{\out{\hypertarget{method-loop}{}}}
+\subsection{Method \code{loop()}}{
+The main worker loop. Use this to set up the main
+w orker event loop, which will continue until exiting (via a timeout
+or message).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$loop(immediate = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{immediate}}{Logical, indicating if we should \emph{not}
+do a blocking wait on the queue but instead reducing the timeout to
+zero. Intended primarily for use in the tests.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-format"></a>}}
+\if{latex}{\out{\hypertarget{method-format}{}}}
+\subsection{Method \code{format()}}{
+Create a nice string representation of the worker.
+Used automatically to print the worker by R6.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$format()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-timer_start"></a>}}
+\if{latex}{\out{\hypertarget{method-timer_start}{}}}
+\subsection{Method \code{timer_start()}}{
+Start the timer
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$timer_start()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-progress"></a>}}
+\if{latex}{\out{\hypertarget{method-progress}{}}}
+\subsection{Method \code{progress()}}{
+Submit a progress message. See
+\code{\link[=rrq_task_progress_update]{rrq_task_progress_update()}} for details of this mechanism.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$progress(value, error = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{value}}{An R object with the contents of the update. This
+will overwrite any previous progress value, and can be retrieved
+from a \link{rrq_controller} with the
+\verb{$task_progress} method.  A value of \code{NULL} will appear
+to clear the status, as \code{NULL} will also be returned if no
+status is found for a task.}
+
+\item{\code{error}}{Logical, indicating if we should throw an error if
+not running as an \code{rrq} task. Set this to \code{FALSE} if
+you want code to work without modification within and outside of
+an \code{rrq} job, or to \code{TRUE} if you want to be sure that
+progress messages have made it to the server.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-task_eval"></a>}}
+\if{latex}{\out{\hypertarget{method-task_eval}{}}}
+\subsection{Method \code{task_eval()}}{
+Evaluate a task
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$task_eval(task_id)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{task_id}}{A task identifier. It is undefined what happens if
+this identifier does not exist.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-shutdown"></a>}}
+\if{latex}{\out{\hypertarget{method-shutdown}{}}}
+\subsection{Method \code{shutdown()}}{
+Stop the worker
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$shutdown(status = "OK", graceful = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{status}}{the worker status; typically be one of \code{OK} or \code{ERROR}
+but can be any string}
+
+\item{\code{graceful}}{Logical, indicating if we should request a
+graceful shutdown of the heartbeat, if running.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-clone}{}}}
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$clone(deep = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
+}
 }

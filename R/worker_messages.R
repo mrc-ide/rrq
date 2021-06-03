@@ -1,5 +1,5 @@
 ## Pulled out because otherwise they clutter the place up.
-run_message <- function(worker, msg) {
+run_message <- function(worker, private, msg) {
   ## TODO: these can be unserialised...
   content <- bin_to_object(msg)
   message_id <- content$id
@@ -13,16 +13,16 @@ run_message <- function(worker, msg) {
                 PING = run_message_ping(),
                 ECHO = run_message_echo(args),
                 EVAL = run_message_eval(args),
-                STOP = run_message_stop(worker, message_id, args), # noreturn
-                INFO = run_message_info(worker),
-                PAUSE = run_message_pause(worker),
-                RESUME = run_message_resume(worker),
+                STOP = run_message_stop(worker, private, message_id, args),
+                INFO = run_message_info(worker, private),
+                PAUSE = run_message_pause(worker, private),
+                RESUME = run_message_resume(worker, private),
                 REFRESH = run_message_refresh(worker),
-                TIMEOUT_SET = run_message_timeout_set(worker, args),
-                TIMEOUT_GET = run_message_timeout_get(worker),
+                TIMEOUT_SET = run_message_timeout_set(worker, private, args),
+                TIMEOUT_GET = run_message_timeout_get(worker, private),
                 run_message_unknown(cmd, args))
 
-  message_respond(worker, message_id, cmd, res)
+  message_respond(worker, private, message_id, cmd, res)
 }
 
 run_message_ping <- function() {
@@ -42,17 +42,17 @@ run_message_eval <- function(args) {
   print(try(eval(args, .GlobalEnv)))
 }
 
-run_message_stop <- function(worker, message_id, args) {
-  message_respond(worker, message_id, "STOP", "BYE")
+run_message_stop <- function(worker, private, message_id, args) {
+  message_respond(worker, private, message_id, "STOP", "BYE")
   if (is.null(args)) {
     args <- "BYE"
   }
   stop(rrq_worker_stop(worker, args))
 }
 
-run_message_info <- function(worker) {
+run_message_info <- function(worker, private) {
   info <- worker$info()
-  worker$con$HSET(worker$keys$worker_info, worker$name, object_to_bin(info))
+  private$con$HSET(private$keys$worker_info, worker$name, object_to_bin(info))
   info
 }
 
@@ -61,29 +61,29 @@ run_message_refresh <- function(worker) {
   "OK"
 }
 
-run_message_pause <- function(worker) {
-  if (worker$paused) {
+run_message_pause <- function(worker, private) {
+  if (private$paused) {
     "NOOP"
   } else {
-    worker$paused <- TRUE
-    worker$con$HSET(worker$keys$worker_status, worker$name, WORKER_PAUSED)
+    private$paused <- TRUE
+    private$con$HSET(private$keys$worker_status, worker$name, WORKER_PAUSED)
     "OK"
   }
 }
 
-run_message_resume <- function(worker, args) {
-  if (worker$paused) {
-    worker$paused <- FALSE
-    worker$con$HSET(worker$keys$worker_status, worker$name, WORKER_IDLE)
+run_message_resume <- function(worker, private) {
+  if (private$paused) {
+    private$paused <- FALSE
+    private$con$HSET(private$keys$worker_status, worker$name, WORKER_IDLE)
     "OK"
   } else {
     "NOOP"
   }
 }
 
-run_message_timeout_set <- function(worker, args) {
+run_message_timeout_set <- function(worker, private, args) {
   if (is.numeric(args) || is.null(args)) {
-    worker$timeout <- args
+    private$timeout <- args
     worker$timer_start()
     "OK"
   } else {
@@ -91,8 +91,8 @@ run_message_timeout_set <- function(worker, args) {
   }
 }
 
-run_message_timeout_get <- function(worker) {
-  if (is.null(worker$timeout)) {
+run_message_timeout_get <- function(worker, private) {
+  if (is.null(private$timeout)) {
     c(timeout = Inf, remaining = Inf)
   } else {
     ## NOTE: This is a slightly odd construction; it arises because
@@ -102,12 +102,12 @@ run_message_timeout_get <- function(worker) {
     ## through one BLPOP cycle.  So, if a TIMEOUT_GET message is
     ## issued _immediately_ after running a task then there will be
     ## no timer here.
-    if (is.null(worker$timer)) {
-      remaining <- worker$timeout
+    if (is.null(private$timer)) {
+      remaining <- private$timeout
     } else {
-      remaining <- worker$timer()
+      remaining <- private$timer()
     }
-    c(timeout = worker$timeout, remaining = remaining)
+    c(timeout = private$timeout, remaining = remaining)
   }
 }
 
@@ -213,8 +213,8 @@ message_response_ids <- function(con, keys, worker_id) {
 }
 
 
-message_respond <- function(worker, message_id, cmd, result) {
+message_respond <- function(worker, private, message_id, cmd, result) {
   worker$log("RESPONSE", cmd)
   response <- response_prepare(message_id, cmd, result)
-  worker$con$HSET(worker$keys$worker_response, message_id, response)
+  private$con$HSET(private$keys$worker_response, message_id, response)
 }

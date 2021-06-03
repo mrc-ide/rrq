@@ -49,13 +49,13 @@ test_that("log parse", {
 })
 
 
-test_that("worker catch gracefull stop", {
+test_that("worker catch graceful stop", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
 
-  worker_catch_stop(w)(rrq_worker_stop(w, "message"))
+  worker_catch_stop(w, r6_private(w))(rrq_worker_stop(w, "message"))
 
-  expect_false(w$loop_continue)
+  expect_false(r6_private(w)$loop_continue)
   log <- obj$worker_log_tail(w$name)
   expect_equal(log$command, "STOP")
   expect_equal(log$message, "OK (message)")
@@ -70,29 +70,19 @@ test_that("worker catch naked error", {
 
   res <- evaluate_promise(
     expect_error(
-      worker_catch_error(w)(simpleError("Some error")),
+      worker_catch_error(w, r6_private(w))(simpleError("Some error")),
       "Some error"))
 
   expect_match(res$messages,
                "This is an uncaught error in rrq, probably a bug",
                all = FALSE)
 
-  expect_false(w$loop_continue)
+  expect_false(r6_private(w)$loop_continue)
   log <- obj$worker_log_tail(w$name)
   expect_equal(log$command, "STOP")
   expect_equal(log$message, "ERROR")
   expect_equal(obj$worker_list(), character(0))
   expect_equal(obj$worker_list_exited(), w$name)
-})
-
-
-test_that("create worker", {
-  obj <- test_rrq()
-  name <- ids::random_id()
-  w <- rrq_worker(obj$queue_id, worker_name = name,
-                  timeout = 1, time_poll = 1)
-  log <- obj$worker_log_tail(name, Inf)
-  expect_equal(log$command, c("ALIVE", "STOP"))
 })
 
 
@@ -113,14 +103,14 @@ test_that("Timer is recreated after task run", {
   w <- test_worker_blocking(obj)
   obj$message_send("TIMEOUT_SET", 10)
   w$step(TRUE)
-  expect_is(w$timer, "function")
+  expect_is(r6_private(w)$timer, "function")
 
   obj$enqueue(sin(1))
   w$step(TRUE)
-  expect_null(w$timer)
+  expect_null(r6_private(w)$timer)
 
   w$step(TRUE)
-  expect_is(w$timer, "function")
+  expect_is(r6_private(w)$timer, "function")
 })
 
 
@@ -220,7 +210,7 @@ test_that("can pass --key-alive", {
 
 test_that("write worker script", {
   p <- tempfile()
-  res <- write_rrq_worker(p)
+  res <- rrq_worker_script(p)
   expect_equal(normalizePath(dirname(res)), normalizePath(p))
   expect_equal(basename(res), "rrq_worker")
   expect_equal(readLines(res)[[1]], "#!/usr/bin/env Rscript")
@@ -228,6 +218,18 @@ test_that("write worker script", {
 
 
 test_that("write versioned worker script", {
-  res <- write_rrq_worker(versioned = TRUE)
+  skip_on_cran()
+  res <- rrq_worker_script(tempfile(), versioned = TRUE)
   expect_match(readLines(res)[[1]], R.home(), fixed = TRUE)
+})
+
+
+test_that("write_rrq_workers is deprecated", {
+  skip_if_not_installed("mockery")
+  mock_worker_script <- mockery::mock()
+  mockery::stub(write_rrq_worker, "rrq_worker_script", mock_worker_script)
+  path <- tempfile()
+  expect_warning(write_rrq_worker(path)) # deprecation warning
+  mockery::expect_called(mock_worker_script, 1)
+  expect_equal(mockery::mock_args(mock_worker_script)[[1]], list(path))
 })

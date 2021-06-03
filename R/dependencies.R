@@ -1,14 +1,14 @@
-worker_queue_dependencies <- function(worker, task_id, task_status) {
-  dependent_keys <- rrq_key_task_dependents(worker$keys$queue_id, task_id)
-  dependent_ids <- worker$con$SMEMBERS(dependent_keys)
+worker_queue_dependencies <- function(con, keys, task_id, task_status) {
+  dependent_keys <- rrq_key_task_dependents(keys$queue_id, task_id)
+  dependent_ids <- con$SMEMBERS(dependent_keys)
   if (length(dependent_ids) == 0) {
     return()
   }
 
   if (identical(task_status, TASK_ERROR)) {
-    cancel_dependencies(worker$con, worker$keys, task_id)
+    cancel_dependencies(con, keys, task_id)
   } else {
-    queue_dependencies(worker$con, worker$keys, task_id, dependent_ids)
+    queue_dependencies(con, keys, task_id, dependent_ids)
   }
   invisible(TRUE)
 }

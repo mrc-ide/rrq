@@ -1,35 +1,29 @@
-worker_run_task <- function(worker, task_id) {
-  task <- worker_run_task_start(worker, task_id)
+worker_run_task <- function(worker, private, task_id) {
+  task <- worker_run_task_start(worker, private, task_id)
   if (task$separate_process) {
-    res <- worker_run_task_separate_process(task, worker)
+    res <- worker_run_task_separate_process(task, worker, private)
   } else {
-    res <- worker_run_task_local(task, worker)
+    res <- worker_run_task_local(task, worker, private)
   }
   task_status <- res$status
-  worker_queue_dependencies(worker, task_id, task_status)
-  worker_run_task_cleanup(worker, task_status, res$value)
+  worker_queue_dependencies(private$con, private$keys, task_id, task_status)
+  worker_run_task_cleanup(worker, private, task_status, res$value)
 }
 
 
-worker_run_task_result <- function(result) {
+worker_run_task_local <- function(task, worker, private) {
+  e <- expression_restore_locals(task, private$envir, private$store)
+  result <- withCallingHandlers(
+    expression_eval_safely(task$expr, e),
+    progress = function(e) worker$progress(unclass(e), FALSE))
   list(value = result$value,
        status = if (result$success) TASK_COMPLETE else TASK_ERROR)
 }
 
 
-worker_run_task_local <- function(task, worker) {
-  e <- expression_restore_locals(task, worker$envir, worker$store)
-  result <- withCallingHandlers(
-    expression_eval_safely(task$expr, e),
-    progress = function(e)
-      task_progress_update(unclass(e), worker, FALSE))
-  worker_run_task_result(result)
-}
-
-
-worker_run_task_separate_process <- function(task, worker) {
-  con <- worker$con
-  keys <- worker$keys
+worker_run_task_separate_process <- function(task, worker, private) {
+  con <- private$con
+  keys <- private$keys
   redis_config <- con$config()
   queue_id <- keys$queue_id
   worker_id <- worker$name
@@ -87,24 +81,17 @@ worker_run_task_separate_process <- function(task, worker) {
 remote_run_task <- function(redis_config, queue_id, worker_id, task_id) {
   worker_name <- sprintf("%s_%s", worker_id, ids::random_id(bytes = 4))
   con <- redux::hiredis(config = redis_config)
-  worker <- rrq_worker_$new(con, queue_id, worker_name = worker_name,
-                            register = FALSE)
-  task <- bin_to_object(con$HGET(worker$keys$task_expr, task_id))
-
-  ## Ensures that the worker and task will be found by
-  ## rrq_task_progress_update
-  cache$active_worker <- worker
-  worker$active_task <- list(task_id = task_id)
-
-  worker_run_task_local(task, worker)
+  worker <- rrq_worker$new(queue_id, con, worker_name = worker_name,
+                           register = FALSE)
+  worker$task_eval(task_id)
 }
 
 
-worker_run_task_start <- function(worker, task_id) {
-  keys <- worker$keys
+worker_run_task_start <- function(worker, private, task_id) {
+  keys <- private$keys
   name <- worker$name
-  dat <- worker$con$pipeline(
-    worker_log(redis, keys, "TASK_START", task_id, worker$verbose),
+  dat <- private$con$pipeline(
+    worker_log(redis, keys, "TASK_START", task_id, private$verbose),
     redis$HSET(keys$worker_status, name,      WORKER_BUSY),
     redis$HSET(keys$worker_task,   name,      task_id),
     redis$HSET(keys$task_worker,   task_id,   name),
@@ -116,7 +103,7 @@ worker_run_task_start <- function(worker, task_id) {
 
   ## This holds the bits of worker state we might need to refer to
   ## later for a running task:
-  worker$active_task <- list(task_id = task_id, key_complete = dat[[6]])
+  private$active_task <- list(task_id = task_id, key_complete = dat[[6]])
 
   ## And this holds the data used in worker_run_task_to actually run
   ## the task
@@ -127,18 +114,18 @@ worker_run_task_start <- function(worker, task_id) {
 }
 
 
-worker_run_task_cleanup <- function(worker, status, value) {
-  task <- worker$active_task
+worker_run_task_cleanup <- function(worker, private, status, value) {
+  task <- private$active_task
   task_id <- task$task_id
   key_complete <- task$key_complete
 
-  keys <- worker$keys
+  keys <- private$keys
   name <- worker$name
   log_status <- paste0("TASK_", status)
 
-  task_result <- worker$store$set(value, task_id)
+  task_result <- private$store$set(value, task_id)
 
-  worker$con$pipeline(
+  private$con$pipeline(
     redis$HSET(keys$task_result,    task_id,  task_result),
     redis$HSET(keys$task_status,    task_id,  status),
     redis$HSET(keys$worker_status,  name,     WORKER_IDLE),
@@ -147,9 +134,9 @@ worker_run_task_cleanup <- function(worker, status, value) {
     if (!is.null(key_complete)) {
       redis$RPUSH(key_complete, task_id)
     },
-    worker_log(redis, keys, log_status, task_id, worker$verbose))
+    worker_log(redis, keys, log_status, task_id, private$verbose))
 
-  worker$active_task <- NULL
+  private$active_task <- NULL
   invisible()
 }
 

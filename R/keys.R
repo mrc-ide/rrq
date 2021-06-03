@@ -44,7 +44,8 @@ rrq_keys_common <- function(queue_id) {
 }
 
 rrq_keys_worker <- function(queue, worker) {
-  list(worker_message   = rrq_key_worker_message(queue, worker),
+  list(worker           = worker,
+       worker_message   = rrq_key_worker_message(queue, worker),
        worker_response  = rrq_key_worker_response(queue, worker),
        worker_log       = rrq_key_worker_log(queue, worker),
        worker_heartbeat = rrq_key_worker_heartbeat(queue, worker))

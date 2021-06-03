@@ -87,8 +87,8 @@ test_that("worker timeout", {
   expect_equal(res$timeout, t)
 
   w <- test_worker_blocking(obj)
-  expect_equal(w$timeout, t)
-  expect_lte(w$timer(), t)
+  expect_equal(r6_private(w)$timeout, t)
+  expect_lte(r6_private(w)$timer(), t)
 
   id <- obj$message_send("TIMEOUT_GET")
   w$step(TRUE)
@@ -103,8 +103,8 @@ test_that("infinite timeout", {
   obj$worker_config_save("infinite", timeout = Inf)
 
   w <- test_worker_blocking(obj, worker_config = "infinite")
-  expect_equal(w$timeout, Inf)
-  expect_equal(w$timer(), Inf)
+  expect_equal(r6_private(w)$timeout, Inf)
+  expect_equal(r6_private(w)$timer(), Inf)
 
   id <- obj$message_send("TIMEOUT_GET")
   w$step(TRUE)
