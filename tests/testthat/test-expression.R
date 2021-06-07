@@ -1,5 +1,3 @@
-context("expression")
-
 test_that("eval safely - simple case", {
   e <- list2env(list(a = 1, b = 2), parent = baseenv())
   expect_equal(
@@ -18,10 +16,10 @@ test_that("eval safely - error", {
 
   res <- expression_eval_safely(f1(FALSE), e)
   expect_false(res$success)
-  expect_is(res$value, "rrq_task_error")
-  expect_is(res$value, "error")
+  expect_s3_class(res$value, "rrq_task_error")
+  expect_s3_class(res$value, "error")
   expect_equal(res$value$message, "some deep error")
-  expect_is(res$value$trace, "character")
+  expect_type(res$value$trace, "character")
   expect_match(res$value$trace, "f3(x)", fixed = TRUE, all = FALSE)
 })
 

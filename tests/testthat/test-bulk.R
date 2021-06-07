@@ -1,5 +1,3 @@
-context("bulk")
-
 test_that("lapply simple case", {
   obj <- test_rrq()
   obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
@@ -8,7 +6,7 @@ test_that("lapply simple case", {
 
   grp <- obj$lapply_(1:10, quote(log), dots = list(base = 2),
                      collect_timeout = 0)
-  expect_is(grp, "rrq_bulk")
+  expect_s3_class(grp, "rrq_bulk")
   expect_setequal(names(grp), c("task_ids", "key_complete", "names"))
 
   w$loop(immediate = TRUE)
@@ -153,10 +151,11 @@ test_that("bulk tasks can be queued with dependency", {
   t3 <- obj$enqueue(sin(pi / 2), depends_on = grp$task_ids)
   ## t3 has not been added to main queue yet
   expect_equal(obj$queue_list(), c(t, t2))
-  expect_equivalent(obj$task_status(t), "PENDING")
-  expect_equivalent(obj$task_status(t2), "PENDING")
-  expect_equivalent(obj$task_status(grp$task_ids), c("DEFERRED", "DEFERRED"))
-  expect_equivalent(obj$task_status(t3), "DEFERRED")
+  expect_equal(unname(obj$task_status(t)), "PENDING")
+  expect_equal(unname(obj$task_status(t2)), "PENDING")
+  expect_equal(unname(obj$task_status(grp$task_ids)),
+               c("DEFERRED", "DEFERRED"))
+  expect_equal(unname(obj$task_status(t3)), "DEFERRED")
 
   ## Original dependencies are stored
   grp_id_1 <- grp$task_ids[[1]]
@@ -203,16 +202,18 @@ test_that("bulk tasks can be queued with dependency", {
 
   w$step(TRUE)
   obj$task_wait(t, 2)
-  expect_equivalent(obj$task_status(t), "COMPLETE")
-  expect_equivalent(obj$task_status(t2), "PENDING")
-  expect_equivalent(obj$task_status(grp$task_ids), c("DEFERRED", "DEFERRED"))
-  expect_equivalent(obj$task_status(t3), "DEFERRED")
+  expect_equal(unname(obj$task_status(t)), "COMPLETE")
+  expect_equal(unname(obj$task_status(t2)), "PENDING")
+  expect_equal(unname(obj$task_status(grp$task_ids)),
+               c("DEFERRED", "DEFERRED"))
+  expect_equal(unname(obj$task_status(t3)), "DEFERRED")
 
   w$step(TRUE)
   obj$task_wait(t2, 2)
-  expect_equivalent(obj$task_status(t2), "COMPLETE")
-  expect_equivalent(obj$task_status(grp$task_ids), c("PENDING", "PENDING"))
-  expect_equivalent(obj$task_status(t3), "DEFERRED")
+  expect_equal(unname(obj$task_status(t2)), "COMPLETE")
+  expect_equal(unname(obj$task_status(grp$task_ids)),
+               c("PENDING", "PENDING"))
+  expect_equal(unname(obj$task_status(t3)), "DEFERRED")
   queue <- obj$queue_list()
   expect_setequal(queue, grp$task_ids)
   expect_equal(obj$con$SMEMBERS(deferred_set), list(t3))
@@ -220,20 +221,21 @@ test_that("bulk tasks can be queued with dependency", {
   w$step(TRUE)
   obj$task_wait(queue[1], 2)
   expect_setequal(obj$task_status(grp$task_ids), c("COMPLETE", "PENDING"))
-  expect_equivalent(obj$task_status(t3), "DEFERRED")
+  expect_equal(unname(obj$task_status(t3)), "DEFERRED")
   expect_equal(obj$queue_list(), queue[2])
   expect_equal(obj$con$SMEMBERS(deferred_set), list(t3))
 
   w$step(TRUE)
   obj$task_wait(queue[2], 2)
-  expect_equivalent(obj$task_status(grp$task_ids), c("COMPLETE", "COMPLETE"))
-  expect_equivalent(obj$task_status(t3), "PENDING")
+  expect_equal(unname(obj$task_status(grp$task_ids)),
+               c("COMPLETE", "COMPLETE"))
+  expect_equal(unname(obj$task_status(t3)), "PENDING")
   expect_equal(obj$queue_list(), t3)
   expect_equal(obj$con$SMEMBERS(deferred_set), list())
 
   w$step(TRUE)
   obj$task_wait(t3, 2)
-  expect_equivalent(obj$task_status(t3), "COMPLETE")
+  expect_equal(unname(obj$task_status(t3)), "COMPLETE")
   expect_equal(obj$queue_list(), character(0))
 })
 

@@ -1,12 +1,10 @@
-context("worker_config")
-
 test_that("rrq_default configuration", {
   ## (this is actually the *test* default configuration, which is
   ## possibly not what is wanted)
   obj <- test_rrq()
   expect_equal(obj$worker_config_list(), "localhost")
   expect_equal(obj$worker_config_read("localhost"),
-               list(time_poll = 1, verbose = TRUE))
+               list(time_poll = 1, verbose = FALSE))
 })
 
 
@@ -14,7 +12,8 @@ test_that("create short-lived worker", {
   obj <- test_rrq()
 
   key <- "stop_immediately"
-  cfg <- obj$worker_config_save(key, timeout = 0, time_poll = 1)
+  cfg <- obj$worker_config_save(key, timeout = 0, time_poll = 1,
+                                verbose = TRUE)
 
   ## Local:
   msg1 <- capture_messages(
@@ -26,9 +25,9 @@ test_that("create short-lived worker", {
   ## Remote:
   logs <- tempfile()
   wid <- test_worker_spawn(obj, worker_config = key, logdir = logs)
-  expect_is(wid, "character")
+  expect_type(wid, "character")
   log <- obj$worker_log_tail(wid, Inf)
-  expect_is(log, "data.frame")
+  expect_s3_class(log, "data.frame")
   expect_true(nrow(log) >= 1)
 
   remaining <- time_checker(3)
@@ -83,7 +82,7 @@ test_that("worker timeout", {
   obj <- test_rrq("myfuns.R")
 
   t <- as.integer(runif(1, min = 100, max = 10000))
-  res <- obj$worker_config_save("localhost", timeout = t)
+  res <- obj$worker_config_save("localhost", timeout = t, verbose = FALSE)
   expect_equal(res$timeout, t)
 
   w <- test_worker_blocking(obj)
@@ -100,7 +99,7 @@ test_that("worker timeout", {
 
 test_that("infinite timeout", {
   obj <- test_rrq("myfuns.R")
-  obj$worker_config_save("infinite", timeout = Inf)
+  obj$worker_config_save("infinite", timeout = Inf, verbose = FALSE)
 
   w <- test_worker_blocking(obj, worker_config = "infinite")
   expect_equal(r6_private(w)$timeout, Inf)

@@ -1,5 +1,3 @@
-context("configure")
-
 test_that("Can set and retrieve a configuration", {
   skip_if_no_redis()
   name <- sprintf("rrq:%s", ids::random_id())

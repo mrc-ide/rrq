@@ -29,7 +29,9 @@ wait_status <- function(t, obj, timeout = 2, time_poll = 0.05,
     if (all(obj$task_status(t) != status)) {
       return()
     }
-    message(".")
+    if (!testthat::is_testing()) {
+      message(".")
+    }
     Sys.sleep(time_poll)
   }
   stop(sprintf("Did not change status from %s in time", status))
@@ -43,7 +45,9 @@ wait_worker_status <- function(w, obj, status, timeout = 2,
     if (all(obj$worker_status(w) != status)) {
       return()
     }
-    message(".")
+    if (!testthat::is_testing()) {
+      message(".")
+    }
     Sys.sleep(time_poll)
   }
   stop(sprintf("Did not change status from %s in time", status))
@@ -66,7 +70,7 @@ test_store <- function(..., prefix = NULL) {
 }
 
 
-test_rrq <- function(sources = NULL, root = tempfile()) {
+test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE) {
   skip_if_no_redis()
   Sys.setenv(R_TESTS = "")
 
@@ -88,7 +92,7 @@ test_rrq <- function(sources = NULL, root = tempfile()) {
   environment(create) <- create_env
 
   obj <- rrq_controller(name)
-  obj$worker_config_save("localhost", time_poll = 1)
+  obj$worker_config_save("localhost", time_poll = 1, verbose = verbose)
   obj$envir(create)
   reg.finalizer(obj, function(e) obj$destroy())
   obj
@@ -98,7 +102,7 @@ test_rrq <- function(sources = NULL, root = tempfile()) {
 test_worker_spawn <- function(obj, ..., timeout = 10) {
   skip_on_cran()
   skip_on_windows()
-  worker_spawn(obj, ..., timeout = timeout)
+  suppressMessages(worker_spawn(obj, ..., timeout = timeout))
 }
 
 
@@ -131,6 +135,13 @@ skip_on_windows <- function() {
 
 r6_private <- function(x) {
   x[[".__enclos_env__"]]$private
+}
+
+
+## Functions change type from function to closure at 4.1, preventing
+## use of expect_type
+expect_is_function <- function(x) {
+  testthat::expect_true(is.function(x))
 }
 
 

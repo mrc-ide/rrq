@@ -1,6 +1,3 @@
-context("migrate")
-
-
 test_that("Can migrate storage", {
   skip_if_no_redis()
   dat <- readRDS("migrate/0.3.1.rds")
@@ -18,9 +15,11 @@ test_that("Can migrate storage", {
     rrq_worker_from_config(dat$queue_id, "localhost"),
     "rrq database needs migrating; please run")
 
-  expect_message(
-    rrq_migrate(dat$queue_id),
-    "Migrating rrq database")
+  res <- evaluate_promise(
+    rrq_migrate(dat$queue_id))
+  expect_match(res$messages, "Migrating rrq database", all = FALSE)
+  expect_match(res$messages, "Updated 4 / 5 task expressions", all = FALSE)
+  expect_match(res$messages, "Updated 5 task results", all = FALSE)
 
   expect_message(
     rrq_migrate(dat$queue_id),

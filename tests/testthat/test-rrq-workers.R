@@ -1,5 +1,3 @@
-context("workers")
-
 test_that("clean up exited workers", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
@@ -103,14 +101,14 @@ test_that("Timer is recreated after task run", {
   w <- test_worker_blocking(obj)
   obj$message_send("TIMEOUT_SET", 10)
   w$step(TRUE)
-  expect_is(r6_private(w)$timer, "function")
+  expect_is_function(r6_private(w)$timer)
 
   obj$enqueue(sin(1))
   w$step(TRUE)
   expect_null(r6_private(w)$timer)
 
   w$step(TRUE)
-  expect_is(r6_private(w)$timer, "function")
+  expect_is_function(r6_private(w)$timer)
 })
 
 

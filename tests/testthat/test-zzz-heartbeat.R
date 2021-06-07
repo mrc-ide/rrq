@@ -1,5 +1,3 @@
-context("heartbeat")
-
 test_that("basic interaction with heartbeat works", {
   skip_if_no_redis()
   config <- redux::redis_config()
@@ -7,8 +5,8 @@ test_that("basic interaction with heartbeat works", {
   period <- 1
   expire <- 2
   obj <- heartbeat$new(key, period, expire = expire, start = FALSE)
-  expect_is(obj, "heartbeat")
-  expect_is(obj, "R6")
+  expect_s3_class(obj, "heartbeat")
+  expect_s3_class(obj, "R6")
 
   con <- test_hiredis()
   expect_equal(con$EXISTS(key), 0)

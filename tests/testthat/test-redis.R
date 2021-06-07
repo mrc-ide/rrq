@@ -1,5 +1,3 @@
-context("redis utilities")
-
 test_that("scan expire", {
   con <- test_hiredis()
 
