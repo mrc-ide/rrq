@@ -13,7 +13,7 @@ test_that("create short-lived worker", {
 
   key <- "stop_immediately"
   cfg <- obj$worker_config_save(key, timeout = 0, time_poll = 1,
-                                verbose = FALSE)
+                                verbose = TRUE)
 
   ## Local:
   msg1 <- capture_messages(

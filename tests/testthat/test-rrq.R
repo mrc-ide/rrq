@@ -889,6 +889,7 @@ test_that("can offload storage", {
   rrq_configure(name, store_max_size = 100, offload_path = path)
 
   obj <- rrq_controller(name)
+  obj$worker_config_save("localhost", time_poll = 1, verbose = FALSE)
   a <- 10
   b <- runif(20)
   t <- obj$enqueue(sum(b) / a)
@@ -922,6 +923,7 @@ test_that("offload storage in result", {
   rrq_configure(name, store_max_size = 100, offload_path = path)
 
   obj <- rrq_controller(name)
+  obj$worker_config_save("localhost", time_poll = 1, verbose = FALSE)
   t <- obj$enqueue(rep(1, 100))
 
   w <- test_worker_blocking(obj)

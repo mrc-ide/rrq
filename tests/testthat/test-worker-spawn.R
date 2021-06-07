@@ -14,12 +14,14 @@ test_that("Don't wait", {
 
 
 test_that("failed spawn", {
+  skip_on_windows()
+
   root <- tempfile()
-  obj <- test_rrq("myfuns.R", root)
+  obj <- test_rrq("myfuns.R", root, verbose = TRUE)
   unlink(file.path(root, "myfuns.R"))
 
   dat <- evaluate_promise(
-    try(test_worker_spawn(obj, 2, timeout = 2),
+    try(worker_spawn(obj, 2, timeout = 2),
         silent = TRUE))
 
   expect_s3_class(dat$result, "try-error")
@@ -34,7 +36,7 @@ test_that("failed spawn", {
 
 
 test_that("read worker process log", {
-  obj <- test_rrq()
+  obj <- test_rrq(verbose = TRUE)
   wid <- test_worker_spawn(obj, 1)
   obj$message_send_and_wait("STOP")
   txt <- obj$worker_process_log(wid)

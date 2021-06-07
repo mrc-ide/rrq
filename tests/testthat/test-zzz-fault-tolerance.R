@@ -2,7 +2,8 @@ test_that("heartbeat", {
   skip_if_not_installed("callr")
   obj <- test_rrq()
 
-  res <- obj$worker_config_save("localhost", heartbeat_period = 3)
+  res <- obj$worker_config_save("localhost", heartbeat_period = 3,
+                                verbose = FALSE)
   expect_equal(res$heartbeat_period, 3)
 
   w <- test_worker_blocking(obj)
@@ -56,7 +57,8 @@ test_that("detecting output with clean exit is quiet", {
   ## interruptable; the interrupt will only be handled _after_ R gets
   ## control back.
   res <- obj$worker_config_save("localhost", time_poll = 1,
-                                heartbeat_period = 1)
+                                heartbeat_period = 1,
+                                verbose = FALSE)
 
   wid <- test_worker_spawn(obj)
   pid <- obj$worker_info()[[wid]]$pid
@@ -89,7 +91,8 @@ test_that("detect killed worker (via heartbeat)", {
   ## interruptable; the interrupt will only be handled _after_ R gets
   ## control back.
   res <- obj$worker_config_save("localhost", time_poll = 1,
-                                heartbeat_period = 1)
+                                heartbeat_period = 1,
+                                verbose = FALSE)
 
   wid <- test_worker_spawn(obj)
   pid <- obj$worker_info()[[wid]]$pid
@@ -135,7 +138,7 @@ test_that("detect multiple killed workers", {
   obj <- test_rrq("myfuns.R")
 
   res <- obj$worker_config_save("localhost", time_poll = 1,
-                                heartbeat_period = 1)
+                                heartbeat_period = 1, verbose = FALSE)
 
   wid <- test_worker_spawn(obj, n = 2)
   pid <- vnapply(obj$worker_info()[wid], "[[", "pid")
@@ -151,11 +154,13 @@ test_that("detect multiple killed workers", {
   expire <- res$heartbeat_period * 3
   Sys.sleep(expire)
 
-  res <- obj$worker_detect_exited()
+  res <- evaluate_promise(obj$worker_detect_exited())
 
-  expect_equal(length(res), 2)
-  expect_setequal(names(res), wid)
-  expect_setequal(unname(res), c(t1, t2))
+  expect_equal(length(res$result), 2)
+  expect_setequal(names(res$result), wid)
+  expect_setequal(unname(res$result), c(t1, t2))
+
+  expect_match(res$messages, "Lost 2 workers", all = FALSE)
 
   expect_silent(res <- obj$worker_detect_exited())
   expect_null(res)
