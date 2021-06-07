@@ -4,7 +4,7 @@ test_that("TIMEOUT_SET causes worker exit on idle worker", {
   obj$message_send("TIMEOUT_SET", 0)
   w$step(TRUE)
   expect_equal(r6_private(w)$timeout, 0)
-  expect_type(r6_private(w)$timer, "function")
+  expect_is_function(r6_private(w)$timer)
   expect_lt(r6_private(w)$timer(), 0)
   expect_error(w$step(TRUE), "TIMEOUT", class = "rrq_worker_stop")
 })
@@ -29,7 +29,7 @@ test_that("TIMEOUT_SET with null clears a timer", {
   obj$message_send("TIMEOUT_SET", 1)
   w$step(TRUE)
   expect_equal(r6_private(w)$timeout, 1)
-  expect_type(r6_private(w)$timer, "function")
+  expect_is_function(r6_private(w)$timer)
   obj$message_send("TIMEOUT_SET", NULL)
   w$step(TRUE)
   expect_null(r6_private(w)$timeout)
@@ -56,7 +56,7 @@ test_that("TIMEOUT_GET returns time remaining", {
 
   obj$message_send("TIMEOUT_SET", 100)
   w$step(TRUE)
-  expect_type(r6_private(w)$timer, "function")
+  expect_is_function(r6_private(w)$timer)
 
   Sys.sleep(0.1)
   id <- obj$message_send("TIMEOUT_GET")
@@ -91,7 +91,7 @@ test_that("TIMEOUT_GET restores a timer", {
   expect_null(r6_private(w)$timer)
 
   w$step(TRUE)
-  expect_type(r6_private(w)$timer, "function")
+  expect_is_function(r6_private(w)$timer)
 })
 
 
@@ -109,7 +109,7 @@ test_that("message response getting", {
   expect_equal(obj$message_has_response(id, named = FALSE), FALSE)
 
   ## Move worker through one cycle
-  w$step(TRUE)
+  expect_message(w$step(TRUE), "PONG")
 
   expect_equal(obj$message_has_response(id, w$name), set_names(TRUE, w$name))
   expect_equal(obj$message_response_ids(w$name), id)
@@ -143,7 +143,7 @@ test_that("Error on missing response", {
     obj$message_get_response(id, nms, timeout = 0.1, time_poll = 0.1),
     sprintf("Response missing for workers: %s, %s", w1$name, w2$name))
 
-  w1$step(TRUE)
+  expect_message(w1$step(TRUE), "PONG")
 
   expect_equal(
     obj$message_has_response(id, nms),
@@ -217,7 +217,8 @@ test_that("messages take priority over tasks", {
   expect_true(obj$message_has_response(id_message, w$name))
   expect_equal(obj$task_status(id_task), set_names(TASK_PENDING, id_task))
 
-  expect_message(w$step(TRUE), "TASK_START")
+  w$step(TRUE)
+
   expect_equal(obj$task_status(id_task), set_names(TASK_COMPLETE, id_task))
 })
 
@@ -237,9 +238,12 @@ test_that("PAUSE: workers ignore tasks", {
   expect_equal(obj$task_status(task), set_names(TASK_PENDING, task))
 
   id <- obj$message_send("RESUME")
-  expect_message(w$step(TRUE), "RESUME")
-  expect_message(w$step(TRUE), "TASK_START")
+  w$step(TRUE)
+  expect_equal(obj$worker_status(), set_names(WORKER_IDLE, w$name))
 
+  expect_equal(obj$task_status(task), set_names(TASK_PENDING, task))
+
+  w$step(TRUE)
   expect_equal(obj$task_status(task), set_names(TASK_COMPLETE, task))
 })
 
@@ -296,7 +300,7 @@ test_that("REFRESH", {
   expect_equal(obj$task_result(t2), 3)
 
   id <- obj$message_send("REFRESH")
-  expect_message(w$step(TRUE), "REFRESH")
+  w$step(TRUE)
   expect_equal(obj$message_get_response(id, w$name, FALSE), list("OK"))
 
   t3 <- obj$enqueue(f1(3))

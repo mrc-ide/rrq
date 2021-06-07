@@ -19,7 +19,7 @@ test_that("eval safely - error", {
   expect_s3_class(res$value, "rrq_task_error")
   expect_s3_class(res$value, "error")
   expect_equal(res$value$message, "some deep error")
-  expect_s3_class(res$value$trace, "character")
+  expect_type(res$value$trace, "character")
   expect_match(res$value$trace, "f3(x)", fixed = TRUE, all = FALSE)
 })
 

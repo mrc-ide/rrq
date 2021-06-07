@@ -38,8 +38,8 @@ test_that("progress - vector and with timeout", {
   p <- progress_timeout(10, show = TRUE, label = "things", timeout = 5,
                         width = 50, force = TRUE)
   expect_setequal(names(p), c("tick", "terminate"))
-  expect_type(p$tick, "function")
-  expect_type(p$terminate, "function")
+  expect_is_function(p$tick)
+  expect_is_function(p$terminate)
 
   res1 <- evaluate_promise(p$tick(1))
   expect_equal(res1$result, FALSE)
@@ -86,8 +86,8 @@ test_that("progress - don't show", {
   p <- progress_timeout(1, show = FALSE, label = "things", timeout = Inf,
                         width = 50, force = TRUE)
   expect_setequal(names(p), c("tick", "terminate"))
-  expect_type(p$tick, "function")
-  expect_type(p$terminate, "function")
+  expect_is_function(p$tick)
+  expect_is_function(p$terminate)
   expect_silent(p$tick())
   expect_false(p$tick())
   expect_silent(p$terminate())

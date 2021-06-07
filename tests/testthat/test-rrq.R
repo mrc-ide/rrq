@@ -245,7 +245,7 @@ test_that("change environment", {
   expect_equal(r6_private(w)$envir$x, 1)
 
   obj$envir(NULL)
-  expect_message(w$step(TRUE), "REFRESH")
+  w$step(TRUE)
   expect_equal(ls(r6_private(w)$envir), character(0))
 })
 
@@ -343,7 +343,7 @@ test_that("get task data errors appropriately if task is missing", {
 
 test_that("a worker will pick up tasks from the priority queue", {
   obj <- test_rrq("myfuns.R")
-  obj$worker_config_save("localhost", queue = c("a", "b"))
+  obj$worker_config_save("localhost", queue = c("a", "b"), verbose = FALSE)
   w <- test_worker_blocking(obj)
 
   t1 <- obj$enqueue(sin(1))
