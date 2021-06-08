@@ -42,13 +42,12 @@ In order to do this, we're going to need a queue and a worker:
 obj <- rrq::rrq_controller("rrq:messages")
 logdir <- tempfile()
 worker_id <- rrq::worker_spawn(obj, logdir = logdir)
-logfile <- file.path(logdir, worker_id)
 ```
 
 On startup the worker log contains:
 
 ```{r results = "asis", echo = FALSE}
-reader <- make_reader(logfile)
+reader <- make_reader(file.path(logdir, worker_id))
 reader()
 ```
 
@@ -77,11 +76,13 @@ worker logfile, we'll print this fairly often.
 The `PING` message simply asks the worker to return `PONG`.  It's
 useful for diagnosing communication issues because it does so
 little
+
 ```{r}
 message_id <- obj$message_send("PING")
 ```
 
 The message id is going to be useful for getting responses:
+
 ```{r}
 message_id
 ```
@@ -89,12 +90,7 @@ message_id
 (this is derived from the current time, according to Redis which is
 the central reference point of time for the whole system).
 
-wait a little while:
-```{r}
-Sys.sleep(.5)
-```
-
-```{r results = "asis", echo = TRUE}
+```{r results = "asis", echo = FALSE}
 reader()
 ```
 
@@ -105,6 +101,7 @@ The logfile prints:
 3. logging a response (`RESPONSE PONG`), which means that something is written to the response stream.
 
 We can access the same bits of information in the worker log:
+
 ```{r}
 obj$worker_log_tail(n = Inf)
 ```
@@ -115,23 +112,26 @@ Inspecting the logs is fine for interactive use, but it's going to
 be more useful often to poll for a response.
 
 We already know that our worker has a response, but we can ask anyway:
+
 ```{r}
 obj$message_has_response(message_id)
 ```
 
 Or inversely we can as what messages a given worker has responses for:
+
 ```{r}
 obj$message_response_ids(worker_id)
 ```
 
 To fetch the responses from all workers it was sent to (always
 returning a named list):
-`
-``{r}
+
+```{r}
 obj$message_get_response(message_id)
 ```
 
 or to fetch the response from a given worker:
+
 ```{r}
 obj$message_get_response(message_id, worker_id)
 ```
@@ -209,14 +209,9 @@ message_id <- obj$message_send("INFO")
 
 Here's the new worker information, complete with an updated `envir`
 field:
+
 ```{r}
 obj$message_get_response(message_id, worker_id, timeout = 10)
-```
-
-and the same information is printed to the worker log:
-
-```{r include = FALSE}
-reader()
 ```
 
 ## `EVAL`
