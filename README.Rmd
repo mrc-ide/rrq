@@ -4,7 +4,14 @@ output: github_document
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
 
 # rrq
 
@@ -21,61 +28,46 @@ Task queues for R, implemented using Redis.
 
 Create an `rrq_controller` object
 
-
-```r
+```{r}
 obj <- rrq::rrq_controller("rrq:readme")
 ```
 
 Submit work to the queue:
 
-
-```r
+```{r}
 t <- obj$enqueue(runif(10))
 t
-#> [1] "53a2e58afc836ff75a0abab53f75e85f"
 ```
 
 Query task process:
 
-
-```r
+```{r}
 obj$task_status(t)
-#> 53a2e58afc836ff75a0abab53f75e85f
-#>                        "PENDING"
 ```
 
 Run tasks on workers in the background
 
-
-```r
+```{r}
 rrq::worker_spawn(obj)
-#> Spawning 1 worker with prefix nearby_ammonite
-#> [1] "nearby_ammonite_1"
 ```
 
 Collect task results when complete
 
-
-```r
+```{r}
 obj$task_wait(t)
-#>  [1] 0.9499495 0.3754099 0.4028146 0.6498432 0.1732155 0.6069491 0.6379786
-#>  [8] 0.8193451 0.1927368 0.8221052
 ```
 
 Query what workers have done
 
-
-```r
+```{r}
 obj$worker_log_tail(n = Inf)
-#>           worker_id       time       command                          message
-#> 1 nearby_ammonite_1 1623142169         ALIVE
-#> 2 nearby_ammonite_1 1623142169    TASK_START 53a2e58afc836ff75a0abab53f75e85f
-#> 3 nearby_ammonite_1 1623142169 TASK_COMPLETE 53a2e58afc836ff75a0abab53f75e85f
 ```
 
 For more information, see `vignette("rrq")`
 
-
+```{r, include = FALSE}
+obj$destroy()
+```
 
 ## Installation
 

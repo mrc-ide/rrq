@@ -15,3 +15,4 @@
 ^docker$
 ^\.github$
 ^\.hadolint\.yml$
+^README\.Rmd$
