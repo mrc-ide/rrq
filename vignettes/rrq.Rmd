@@ -363,7 +363,7 @@ rrq::rrq_configure(id, store_max_size = 1000, offload_path = path)
 then we create the queue object as normal (and spawn a worker so that we can use it)
 
 ```{r}
-obj <- rrq_controller(id)
+obj <- rrq::rrq_controller(id)
 rrq::worker_spawn(obj, 1)
 ```
 
