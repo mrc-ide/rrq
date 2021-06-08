@@ -190,7 +190,10 @@ rrq_controller_ <- R6::R6Class(
     ##'   function.
     ##'
     ##' @param create A function that will create an environment. It will
-    ##'   be called with no parameters, in a fresh R session.
+    ##'   be called with one parameter (an environment), in a fresh R
+    ##'   session. The function [rrq::rrq_envir()] can be used to
+    ##'   create a suitable function for the most common case (loading
+    ##'   packages and sourcing scripts).
     ##'
     ##' @param notify Boolean, indicating if we should send a `REFRESH`
     ##'   message to all workers to update their environment.

@@ -249,7 +249,10 @@ function.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{create}}{A function that will create an environment. It will
-be called with no parameters, in a fresh R session.}
+be called with one parameter (an environment), in a fresh R
+session. The function \code{\link[=rrq_envir]{rrq_envir()}} can be used to
+create a suitable function for the most common case (loading
+packages and sourcing scripts).}
 
 \item{\code{notify}}{Boolean, indicating if we should send a \code{REFRESH}
 message to all workers to update their environment.}
