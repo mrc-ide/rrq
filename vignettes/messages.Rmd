@@ -23,7 +23,7 @@ make_reader <- function(filename, lang = "plain") {
   force(filename)
   force(lang)
   function() {
-    txt <- readLines(logfile)
+    txt <- readLines(filename)
     if (n > 0) {
       txt <- txt[-seq_len(n)]
     }
