@@ -30,7 +30,7 @@ jobs:
 
       - name: Move real vignettes
         run: |
-          cp vignettes_src/*.Rmd vignettes
+          cp vignettes_src/* vignettes
 
       - name: Query dependencies
         run: |

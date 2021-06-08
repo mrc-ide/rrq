@@ -82,7 +82,7 @@ jobs:
       - name: Move real vignettes
         if: runner.os != 'windows'
         run: |
-          cp vignettes_src/*.Rmd vignettes
+          cp vignettes_src/* vignettes
 
       - name: Install dependencies
         run: |
