@@ -16,3 +16,4 @@
 ^\.github$
 ^\.hadolint\.yml$
 ^README\.Rmd$
+^docs$
