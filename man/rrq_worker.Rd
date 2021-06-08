@@ -196,7 +196,7 @@ zero. Intended primarily for use in the tests.}
 \if{latex}{\out{\hypertarget{method-loop}{}}}
 \subsection{Method \code{loop()}}{
 The main worker loop. Use this to set up the main
-w orker event loop, which will continue until exiting (via a timeout
+worker event loop, which will continue until exiting (via a timeout
 or message).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_worker$loop(immediate = FALSE)}\if{html}{\out{</div>}}

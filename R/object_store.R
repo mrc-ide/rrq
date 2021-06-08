@@ -1,7 +1,9 @@
-##' @title rrq object store
-##'
 ##' Create an object store. Typically this is not used by end-users,
 ##' and is used internally by [rrq::rrq_controller]
+##'
+##' @title rrq object store
+##'
+##' @description
 ##'
 ##' When you create a task with rrq and that task uses local variables
 ##' these need to be copied over to the worker that will evaluate the

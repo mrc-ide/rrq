@@ -2,84 +2,8 @@
 % Please edit documentation in R/object_store.R
 \name{object_store}
 \alias{object_store}
-\title{rrq object store
-
-Create an object store. Typically this is not used by end-users,
-and is used internally by \link{rrq_controller}
-
-When you create a task with rrq and that task uses local variables
-these need to be copied over to the worker that will evaluate the
-task. So, if we had\preformatted{obj$enqueue(f(a, b))
-}
-
-that would be the objects \code{a} and \code{b} from the context where
-\code{enqueue} was called. There are a few considerations here:
-\itemize{
-\item The names \code{a} and \code{b} are only useful in the immediate context
-of the controller at the point the task is sent and so we need
-to store the \emph{values} referenced by \code{a} and \code{b} without
-reference to the names - we do this by naming the new values
-after their value. That is, the name becomes the hash of the
-object, computed by \code{\link[openssl:hash]{openssl::sha256()}} after serialisation, as
-a form of \href{https://en.wikipedia.org/wiki/Content-addressable_storage}{content-addressible storage}.
-\item When doing this we note that we might end up using the value
-referenced by \code{a} or \code{b} many times in different tasks so we
-should not re-save the data more than needed, and we should not
-necessarily delete it when a task is deleted unless nothing else
-uses that value.
-\item The objects might tiny or could be large; if small we tend to
-care about how quickly they can be resolved (i.e., latency) and
-if large we need to be careful not to overfull Redis' database
-as it's a memory-based system.
-}
-
-To make this robust and flexible, we use a \code{object_store} object,
-which will allow objects to be stored either directly in Redis, or
-offloaded onto some "large" data store based on their
-size. Currently, we provide support only for offloading to disk,
-but in future hope to expand this.
-
-When we create a value in the store (or reference a value that
-already exists) we assign a tag into the database; this means that
-we have for a value with hash \code{abc123} and tag \code{def789}
-\itemize{
-\item \verb{prefix:data["abc123"] => [1] f5 26 a5 b7 26 93 b3 41 b7 d0 b0...}
-(the data stored, serialised into a redis hash by its hash, as a
-binary object.
-\item \verb{prefix:tag_hash:def789 => \{abc123\}} (a set of hashes used by our tag)
-\item \verb{prefix:hash_tag:abc123 => \{def789\}} (a set of tags that
-reference our hash)
-}
-
-If we also used the value with hash \code{abc123} with tag \code{fed987}
-this would look like
-\itemize{
-\item \verb{prefix:data[abc123] => [1] f5 26 a5 b7 26 93 b3 41 b7 d0 b0...}
-hash, as a binary object.
-\item \verb{prefix:tag_hash:def789 => \{abc123\}}
-\item \verb{prefix:tag_hash:fed987 => \{abc123\}}
-\item \verb{prefix:hash_tag:abc123 => \{def789, fed987\}}
-}
-
-As tags are dropped, then the references are dropped from the set
-\code{prefix:hash_tag:abc123} and when that set becomes empty then we
-can delete \code{prefix:data[abc123]} as simple form of \href{https://en.wikipedia.org/wiki/Reference_counting}{reference counting}.
-
-For \code{rrq} we will use \code{task_id}s as a tag.
-
-For dealing with large data, we "offload" large data into a
-secondary store. This replaces the redis hash of \verb{hash => value}
-with something else. Currently the only alternative we offer is
-\code{\link{object_store_offload_disk}} which will save the binary
-representation of the object at the path \verb{<path>/<hash>} and will
-allow large values to be shared between controller and worker so
-long as they share a common filesystem.}
+\title{rrq object store}
 \description{
-rrq object store
-
-Create an object store. Typically this is not used by end-users,
-and is used internally by \link{rrq_controller}
-
 When you create a task with rrq and that task uses local variables
 these need to be copied over to the worker that will evaluate the
 task. So, if we had\preformatted{obj$enqueue(f(a, b))
@@ -147,79 +71,10 @@ with something else. Currently the only alternative we offer is
 representation of the object at the path \verb{<path>/<hash>} and will
 allow large values to be shared between controller and worker so
 long as they share a common filesystem.
-
-rrq object store
-
+}
+\details{
 Create an object store. Typically this is not used by end-users,
 and is used internally by \link{rrq_controller}
-
-When you create a task with rrq and that task uses local variables
-these need to be copied over to the worker that will evaluate the
-task. So, if we had\preformatted{obj$enqueue(f(a, b))
-}
-
-that would be the objects \code{a} and \code{b} from the context where
-\code{enqueue} was called. There are a few considerations here:
-\itemize{
-\item The names \code{a} and \code{b} are only useful in the immediate context
-of the controller at the point the task is sent and so we need
-to store the \emph{values} referenced by \code{a} and \code{b} without
-reference to the names - we do this by naming the new values
-after their value. That is, the name becomes the hash of the
-object, computed by \code{\link[openssl:hash]{openssl::sha256()}} after serialisation, as
-a form of \href{https://en.wikipedia.org/wiki/Content-addressable_storage}{content-addressible storage}.
-\item When doing this we note that we might end up using the value
-referenced by \code{a} or \code{b} many times in different tasks so we
-should not re-save the data more than needed, and we should not
-necessarily delete it when a task is deleted unless nothing else
-uses that value.
-\item The objects might tiny or could be large; if small we tend to
-care about how quickly they can be resolved (i.e., latency) and
-if large we need to be careful not to overfull Redis' database
-as it's a memory-based system.
-}
-
-To make this robust and flexible, we use a \code{object_store} object,
-which will allow objects to be stored either directly in Redis, or
-offloaded onto some "large" data store based on their
-size. Currently, we provide support only for offloading to disk,
-but in future hope to expand this.
-
-When we create a value in the store (or reference a value that
-already exists) we assign a tag into the database; this means that
-we have for a value with hash \code{abc123} and tag \code{def789}
-\itemize{
-\item \verb{prefix:data["abc123"] => [1] f5 26 a5 b7 26 93 b3 41 b7 d0 b0...}
-(the data stored, serialised into a redis hash by its hash, as a
-binary object.
-\item \verb{prefix:tag_hash:def789 => \{abc123\}} (a set of hashes used by our tag)
-\item \verb{prefix:hash_tag:abc123 => \{def789\}} (a set of tags that
-reference our hash)
-}
-
-If we also used the value with hash \code{abc123} with tag \code{fed987}
-this would look like
-\itemize{
-\item \verb{prefix:data[abc123] => [1] f5 26 a5 b7 26 93 b3 41 b7 d0 b0...}
-hash, as a binary object.
-\item \verb{prefix:tag_hash:def789 => \{abc123\}}
-\item \verb{prefix:tag_hash:fed987 => \{abc123\}}
-\item \verb{prefix:hash_tag:abc123 => \{def789, fed987\}}
-}
-
-As tags are dropped, then the references are dropped from the set
-\code{prefix:hash_tag:abc123} and when that set becomes empty then we
-can delete \code{prefix:data[abc123]} as simple form of \href{https://en.wikipedia.org/wiki/Reference_counting}{reference counting}.
-
-For \code{rrq} we will use \code{task_id}s as a tag.
-
-For dealing with large data, we "offload" large data into a
-secondary store. This replaces the redis hash of \verb{hash => value}
-with something else. Currently the only alternative we offer is
-\code{\link{object_store_offload_disk}} which will save the binary
-representation of the object at the path \verb{<path>/<hash>} and will
-allow large values to be shared between controller and worker so
-long as they share a common filesystem.
 }
 \section{Methods}{
 \subsection{Public methods}{
