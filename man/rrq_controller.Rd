@@ -298,9 +298,9 @@ push jobs onto a queue with no worker, it will queue forever.}
 run in a separate process on the worker. If \code{TRUE}, then the
 worker runs the task in a separate process using the \code{callr}
 package. This means that the worker environment is completely
-clean, subsequent runs are not affected by preceeding ones.
+clean, subsequent runs are not affected by preceding ones.
 The downside of this approach is a considerable overhead in
-starting the extenal process and transferring data back.}
+starting the external process and transferring data back.}
 
 \item{\code{timeout}}{Optionally, a maximum allowed running time, in
 seconds. This parameter only has an effect if \code{separate_process}

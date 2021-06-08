@@ -22,7 +22,7 @@
 ##'   reference to the names - we do this by naming the new values
 ##'   after their value. That is, the name becomes the hash of the
 ##'   object, computed by [openssl::sha256()] after serialisation, as
-##'   a form of [content-addressible
+##'   a form of [content-addressable
 ##'   storage](https://en.wikipedia.org/wiki/Content-addressable_storage).
 ##' * When doing this we note that we might end up using the value
 ##'   referenced by `a` or `b` many times in different tasks so we
@@ -97,7 +97,7 @@ object_store <- R6::R6Class(
     ##' @param offload An offload storage object. We provide one of
     ##'   these [`rrq::object_store_offload_disk`], which saves objects
     ##'   to on disk after serialisation). This interface is
-    ##'   subject to change. If not given but an object execeeds `max_size`
+    ##'   subject to change. If not given but an object exceeds `max_size`
     ##'   an error will be thrown.
     initialize = function(con, prefix, max_size = Inf, offload = NULL) {
       private$con <- con

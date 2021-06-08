@@ -34,7 +34,6 @@ but will sit and poll a queue for jobs.
 \item \href{#method-progress}{\code{rrq_worker$progress()}}
 \item \href{#method-task_eval}{\code{rrq_worker$task_eval()}}
 \item \href{#method-shutdown}{\code{rrq_worker$shutdown()}}
-\item \href{#method-clone}{\code{rrq_worker$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
@@ -121,7 +120,7 @@ key-value pairs.
 \if{latex}{\out{\hypertarget{method-log}{}}}
 \subsection{Method \code{log()}}{
 Create a log entry. This will print a human readable
-format to screen and a parseable format to the redis database.
+format to screen and a machine-readable format to the redis database.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_worker$log(label, value = NULL)}\if{html}{\out{</div>}}
 }
@@ -297,23 +296,6 @@ but can be any string}
 
 \item{\code{graceful}}{Logical, indicating if we should request a
 graceful shutdown of the heartbeat, if running.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_worker$clone(deep = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
 }
 \if{html}{\out{</div>}}
 }

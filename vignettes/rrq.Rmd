@@ -50,7 +50,7 @@ We'll also need some worker processes to carry out our tasks. Here, we'll spawn 
 rrq::worker_spawn(obj, 2)
 ```
 
-Retrive the result, polling if needed:
+Retrieve the result, polling if needed:
 
 ```{r}
 obj$task_wait(t, progress = FALSE)
@@ -83,7 +83,7 @@ parallel::parLapply(cl, x, fun)
 * It is not possible to retrieve partially completed results - we have to wait for all the tasks to complete before working with any
 * If tasks are of uneven size, the load balancing form (`parallel::parLapplyLB`) is quite slow
 
-As such it is hard to build intefaces like queues or work through dependency graphs (though see heroic work in [future](https://future.futureverse.org/) and [targets](https://docs.ropensci.org/targets/)). Attempts at doing this run into issues of where do you store the data and the queue in such a way that you can safely have multiple worker processes interacting with the queue without corrupting the database or hitting race conditions. Approaches like [liteq](https://cran.r-project.org/package=liteq) may not work on network file systems, and therefore become limited to a single node.
+As such it is hard to build interfaces like queues or work through dependency graphs (though see heroic work in [future](https://future.futureverse.org/) and [targets](https://docs.ropensci.org/targets/)). Attempts at doing this run into issues of where do you store the data and the queue in such a way that you can safely have multiple worker processes interacting with the queue without corrupting the database or hitting race conditions. Approaches like [liteq](https://cran.r-project.org/package=liteq) may not work on network file systems, and therefore become limited to a single node.
 
 At the other end of the scale, HPC systems with their schedulers can avoid all these issues, but with byzantine interfaces and slow per-task submission.
 
@@ -94,9 +94,9 @@ Notable features of `rrq` which motivate its development within this landscape:
 * Supports a scalable worker pool; no workers are needed for tasks to be queued, and workers can be added or removed at will while tasks are running
 * Allows for multiple non-interacting queues, multiple priority levels within a queue, and automatically resolved dependencies among completing tasks
 * Supports a fully load-balanced design with overheads of around 1ms per task
-* Supports optionally running each task in a separate process, allowing for strong isolation between tasks as well as per-task timeouts and cancellability
+* Supports optionally running each task in a separate process, allowing for strong isolation between tasks as well as per-task timeouts and allowing cancellation
 * Allows rich querying of task status and progress and worker history
-* Exposes both low-level primatives for working with individual tasks as well as higher level interfaces that mimic functions like `lapply`
+* Exposes both low-level primitives for working with individual tasks as well as higher level interfaces that mimic functions like `lapply`
 
 ## Running tasks
 
@@ -169,7 +169,7 @@ create <- function(env) {
 }
 ```
 
-This approach would also allow you do do somethng like read an rds or rdata file containing a large object that you want every worker to have a copy of.
+This approach would also allow you do do something like read an rds or Rdata file containing a large object that you want every worker to have a copy of.
 
 The next step is to register this function for your queue:
 
@@ -326,7 +326,7 @@ Note that there is no validation to check that any worker is listening on any qu
 
 ### Jump the queue
 
-Almost always you will want to use a first-in-first-out queueing system, which is the default that rrq supports. However when queeing you can specify `at_front = TRUE` and jump to the front of the queue.
+Almost always you will want to use a first-in-first-out queueing system, which is the default that rrq supports. However when queuing you can specify `at_front = TRUE` and jump to the front of the queue.
 
 ## Running tasks in separate processes
 
@@ -340,7 +340,7 @@ The additional features that it provides are:
 * Cancellable tasks: you can stop a running task and the worker will gracefully pick up additional work
 * Per-task timeout: you can specify the maximum running time of any task and if the task exceeds it, it will be killed
 
-The sorts of tasks that benefit from this sort of approach are typically long-running (expected running times in the 10s of seconds or more) so that the overhead is low, but also the features of cancellation and timeouts become more useful. We have also seen this used usefully where the task may leak memory, or cache results agressively - over time this would cause the worker process to consume more memory until the worker process was killed by the operating system.
+The sorts of tasks that benefit from this sort of approach are typically long-running (expected running times in the 10s of seconds or more) so that the overhead is low, but also the features of cancellation and timeouts become more useful. We have also seen this used usefully where the task may leak memory, or cache results aggressively - over time this would cause the worker process to consume more memory until the worker process was killed by the operating system.
 
 To use a separate process, add `separate_process = TRUE` to calls to `$enqueue()`. This will then enable the argument `timeout` to have an effect, as well as the `$task_cancel()` method.
 
@@ -348,7 +348,7 @@ To use a separate process, add `separate_process = TRUE` to calls to `$enqueue()
 
 The data for each task, and the task result itself, is saved in Redis. This is alongside the typically much smaller metadata required to run rrq.  Because Redis is an [in memory](https://redis.io/topics/faq) database, this means that some things will not be a great idea; for example sending off 1000 tasks that will each write back 100 MB of simulation output would try and write 100 GB of data into the Redis database which may cause issues for your server!
 
-To allow for this workflow, `rrq` supports configuring its object store (`rrq::object_store`) so that objects above a certain size are written out elsewhere. Currently, the only "elsewhere" supported is to disk with the assumption that the controller and all workers share a filesytem. The approach used is safe for multiple concurrent processes, including over network mounted filesystems.
+To allow for this workflow, `rrq` supports configuring its object store (`rrq::object_store`) so that objects above a certain size are written out elsewhere. Currently, the only "elsewhere" supported is to disk with the assumption that the controller and all workers share a filesystem. The approach used is safe for multiple concurrent processes, including over network mounted filesystems.
 
 To configure this you must use `rrq::rrq_configure` *before attaching either a controller or a worker to the queue*. The configuration interface here will change in future, but we will maintain backward compatibility with the current options.
 

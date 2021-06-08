@@ -18,7 +18,7 @@ to store the \emph{values} referenced by \code{a} and \code{b} without
 reference to the names - we do this by naming the new values
 after their value. That is, the name becomes the hash of the
 object, computed by \code{\link[openssl:hash]{openssl::sha256()}} after serialisation, as
-a form of \href{https://en.wikipedia.org/wiki/Content-addressable_storage}{content-addressible storage}.
+a form of \href{https://en.wikipedia.org/wiki/Content-addressable_storage}{content-addressable storage}.
 \item When doing this we note that we might end up using the value
 referenced by \code{a} or \code{b} many times in different tasks so we
 should not re-save the data more than needed, and we should not
@@ -117,7 +117,7 @@ be stored in the redis database.}
 \item{\code{offload}}{An offload storage object. We provide one of
 these \code{\link{object_store_offload_disk}}, which saves objects
 to on disk after serialisation). This interface is
-subject to change. If not given but an object execeeds \code{max_size}
+subject to change. If not given but an object exceeds \code{max_size}
 an error will be thrown.}
 }
 \if{html}{\out{</div>}}

@@ -49,6 +49,7 @@ rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
 ##' @export
 rrq_worker <- R6::R6Class(
   "rrq_worker",
+  cloneable = FALSE,
 
   public = list(
     ##' @field name The name of the worker
@@ -139,7 +140,7 @@ rrq_worker <- R6::R6Class(
     },
 
     ##' @description Create a log entry. This will print a human readable
-    ##'   format to screen and a parseable format to the redis database.
+    ##'   format to screen and a machine-readable format to the redis database.
     ##'
     ##' @param label Scalar character, the title of the log entry
     ##'

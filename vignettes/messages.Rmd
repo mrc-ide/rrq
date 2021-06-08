@@ -163,9 +163,9 @@ Looking at the log will show what went on here:
 obj$worker_log_tail(n = 4)
 ```
 
-1. A task is recieved
+1. A task is received
 2. 2s later the task is completed
-3. Then the message is recieved
+3. Then the message is received
 4. Then, basically instantaneously, the message is responded to
 
 However, because the message is only processed after the task is
