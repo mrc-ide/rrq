@@ -7,16 +7,19 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
 
 ## Getting started
 
 This document assumes that that you have a Redis server running. If not, see the bottom of the document for options you will have for installing this on your own system. You can test if your Redis server is behaving as expected by running
 
-
-```r
+```{r}
 redux::hiredis()$PING()
-#> [Redis: PONG]
 ```
 
 If you get an error like "Connection refused" then check your installation.
@@ -27,38 +30,30 @@ The package is designed to be easy to get started with, and has features that yo
 
 Without any great explanation, here is the basic approach to using rrq to run a task on another R process, asynchronously . First, we create a "controller" object which you can use for queuing tasks.
 
-
-```r
+```{r}
 id <- paste0("rrq:", ids::random_id(bytes = 4))
 obj <- rrq::rrq_controller(id)
 ```
 
-This controller uses an "identifier" (here, rrq:75e47e10) which can be anything you want but acts like a folder within the Redis server, distinguishing your queue from any others hosted on the same server.
+This controller uses an "identifier" (here, `r id`) which can be anything you want but acts like a folder within the Redis server, distinguishing your queue from any others hosted on the same server.
 
 Submit a task to the queue with the `$enqueue()` method, returning a key for that task
 
-
-```r
+```{r}
 t <- obj$enqueue(1 + 1)
 t
-#> [1] "707a446ce24c05c1101ae1b950fc5257"
 ```
 
 We'll also need some worker processes to carry out our tasks. Here, we'll spawn two for now (see the section below on alternatives to this)
 
-
-```r
+```{r}
 rrq::worker_spawn(obj, 2)
-#> Spawning 2 workers with prefix dissentient_fallowdeer
-#> [1] "dissentient_fallowdeer_1" "dissentient_fallowdeer_2"
 ```
 
 Retrieve the result, polling if needed:
 
-
-```r
+```{r}
 obj$task_wait(t, progress = FALSE)
-#> [1] 2
 ```
 
 Things to note here:
@@ -109,31 +104,27 @@ Running tasks is a little different to many R-parallel backends, because we do n
 
 Consider enqueing this expression
 
-
-```r
+```{r}
 t <- obj$enqueue({Sys.sleep(2); runif(1)})
 ```
 
 This has created a task that will sleep for 2 seconds then return a random number
 
-
+```{r, include = FALSE}
+Sys.sleep(0.5)
+```
 
 Initially the task has status `RUNNING` (it will be `PENDING` *very* briefly):
 
-
-```r
+```{r}
 obj$task_status(t)
-#> cbb28794c16ceaffc1fcdaed46380743
-#>                        "RUNNING"
 ```
 
 Then after a couple of seconds it will complete (we pad this out here so that it will complete even on slow systems)
 
-
-```r
+```{r}
 Sys.sleep(3)
 obj$task_result(t)
-#> [1] 0.3315896
 ```
 
 The basic task lifecycle is this:
@@ -146,23 +137,18 @@ In addition there are rarer ways a task can end (`CANCELLED`, `DIED`, `TIMEOUT`)
 
 Above, we slept for a few seconds in order for the task to become finished. However, this is an extremely common operation, so `rrq` provides a `$task_wait` method which will wait until a task finishes, then returns the result.
 
-
-```r
+```{r}
 t <- obj$enqueue({Sys.sleep(2); runif(1)})
 obj$task_wait(t)
-#> [1] 0.1008125
 ```
 
 The polling interval here is 1 second by default, but if the task completes within that period it will still be returned as soon as it is complete (the interval is just the time between progress bar updates and the period where an interrupt would be caught to cancel the wait).
 
 Once a task is complete, `$task_wait` and `$task_result` are equivalent
 
-
-```r
+```{r}
 obj$task_wait(t)
-#> [1] 0.1008125
 obj$task_result(t)
-#> [1] 0.1008125
 ```
 
 ## Configuring the worker environment
@@ -171,19 +157,13 @@ It is rare that we want our workers to run in completely empty R environments (n
 
 In order to do this, first define a function that will accept one argument which will be the environment that the worker will use, and then set that environment up. So, for example, suppose we want to source a file "myfuns.R" which contains some code
 
-
-```r
+```{r results = "asis"}
 writeLines(c("```r", readLines("myfuns.R"), "```"))
-slowdouble <- function(x) {
-  Sys.sleep(x)
-  x * 2
-}
 ```
 
 We might write:
 
-
-```r
+```{r}
 create <- function(env) {
   sys.source("myfuns.R", env)
 }
@@ -193,34 +173,21 @@ This approach would also allow you do do something like read an rds or Rdata fil
 
 The next step is to register this function for your queue:
 
-
-```r
+```{r}
 obj$envir(create)
 ```
 
 By default, this will notify all running workers to update their environment. Note that if your function errors in any way, your workers will exit!
 
-
-```r
+```{r}
 obj$worker_log_tail(n = 4)
-#>                  worker_id       time  command message
-#> 1 dissentient_fallowdeer_1 1623157852  MESSAGE REFRESH
-#> 2 dissentient_fallowdeer_2 1623157852  MESSAGE REFRESH
-#> 3 dissentient_fallowdeer_1 1623157852    ENVIR     new
-#> 4 dissentient_fallowdeer_2 1623157852    ENVIR     new
-#> 5 dissentient_fallowdeer_1 1623157852    ENVIR  create
-#> 6 dissentient_fallowdeer_2 1623157852    ENVIR  create
-#> 7 dissentient_fallowdeer_1 1623157852 RESPONSE REFRESH
-#> 8 dissentient_fallowdeer_2 1623157852 RESPONSE REFRESH
 ```
 
 Now our workers have picked up our functions we can start using them:
 
-
-```r
+```{r}
 t <- obj$enqueue(slowdouble(1))
 obj$task_wait(t)
-#> [1] 2
 ```
 
 ## Scheduling options
@@ -247,25 +214,15 @@ If a prerequisite task fails for any reason (an error, is cancelled, or its work
 
 For example, suppose that we have code:
 
-
-```r
+```{r results = "asis"}
 writeLines(c("```r", readLines("deps.R"), "```"))
-create <- function(n) {
-  saveRDS(runif(n), "numbers.rds")
-}
-
-use <- function(i) {
-  d <- readRDS("numbers.rds")
-  d[[i]]
-}
 ```
 
 Here we have some function `create` that we want to run first, doing some setup, then another function `use` that we want to run after which will read the result of running `create` and do some analysis on it.
 
 Create an `rrq_controller` object and tell workers to read the `deps.R` file which contains these function definitions
 
-
-```r
+```{r}
 obj <- rrq::rrq_controller(paste0("rrq:", ids::random_id(bytes = 4)))
 obj$envir(rrq::rrq_envir(sources = "deps.R"))
 source("deps.R")
@@ -273,64 +230,42 @@ source("deps.R")
 
 We can then enqueue our first task:
 
-
-```r
+```{r}
 id <- obj$enqueue(create(5))
 ```
 
 Then use this `id`
 
-
-```r
+```{r}
 id_use <- obj$lapply(1:5, use, depends_on = id, collect_timeout = 0)
 ```
 
 The status of the first task will be `PENDING`, per usual:
 
-
-```r
+```{r}
 obj$task_status(id)
-#> 4630760c6e341983fbbb61b70da1d2c3
-#>                        "PENDING"
 ```
 
 however, the group of tasks submitted as part of the `$lapply` call will be `DEFERRED` because they're not yet in the queue:
 
-
-```r
+```{r}
 obj$task_status(id_use$task_ids)
-#> dc3cd4240c033aa71017a2a0f389453e 471127fe19bcfd50ba73d6f3d8faa540
-#>                       "DEFERRED"                       "DEFERRED"
-#> 1f5fe43ce5904292863c07b4f484aa87 260f881ef92d7fbb4a44d6ba7cf411cb
-#>                       "DEFERRED"                       "DEFERRED"
-#> 9cd1be2c31109abd8e921c5bcfe35c7a
-#>                       "DEFERRED"
 obj$queue_list()
-#> [1] "4630760c6e341983fbbb61b70da1d2c3"
 ```
 
 obj$task_result(id_use$task_ids[[1]])
 
 Once the first task is processed by a worker, the status changes:
 
+```{r, include = FALSE}
+w <- rrq::rrq_worker_from_config(obj$queue_id)
+w$step(TRUE)
+```
 
-
-
-```r
+```{r}
 obj$task_status(id)
-#> 4630760c6e341983fbbb61b70da1d2c3
-#>                       "COMPLETE"
 obj$task_status(id_use$task_ids)
-#> dc3cd4240c033aa71017a2a0f389453e 471127fe19bcfd50ba73d6f3d8faa540
-#>                        "PENDING"                        "PENDING"
-#> 1f5fe43ce5904292863c07b4f484aa87 260f881ef92d7fbb4a44d6ba7cf411cb
-#>                        "PENDING"                        "PENDING"
-#> 9cd1be2c31109abd8e921c5bcfe35c7a
-#>                        "PENDING"
 obj$queue_list()
-#> [1] "9cd1be2c31109abd8e921c5bcfe35c7a" "1f5fe43ce5904292863c07b4f484aa87"
-#> [3] "471127fe19bcfd50ba73d6f3d8faa540" "260f881ef92d7fbb4a44d6ba7cf411cb"
-#> [5] "dc3cd4240c033aa71017a2a0f389453e"
 ```
 
 At this point the tasks will proceed through the queue as usual.
@@ -349,53 +284,42 @@ Every worker listens to the `default` queue, but when starting a worker, you can
 
 The easiest way to configure this is to save a worker configuration:
 
-
-```r
+```{r}
 id <- paste0("rrq:", ids::random_id(bytes = 4))
 obj <- rrq::rrq_controller(id)
 obj$worker_config_save("short", queue = "short")
 obj$worker_config_save("all", queue = c("short", "long"))
 obj$worker_config_list()
-#> [1] "localhost" "short"     "all"
 ```
 
 Above, we create two configurations: "short" which just listens on the queue `short`, and `all` which listens both on the short and long task queues (note that both these workers will also listen on the default queue).
 
-
-```r
+```{r}
 rrq::worker_spawn(obj, worker_config = "short")
-#> Spawning 1 worker with prefix kainolophobic_manxcat
-#> [1] "kainolophobic_manxcat_1"
 rrq::worker_spawn(obj, worker_config = "all")
-#> Spawning 1 worker with prefix unheavenly_swallowtailbutterfly
-#> [1] "unheavenly_swallowtailbutterfly_1"
 ```
 
 We can then submit a long task to the worker:
 
-
-```r
+```{r}
 id_long1 <- obj$enqueue(Sys.sleep(3600), queue = "long")
 id_long2 <- obj$enqueue(Sys.sleep(3600), queue = "long")
 ```
 
 After the workers have had the ability to pick up work, our "short" worker is still available:
 
-
-
-```r
+```{r, include = FALSE}
+Sys.sleep(1)
+```
+```{r}
 obj$worker_status()
-#>           kainolophobic_manxcat_1 unheavenly_swallowtailbutterfly_1
-#>                            "IDLE"                            "BUSY"
 ```
 
 So we can submit tasks to this short queue and have them processed
 
-
-```r
+```{r}
 id <- obj$enqueue(runif(1), queue = "short")
 obj$task_wait(id, timeout = 10)
-#> [1] 0.7619073
 ```
 
 Note that there is no validation to check that any worker is listening on any queue when you submit a task. Indeed there can't be as new workers can be added at any time (so at the point of submission perhaps there were no workers).
@@ -430,8 +354,7 @@ To configure this you must use `rrq::rrq_configure` *before attaching either a c
 
 To configure storage so that every object that is greater than 1MB is saved to disk, you could write:
 
-
-```r
+```{r}
 id <- paste0("rrq:", ids::random_id(bytes = 4))
 path <- tempfile()
 rrq::rrq_configure(id, store_max_size = 1000, offload_path = path)
@@ -439,29 +362,25 @@ rrq::rrq_configure(id, store_max_size = 1000, offload_path = path)
 
 then we create the queue object as normal (and spawn a worker so that we can use it)
 
-
-```r
+```{r}
 obj <- rrq::rrq_controller(id)
 rrq::worker_spawn(obj, 1)
-#> Spawning 1 worker with prefix lexicostatistic_eland
-#> [1] "lexicostatistic_eland_1"
 ```
 
 It's not that hard to get to 1MB of data, we can do that by simulating a big pile of random numbers:
 
-
-```r
+```{r}
 t <- obj$enqueue(runif(200000))
 ```
 
-
+```{r include = FALSE}
+invisible(obj$task_wait(t, timeout = 10))
+```
 
 Once the task has finished, data will be stored on disk below the path given above:
 
-
-```r
+```{r}
 dir(path)
-#> [1] "a52924722f4cdf12b0ee3ab8ab762d230ad61ca121cc95c3387b7341cc774b7a"
 ```
 
 This keeps the larger objects out of the database.

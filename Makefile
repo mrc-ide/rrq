@@ -31,28 +31,22 @@ clean:
 	rm -f ${PACKAGE}_*.tar.gz
 	rm -rf ${PACKAGE}.Rcheck
 
-vignettes/src/context.Rmd: vignettes/src/context.R
-	${RSCRIPT} -e 'library(sowsear); sowsear("$<", output="$@")'
 
-vignettes/context.Rmd: vignettes/src/context.Rmd
-	cd vignettes/src && ${RSCRIPT} -e 'knitr::knit("context.Rmd")'
-	mv vignettes/src/context.md $@
+vignettes/rrq.Rmd: vignettes_src/rrq.Rmd
+	mkdir -p vignettes
+	cd vignettes_src && ${RSCRIPT} -e 'knitr::knit("rrq.Rmd")'
+	mv vignettes_src/rrq.md $@
 	sed -i.bak 's/[[:space:]]*$$//' $@
 	rm -f $@.bak
 
-vignettes_install: vignettes/context.Rmd
-	${RSCRIPT} -e 'library(methods); devtools::build_vignettes()'
+vignettes/messages.Rmd: vignettes_src/messages.Rmd
+	mkdir -p vignettes
+	cd vignettes_src && ${RSCRIPT} -e 'knitr::knit("messages.Rmd")'
+	mv vignettes_src/messages.md $@
+	sed -i.bak 's/[[:space:]]*$$//' $@
+	rm -f $@.bak
 
-vignettes:
-	rm -f vignettes/context.Rmd
-	make vignettes_install
-
-staticdocs:
-	@mkdir -p inst/staticdocs
-	Rscript -e "library(methods); staticdocs::build_site()"
-	rm -f vignettes/*.html
-	@rmdir inst/staticdocs
-website: staticdocs
-	./update_web.sh
+vignettes: vignettes/rrq.Rmd vignettes/messages.Rmd
+	Rscript -e 'library(methods); devtools::build_vignettes()'
 
 .PHONY: all test document install vignettes

@@ -7,47 +7,48 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
 
-
-
+```{r echo = FALSE, results = "hide"}
+lang_output <- function(x, lang) {
+  cat(c(sprintf("```%s", lang), x, "```"), sep = "\n")
+}
+make_reader <- function(filename, lang = "plain") {
+  n <- 0
+  force(filename)
+  force(lang)
+  function() {
+    txt <- readLines(filename)
+    if (n > 0) {
+      txt <- txt[-seq_len(n)]
+    }
+    n <<- n + length(txt)
+    lang_output(txt, lang)
+  }
+}
+```
 
 In addition to passing tasks (and results) between a controller and
 workers, the controller can also send "messages" to workers.  This
 vignette shows what the possible messages do.
 
 In order to do this, we're going to need a queue and a worker:
-
-```r
+```{r}
 obj <- rrq::rrq_controller("rrq:messages")
 logdir <- tempfile()
 worker_id <- rrq::worker_spawn(obj, logdir = logdir)
-#> Spawning 1 worker with prefix intranational_fallowdeer
 ```
 
 On startup the worker log contains:
 
-```plain
-[2021-06-08 14:10:55] QUEUE default
-[2021-06-08 14:10:55] ENVIR new
-[2021-06-08 14:10:55] ALIVE
-                                 __
-                ______________ _/ /
-      ______   / ___/ ___/ __ `/ /_____
-     /_____/  / /  / /  / /_/ /_/_____/
- ______      /_/  /_/   \__, (_)   ______
-/_____/                   /_/     /_____/
-    worker:        intranational_fallowdeer_1
-    rrq_version:   0.4.3 [LOCAL]
-    platform:      x86_64-pc-linux-gnu (64-bit)
-    running:       Ubuntu 20.04.2 LTS
-    hostname:      wpia-dide300
-    username:      rfitzjoh
-    queue:         rrq:messages:queue:default
-    wd:            /home/rfitzjoh/Documents/src/rrq/vignettes_src
-    pid:           146227
-    redis_host:    127.0.0.1
-    redis_port:    6379
-    heartbeat_key: <not set>
+```{r results = "asis", echo = FALSE}
+reader <- make_reader(file.path(logdir, worker_id))
+reader()
 ```
 
 Because one of the main effects of messages is to print to the
@@ -76,26 +77,21 @@ The `PING` message simply asks the worker to return `PONG`.  It's
 useful for diagnosing communication issues because it does so
 little
 
-
-```r
+```{r}
 message_id <- obj$message_send("PING")
 ```
 
 The message id is going to be useful for getting responses:
 
-
-```r
+```{r}
 message_id
-#> [1] "1623157855.453103"
 ```
 
 (this is derived from the current time, according to Redis which is
 the central reference point of time for the whole system).
 
-```plain
-[2021-06-08 14:10:55] MESSAGE PING
-PONG
-[2021-06-08 14:10:55] RESPONSE PING
+```{r results = "asis", echo = FALSE}
+reader()
 ```
 
 The logfile prints:
@@ -106,13 +102,8 @@ The logfile prints:
 
 We can access the same bits of information in the worker log:
 
-
-```r
+```{r}
 obj$worker_log_tail(n = Inf)
-#>                    worker_id       time  command message
-#> 1 intranational_fallowdeer_1 1623157855    ALIVE
-#> 2 intranational_fallowdeer_1 1623157855  MESSAGE    PING
-#> 3 intranational_fallowdeer_1 1623157855 RESPONSE    PING
 ```
 
 This includes the `ALIVE` message as the worker comes up.
@@ -122,85 +113,54 @@ be more useful often to poll for a response.
 
 We already know that our worker has a response, but we can ask anyway:
 
-
-```r
+```{r}
 obj$message_has_response(message_id)
-#> intranational_fallowdeer_1
-#>                       TRUE
 ```
 
 Or inversely we can as what messages a given worker has responses for:
 
-
-```r
+```{r}
 obj$message_response_ids(worker_id)
-#> [1] "1623157855.453103"
 ```
 
 To fetch the responses from all workers it was sent to (always
 returning a named list):
 
-
-```r
+```{r}
 obj$message_get_response(message_id)
-#> $intranational_fallowdeer_1
-#> [1] "PONG"
 ```
 
 or to fetch the response from a given worker:
 
-
-```r
+```{r}
 obj$message_get_response(message_id, worker_id)
-#> $intranational_fallowdeer_1
-#> [1] "PONG"
 ```
 
 The response can be deleted by passing `delete = TRUE` to this method:
 
-
-```r
+```{r}
 obj$message_get_response(message_id, worker_id, delete = TRUE)
-#> $intranational_fallowdeer_1
-#> [1] "PONG"
 ```
 
 after which recalling the message will throw an error:
 
-
-```r
+```{r error = TRUE}
 obj$message_get_response(message_id, worker_id)
-#> Error in message_get_response(self$con, self$keys, message_id, worker_ids, : Response missing for workers: intranational_fallowdeer_1
 ```
 
 There is also a `wait` argument that lets you wait until a response is
 ready (as in `$task_wait()`).
 
-
-```r
+```{r}
 obj$enqueue(Sys.sleep(2))
-#> [1] "225541966e43ce6dccd2621afb10523f"
 message_id <- obj$message_send("PING")
 obj$message_get_response(message_id, worker_id, delete = TRUE, timeout = 10)
-#> $intranational_fallowdeer_1
-#> [1] "PONG"
 ```
 
 Looking at the log will show what went on here:
 
-
-```r
+```{r}
 obj$worker_log_tail(n = 4)
-#>                    worker_id       time       command
-#> 1 intranational_fallowdeer_1 1623157856    TASK_START
-#> 2 intranational_fallowdeer_1 1623157858 TASK_COMPLETE
-#> 3 intranational_fallowdeer_1 1623157858       MESSAGE
-#> 4 intranational_fallowdeer_1 1623157858      RESPONSE
-#>                            message
-#> 1 225541966e43ce6dccd2621afb10523f
-#> 2 225541966e43ce6dccd2621afb10523f
-#> 3                             PING
-#> 4                             PING
 ```
 
 1. A task is received
@@ -212,12 +172,8 @@ However, because the message is only processed after the task is
 completed, the response takes a while to come back.  Equivalently,
 from the worker log:
 
-```plain
-[2021-06-08 14:10:55] TASK_START 225541966e43ce6dccd2621afb10523f
-[2021-06-08 14:10:57] TASK_COMPLETE 225541966e43ce6dccd2621afb10523f
-[2021-06-08 14:10:57] MESSAGE PING
-PONG
-[2021-06-08 14:10:57] RESPONSE PING
+```{r results = "asis", echo = FALSE}
+reader()
 ```
 
 ## `ECHO`
@@ -226,18 +182,13 @@ This is basically like `PING` and not very interesting; it prints
 an arbitrary string to the log.  It always returns `"OK"` as a
 response.
 
-
-```r
+```{r}
 message_id <- obj$message_send("ECHO", "hello world!")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $intranational_fallowdeer_1
-#> [1] "OK"
 ```
 
-```plain
-[2021-06-08 14:10:57] MESSAGE ECHO
-hello world!
-[2021-06-08 14:10:57] RESPONSE ECHO
+```{r results = "asis", echo = FALSE}
+reader()
 ```
 
 ## `INFO`
@@ -246,89 +197,21 @@ The `INFO` command refreshes and returns the worker information.
 
 We already have a copy of the worker info; it was created when the
 worker started up:
-
-```r
+```{r}
 obj$worker_info()[[worker_id]]
-#> $worker
-#> [1] "intranational_fallowdeer_1"
-#>
-#> $rrq_version
-#> [1] "0.4.3 [LOCAL]"
-#>
-#> $platform
-#> [1] "x86_64-pc-linux-gnu (64-bit)"
-#>
-#> $running
-#> [1] "Ubuntu 20.04.2 LTS"
-#>
-#> $hostname
-#> [1] "wpia-dide300"
-#>
-#> $username
-#> [1] "rfitzjoh"
-#>
-#> $queue
-#> [1] "rrq:messages:queue:default"
-#>
-#> $wd
-#> [1] "/home/rfitzjoh/Documents/src/rrq/vignettes_src"
-#>
-#> $pid
-#> [1] 146227
-#>
-#> $redis_host
-#> [1] "127.0.0.1"
-#>
-#> $redis_port
-#> [1] 6379
 ```
 
 We can force the worker to refresh:
 
-
-```r
+```{r}
 message_id <- obj$message_send("INFO")
 ```
 
 Here's the new worker information, complete with an updated `envir`
 field:
 
-
-```r
+```{r}
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $intranational_fallowdeer_1
-#> $intranational_fallowdeer_1$worker
-#> [1] "intranational_fallowdeer_1"
-#>
-#> $intranational_fallowdeer_1$rrq_version
-#> [1] "0.4.3 [LOCAL]"
-#>
-#> $intranational_fallowdeer_1$platform
-#> [1] "x86_64-pc-linux-gnu (64-bit)"
-#>
-#> $intranational_fallowdeer_1$running
-#> [1] "Ubuntu 20.04.2 LTS"
-#>
-#> $intranational_fallowdeer_1$hostname
-#> [1] "wpia-dide300"
-#>
-#> $intranational_fallowdeer_1$username
-#> [1] "rfitzjoh"
-#>
-#> $intranational_fallowdeer_1$queue
-#> [1] "rrq:messages:queue:default"
-#>
-#> $intranational_fallowdeer_1$wd
-#> [1] "/home/rfitzjoh/Documents/src/rrq/vignettes_src"
-#>
-#> $intranational_fallowdeer_1$pid
-#> [1] 146227
-#>
-#> $intranational_fallowdeer_1$redis_host
-#> [1] "127.0.0.1"
-#>
-#> $intranational_fallowdeer_1$redis_port
-#> [1] 6379
 ```
 
 ## `EVAL`
@@ -338,12 +221,9 @@ any sort of unevaluated or quoted expression).  This expression is
 evaluated in the global environment, which is *not* the environment
 in which queued code is evaluated in.
 
-
-```r
+```{r}
 message_id <- obj$message_send("EVAL", "1 + 1")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $intranational_fallowdeer_1
-#> [1] 2
 ```
 
 This could be used to evaluate code that has side effects, such as
@@ -355,115 +235,66 @@ to restart the worker.
 
 The `PAUSE` / `RESUME` messages can be used to prevent workers from picking up new work (and then allowing them to start again).
 
-
-```r
+```{r}
 obj$worker_status()
-#> intranational_fallowdeer_1
-#>                     "IDLE"
 message_id <- obj$message_send("PAUSE")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $intranational_fallowdeer_1
-#> [1] "OK"
 obj$worker_status()
-#> intranational_fallowdeer_1
-#>                   "PAUSED"
 ```
 
 Once paused workers ignore tasks, which stay on the queue:
 
-
-```r
+```{r}
 t <- obj$enqueue(runif(5))
 obj$task_status(t)
-#> d0bbda15b7b583e969d4c08a3c3610e4
-#>                        "PENDING"
 ```
 
 Sending a `RESUME` message unpauses the worker:
 
-
-```r
+```{r}
 message_id <- obj$message_send("RESUME")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $intranational_fallowdeer_1
-#> [1] "OK"
 obj$task_wait(t, 5)
-#> [1] 0.09396165 0.42519571 0.25107014 0.09519392 0.25233610
 ```
 
 ## `SET_TIMEOUT` / `GET_TIMEOUT`
 
 Workers will quit after being left idle for more than a certain time; this is their timeout. Only processing tasks counts as work (not messages).  You can query the timeout with `GET_TIMEOUT` and set it with `SET_TIMEOUT`. For our worker above the timeout is infinite; it will never quit:
 
-
-```r
+```{r}
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $intranational_fallowdeer_1
-#>   timeout remaining
-#>       Inf       Inf
 ```
 
 We can set this to a finite value, in seconds:
 
-
-```r
+```{r}
 obj$message_send_and_wait("TIMEOUT_SET", 600, worker_ids = worker_id)
-#> $intranational_fallowdeer_1
-#> [1] "OK"
 ```
 
 Here the timeout is set to 10 minutes (600s).
 
 Once set, the `TIMEOUT_GET` returns the length of time remaining before the worker exits
 
-
-```r
+```{r}
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $intranational_fallowdeer_1
-#>   timeout remaining
-#>  600.0000  599.9348
 Sys.sleep(5)
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $intranational_fallowdeer_1
-#>   timeout remaining
-#>  600.0000  594.8717
 ```
 
 One useful pattern is to send work to workers, then set the timeout to zero. This means that when work is complete they will exit (almost) immediately:
 
-
-```r
+```{r}
 grp <- obj$lapply(1:5, function(x) {Sys.sleep(0.5); runif(x)},
                   collect_timeout = 0)
 obj$message_send("TIMEOUT_SET", 0, worker_id)
 obj$tasks_wait(grp$task_ids)
-#> $dccb71a0a9224fa7d8657fbd92b9ff36
-#> [1] 0.3224497
-#>
-#> $`18284b0852093b4a462dfbb6e0a17979`
-#> [1] 0.7397342 0.5423508
-#>
-#> $a74d86038b581dfc42f8d4b5b94df88f
-#> [1] 0.3494711 0.9113329 0.4348230
-#>
-#> $`623252063be088a7620ff5942bc90d12`
-#> [1] 0.9031626 0.6049453 0.1788282 0.8481711
-#>
-#> $ee5ae4cf6a7a989205c9942082ce8ae9
-#> [1] 0.2625466 0.0175564 0.3735846 0.8468918 0.7491937
 ```
 
 The worker will remain idle for 60s (by default) which is the length of time that one poll for work lasts, then it will exit.
 
-
-```r
+```{r}
 obj$worker_status(worker_id)
-#> intranational_fallowdeer_1
-#>                     "IDLE"
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $intranational_fallowdeer_1
-#>   timeout remaining
-#>         0         0
 ```
 
 ## Messages that are supported but use via wrappers:

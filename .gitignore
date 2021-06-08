@@ -8,3 +8,5 @@ extra/figure
 inst/doc
 numbers.rds
 docs
+/doc/
+/Meta/
