@@ -17,3 +17,4 @@
 ^\.hadolint\.yml$
 ^README\.Rmd$
 ^docs$
+^\.hadolint\.yaml$
