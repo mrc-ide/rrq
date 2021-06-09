@@ -15,7 +15,7 @@ be \code{file.path(path, "rrq_worker")}}
 versioned R script that will use the same path to \code{Rscript} as
 the running session. If \code{FALSE} we use \verb{#!/usr/bin/env Rscript}
 which will pick up \code{Rscript} from the path. You may want to use
-a versioned script in tests or if you have mulitple R versions
+a versioned script in tests or if you have multiple R versions
 installed simultaneously.}
 }
 \value{

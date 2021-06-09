@@ -190,7 +190,10 @@ rrq_controller_ <- R6::R6Class(
     ##'   function.
     ##'
     ##' @param create A function that will create an environment. It will
-    ##'   be called with no parameters, in a fresh R session.
+    ##'   be called with one parameter (an environment), in a fresh R
+    ##'   session. The function [rrq::rrq_envir()] can be used to
+    ##'   create a suitable function for the most common case (loading
+    ##'   packages and sourcing scripts).
     ##'
     ##' @param notify Boolean, indicating if we should send a `REFRESH`
     ##'   message to all workers to update their environment.
@@ -225,9 +228,9 @@ rrq_controller_ <- R6::R6Class(
     ##'   run in a separate process on the worker. If `TRUE`, then the
     ##'   worker runs the task in a separate process using the `callr`
     ##'   package. This means that the worker environment is completely
-    ##'   clean, subsequent runs are not affected by preceeding ones.
+    ##'   clean, subsequent runs are not affected by preceding ones.
     ##'   The downside of this approach is a considerable overhead in
-    ##'   starting the extenal process and transferring data back.
+    ##'   starting the external process and transferring data back.
     ##'
     ##' @param timeout Optionally, a maximum allowed running time, in
     ##'   seconds. This parameter only has an effect if `separate_process`

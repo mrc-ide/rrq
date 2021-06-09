@@ -15,3 +15,9 @@
 ^docker$
 ^\.github$
 ^\.hadolint\.yml$
+^README\.Rmd$
+^docs$
+^\.hadolint\.yaml$
+^vignettes_src$
+^doc$
+^Meta$

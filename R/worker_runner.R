@@ -48,7 +48,7 @@
 ##'   versioned R script that will use the same path to `Rscript` as
 ##'   the running session. If `FALSE` we use `#!/usr/bin/env Rscript`
 ##'   which will pick up `Rscript` from the path. You may want to use
-##'   a versioned script in tests or if you have mulitple R versions
+##'   a versioned script in tests or if you have multiple R versions
 ##'   installed simultaneously.
 ##'
 ##' @return Invisibly, the path to the script

@@ -1,0 +1,305 @@
+---
+title: "messages"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{messages}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r echo = FALSE, results = "hide"}
+lang_output <- function(x, lang) {
+  cat(c(sprintf("```%s", lang), x, "```"), sep = "\n")
+}
+make_reader <- function(filename, lang = "plain") {
+  n <- 0
+  force(filename)
+  force(lang)
+  function() {
+    txt <- readLines(filename)
+    if (n > 0) {
+      txt <- txt[-seq_len(n)]
+    }
+    n <<- n + length(txt)
+    lang_output(txt, lang)
+  }
+}
+```
+
+In addition to passing tasks (and results) between a controller and
+workers, the controller can also send "messages" to workers.  This
+vignette shows what the possible messages do.
+
+In order to do this, we're going to need a queue and a worker:
+```{r}
+obj <- rrq::rrq_controller("rrq:messages")
+logdir <- tempfile()
+worker_id <- rrq::worker_spawn(obj, logdir = logdir)
+```
+
+On startup the worker log contains:
+
+```{r results = "asis", echo = FALSE}
+reader <- make_reader(file.path(logdir, worker_id))
+reader()
+```
+
+Because one of the main effects of messages is to print to the
+worker logfile, we'll print this fairly often.
+
+## Messages and responses
+
+1. The queue sends a message for one or more workers to process.
+   The message has an *identifier* that is derived from the current
+   time.  Messages are written to a first-in-first-out queue, *per
+   worker*, and are processed independently by workers who do not
+   look to see if other workers have messages or are processing
+   them.
+
+2. As soon as a worker has finished processing any current job it
+   will process the message (it must wait to finish a current job
+   but will not start any further jobs).
+
+3. Once the message has been processed (see below) a response will
+   be written to a response list with the same identifier as the
+   message.
+
+## `PING`
+
+The `PING` message simply asks the worker to return `PONG`.  It's
+useful for diagnosing communication issues because it does so
+little
+
+```{r}
+message_id <- obj$message_send("PING")
+```
+
+The message id is going to be useful for getting responses:
+
+```{r}
+message_id
+```
+
+(this is derived from the current time, according to Redis which is
+the central reference point of time for the whole system).
+
+```{r results = "asis", echo = FALSE}
+reader()
+```
+
+The logfile prints:
+
+1. the request for the `PING` (`MESSAGE PING`)
+2. the value `PONG` to the R message stream
+3. logging a response (`RESPONSE PONG`), which means that something is written to the response stream.
+
+We can access the same bits of information in the worker log:
+
+```{r}
+obj$worker_log_tail(n = Inf)
+```
+
+This includes the `ALIVE` message as the worker comes up.
+
+Inspecting the logs is fine for interactive use, but it's going to
+be more useful often to poll for a response.
+
+We already know that our worker has a response, but we can ask anyway:
+
+```{r}
+obj$message_has_response(message_id)
+```
+
+Or inversely we can as what messages a given worker has responses for:
+
+```{r}
+obj$message_response_ids(worker_id)
+```
+
+To fetch the responses from all workers it was sent to (always
+returning a named list):
+
+```{r}
+obj$message_get_response(message_id)
+```
+
+or to fetch the response from a given worker:
+
+```{r}
+obj$message_get_response(message_id, worker_id)
+```
+
+The response can be deleted by passing `delete = TRUE` to this method:
+
+```{r}
+obj$message_get_response(message_id, worker_id, delete = TRUE)
+```
+
+after which recalling the message will throw an error:
+
+```{r error = TRUE}
+obj$message_get_response(message_id, worker_id)
+```
+
+There is also a `timeout` argument that lets you wait until a response is
+ready (as in `$task_wait()`).
+
+```{r}
+obj$enqueue(Sys.sleep(2))
+message_id <- obj$message_send("PING")
+obj$message_get_response(message_id, worker_id, delete = TRUE, timeout = 10)
+```
+
+Looking at the log will show what went on here:
+
+```{r}
+obj$worker_log_tail(n = 4)
+```
+
+1. A task is received
+2. 2s later the task is completed
+3. Then the message is received
+4. Then, basically instantaneously, the message is responded to
+
+However, because the message is only processed after the task is
+completed, the response takes a while to come back.  Equivalently,
+from the worker log:
+
+```{r results = "asis", echo = FALSE}
+reader()
+```
+
+## `ECHO`
+
+This is basically like `PING` and not very interesting; it prints
+an arbitrary string to the log.  It always returns `"OK"` as a
+response.
+
+```{r}
+message_id <- obj$message_send("ECHO", "hello world!")
+obj$message_get_response(message_id, worker_id, timeout = 10)
+```
+
+```{r results = "asis", echo = FALSE}
+reader()
+```
+
+## `INFO`
+
+The `INFO` command refreshes and returns the worker information.
+
+We already have a copy of the worker info; it was created when the
+worker started up:
+```{r}
+obj$worker_info()[[worker_id]]
+```
+
+We can force the worker to refresh:
+
+```{r}
+message_id <- obj$message_send("INFO")
+```
+
+Here's the new worker information, complete with an updated `envir`
+field:
+
+```{r}
+obj$message_get_response(message_id, worker_id, timeout = 10)
+```
+
+## `EVAL`
+
+Evaluate an arbitrary R expression, passed as a string (*not* as
+any sort of unevaluated or quoted expression).  This expression is
+evaluated in the global environment, which is *not* the environment
+in which queued code is evaluated in.
+
+```{r}
+message_id <- obj$message_send("EVAL", "1 + 1")
+obj$message_get_response(message_id, worker_id, timeout = 10)
+```
+
+This could be used to evaluate code that has side effects, such as
+installing packages.  However, due to limitations with how R loads
+packages the only way to update and reload a package is going to be
+to restart the worker.
+
+## `PAUSE` / `RESUME`
+
+The `PAUSE` / `RESUME` messages can be used to prevent workers from picking up new work (and then allowing them to start again).
+
+```{r}
+obj$worker_status()
+message_id <- obj$message_send("PAUSE")
+obj$message_get_response(message_id, worker_id, timeout = 10)
+obj$worker_status()
+```
+
+Once paused workers ignore tasks, which stay on the queue:
+
+```{r}
+t <- obj$enqueue(runif(5))
+obj$task_status(t)
+```
+
+Sending a `RESUME` message unpauses the worker:
+
+```{r}
+message_id <- obj$message_send("RESUME")
+obj$message_get_response(message_id, worker_id, timeout = 10)
+obj$task_wait(t, 5)
+```
+
+## `SET_TIMEOUT` / `GET_TIMEOUT`
+
+Workers will quit after being left idle for more than a certain time; this is their timeout. Only processing tasks counts as work (not messages).  You can query the timeout with `GET_TIMEOUT` and set it with `SET_TIMEOUT`. For our worker above the timeout is infinite; it will never quit:
+
+```{r}
+obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
+```
+
+We can set this to a finite value, in seconds:
+
+```{r}
+obj$message_send_and_wait("TIMEOUT_SET", 600, worker_ids = worker_id)
+```
+
+Here the timeout is set to 10 minutes (600s).
+
+Once set, the `TIMEOUT_GET` returns the length of time remaining before the worker exits
+
+```{r}
+obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
+Sys.sleep(5)
+obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
+```
+
+One useful pattern is to send work to workers, then set the timeout to zero. This means that when work is complete they will exit (almost) immediately:
+
+```{r}
+grp <- obj$lapply(1:5, function(x) {Sys.sleep(0.5); runif(x)},
+                  collect_timeout = 0)
+obj$message_send("TIMEOUT_SET", 0, worker_id)
+obj$tasks_wait(grp$task_ids)
+```
+
+The worker will remain idle for 60s (by default) which is the length of time that one poll for work lasts, then it will exit.
+
+```{r}
+obj$worker_status(worker_id)
+obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
+```
+
+## Messages that are supported but use via wrappers:
+
+There are other methods that are typically used via methods on the [`rrq::rrq_controller`] object.
+
+* `REFRESH`: requests that the worker refresh its evaluation environment. Typically used via the `$envir()` method
+* `STOP`: sent with a informational message as an argument, requests that the worker stop. Typically used via the `$worker_stop()` method

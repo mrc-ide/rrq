@@ -249,7 +249,10 @@ function.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{create}}{A function that will create an environment. It will
-be called with no parameters, in a fresh R session.}
+be called with one parameter (an environment), in a fresh R
+session. The function \code{\link[=rrq_envir]{rrq_envir()}} can be used to
+create a suitable function for the most common case (loading
+packages and sourcing scripts).}
 
 \item{\code{notify}}{Boolean, indicating if we should send a \code{REFRESH}
 message to all workers to update their environment.}
@@ -295,9 +298,9 @@ push jobs onto a queue with no worker, it will queue forever.}
 run in a separate process on the worker. If \code{TRUE}, then the
 worker runs the task in a separate process using the \code{callr}
 package. This means that the worker environment is completely
-clean, subsequent runs are not affected by preceeding ones.
+clean, subsequent runs are not affected by preceding ones.
 The downside of this approach is a considerable overhead in
-starting the extenal process and transferring data back.}
+starting the external process and transferring data back.}
 
 \item{\code{timeout}}{Optionally, a maximum allowed running time, in
 seconds. This parameter only has an effect if \code{separate_process}

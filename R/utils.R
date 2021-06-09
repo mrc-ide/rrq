@@ -191,3 +191,8 @@ is_serialized_object <- function(x) {
     length(x) >= 14 &&
     identical(x[1:2], as.raw(c(0x42, 0x0a)))
 }
+
+
+squote <- function(x) {
+  sprintf("'%s'", x)
+}

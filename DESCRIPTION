@@ -1,8 +1,11 @@
 Package: rrq
 Title: Simple Redis Queue
-Version: 0.4.2
-Author: Rich FitzJohn
-Maintainer: Rich FitzJohn <rich.fitzjohn@gmail.com>
+Version: 0.4.3
+Authors@R: c(person("Rich", "FitzJohn", role = c("aut", "cre"),
+                    email = "rich.fitzjohn@gmail.com"),
+             person("Robert", "Ashton", role = "aut"),
+             person("Imperial College of Science, Technology and Medicine",
+                    role = "cph"))
 Description: Simple Redis queue in R.
 License: MIT + file LICENSE
 LazyData: true
@@ -17,8 +20,10 @@ Imports:
     redux (>= 1.0.0)
 Suggests:
     callr (>= 3.7.0),
+    knitr,
     mockery,
     processx,
+    rmarkdown,
     storr,
     testthat,
     withr
@@ -27,3 +32,4 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Language: en-GB
 Config/testthat/edition: 3
+VignetteBuilder: knitr
