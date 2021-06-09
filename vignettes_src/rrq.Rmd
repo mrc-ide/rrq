@@ -28,7 +28,7 @@ The package is designed to be easy to get started with, and has features that yo
 
 ## Hello world
 
-Without any great explanation, here is the basic approach to using rrq to run a task on another R process, asynchronously . First, we create a "controller" object which you can use for queuing tasks.
+Without any great explanation, here is the basic approach to using rrq to run a task on another R process, asynchronously. First, we create a "controller" object which you can use for queuing tasks.
 
 ```{r}
 id <- paste0("rrq:", ids::random_id(bytes = 4))
@@ -76,7 +76,7 @@ to run in parallel given a cluster object `cl`
 parallel::parLapply(cl, x, fun)
 ```
 
-(the even simpler `parallel::mclapply(x, fun)` can be used on platforms other than Windows with reasonable success). Nice as this is it suffers some drawbacks, most of which follow from the derive from the simple blocking interface:
+(the even simpler `parallel::mclapply(x, fun)` can be used on platforms other than Windows with reasonable success). Nice as this is it suffers some drawbacks, most of which follow from the simple blocking interface:
 
 * The R session is blocked while the calculations run, even though the host session is doing (essentially) nothing
 * The number of workers (size of the cluster) is fixed at the point where `parLapply` has been called, and is restricted to a single node without considerable effort. One cannot add workers to the cluster while it runs, or remove unneeded ones as tasks finish.
@@ -206,7 +206,7 @@ We support a simple system for allowing tasks to depend on other tasks. An examp
 * store results in a database (e.g., Redis!) at the end of one task, read them in the next
 * connect to the queue from your task itself
 
-When queueing a task, you can provide a vector of task identifiers as the `depends_on` argument. These identifiers must all be known to `rrq` and the task will not be started until all these prerequisites are completed. The task lifecycle will look like different to the above; rather than starting as `PENDING` the task begins as `DEFERRED`.
+When queueing a task, you can provide a vector of task identifiers as the `depends_on` argument. These identifiers must all be known to `rrq` and the task will not be started until all these prerequisites are completed. The task lifecycle will look different to the above; rather than starting as `PENDING` the task begins as `DEFERRED`.
 
 Once all prerequisites are complete, a task becomes possible and it moves from `DEFERRED` to `PENDING`. It will be placed at the *front* of the queue.
 
