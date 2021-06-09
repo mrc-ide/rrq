@@ -73,7 +73,7 @@ rrq queue worker" />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.4.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.4.3</span>
       </span>
     </div>
 
@@ -86,7 +86,22 @@ rrq queue worker" />
   </a>
 </li>
 <li>
+  <a href="../articles/rrq.html">Get started</a>
+</li>
+<li>
   <a href="../reference/index.html">Reference</a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Articles
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="../articles/messages.html">messages</a>
+    </li>
+  </ul>
 </li>
 <li>
   <a href="../news/index.html">Changelog</a>
@@ -152,7 +167,6 @@ but will sit and poll a queue for jobs.</p>
 <li><p><a href='#method-progress'><code>rrq_worker$progress()</code></a></p></li>
 <li><p><a href='#method-task_eval'><code>rrq_worker$task_eval()</code></a></p></li>
 <li><p><a href='#method-shutdown'><code>rrq_worker$shutdown()</code></a></p></li>
-<li><p><a href='#method-clone'><code>rrq_worker$clone()</code></a></p></li>
 </ul>
 <p><hr>
 <a id="method-new"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>new()</code></h3>
@@ -224,7 +238,7 @@ key-value pairs.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href=
 <p><hr>
 <a id="method-log"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code><a href='https://rdrr.io/r/base/Log.html'>log()</a></code></h3>
 <p>Create a log entry. This will print a human readable
-format to screen and a parseable format to the redis database.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+format to screen and a machine-readable format to the redis database.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
 <p><div class="r"></p><pre><span class='va'>rrq_worker</span><span class='op'>$</span><span class='fu'>log</span><span class='op'>(</span><span class='va'>label</span>, value <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
@@ -273,7 +287,7 @@ zero. Intended primarily for use in the tests.</p></dd>
 <p><hr>
 <a id="method-loop"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>loop()</code></h3>
 <p>The main worker loop. Use this to set up the main
-w orker event loop, which will continue until exiting (via a timeout
+worker event loop, which will continue until exiting (via a timeout
 or message).</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
 <p><div class="r"></p><pre><span class='va'>rrq_worker</span><span class='op'>$</span><span class='fu'>loop</span><span class='op'>(</span>immediate <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre><p></div></p>
 
@@ -342,16 +356,6 @@ but can be any string</p></dd>
 graceful shutdown of the heartbeat, if running.</p></dd>
 
 </dl><p></div></p>
-<p><hr>
-<a id="method-clone"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>clone()</code></h3>
-<p>The objects of this class are cloneable with this method.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>rrq_worker</span><span class='op'>$</span><span class='fu'>clone</span><span class='op'>(</span>deep <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre><p></div></p>
-
-<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
-<p><div class="arguments"></p><dl>
-<dt><code>deep</code></dt><dd><p>Whether to make a deep clone.</p></dd>
-
-</dl><p></div></p>
 
 
 
@@ -366,7 +370,7 @@ graceful shutdown of the heartbeat, if running.</p></dd>
 
       <footer>
       <div class="copyright">
-  <p>Developed by Rich FitzJohn.</p>
+  <p>Developed by Rich FitzJohn, Robert Ashton.</p>
 </div>
 
 <div class="pkgdown">
