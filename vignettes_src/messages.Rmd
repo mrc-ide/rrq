@@ -148,7 +148,7 @@ after which recalling the message will throw an error:
 obj$message_get_response(message_id, worker_id)
 ```
 
-There is also a `wait` argument that lets you wait until a response is
+There is also a `timeout` argument that lets you wait until a response is
 ready (as in `$task_wait()`).
 
 ```{r}

@@ -35,7 +35,7 @@ id <- paste0("rrq:", ids::random_id(bytes = 4))
 obj <- rrq::rrq_controller(id)
 ```
 
-This controller uses an "identifier" (here, `r id`) which can be anything you want but acts like a folder within the Redis server, distinguishing your queue from any others hosted on the same server.
+This controller uses an "identifier" (here, `id` is `r id`) which can be anything you want but acts like a folder within the Redis server, distinguishing your queue from any others hosted on the same server.
 
 Submit a task to the queue with the `$enqueue()` method, returning a key for that task
 
@@ -155,7 +155,11 @@ obj$task_result(t)
 
 It is rare that we want our workers to run in completely empty R environments (no extra loaded packages, no custom functions available). Quite often you will want to run something to configure the workers before they accept tasks.
 
-In order to do this, first define a function that will accept one argument which will be the environment that the worker will use, and then set that environment up. So, for example, suppose we want to source a file "myfuns.R" which contains some code
+In order to do this, first define a function that will accept one argument which will be the environment that the worker will use, and then set that environment up.
+
+For the most common case, where you have script files that contain function definitions and you have a set of packages to load, rrq has a helper function `rrq::rrq_envir`.
+
+So, for example, suppose we want to source a file "myfuns.R" which contains some code
 
 ```{r results = "asis"}
 writeLines(c("```r", readLines("myfuns.R"), "```"))
@@ -164,12 +168,8 @@ writeLines(c("```r", readLines("myfuns.R"), "```"))
 We might write:
 
 ```{r}
-create <- function(env) {
-  sys.source("myfuns.R", env)
-}
+create <- rrq::rrq_envir(sources = "myfuns.R")
 ```
-
-This approach would also allow you do do something like read an rds or Rdata file containing a large object that you want every worker to have a copy of.
 
 The next step is to register this function for your queue:
 
@@ -189,6 +189,16 @@ Now our workers have picked up our functions we can start using them:
 t <- obj$enqueue(slowdouble(1))
 obj$task_wait(t)
 ```
+
+If you need more control you can write your own function. We could have written `create` as
+
+```{r}
+create <- function(env) {
+  sys.source("myfuns.R", env)
+}
+```
+
+This approach would also allow you do do something like read an rds or Rdata file containing a large object that you want every worker to have a copy of.
 
 ## Scheduling options
 

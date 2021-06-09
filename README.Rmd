@@ -53,6 +53,12 @@ Collect task results when complete
 obj$task_wait(t)
 ```
 
+Or try and retrieve them regardless of if they are complete
+
+```{r}
+obj$task_result(t)
+```
+
 Query what workers have done
 
 ```{r}
