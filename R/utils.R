@@ -164,7 +164,7 @@ wait_timeout <- function(explanation, timeout, keep_going,
 }
 
 wait_success <- function(explanation, timeout, keep_going,
-                         poll = timeout / 100) {
+                         poll = timeout / 5) {
   t_end <- Sys.time() + timeout
   out <- NULL
   while (is.null(out)) {
