@@ -55,7 +55,7 @@ test_that("Sensible error message on missing config", {
   key <- "nonexistant"
 
   expect_error(
-    rrq_worker_from_config(obj$queue_id, key),
+    rrq_worker_from_config(obj, worker_config = key),
     "Invalid rrq worker configuration key 'nonexistant'")
   expect_error(
     test_worker_spawn(obj, worker_config = key),
@@ -132,16 +132,4 @@ test_that("verbose is validated", {
     "verbose must be logical")
   obj$worker_config_save("quiet", verbose = FALSE)
   expect_equal(obj$worker_config_read("quiet"), list(verbose = FALSE))
-})
-
-test_that("config read timeout", {
-  obj <- test_rrq()
-
-  msg <- evaluate_promise(
-    expect_error(rrq_worker_from_config(obj$queue_id, "key", timeout = 2),
-                 "Invalid rrq worker configuration key 'key'"))
-  ## Attempted twice - checking actual progress messages here doesn't work
-  ## as they are not printed when running in non-interactively
-  expect_equal(
-    sum(msg$messages == "Invalid rrq worker configuration key 'key'\n"), 2)
 })

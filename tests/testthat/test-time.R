@@ -37,7 +37,7 @@ test_that("progress - vector and with timeout", {
   skip_on_cran() # too dependent on progress internals
   p <- progress_timeout(10, show = TRUE, label = "things", timeout = 5,
                         width = 50, force = TRUE)
-  expect_setequal(names(p), c("tick", "terminate", "message"))
+  expect_setequal(names(p), c("tick", "terminate"))
   expect_is_function(p$tick)
   expect_is_function(p$terminate)
 
@@ -110,15 +110,4 @@ test_that("status change timeout", {
     "Did not change status from 'PENDING' in time")
   expect_silent(
     wait_status_change(obj$con, obj$keys, t, TASK_RUNNING, 0.01, 0.005))
-})
-
-test_that("progress - can print a custom message", {
-  skip_on_cran() # too dependent on progress internals
-  p <- progress_timeout(1, show = TRUE, label = "things", timeout = Inf,
-                        width = 50, force = TRUE)
-
-  res1 <- evaluate_promise(p$message("Something is happening"))
-  expect_match(res1$messages[[3]],
-               "Something is happening\n",
-               fixed = TRUE)
 })

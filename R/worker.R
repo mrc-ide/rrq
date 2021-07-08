@@ -33,23 +33,10 @@ rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
                                    worker_name = NULL, key_alive = NULL,
                                    con = redux::hiredis(), timeout = 5) {
   keys <- rrq_keys(queue_id)
-  p <- progress_timeout(1, TRUE, "config read", timeout)
-  config <- NULL
-  while (is.null(config)) {
-    config <<- tryCatch(worker_config_read(con, keys, worker_config),
-                        error = function(e) {
-                          p$message(e$message)
-                        })
-    sys_sleep(1)
-    if (p$tick()) {
-      break
-    }
+  config_read <- function() {
+    worker_config_read(con, keys, worker_config)
   }
-  p$terminate()
-  if (is.null(config)) {
-    ## Throw the error if we haven't managed to retrieve config after 5 tries
-    config <- worker_config_read(con, keys, worker_config)
-  }
+  config <- wait_success("config not readable in time", timeout, config_read, 1)
 
   rrq_worker$new(queue_id, con,
                  key_alive = key_alive,
