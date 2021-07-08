@@ -21,6 +21,7 @@ Imports:
 Suggests:
     callr (>= 3.7.0),
     knitr,
+    markdown,
     mockery,
     processx,
     rmarkdown,
