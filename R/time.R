@@ -50,7 +50,7 @@ progress_timeout <- function(total, show, label, timeout, ...) {
       }
       rem <= 0
     }
-    list(tick = tick, terminate = p$terminate)
+    list(tick = tick, terminate = p$terminate, message = p$message)
   } else {
     tick <- function(len = 1, ...) {
       time_left() <= 0

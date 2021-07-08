@@ -111,3 +111,14 @@ test_that("status change timeout", {
   expect_silent(
     wait_status_change(obj$con, obj$keys, t, TASK_RUNNING, 0.01, 0.005))
 })
+
+test_that("progress - can print a custom message", {
+  skip_on_cran() # too dependent on progress internals
+  p <- progress_timeout(1, show = TRUE, label = "things", timeout = Inf,
+                        width = 50, force = TRUE)
+
+  res1 <- evaluate_promise(p$message("Something is happening"))
+  expect_match(res1$messages[[3]],
+               "Something is happening\n",
+               fixed = TRUE)
+})

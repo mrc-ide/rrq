@@ -133,3 +133,15 @@ test_that("verbose is validated", {
   obj$worker_config_save("quiet", verbose = FALSE)
   expect_equal(obj$worker_config_read("quiet"), list(verbose = FALSE))
 })
+
+test_that("config read timeout", {
+  skip_on_cran() # too dependent on progress internals
+  obj <- test_rrq()
+
+  msg <- evaluate_promise(
+    expect_error(rrq_worker_from_config(obj$queue_id, "key", timeout = 1),
+                 "Invalid rrq worker configuration key 'key'"))
+  expect_true("Invalid rrq worker configuration key 'key'\n" %in% msg$messages)
+  expect_true(
+    "(-) waiting for config read | giving up in 0 s" %in% msg$messages)
+})

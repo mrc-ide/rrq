@@ -20,6 +20,10 @@
 ##'
 ##' @param con Redis configuration
 ##'
+##' @param timeout How long to try and read the worker config for. Will
+##'   attempt to read once a second and throw an error if config cannot
+##'   be located after `timeout` seconds.
+##'
 ##' @return A [`rrq::rrq_worker`] object. If you want to "run" the
 ##'   worker, you would want to use the `$loop()` method of this
 ##'   object. Other methods are for advanced use.
@@ -27,9 +31,25 @@
 ##' @export
 rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
                                    worker_name = NULL, key_alive = NULL,
-                                   con = redux::hiredis()) {
+                                   con = redux::hiredis(), timeout = 5) {
   keys <- rrq_keys(queue_id)
-  config <- worker_config_read(con, keys, worker_config)
+  p <- progress_timeout(1, TRUE, "config read", timeout)
+  config <- NULL
+  while (is.null(config)) {
+    config <<- tryCatch(worker_config_read(con, keys, worker_config),
+                        error = function(e) {
+                          p$message(e$message)
+                        })
+    sys_sleep(1)
+    if (p$tick()) {
+      break
+    }
+  }
+  p$terminate()
+  if (is.null(config)) {
+    ## Throw the error if we haven't managed to retrieve config after 5 tries
+    config <- worker_config_read(con, keys, worker_config)
+  }
 
   rrq_worker$new(queue_id, con,
                  key_alive = key_alive,
