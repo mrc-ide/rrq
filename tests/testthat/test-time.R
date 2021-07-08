@@ -37,7 +37,7 @@ test_that("progress - vector and with timeout", {
   skip_on_cran() # too dependent on progress internals
   p <- progress_timeout(10, show = TRUE, label = "things", timeout = 5,
                         width = 50, force = TRUE)
-  expect_setequal(names(p), c("tick", "terminate"))
+  expect_setequal(names(p), c("tick", "terminate", "message"))
   expect_is_function(p$tick)
   expect_is_function(p$terminate)
 
