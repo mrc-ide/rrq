@@ -63,13 +63,6 @@ rrq_configure <- function(queue_id, con = redux::hiredis(), ...,
     stop("Unconsumed dot arguments")
   }
   keys <- rrq_keys_common(queue_id)
-  config <- con$GET(keys$configuration)
-  if (!is.null(config)) {
-    ## We could check that it's the same?
-    stop(sprintf(
-      "Can't set configuration for queue '%s' as it already exists",
-      queue_id))
-  }
 
   assert_scalar_numeric(store_max_size)
   if (!is.null(offload_path)) {
@@ -78,7 +71,16 @@ rrq_configure <- function(queue_id, con = redux::hiredis(), ...,
 
   config <- list(store_max_size = store_max_size,
                  offload_path = offload_path)
-  con$SET(keys$configuration, object_to_bin(config))
+
+  prev <- con$GET(keys$configuration)
+  if (is.null(prev)) {
+    con$SET(keys$configuration, object_to_bin(config))
+  } else if (!identical(unserialize(prev), config)) {
+    stop(sprintf(
+      "Can't set configuration for queue '%s' as it already exists",
+      queue_id))
+  }
+
   invisible(config)
 }
 

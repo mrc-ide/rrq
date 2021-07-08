@@ -1,6 +1,6 @@
 Package: rrq
 Title: Simple Redis Queue
-Version: 0.4.3
+Version: 0.4.4
 Authors@R: c(person("Rich", "FitzJohn", role = c("aut", "cre"),
                     email = "rich.fitzjohn@gmail.com"),
              person("Robert", "Ashton", role = "aut"),
@@ -21,6 +21,7 @@ Imports:
 Suggests:
     callr (>= 3.7.0),
     knitr,
+    markdown,
     mockery,
     processx,
     rmarkdown,
