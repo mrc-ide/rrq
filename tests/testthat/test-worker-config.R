@@ -55,7 +55,7 @@ test_that("Sensible error message on missing config", {
   key <- "nonexistant"
 
   expect_error(
-    rrq_worker_from_config(obj, worker_config = key),
+    rrq_worker_from_config(obj$queue_id, key),
     "Invalid rrq worker configuration key 'nonexistant'")
   expect_error(
     test_worker_spawn(obj, worker_config = key),
