@@ -163,6 +163,26 @@ wait_timeout <- function(explanation, timeout, keep_going,
   }
 }
 
+wait_success <- function(explanation, timeout, keep_going,
+                         poll = timeout / 5) {
+  t_end <- Sys.time() + timeout
+  out <- NULL
+  while (is.null(out)) {
+    out <- tryCatch(keep_going(),
+                     error = function(e) {
+                       if (Sys.time() > t_end) {
+                         e$message <- sprintf("Timeout: %s\n%s", explanation,
+                                              e$message)
+                         stop(e)
+                       } else {
+                         message(e$message)
+                       }
+                     })
+    Sys.sleep(poll)
+  }
+  out
+}
+
 
 hash_data <- function(data) {
   if (length(data) >= 2^31) {

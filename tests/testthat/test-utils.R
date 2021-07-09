@@ -143,6 +143,21 @@ test_that("wait timeout errors informatively", {
   expect_equal(mockery::mock_args(callback)[[1]], list())
 })
 
+test_that("wait success returns result", {
+  callback <- mockery::mock(stop("Failure"), TRUE)
+  msg <- evaluate_promise(wait_success("my explanation", 2, callback))
+  expect_equal(msg$messages, "Failure\n")
+  expect_true(msg$result)
+})
+
+test_that("wait success returns error message", {
+  callback <- mockery::mock(stop("Failure"), cycle = TRUE)
+  msg <- evaluate_promise(expect_error(
+    wait_success("my explanation", 0.1, callback, 0.05)))
+  expect_equal(msg$messages, c("Failure\n", "Failure\n"))
+  expect_equal(msg$result$message, "Timeout: my explanation\nFailure")
+})
+
 
 test_that("Hash large data", {
   skip_on_cran() # slow, possibly problematic?

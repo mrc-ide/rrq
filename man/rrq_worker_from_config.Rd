@@ -9,7 +9,8 @@ rrq_worker_from_config(
   worker_config = "localhost",
   worker_name = NULL,
   key_alive = NULL,
-  con = redux::hiredis()
+  con = redux::hiredis(),
+  timeout = 5
 )
 }
 \arguments{
@@ -27,6 +28,10 @@ worker is alive. This can be passed to
 wait for workers to come up.}
 
 \item{con}{Redis configuration}
+
+\item{timeout}{How long to try and read the worker config for. Will
+attempt to read once a second and throw an error if config cannot
+be located after \code{timeout} seconds.}
 }
 \value{
 A \code{\link{rrq_worker}} object. If you want to "run" the
