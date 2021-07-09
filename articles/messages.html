@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.4.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.4.5</span>
       </span>
     </div>
 
@@ -101,26 +101,26 @@
 <code class="sourceCode R"><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/rrq_controller.html">rrq_controller</a></span><span class="op">(</span><span class="st">"rrq:messages"</span><span class="op">)</span>
 <span class="va">logdir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html">tempfile</a></span><span class="op">(</span><span class="op">)</span>
 <span class="va">worker_id</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/worker_spawn.html">worker_spawn</a></span><span class="op">(</span><span class="va">obj</span>, logdir <span class="op">=</span> <span class="va">logdir</span><span class="op">)</span>
-<span class="co">#&gt; Spawning 1 worker with prefix evolutionary_xinjiangovenator</span></code></pre></div>
+<span class="co">#&gt; Spawning 1 worker with prefix unanimating_woodcock</span></code></pre></div>
 <p>On startup the worker log contains:</p>
-<pre class="plain"><code>[2021-07-08 13:57:26] QUEUE default
-[2021-07-08 13:57:26] ENVIR new
-[2021-07-08 13:57:26] ALIVE
+<pre class="plain"><code>[2021-07-09 13:58:18] QUEUE default
+[2021-07-09 13:58:18] ENVIR new
+[2021-07-09 13:58:18] ALIVE
                                  __
                 ______________ _/ /
       ______   / ___/ ___/ __ `/ /_____
      /_____/  / /  / /  / /_/ /_/_____/
  ______      /_/  /_/   \__, (_)   ______
 /_____/                   /_/     /_____/
-    worker:        evolutionary_xinjiangovenator_1
-    rrq_version:   0.4.4 [LOCAL]
+    worker:        unanimating_woodcock_1
+    rrq_version:   0.4.5 [LOCAL]
     platform:      x86_64-apple-darwin17.0 (64-bit)
     running:       macOS Catalina 10.15.7
-    hostname:      Mac-1625752392058.local
+    hostname:      Mac-1625838832634.local
     username:      runner
     queue:         rrq:messages:queue:default
     wd:            /Users/runner/work/rrq/rrq/vignettes
-    pid:           2163
+    pid:           3002
     redis_host:    127.0.0.1
     redis_port:    6379
     heartbeat_key: &lt;not set&gt;</code></pre>
@@ -144,11 +144,11 @@
 <p>The message id is going to be useful for getting responses:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">message_id</span>
-<span class="co">#&gt; [1] "1625752646.952164"</span></code></pre></div>
+<span class="co">#&gt; [1] "1625839098.465257"</span></code></pre></div>
 <p>(this is derived from the current time, according to Redis which is the central reference point of time for the whole system).</p>
-<pre class="plain"><code>[2021-07-08 13:57:26] MESSAGE PING
+<pre class="plain"><code>[2021-07-09 13:58:18] MESSAGE PING
 PONG
-[2021-07-08 13:57:26] RESPONSE PING</code></pre>
+[2021-07-09 13:58:18] RESPONSE PING</code></pre>
 <p>The logfile prints:</p>
 <ol style="list-style-type: decimal">
 <li>the request for the <code>PING</code> (<code>MESSAGE PING</code>)</li>
@@ -158,59 +158,59 @@ PONG
 <p>We can access the same bits of information in the worker log:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">worker_log_tail</span><span class="op">(</span>n <span class="op">=</span> <span class="cn">Inf</span><span class="op">)</span>
-<span class="co">#&gt;                         worker_id       time  command message</span>
-<span class="co">#&gt; 1 evolutionary_xinjiangovenator_1 1625752647    ALIVE        </span>
-<span class="co">#&gt; 2 evolutionary_xinjiangovenator_1 1625752647  MESSAGE    PING</span>
-<span class="co">#&gt; 3 evolutionary_xinjiangovenator_1 1625752647 RESPONSE    PING</span></code></pre></div>
+<span class="co">#&gt;                worker_id       time  command message</span>
+<span class="co">#&gt; 1 unanimating_woodcock_1 1625839098    ALIVE        </span>
+<span class="co">#&gt; 2 unanimating_woodcock_1 1625839098  MESSAGE    PING</span>
+<span class="co">#&gt; 3 unanimating_woodcock_1 1625839098 RESPONSE    PING</span></code></pre></div>
 <p>This includes the <code>ALIVE</code> message as the worker comes up.</p>
 <p>Inspecting the logs is fine for interactive use, but it’s going to be more useful often to poll for a response.</p>
 <p>We already know that our worker has a response, but we can ask anyway:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">message_has_response</span><span class="op">(</span><span class="va">message_id</span><span class="op">)</span>
-<span class="co">#&gt; evolutionary_xinjiangovenator_1 </span>
-<span class="co">#&gt;                            TRUE</span></code></pre></div>
+<span class="co">#&gt; unanimating_woodcock_1 </span>
+<span class="co">#&gt;                   TRUE</span></code></pre></div>
 <p>Or inversely we can as what messages a given worker has responses for:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">message_response_ids</span><span class="op">(</span><span class="va">worker_id</span><span class="op">)</span>
-<span class="co">#&gt; [1] "1625752646.952164"</span></code></pre></div>
+<span class="co">#&gt; [1] "1625839098.465257"</span></code></pre></div>
 <p>To fetch the responses from all workers it was sent to (always returning a named list):</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span><span class="op">)</span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1</span>
+<span class="co">#&gt; $unanimating_woodcock_1</span>
 <span class="co">#&gt; [1] "PONG"</span></code></pre></div>
 <p>or to fetch the response from a given worker:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span><span class="op">)</span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1</span>
+<span class="co">#&gt; $unanimating_woodcock_1</span>
 <span class="co">#&gt; [1] "PONG"</span></code></pre></div>
 <p>The response can be deleted by passing <code>delete = TRUE</code> to this method:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, delete <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1</span>
+<span class="co">#&gt; $unanimating_woodcock_1</span>
 <span class="co">#&gt; [1] "PONG"</span></code></pre></div>
 <p>after which recalling the message will throw an error:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span><span class="op">)</span>
-<span class="co">#&gt; Error in message_get_response(self$con, self$keys, message_id, worker_ids, : Response missing for workers: evolutionary_xinjiangovenator_1</span></code></pre></div>
+<span class="co">#&gt; Error in message_get_response(self$con, self$keys, message_id, worker_ids, : Response missing for workers: unanimating_woodcock_1</span></code></pre></div>
 <p>There is also a <code>timeout</code> argument that lets you wait until a response is ready (as in <code>$task_wait()</code>).</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html">Sys.sleep</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span>
-<span class="co">#&gt; [1] "f3c68193e60bd4f0f91cde3788673746"</span>
+<span class="co">#&gt; [1] "4fcd7c5e32dced08ed827eee3be201bd"</span>
 <span class="va">message_id</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"PING"</span><span class="op">)</span>
 <span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, delete <span class="op">=</span> <span class="cn">TRUE</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1</span>
+<span class="co">#&gt; $unanimating_woodcock_1</span>
 <span class="co">#&gt; [1] "PONG"</span></code></pre></div>
 <p>Looking at the log will show what went on here:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">worker_log_tail</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>
-<span class="co">#&gt;                         worker_id       time       command</span>
-<span class="co">#&gt; 1 evolutionary_xinjiangovenator_1 1625752648    TASK_START</span>
-<span class="co">#&gt; 2 evolutionary_xinjiangovenator_1 1625752650 TASK_COMPLETE</span>
-<span class="co">#&gt; 3 evolutionary_xinjiangovenator_1 1625752650       MESSAGE</span>
-<span class="co">#&gt; 4 evolutionary_xinjiangovenator_1 1625752650      RESPONSE</span>
+<span class="co">#&gt;                worker_id       time       command</span>
+<span class="co">#&gt; 1 unanimating_woodcock_1 1625839099    TASK_START</span>
+<span class="co">#&gt; 2 unanimating_woodcock_1 1625839101 TASK_COMPLETE</span>
+<span class="co">#&gt; 3 unanimating_woodcock_1 1625839101       MESSAGE</span>
+<span class="co">#&gt; 4 unanimating_woodcock_1 1625839101      RESPONSE</span>
 <span class="co">#&gt;                            message</span>
-<span class="co">#&gt; 1 f3c68193e60bd4f0f91cde3788673746</span>
-<span class="co">#&gt; 2 f3c68193e60bd4f0f91cde3788673746</span>
+<span class="co">#&gt; 1 4fcd7c5e32dced08ed827eee3be201bd</span>
+<span class="co">#&gt; 2 4fcd7c5e32dced08ed827eee3be201bd</span>
 <span class="co">#&gt; 3                             PING</span>
 <span class="co">#&gt; 4                             PING</span></code></pre></div>
 <ol style="list-style-type: decimal">
@@ -220,11 +220,11 @@ PONG
 <li>Then, basically instantaneously, the message is responded to</li>
 </ol>
 <p>However, because the message is only processed after the task is completed, the response takes a while to come back. Equivalently, from the worker log:</p>
-<pre class="plain"><code>[2021-07-08 13:57:28] TASK_START f3c68193e60bd4f0f91cde3788673746
-[2021-07-08 13:57:30] TASK_COMPLETE f3c68193e60bd4f0f91cde3788673746
-[2021-07-08 13:57:30] MESSAGE PING
+<pre class="plain"><code>[2021-07-09 13:58:19] TASK_START 4fcd7c5e32dced08ed827eee3be201bd
+[2021-07-09 13:58:21] TASK_COMPLETE 4fcd7c5e32dced08ed827eee3be201bd
+[2021-07-09 13:58:21] MESSAGE PING
 PONG
-[2021-07-08 13:57:30] RESPONSE PING</code></pre>
+[2021-07-09 13:58:21] RESPONSE PING</code></pre>
 </div>
 <div id="echo" class="section level2">
 <h2 class="hasAnchor">
@@ -234,11 +234,11 @@ PONG
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">message_id</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"ECHO"</span>, <span class="st">"hello world!"</span><span class="op">)</span>
 <span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1</span>
+<span class="co">#&gt; $unanimating_woodcock_1</span>
 <span class="co">#&gt; [1] "OK"</span></code></pre></div>
-<pre class="plain"><code>[2021-07-08 13:57:30] MESSAGE ECHO
+<pre class="plain"><code>[2021-07-09 13:58:21] MESSAGE ECHO
 hello world!
-[2021-07-08 13:57:30] RESPONSE ECHO</code></pre>
+[2021-07-09 13:58:21] RESPONSE ECHO</code></pre>
 </div>
 <div id="info" class="section level2">
 <h2 class="hasAnchor">
@@ -249,10 +249,10 @@ hello world!
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">worker_info</span><span class="op">(</span><span class="op">)</span><span class="op">[[</span><span class="va">worker_id</span><span class="op">]</span><span class="op">]</span>
 <span class="co">#&gt; $worker</span>
-<span class="co">#&gt; [1] "evolutionary_xinjiangovenator_1"</span>
+<span class="co">#&gt; [1] "unanimating_woodcock_1"</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; $rrq_version</span>
-<span class="co">#&gt; [1] "0.4.4 [LOCAL]"</span>
+<span class="co">#&gt; [1] "0.4.5 [LOCAL]"</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; $platform</span>
 <span class="co">#&gt; [1] "x86_64-apple-darwin17.0 (64-bit)"</span>
@@ -261,7 +261,7 @@ hello world!
 <span class="co">#&gt; [1] "macOS Catalina 10.15.7"</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; $hostname</span>
-<span class="co">#&gt; [1] "Mac-1625752392058.local"</span>
+<span class="co">#&gt; [1] "Mac-1625838832634.local"</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; $username</span>
 <span class="co">#&gt; [1] "runner"</span>
@@ -273,7 +273,7 @@ hello world!
 <span class="co">#&gt; [1] "/Users/runner/work/rrq/rrq/vignettes"</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; $pid</span>
-<span class="co">#&gt; [1] 2163</span>
+<span class="co">#&gt; [1] 3002</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; $redis_host</span>
 <span class="co">#&gt; [1] "127.0.0.1"</span>
@@ -286,38 +286,38 @@ hello world!
 <p>Here’s the new worker information, complete with an updated <code>envir</code> field:</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1</span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1$worker</span>
-<span class="co">#&gt; [1] "evolutionary_xinjiangovenator_1"</span>
+<span class="co">#&gt; $unanimating_woodcock_1</span>
+<span class="co">#&gt; $unanimating_woodcock_1$worker</span>
+<span class="co">#&gt; [1] "unanimating_woodcock_1"</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1$rrq_version</span>
-<span class="co">#&gt; [1] "0.4.4 [LOCAL]"</span>
+<span class="co">#&gt; $unanimating_woodcock_1$rrq_version</span>
+<span class="co">#&gt; [1] "0.4.5 [LOCAL]"</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1$platform</span>
+<span class="co">#&gt; $unanimating_woodcock_1$platform</span>
 <span class="co">#&gt; [1] "x86_64-apple-darwin17.0 (64-bit)"</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1$running</span>
+<span class="co">#&gt; $unanimating_woodcock_1$running</span>
 <span class="co">#&gt; [1] "macOS Catalina 10.15.7"</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1$hostname</span>
-<span class="co">#&gt; [1] "Mac-1625752392058.local"</span>
+<span class="co">#&gt; $unanimating_woodcock_1$hostname</span>
+<span class="co">#&gt; [1] "Mac-1625838832634.local"</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1$username</span>
+<span class="co">#&gt; $unanimating_woodcock_1$username</span>
 <span class="co">#&gt; [1] "runner"</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1$queue</span>
+<span class="co">#&gt; $unanimating_woodcock_1$queue</span>
 <span class="co">#&gt; [1] "rrq:messages:queue:default"</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1$wd</span>
+<span class="co">#&gt; $unanimating_woodcock_1$wd</span>
 <span class="co">#&gt; [1] "/Users/runner/work/rrq/rrq/vignettes"</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1$pid</span>
-<span class="co">#&gt; [1] 2163</span>
+<span class="co">#&gt; $unanimating_woodcock_1$pid</span>
+<span class="co">#&gt; [1] 3002</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1$redis_host</span>
+<span class="co">#&gt; $unanimating_woodcock_1$redis_host</span>
 <span class="co">#&gt; [1] "127.0.0.1"</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1$redis_port</span>
+<span class="co">#&gt; $unanimating_woodcock_1$redis_port</span>
 <span class="co">#&gt; [1] 6379</span></code></pre></div>
 </div>
 <div id="eval" class="section level2">
@@ -328,7 +328,7 @@ hello world!
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">message_id</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"EVAL"</span>, <span class="st">"1 + 1"</span><span class="op">)</span>
 <span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1</span>
+<span class="co">#&gt; $unanimating_woodcock_1</span>
 <span class="co">#&gt; [1] 2</span></code></pre></div>
 <p>This could be used to evaluate code that has side effects, such as installing packages. However, due to limitations with how R loads packages the only way to update and reload a package is going to be to restart the worker.</p>
 </div>
@@ -339,29 +339,29 @@ hello world!
 <p>The <code>PAUSE</code> / <code>RESUME</code> messages can be used to prevent workers from picking up new work (and then allowing them to start again).</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">worker_status</span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; evolutionary_xinjiangovenator_1 </span>
-<span class="co">#&gt;                          "IDLE"</span>
+<span class="co">#&gt; unanimating_woodcock_1 </span>
+<span class="co">#&gt;                 "IDLE"</span>
 <span class="va">message_id</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"PAUSE"</span><span class="op">)</span>
 <span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1</span>
+<span class="co">#&gt; $unanimating_woodcock_1</span>
 <span class="co">#&gt; [1] "OK"</span>
 <span class="va">obj</span><span class="op">$</span><span class="fu">worker_status</span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; evolutionary_xinjiangovenator_1 </span>
-<span class="co">#&gt;                        "PAUSED"</span></code></pre></div>
+<span class="co">#&gt; unanimating_woodcock_1 </span>
+<span class="co">#&gt;               "PAUSED"</span></code></pre></div>
 <p>Once paused workers ignore tasks, which stay on the queue:</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html">runif</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span><span class="op">)</span>
 <span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">t</span><span class="op">)</span>
-<span class="co">#&gt; 12ba68757fa38afd39d8fed395de0826 </span>
+<span class="co">#&gt; e298b691367bf74664d09d8bb8656849 </span>
 <span class="co">#&gt;                        "PENDING"</span></code></pre></div>
 <p>Sending a <code>RESUME</code> message unpauses the worker:</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">message_id</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"RESUME"</span><span class="op">)</span>
 <span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1</span>
+<span class="co">#&gt; $unanimating_woodcock_1</span>
 <span class="co">#&gt; [1] "OK"</span>
 <span class="va">obj</span><span class="op">$</span><span class="fu">task_wait</span><span class="op">(</span><span class="va">t</span>, <span class="fl">5</span><span class="op">)</span>
-<span class="co">#&gt; [1] 0.7871288 0.0985038 0.8376761 0.8917005 0.0687229</span></code></pre></div>
+<span class="co">#&gt; [1] 0.8289693 0.9095430 0.6183646 0.5785206 0.2015927</span></code></pre></div>
 </div>
 <div id="set_timeout-get_timeout" class="section level2">
 <h2 class="hasAnchor">
@@ -370,53 +370,53 @@ hello world!
 <p>Workers will quit after being left idle for more than a certain time; this is their timeout. Only processing tasks counts as work (not messages). You can query the timeout with <code>GET_TIMEOUT</code> and set it with <code>SET_TIMEOUT</code>. For our worker above the timeout is infinite; it will never quit:</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">message_send_and_wait</span><span class="op">(</span><span class="st">"TIMEOUT_GET"</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1</span>
+<span class="co">#&gt; $unanimating_woodcock_1</span>
 <span class="co">#&gt;   timeout remaining </span>
 <span class="co">#&gt;       Inf       Inf</span></code></pre></div>
 <p>We can set this to a finite value, in seconds:</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">message_send_and_wait</span><span class="op">(</span><span class="st">"TIMEOUT_SET"</span>, <span class="fl">600</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1</span>
+<span class="co">#&gt; $unanimating_woodcock_1</span>
 <span class="co">#&gt; [1] "OK"</span></code></pre></div>
 <p>Here the timeout is set to 10 minutes (600s).</p>
 <p>Once set, the <code>TIMEOUT_GET</code> returns the length of time remaining before the worker exits</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">message_send_and_wait</span><span class="op">(</span><span class="st">"TIMEOUT_GET"</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1</span>
+<span class="co">#&gt; $unanimating_woodcock_1</span>
 <span class="co">#&gt;   timeout remaining </span>
-<span class="co">#&gt;  600.0000  599.6972</span>
+<span class="co">#&gt;  600.0000  599.8414</span>
 <span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html">Sys.sleep</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span>
 <span class="va">obj</span><span class="op">$</span><span class="fu">message_send_and_wait</span><span class="op">(</span><span class="st">"TIMEOUT_GET"</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1</span>
+<span class="co">#&gt; $unanimating_woodcock_1</span>
 <span class="co">#&gt;   timeout remaining </span>
-<span class="co">#&gt;  600.0000  594.5626</span></code></pre></div>
+<span class="co">#&gt;  600.0000  594.6632</span></code></pre></div>
 <p>One useful pattern is to send work to workers, then set the timeout to zero. This means that when work is complete they will exit (almost) immediately:</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">grp</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">lapply</span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html">Sys.sleep</a></span><span class="op">(</span><span class="fl">0.5</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html">runif</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">}</span>,
                   collect_timeout <span class="op">=</span> <span class="fl">0</span><span class="op">)</span>
 <span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"TIMEOUT_SET"</span>, <span class="fl">0</span>, <span class="va">worker_id</span><span class="op">)</span>
 <span class="va">obj</span><span class="op">$</span><span class="fu">tasks_wait</span><span class="op">(</span><span class="va">grp</span><span class="op">$</span><span class="va">task_ids</span><span class="op">)</span>
-<span class="co">#&gt; $`62e151d5f582543329387c6c9e68f521`</span>
-<span class="co">#&gt; [1] 0.6573737</span>
+<span class="co">#&gt; $`6cf3e1c224f6a9b57a93dd6a556701f0`</span>
+<span class="co">#&gt; [1] 0.9180354</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; $`2936fa4d89359cef433f0a8ab21df041`</span>
-<span class="co">#&gt; [1] 0.2918408 0.5550134</span>
+<span class="co">#&gt; $f2fd3d43481544e6d7ac9f4efdc1f4fd</span>
+<span class="co">#&gt; [1] 0.1520238 0.6743377</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; $`80410ab27cc78e689fca0c1c3de000ae`</span>
-<span class="co">#&gt; [1] 0.09552118 0.38523482 0.55907734</span>
+<span class="co">#&gt; $`6d29cbbf5d7cacc87878d48f0eb8cd40`</span>
+<span class="co">#&gt; [1] 0.3261795 0.1376931 0.3049088</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; $cb6e844edc5124767c24a9ed048331e3</span>
-<span class="co">#&gt; [1] 0.8715891 0.8291844 0.6239466 0.6264389</span>
+<span class="co">#&gt; $`6aeed30167d752856b3924a9cfed959d`</span>
+<span class="co">#&gt; [1] 0.9915484 0.1702072 0.1992849 0.7909524</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; $dc3a40cce8ba5a758fc50af6fc6ce452</span>
-<span class="co">#&gt; [1] 0.96933589 0.23085588 0.81220914 0.05553227 0.86172704</span></code></pre></div>
+<span class="co">#&gt; $bbdbd993c48d76c1d12ebb9204064ab6</span>
+<span class="co">#&gt; [1] 0.04979679 0.44399838 0.01064531 0.83285980 0.22384938</span></code></pre></div>
 <p>The worker will remain idle for 60s (by default) which is the length of time that one poll for work lasts, then it will exit.</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">worker_status</span><span class="op">(</span><span class="va">worker_id</span><span class="op">)</span>
-<span class="co">#&gt; evolutionary_xinjiangovenator_1 </span>
-<span class="co">#&gt;                          "IDLE"</span>
+<span class="co">#&gt; unanimating_woodcock_1 </span>
+<span class="co">#&gt;                 "IDLE"</span>
 <span class="va">obj</span><span class="op">$</span><span class="fu">message_send_and_wait</span><span class="op">(</span><span class="st">"TIMEOUT_GET"</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span>
-<span class="co">#&gt; $evolutionary_xinjiangovenator_1</span>
+<span class="co">#&gt; $unanimating_woodcock_1</span>
 <span class="co">#&gt;   timeout remaining </span>
 <span class="co">#&gt;         0         0</span></code></pre></div>
 </div>
