@@ -1,7 +1,3 @@
----
-output: github_document
----
-
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 
@@ -23,7 +19,7 @@ Create an `rrq_controller` object
 
 
 ```r
-obj <- rrq::rrq_controller("rrq:readme")
+obj <- rrq::rrq_controller$new("rrq:readme")
 ```
 
 Submit work to the queue:
@@ -32,7 +28,7 @@ Submit work to the queue:
 ```r
 t <- obj$enqueue(runif(10))
 t
-#> [1] "53a2e58afc836ff75a0abab53f75e85f"
+#> [1] "6a368aa506da1aabcd264ca859fa3322"
 ```
 
 Query task process:
@@ -40,7 +36,7 @@ Query task process:
 
 ```r
 obj$task_status(t)
-#> 53a2e58afc836ff75a0abab53f75e85f
+#> 6a368aa506da1aabcd264ca859fa3322
 #>                        "PENDING"
 ```
 
@@ -49,8 +45,8 @@ Run tasks on workers in the background
 
 ```r
 rrq::worker_spawn(obj)
-#> Spawning 1 worker with prefix nearby_ammonite
-#> [1] "nearby_ammonite_1"
+#> Spawning 1 worker with prefix endocrinous_anemonecrab
+#> [1] "endocrinous_anemonecrab_1"
 ```
 
 Collect task results when complete
@@ -58,8 +54,17 @@ Collect task results when complete
 
 ```r
 obj$task_wait(t)
-#>  [1] 0.9499495 0.3754099 0.4028146 0.6498432 0.1732155 0.6069491 0.6379786
-#>  [8] 0.8193451 0.1927368 0.8221052
+#>  [1] 0.6429454 0.3498470 0.2804653 0.2975355 0.1308821 0.1520124 0.3212029
+#>  [8] 0.1526649 0.1589430 0.3306704
+```
+
+Or try and retrieve them regardless of if they are complete
+
+
+```r
+obj$task_result(t)
+#>  [1] 0.6429454 0.3498470 0.2804653 0.2975355 0.1308821 0.1520124 0.3212029
+#>  [8] 0.1526649 0.1589430 0.3306704
 ```
 
 Query what workers have done
@@ -67,10 +72,14 @@ Query what workers have done
 
 ```r
 obj$worker_log_tail(n = Inf)
-#>           worker_id       time       command                          message
-#> 1 nearby_ammonite_1 1623142169         ALIVE
-#> 2 nearby_ammonite_1 1623142169    TASK_START 53a2e58afc836ff75a0abab53f75e85f
-#> 3 nearby_ammonite_1 1623142169 TASK_COMPLETE 53a2e58afc836ff75a0abab53f75e85f
+#>                   worker_id       time       command
+#> 1 endocrinous_anemonecrab_1 1629120683         ALIVE
+#> 2 endocrinous_anemonecrab_1 1629120683    TASK_START
+#> 3 endocrinous_anemonecrab_1 1629120683 TASK_COMPLETE
+#>                            message
+#> 1
+#> 2 6a368aa506da1aabcd264ca859fa3322
+#> 3 6a368aa506da1aabcd264ca859fa3322
 ```
 
 For more information, see `vignette("rrq")`

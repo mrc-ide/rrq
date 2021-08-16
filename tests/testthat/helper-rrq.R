@@ -91,7 +91,7 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE) {
   }
   environment(create) <- create_env
 
-  obj <- rrq_controller(name)
+  obj <- rrq_controller$new(name)
   obj$worker_config_save("localhost", time_poll = 1, verbose = verbose)
   obj$envir(create)
   reg.finalizer(obj, function(e) obj$destroy())

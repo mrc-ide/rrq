@@ -9,6 +9,7 @@ vignette: >
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
+  error = FALSE,
   collapse = TRUE,
   comment = "#>"
 )
@@ -39,7 +40,7 @@ vignette shows what the possible messages do.
 
 In order to do this, we're going to need a queue and a worker:
 ```{r}
-obj <- rrq::rrq_controller("rrq:messages")
+obj <- rrq::rrq_controller$new("rrq:messages")
 logdir <- tempfile()
 worker_id <- rrq::worker_spawn(obj, logdir = logdir)
 ```

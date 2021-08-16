@@ -2,20 +2,30 @@
 % Please edit documentation in R/rrq_controller.R
 \name{rrq_controller}
 \alias{rrq_controller}
-\alias{rrq_controller_}
 \title{rrq queue controller}
-\usage{
-rrq_controller(queue_id, con = redux::hiredis())
-}
-\arguments{
-\item{queue_id}{An identifier for the queue.  This will prefix all
-keys in redis, so a prefix might be useful here depending on
-your use case (e.g. \code{rrq:<user>:<id>})}
-
-\item{con}{A redis connection}
-}
 \description{
+rrq queue controller
+
+rrq queue controller
+}
+\details{
 A queue controller.  Use this to interact with a queue/cluster.
+
+The \code{type} parameter indicates the strategy used to stop
+workers, and interacts with other parameters. The strategies used by
+the different values are:
+\itemize{
+\item \code{message}, in which case a \code{STOP} message will be sent to the
+worker, which they will receive after finishing any currently
+running task (if \code{RUNNING}; \code{IDLE} workers will stop immediately).
+\item \code{kill}, in which case a kill signal will be sent via the heartbeat
+(if the worker is using one). This will kill the worker even if
+is currently working on a task, eventually leaving that task with
+a status of \code{DIED}.
+\item \code{kill_local}, in which case a kill signal is sent using operating
+system signals, which requires that the worker is on the same
+machine as the controller.
+}
 }
 \section{Task lifecycle}{
 
@@ -128,71 +138,75 @@ ans <- obj$lapply_(1:10, quote(log), base = quote(b))
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{rrq_controller_$new()}}
-\item \href{#method-destroy}{\code{rrq_controller_$destroy()}}
-\item \href{#method-envir}{\code{rrq_controller_$envir()}}
-\item \href{#method-enqueue}{\code{rrq_controller_$enqueue()}}
-\item \href{#method-enqueue_}{\code{rrq_controller_$enqueue_()}}
-\item \href{#method-lapply}{\code{rrq_controller_$lapply()}}
-\item \href{#method-lapply_}{\code{rrq_controller_$lapply_()}}
-\item \href{#method-enqueue_bulk}{\code{rrq_controller_$enqueue_bulk()}}
-\item \href{#method-enqueue_bulk_}{\code{rrq_controller_$enqueue_bulk_()}}
-\item \href{#method-bulk_wait}{\code{rrq_controller_$bulk_wait()}}
-\item \href{#method-task_list}{\code{rrq_controller_$task_list()}}
-\item \href{#method-task_exists}{\code{rrq_controller_$task_exists()}}
-\item \href{#method-task_status}{\code{rrq_controller_$task_status()}}
-\item \href{#method-task_progress}{\code{rrq_controller_$task_progress()}}
-\item \href{#method-task_overview}{\code{rrq_controller_$task_overview()}}
-\item \href{#method-task_position}{\code{rrq_controller_$task_position()}}
-\item \href{#method-task_preceeding}{\code{rrq_controller_$task_preceeding()}}
-\item \href{#method-task_result}{\code{rrq_controller_$task_result()}}
-\item \href{#method-tasks_result}{\code{rrq_controller_$tasks_result()}}
-\item \href{#method-task_wait}{\code{rrq_controller_$task_wait()}}
-\item \href{#method-tasks_wait}{\code{rrq_controller_$tasks_wait()}}
-\item \href{#method-task_delete}{\code{rrq_controller_$task_delete()}}
-\item \href{#method-task_cancel}{\code{rrq_controller_$task_cancel()}}
-\item \href{#method-task_data}{\code{rrq_controller_$task_data()}}
-\item \href{#method-queue_length}{\code{rrq_controller_$queue_length()}}
-\item \href{#method-queue_list}{\code{rrq_controller_$queue_list()}}
-\item \href{#method-queue_remove}{\code{rrq_controller_$queue_remove()}}
-\item \href{#method-deferred_list}{\code{rrq_controller_$deferred_list()}}
-\item \href{#method-worker_len}{\code{rrq_controller_$worker_len()}}
-\item \href{#method-worker_list}{\code{rrq_controller_$worker_list()}}
-\item \href{#method-worker_list_exited}{\code{rrq_controller_$worker_list_exited()}}
-\item \href{#method-worker_info}{\code{rrq_controller_$worker_info()}}
-\item \href{#method-worker_status}{\code{rrq_controller_$worker_status()}}
-\item \href{#method-worker_log_tail}{\code{rrq_controller_$worker_log_tail()}}
-\item \href{#method-worker_task_id}{\code{rrq_controller_$worker_task_id()}}
-\item \href{#method-worker_delete_exited}{\code{rrq_controller_$worker_delete_exited()}}
-\item \href{#method-worker_stop}{\code{rrq_controller_$worker_stop()}}
-\item \href{#method-worker_detect_exited}{\code{rrq_controller_$worker_detect_exited()}}
-\item \href{#method-worker_process_log}{\code{rrq_controller_$worker_process_log()}}
-\item \href{#method-worker_config_save}{\code{rrq_controller_$worker_config_save()}}
-\item \href{#method-worker_config_list}{\code{rrq_controller_$worker_config_list()}}
-\item \href{#method-worker_config_read}{\code{rrq_controller_$worker_config_read()}}
-\item \href{#method-worker_load}{\code{rrq_controller_$worker_load()}}
-\item \href{#method-message_send}{\code{rrq_controller_$message_send()}}
-\item \href{#method-message_has_response}{\code{rrq_controller_$message_has_response()}}
-\item \href{#method-message_get_response}{\code{rrq_controller_$message_get_response()}}
-\item \href{#method-message_response_ids}{\code{rrq_controller_$message_response_ids()}}
-\item \href{#method-message_send_and_wait}{\code{rrq_controller_$message_send_and_wait()}}
+\item \href{#method-new}{\code{rrq_controller$new()}}
+\item \href{#method-destroy}{\code{rrq_controller$destroy()}}
+\item \href{#method-envir}{\code{rrq_controller$envir()}}
+\item \href{#method-enqueue}{\code{rrq_controller$enqueue()}}
+\item \href{#method-enqueue_}{\code{rrq_controller$enqueue_()}}
+\item \href{#method-lapply}{\code{rrq_controller$lapply()}}
+\item \href{#method-lapply_}{\code{rrq_controller$lapply_()}}
+\item \href{#method-enqueue_bulk}{\code{rrq_controller$enqueue_bulk()}}
+\item \href{#method-enqueue_bulk_}{\code{rrq_controller$enqueue_bulk_()}}
+\item \href{#method-bulk_wait}{\code{rrq_controller$bulk_wait()}}
+\item \href{#method-task_list}{\code{rrq_controller$task_list()}}
+\item \href{#method-task_exists}{\code{rrq_controller$task_exists()}}
+\item \href{#method-task_status}{\code{rrq_controller$task_status()}}
+\item \href{#method-task_progress}{\code{rrq_controller$task_progress()}}
+\item \href{#method-task_overview}{\code{rrq_controller$task_overview()}}
+\item \href{#method-task_position}{\code{rrq_controller$task_position()}}
+\item \href{#method-task_preceeding}{\code{rrq_controller$task_preceeding()}}
+\item \href{#method-task_result}{\code{rrq_controller$task_result()}}
+\item \href{#method-tasks_result}{\code{rrq_controller$tasks_result()}}
+\item \href{#method-task_wait}{\code{rrq_controller$task_wait()}}
+\item \href{#method-tasks_wait}{\code{rrq_controller$tasks_wait()}}
+\item \href{#method-task_delete}{\code{rrq_controller$task_delete()}}
+\item \href{#method-task_cancel}{\code{rrq_controller$task_cancel()}}
+\item \href{#method-task_data}{\code{rrq_controller$task_data()}}
+\item \href{#method-queue_length}{\code{rrq_controller$queue_length()}}
+\item \href{#method-queue_list}{\code{rrq_controller$queue_list()}}
+\item \href{#method-queue_remove}{\code{rrq_controller$queue_remove()}}
+\item \href{#method-deferred_list}{\code{rrq_controller$deferred_list()}}
+\item \href{#method-worker_len}{\code{rrq_controller$worker_len()}}
+\item \href{#method-worker_list}{\code{rrq_controller$worker_list()}}
+\item \href{#method-worker_list_exited}{\code{rrq_controller$worker_list_exited()}}
+\item \href{#method-worker_info}{\code{rrq_controller$worker_info()}}
+\item \href{#method-worker_status}{\code{rrq_controller$worker_status()}}
+\item \href{#method-worker_log_tail}{\code{rrq_controller$worker_log_tail()}}
+\item \href{#method-worker_task_id}{\code{rrq_controller$worker_task_id()}}
+\item \href{#method-worker_delete_exited}{\code{rrq_controller$worker_delete_exited()}}
+\item \href{#method-worker_stop}{\code{rrq_controller$worker_stop()}}
+\item \href{#method-worker_detect_exited}{\code{rrq_controller$worker_detect_exited()}}
+\item \href{#method-worker_process_log}{\code{rrq_controller$worker_process_log()}}
+\item \href{#method-worker_config_save}{\code{rrq_controller$worker_config_save()}}
+\item \href{#method-worker_config_list}{\code{rrq_controller$worker_config_list()}}
+\item \href{#method-worker_config_read}{\code{rrq_controller$worker_config_read()}}
+\item \href{#method-worker_load}{\code{rrq_controller$worker_load()}}
+\item \href{#method-message_send}{\code{rrq_controller$message_send()}}
+\item \href{#method-message_has_response}{\code{rrq_controller$message_has_response()}}
+\item \href{#method-message_get_response}{\code{rrq_controller$message_get_response()}}
+\item \href{#method-message_response_ids}{\code{rrq_controller$message_response_ids()}}
+\item \href{#method-message_send_and_wait}{\code{rrq_controller$message_send_and_wait()}}
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-new"></a>}}
 \if{latex}{\out{\hypertarget{method-new}{}}}
 \subsection{Method \code{new()}}{
-Constructor (called by \code{rrq_controller()})
+Constructor
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$new(queue_id, con)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$new(queue_id, con = redux::hiredis())}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{queue_id}}{An identifier for the queue}
+\item{\code{queue_id}}{An identifier for the queue.  This will prefix all
+keys in redis, so a prefix might be useful here depending on
+your use case (e.g. \code{rrq:<user>:<id>})}
 
-\item{\code{con}}{A redis connection}
+\item{\code{con}}{A redis connection. The default tries to create a redis
+connection using default ports, or environment variables set as in
+\code{\link[redux:hiredis]{redux::hiredis()}}}
 }
 \if{html}{\out{</div>}}
 }
@@ -205,7 +219,7 @@ Entirely destroy a queue, by deleting all keys
 associated with it from the Redis database. This is a very
 destructive action and cannot be undone.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$destroy(
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$destroy(
   delete = TRUE,
   worker_stop_type = "message",
   worker_stop_timeout = 0
@@ -242,7 +256,7 @@ Register a function to create an environment when
 creating a worker. When a worker starts, they will run this
 function.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$envir(create, notify = TRUE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$envir(create, notify = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -266,7 +280,7 @@ message to all workers to update their environment.}
 \subsection{Method \code{enqueue()}}{
 Queue an expression
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$enqueue(
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$enqueue(
   expr,
   envir = parent.frame(),
   queue = NULL,
@@ -336,7 +350,7 @@ have configured your worker environment.}
 \subsection{Method \code{enqueue_()}}{
 Queue an expression
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$enqueue_(
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$enqueue_(
   expr,
   envir = parent.frame(),
   queue = NULL,
@@ -395,7 +409,7 @@ calculation. See \verb{$enqueue} for details.}
 Apply a function over a list of data. This is
 equivalent to using \verb{$enqueue()} over each element in the list.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$lapply(
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$lapply(
   x,
   fun,
   ...,
@@ -469,7 +483,7 @@ With this version, both are passed by value; this may create more
 overhead on the redis server as the values of the variables will
 be copied over rather than using their names if possible.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$lapply_(
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$lapply_(
   x,
   fun,
   ...,
@@ -544,7 +558,7 @@ is provided. Rather than \verb{$lapply()} which applies \code{fun} to each
 element of \code{x}, \verb{enqueue_bulk will apply over each row of }x\verb{, spreading the columms out as arguments. If you have a function }f(a, b)\verb{and a [data.frame] with columns}a\code{and}b` this
 should feel intuitive.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$enqueue_bulk(
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$enqueue_bulk(
   x,
   fun,
   ...,
@@ -620,7 +634,7 @@ With this version, both are passed by value; this may create more
 overhead on the redis server as the values of the variables will
 be copied over rather than using their names if possible.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$enqueue_bulk_(
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$enqueue_bulk_(
   x,
   fun,
   ...,
@@ -692,7 +706,7 @@ progress bar if in an interactive session.}
 \subsection{Method \code{bulk_wait()}}{
 Wait for a group of tasks
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$bulk_wait(
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$bulk_wait(
   x,
   timeout = Inf,
   time_poll = 1,
@@ -730,7 +744,7 @@ to prevent build-up of lots of task information in Redis.}
 \subsection{Method \code{task_list()}}{
 List ids of all tasks known to this rrq controller
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_list()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_list()}\if{html}{\out{</div>}}
 }
 
 }
@@ -741,7 +755,7 @@ List ids of all tasks known to this rrq controller
 Test if task with id \code{task_ids} is known to this
 rrq controller
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_exists(task_ids = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_exists(task_ids = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -760,7 +774,7 @@ Return a character vector of task statuses. The name
 of each element corresponds to a task id, and the value will be
 one of the possible statuses ("PENDING", "COMPLETE", etc).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_status(task_ids = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_status(task_ids = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -781,7 +795,7 @@ Retrieve task progress, if set. This will be \code{NULL}
 if progress has never been registered, otherwise whatever value
 was set - can be an arbitrary R object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_progress(task_id)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_progress(task_id)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -800,7 +814,7 @@ Provide a high level overview of task statuses
 for a set of task ids, being the count in major categories of
 \code{PENDING}, \code{RUNNING}, \code{COMPLETE} and \code{ERROR}.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_overview(task_ids = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_overview(task_ids = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -819,7 +833,7 @@ all task ids known to this rrq controller is used.}
 \subsection{Method \code{task_position()}}{
 Find the position of one or more tasks in the queue.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_position(task_ids, missing = 0L, queue = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_position(task_ids, missing = 0L, queue = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -847,7 +861,7 @@ If the task is missing from the queue this will return NULL. If
 the task is next in the queue this will return an empty character
 vector.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_preceeding(task_id, queue = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_preceeding(task_id, queue = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -870,7 +884,7 @@ for a method for efficiently getting multiple results at once).
 Returns the value of running the task if it is complete, and an
 error otherwise.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_result(task_id)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_result(task_id)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -888,7 +902,7 @@ error otherwise.
 Get the results of a group of tasks, returning them as a
 list.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$tasks_result(task_ids)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$tasks_result(task_ids)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -909,7 +923,7 @@ when completed. If the task has already completed this is
 roughly equivalent to \code{task_result}. See \verb{$tasks_wait} for an
 efficient way of doing this for a group of tasks.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_wait(
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_wait(
   task_id,
   timeout = Inf,
   time_poll = 1,
@@ -950,7 +964,7 @@ Poll for a group of tasks to complete, returning the
 result as list when completed. If the tasks have already completed
 this is roughly equivalent to \code{tasks_result}.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$tasks_wait(
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$tasks_wait(
   task_ids,
   timeout = Inf,
   time_poll = 1,
@@ -983,7 +997,7 @@ progress bar if in an interactive session.}
 \subsection{Method \code{task_delete()}}{
 Delete one or more tasks
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_delete(task_ids, check = TRUE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_delete(task_ids, check = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1008,7 +1022,7 @@ it was set to run in a separate process (i.e., queued with
 \code{separate_process = TRUE}). Dependent tasks will be marked as
 impossible.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_cancel(task_id, wait = TRUE, delete = TRUE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_cancel(task_id, wait = TRUE, delete = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1036,7 +1050,7 @@ error with task_id and status e.g. Task 123 is not running (MISSING)
 Fetch internal data about a task from Redis
 (expert use only).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$task_data(task_id)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_data(task_id)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1054,7 +1068,7 @@ Fetch internal data about a task from Redis
 Returns the number of tasks in the queue (waiting for
 an available worker).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$queue_length(queue = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$queue_length(queue = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1072,7 +1086,7 @@ an available worker).
 \subsection{Method \code{queue_list()}}{
 Returns the keys in the task queue.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$queue_list(queue = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$queue_list(queue = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1090,7 +1104,7 @@ Returns the keys in the task queue.
 \subsection{Method \code{queue_remove()}}{
 Remove task ids from a queue.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$queue_remove(task_ids, queue = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$queue_remove(task_ids, queue = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1112,7 +1126,7 @@ Return deferred tasks and what they are waiting on.
 Note this is in an arbitrary order, tasks will be added to the
 queue as their dependencies are satisfied.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$deferred_list()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$deferred_list()}\if{html}{\out{</div>}}
 }
 
 }
@@ -1122,7 +1136,7 @@ queue as their dependencies are satisfied.
 \subsection{Method \code{worker_len()}}{
 Returns the number of active workers
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$worker_len()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_len()}\if{html}{\out{</div>}}
 }
 
 }
@@ -1132,7 +1146,7 @@ Returns the number of active workers
 \subsection{Method \code{worker_list()}}{
 Returns the ids of active workers
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$worker_list()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_list()}\if{html}{\out{</div>}}
 }
 
 }
@@ -1142,7 +1156,7 @@ Returns the ids of active workers
 \subsection{Method \code{worker_list_exited()}}{
 Returns the ids of workers known to have exited
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$worker_list_exited()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_list_exited()}\if{html}{\out{</div>}}
 }
 
 }
@@ -1153,7 +1167,7 @@ Returns the ids of workers known to have exited
 Returns a list of information about active
 workers (or exited workers if \code{worker_ids} includes them).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$worker_info(worker_ids = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_info(worker_ids = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1171,7 +1185,7 @@ all active workers are used.}
 \subsection{Method \code{worker_status()}}{
 Returns a character vector of current worker statuses
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$worker_status(worker_ids = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_status(worker_ids = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1194,7 +1208,7 @@ event happened; see \link[redux:redis_time]{redux::redis_time} to convert this t
 time), \code{command} (the worker command) and \code{message} (the message
 corresponding to that command).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$worker_log_tail(worker_ids = NULL, n = 1)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_log_tail(worker_ids = NULL, n = 1)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1216,7 +1230,7 @@ last entry. Use \code{Inf} or \code{0} to indicate that you want all log entries
 Returns the task id that each worker is working on,
 if any.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$worker_task_id(worker_ids = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_task_id(worker_ids = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1234,7 +1248,7 @@ all active workers are used.}
 \subsection{Method \code{worker_delete_exited()}}{
 Cleans up workers known to have exited
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$worker_delete_exited(worker_ids = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_delete_exited(worker_ids = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1252,7 +1266,7 @@ rrq looks for exited workers.}
 \subsection{Method \code{worker_stop()}}{
 Stop workers.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$worker_stop(
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_stop(
   worker_ids = NULL,
   type = "message",
   timeout = 0,
@@ -1287,24 +1301,6 @@ progress bar if in an interactive session.}
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Details}{
-The \code{type} parameter indicates the strategy used to stop
-workers, and interacts with other parameters. The strategies used by
-the different values are:
-\itemize{
-\item \code{message}, in which case a \code{STOP} message will be sent to the
-worker, which they will receive after finishing any currently
-running task (if \code{RUNNING}; \code{IDLE} workers will stop immediately).
-\item \code{kill}, in which case a kill signal will be sent via the heartbeat
-(if the worker is using one). This will kill the worker even if
-is currently working on a task, eventually leaving that task with
-a status of \code{DIED}.
-\item \code{kill_local}, in which case a kill signal is sent using operating
-system signals, which requires that the worker is on the same
-machine as the controller.
-}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-worker_detect_exited"></a>}}
@@ -1312,7 +1308,7 @@ machine as the controller.
 \subsection{Method \code{worker_detect_exited()}}{
 Detects exited workers through a lapsed heartbeat
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$worker_detect_exited()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_detect_exited()}\if{html}{\out{</div>}}
 }
 
 }
@@ -1326,7 +1322,7 @@ storage) as the controller. This will generally behave for
 workers started with \link{worker_spawn} but may require significant
 care otherwise.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$worker_process_log(worker_id)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_process_log(worker_id)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1345,7 +1341,7 @@ Save a worker configuration, which can be used to
 start workers with a set of options with the cli. These
 correspond to arguments to \link{rrq_worker}.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$worker_config_save(
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_config_save(
   name,
   time_poll = NULL,
   timeout = NULL,
@@ -1403,7 +1399,7 @@ be thrown).}
 Return names of worker configurations saved by
 \verb{$worker_config_save}
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$worker_config_list()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_config_list()}\if{html}{\out{</div>}}
 }
 
 }
@@ -1414,7 +1410,7 @@ Return names of worker configurations saved by
 Return the value of a of worker configuration saved by
 \verb{$worker_config_save}
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$worker_config_read(name)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_config_read(name)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1434,7 +1430,7 @@ interface may change).}
 \if{latex}{\out{\hypertarget{method-worker_load}{}}}
 \subsection{Method \code{worker_load()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$worker_load(worker_ids = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_load(worker_ids = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1454,7 +1450,7 @@ Send a message to workers. Sending a message returns
 a message id, which can be used to poll for a response with the
 other \verb{message_*} methods.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$message_send(command, args = NULL, worker_ids = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$message_send(command, args = NULL, worker_ids = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1477,7 +1473,7 @@ to. If \code{NULL} then the message will be sent to all active workers.}
 \subsection{Method \code{message_has_response()}}{
 Detect if a response is available for a message
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$message_has_response(
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$message_has_response(
   message_id,
   worker_ids = NULL,
   named = TRUE
@@ -1505,7 +1501,7 @@ of workers that the message was sent to!)}
 Get response to messages, waiting until the
 message has been responded to.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$message_get_response(
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$message_get_response(
   message_id,
   worker_ids = NULL,
   named = TRUE,
@@ -1555,7 +1551,7 @@ progress bar if in an interactive session.}
 Return ids for messages with responses for a
 particular worker.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$message_response_ids(worker_id)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$message_response_ids(worker_id)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1574,7 +1570,7 @@ Send a message and wait for responses.
 This is a helper function around \code{message_send} and
 \code{message_get_response}.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller_$message_send_and_wait(
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$message_send_and_wait(
   command,
   args = NULL,
   worker_ids = NULL,

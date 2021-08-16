@@ -183,7 +183,7 @@ heartbeat <- R6::R6Class(
 
 ##' Send a kill signal (typically `SIGTERM`) to terminate a process
 ##' that is running a heartbeat. This is used by
-##' [rrq::rrq_controller()] in order to tear down workers, even if
+##' [`rrq::rrq_controller`] in order to tear down workers, even if
 ##' they are processing a task. When a heartbeat process is created,
 ##' in its main loop it will listen for requests to kill via this
 ##' function and will forward them to the worker. This is primarily

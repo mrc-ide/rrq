@@ -17,7 +17,7 @@ heartbeat_kill(con, key, signal = tools::SIGTERM)
 \description{
 Send a kill signal (typically \code{SIGTERM}) to terminate a process
 that is running a heartbeat. This is used by
-\code{\link[=rrq_controller]{rrq_controller()}} in order to tear down workers, even if
+\code{\link{rrq_controller}} in order to tear down workers, even if
 they are processing a task. When a heartbeat process is created,
 in its main loop it will listen for requests to kill via this
 function and will forward them to the worker. This is primarily

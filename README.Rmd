@@ -3,6 +3,7 @@
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
+  error = FALSE,
   comment = "#>",
   fig.path = "man/figures/README-",
   out.width = "100%"
@@ -25,7 +26,7 @@ Task queues for R, implemented using Redis.
 Create an `rrq_controller` object
 
 ```{r}
-obj <- rrq::rrq_controller("rrq:readme")
+obj <- rrq::rrq_controller$new("rrq:readme")
 ```
 
 Submit work to the queue:

@@ -30,10 +30,10 @@ Without any great explanation, here is the basic approach to using rrq to run a 
 
 ```r
 id <- paste0("rrq:", ids::random_id(bytes = 4))
-obj <- rrq::rrq_controller(id)
+obj <- rrq::rrq_controller$new(id)
 ```
 
-This controller uses an "identifier" (here, `id` is rrq:5f2daa61) which can be anything you want but acts like a folder within the Redis server, distinguishing your queue from any others hosted on the same server.
+This controller uses an "identifier" (here, `id` is rrq:a067982c) which can be anything you want but acts like a folder within the Redis server, distinguishing your queue from any others hosted on the same server.
 
 Submit a task to the queue with the `$enqueue()` method, returning a key for that task
 
@@ -41,7 +41,7 @@ Submit a task to the queue with the `$enqueue()` method, returning a key for tha
 ```r
 t <- obj$enqueue(1 + 1)
 t
-#> [1] "ea57dd0692718d5d0057e7194635acfd"
+#> [1] "5f5d4d1add181d3c98fa436525f2ffcc"
 ```
 
 We'll also need some worker processes to carry out our tasks. Here, we'll spawn two for now (see the section below on alternatives to this)
@@ -49,8 +49,8 @@ We'll also need some worker processes to carry out our tasks. Here, we'll spawn 
 
 ```r
 rrq::worker_spawn(obj, 2)
-#> Spawning 2 workers with prefix nemophilic_stinkpot
-#> [1] "nemophilic_stinkpot_1" "nemophilic_stinkpot_2"
+#> Spawning 2 workers with prefix commiserative_rodent
+#> [1] "commiserative_rodent_1" "commiserative_rodent_2"
 ```
 
 Retrieve the result, polling if needed:
@@ -123,7 +123,7 @@ Initially the task has status `RUNNING` (it will be `PENDING` *very* briefly):
 
 ```r
 obj$task_status(t)
-#> d5a1b957d6fa4fff57d5147ee647959e
+#> 55c0da0fa52706233539d58cea2c56a0
 #>                        "RUNNING"
 ```
 
@@ -133,7 +133,7 @@ Then after a couple of seconds it will complete (we pad this out here so that it
 ```r
 Sys.sleep(3)
 obj$task_result(t)
-#> [1] 0.7784492
+#> [1] 0.5593929
 ```
 
 The basic task lifecycle is this:
@@ -150,7 +150,7 @@ Above, we slept for a few seconds in order for the task to become finished. Howe
 ```r
 t <- obj$enqueue({Sys.sleep(2); runif(1)})
 obj$task_wait(t)
-#> [1] 0.6516485
+#> [1] 0.07685814
 ```
 
 The polling interval here is 1 second by default, but if the task completes within that period it will still be returned as soon as it is complete (the interval is just the time between progress bar updates and the period where an interrupt would be caught to cancel the wait).
@@ -160,9 +160,9 @@ Once a task is complete, `$task_wait` and `$task_result` are equivalent
 
 ```r
 obj$task_wait(t)
-#> [1] 0.6516485
+#> [1] 0.07685814
 obj$task_result(t)
-#> [1] 0.6516485
+#> [1] 0.07685814
 ```
 
 ## Configuring the worker environment
@@ -203,15 +203,15 @@ By default, this will notify all running workers to update their environment. No
 
 ```r
 obj$worker_log_tail(n = 4)
-#>               worker_id       time  command message
-#> 1 nemophilic_stinkpot_1 1623244023  MESSAGE REFRESH
-#> 2 nemophilic_stinkpot_2 1623244023  MESSAGE REFRESH
-#> 3 nemophilic_stinkpot_1 1623244023    ENVIR     new
-#> 4 nemophilic_stinkpot_2 1623244023    ENVIR     new
-#> 5 nemophilic_stinkpot_1 1623244023    ENVIR  create
-#> 6 nemophilic_stinkpot_2 1623244023    ENVIR  create
-#> 7 nemophilic_stinkpot_1 1623244023 RESPONSE REFRESH
-#> 8 nemophilic_stinkpot_2 1623244023 RESPONSE REFRESH
+#>                worker_id       time  command message
+#> 1 commiserative_rodent_1 1629120552  MESSAGE REFRESH
+#> 2 commiserative_rodent_2 1629120552  MESSAGE REFRESH
+#> 3 commiserative_rodent_1 1629120552    ENVIR     new
+#> 4 commiserative_rodent_2 1629120552    ENVIR     new
+#> 5 commiserative_rodent_1 1629120552    ENVIR  create
+#> 6 commiserative_rodent_2 1629120552    ENVIR  create
+#> 7 commiserative_rodent_1 1629120552 RESPONSE REFRESH
+#> 8 commiserative_rodent_2 1629120552 RESPONSE REFRESH
 ```
 
 Now our workers have picked up our functions we can start using them:
@@ -277,7 +277,7 @@ Create an `rrq_controller` object and tell workers to read the `deps.R` file whi
 
 
 ```r
-obj <- rrq::rrq_controller(paste0("rrq:", ids::random_id(bytes = 4)))
+obj <- rrq::rrq_controller$new(paste0("rrq:", ids::random_id(bytes = 4)))
 obj$envir(rrq::rrq_envir(sources = "deps.R"))
 source("deps.R")
 ```
@@ -301,7 +301,7 @@ The status of the first task will be `PENDING`, per usual:
 
 ```r
 obj$task_status(id)
-#> 050fa8dbd32220b1d7d93a842b8c9962
+#> c708b37c35233af42ebc5ff7cf2dbc6e
 #>                        "PENDING"
 ```
 
@@ -310,14 +310,14 @@ however, the group of tasks submitted as part of the `$lapply` call will be `DEF
 
 ```r
 obj$task_status(id_use$task_ids)
-#> eb7855c15a4141d335587d7a19a2ec2e 65f0638d4a261acc13112d6b12d9d93f
+#> a4643f65cbe9a61e7b8de845d67a59d4 e5ee67e6a65c03d03b135187d87212b0
 #>                       "DEFERRED"                       "DEFERRED"
-#> d9db40f5b7ceecd70a0f10d1d5108b38 abff381d456615bb3f12b86da45f260a
+#> d6ad45e50de4319af7b4639afd81f8e7 3a5ac2303d2ee6cf9b383b20d2c85e0f
 #>                       "DEFERRED"                       "DEFERRED"
-#> ce3d55d0d767ab507eb67ebcbeccc58f
+#> 5b0b888a2903282ec6458c3af2b76a0f
 #>                       "DEFERRED"
 obj$queue_list()
-#> [1] "050fa8dbd32220b1d7d93a842b8c9962"
+#> [1] "c708b37c35233af42ebc5ff7cf2dbc6e"
 ```
 
 obj$task_result(id_use$task_ids[[1]])
@@ -329,19 +329,19 @@ Once the first task is processed by a worker, the status changes:
 
 ```r
 obj$task_status(id)
-#> 050fa8dbd32220b1d7d93a842b8c9962
+#> c708b37c35233af42ebc5ff7cf2dbc6e
 #>                       "COMPLETE"
 obj$task_status(id_use$task_ids)
-#> eb7855c15a4141d335587d7a19a2ec2e 65f0638d4a261acc13112d6b12d9d93f
+#> a4643f65cbe9a61e7b8de845d67a59d4 e5ee67e6a65c03d03b135187d87212b0
 #>                        "PENDING"                        "PENDING"
-#> d9db40f5b7ceecd70a0f10d1d5108b38 abff381d456615bb3f12b86da45f260a
+#> d6ad45e50de4319af7b4639afd81f8e7 3a5ac2303d2ee6cf9b383b20d2c85e0f
 #>                        "PENDING"                        "PENDING"
-#> ce3d55d0d767ab507eb67ebcbeccc58f
+#> 5b0b888a2903282ec6458c3af2b76a0f
 #>                        "PENDING"
 obj$queue_list()
-#> [1] "ce3d55d0d767ab507eb67ebcbeccc58f" "eb7855c15a4141d335587d7a19a2ec2e"
-#> [3] "65f0638d4a261acc13112d6b12d9d93f" "d9db40f5b7ceecd70a0f10d1d5108b38"
-#> [5] "abff381d456615bb3f12b86da45f260a"
+#> [1] "5b0b888a2903282ec6458c3af2b76a0f" "d6ad45e50de4319af7b4639afd81f8e7"
+#> [3] "3a5ac2303d2ee6cf9b383b20d2c85e0f" "a4643f65cbe9a61e7b8de845d67a59d4"
+#> [5] "e5ee67e6a65c03d03b135187d87212b0"
 ```
 
 At this point the tasks will proceed through the queue as usual.
@@ -363,11 +363,11 @@ The easiest way to configure this is to save a worker configuration:
 
 ```r
 id <- paste0("rrq:", ids::random_id(bytes = 4))
-obj <- rrq::rrq_controller(id)
+obj <- rrq::rrq_controller$new(id)
 obj$worker_config_save("short", queue = "short")
 obj$worker_config_save("all", queue = c("short", "long"))
 obj$worker_config_list()
-#> [1] "all"       "localhost" "short"
+#> [1] "short"     "all"       "localhost"
 ```
 
 Above, we create two configurations: "short" which just listens on the queue `short`, and `all` which listens both on the short and long task queues (note that both these workers will also listen on the default queue).
@@ -375,11 +375,11 @@ Above, we create two configurations: "short" which just listens on the queue `sh
 
 ```r
 rrq::worker_spawn(obj, worker_config = "short")
-#> Spawning 1 worker with prefix benighted_iridescentshark
-#> [1] "benighted_iridescentshark_1"
+#> Spawning 1 worker with prefix moonstone_shelduck
+#> [1] "moonstone_shelduck_1"
 rrq::worker_spawn(obj, worker_config = "all")
-#> Spawning 1 worker with prefix theosophic_prayingmantis
-#> [1] "theosophic_prayingmantis_1"
+#> Spawning 1 worker with prefix downy_xoni
+#> [1] "downy_xoni_1"
 ```
 
 We can then submit a long task to the worker:
@@ -396,8 +396,8 @@ After the workers have had the ability to pick up work, our "short" worker is st
 
 ```r
 obj$worker_status()
-#> benighted_iridescentshark_1  theosophic_prayingmantis_1
-#>                      "IDLE"                      "BUSY"
+#> moonstone_shelduck_1         downy_xoni_1
+#>               "IDLE"               "BUSY"
 ```
 
 So we can submit tasks to this short queue and have them processed
@@ -406,7 +406,7 @@ So we can submit tasks to this short queue and have them processed
 ```r
 id <- obj$enqueue(runif(1), queue = "short")
 obj$task_wait(id, timeout = 10)
-#> [1] 0.6054476
+#> [1] 0.5236756
 ```
 
 Note that there is no validation to check that any worker is listening on any queue when you submit a task. Indeed there can't be as new workers can be added at any time (so at the point of submission perhaps there were no workers).
@@ -452,10 +452,10 @@ then we create the queue object as normal (and spawn a worker so that we can use
 
 
 ```r
-obj <- rrq::rrq_controller(id)
+obj <- rrq::rrq_controller$new(id)
 rrq::worker_spawn(obj, 1)
-#> Spawning 1 worker with prefix cleanshaven_octopus
-#> [1] "cleanshaven_octopus_1"
+#> Spawning 1 worker with prefix lexicographical_sambar
+#> [1] "lexicographical_sambar_1"
 ```
 
 It's not that hard to get to 1MB of data, we can do that by simulating a big pile of random numbers:
@@ -472,7 +472,7 @@ Once the task has finished, data will be stored on disk below the path given abo
 
 ```r
 dir(path)
-#> [1] "aca21e339d0f2e81ec44d5da4bbe3b7328c1cb8b18d2f657c0e02877efa58705"
+#> [1] "e5461323a584057e36fd2acc498ef923c7715eb52ddf5814027e74f7d31251fd"
 ```
 
 This keeps the larger objects out of the database.
