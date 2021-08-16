@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.4.5</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.5.0</span>
       </span>
     </div>
 
@@ -84,13 +84,6 @@
 
       </header><div class="row">
   <div class="contents col-md-9">
-
-<hr>
-<div id="output-github_document" class="section level2">
-<h2 class="hasAnchor">
-<a href="#output-github_document" class="anchor"></a>output: github_document</h2>
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-</div>
 <div id="rrq" class="section level1">
 <div class="page-header"><h1 class="hasAnchor">
 <a href="#rrq" class="anchor"></a>rrq</h1></div>
@@ -102,45 +95,54 @@
 <a href="#getting-started" class="anchor"></a>Getting started</h2>
 <p>Create an <code>rrq_controller</code> object</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="reference/rrq_controller.html">rrq_controller</a></span><span class="op">(</span><span class="st">"rrq:readme"</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="va"><a href="reference/rrq_controller.html">rrq_controller</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"rrq:readme"</span><span class="op">)</span></code></pre></div>
 <p>Submit work to the queue:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html">runif</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span><span class="op">)</span>
 <span class="va">t</span>
-<span class="co">#&gt; [1] "53a2e58afc836ff75a0abab53f75e85f"</span></code></pre></div>
+<span class="co">#&gt; [1] "6a368aa506da1aabcd264ca859fa3322"</span></code></pre></div>
 <p>Query task process:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">t</span><span class="op">)</span>
-<span class="co">#&gt; 53a2e58afc836ff75a0abab53f75e85f</span>
+<span class="co">#&gt; 6a368aa506da1aabcd264ca859fa3322</span>
 <span class="co">#&gt;                        "PENDING"</span></code></pre></div>
 <p>Run tasks on workers in the background</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="reference/worker_spawn.html">worker_spawn</a></span><span class="op">(</span><span class="va">obj</span><span class="op">)</span>
-<span class="co">#&gt; Spawning 1 worker with prefix nearby_ammonite</span>
-<span class="co">#&gt; [1] "nearby_ammonite_1"</span></code></pre></div>
+<span class="co">#&gt; Spawning 1 worker with prefix endocrinous_anemonecrab</span>
+<span class="co">#&gt; [1] "endocrinous_anemonecrab_1"</span></code></pre></div>
 <p>Collect task results when complete</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">task_wait</span><span class="op">(</span><span class="va">t</span><span class="op">)</span>
-<span class="co">#&gt;  [1] 0.9499495 0.3754099 0.4028146 0.6498432 0.1732155 0.6069491 0.6379786</span>
-<span class="co">#&gt;  [8] 0.8193451 0.1927368 0.8221052</span></code></pre></div>
-<p>Query what workers have done</p>
+<span class="co">#&gt;  [1] 0.6429454 0.3498470 0.2804653 0.2975355 0.1308821 0.1520124 0.3212029</span>
+<span class="co">#&gt;  [8] 0.1526649 0.1589430 0.3306704</span></code></pre></div>
+<p>Or try and retrieve them regardless of if they are complete</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">task_result</span><span class="op">(</span><span class="va">t</span><span class="op">)</span>
+<span class="co">#&gt;  [1] 0.6429454 0.3498470 0.2804653 0.2975355 0.1308821 0.1520124 0.3212029</span>
+<span class="co">#&gt;  [8] 0.1526649 0.1589430 0.3306704</span></code></pre></div>
+<p>Query what workers have done</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span><span class="op">$</span><span class="fu">worker_log_tail</span><span class="op">(</span>n <span class="op">=</span> <span class="cn">Inf</span><span class="op">)</span>
-<span class="co">#&gt;           worker_id       time       command                          message</span>
-<span class="co">#&gt; 1 nearby_ammonite_1 1623142169         ALIVE</span>
-<span class="co">#&gt; 2 nearby_ammonite_1 1623142169    TASK_START 53a2e58afc836ff75a0abab53f75e85f</span>
-<span class="co">#&gt; 3 nearby_ammonite_1 1623142169 TASK_COMPLETE 53a2e58afc836ff75a0abab53f75e85f</span></code></pre></div>
+<span class="co">#&gt;                   worker_id       time       command</span>
+<span class="co">#&gt; 1 endocrinous_anemonecrab_1 1629120683         ALIVE</span>
+<span class="co">#&gt; 2 endocrinous_anemonecrab_1 1629120683    TASK_START</span>
+<span class="co">#&gt; 3 endocrinous_anemonecrab_1 1629120683 TASK_COMPLETE</span>
+<span class="co">#&gt;                            message</span>
+<span class="co">#&gt; 1</span>
+<span class="co">#&gt; 2 6a368aa506da1aabcd264ca859fa3322</span>
+<span class="co">#&gt; 3 6a368aa506da1aabcd264ca859fa3322</span></code></pre></div>
 <p>For more information, see <code><a href="articles/rrq.html">vignette("rrq")</a></code></p>
 </div>
 <div id="installation" class="section level2">
 <h2 class="hasAnchor">
 <a href="#installation" class="anchor"></a>Installation</h2>
 <p>Install from the mrc-ide package repository:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu">drat</span><span class="fu">:::</span><span class="fu">add</span><span class="op">(</span><span class="st">"mrc-ide"</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="st">"rrq"</span><span class="op">)</span></code></pre></div>
 <p>Alternatively, install with <code>remotes</code>:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html">install_github</a></span><span class="op">(</span><span class="st">"mrc-ide/rrq"</span>, upgrade <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></code></pre></div>
 </div>
 <div id="testing" class="section level2">
@@ -157,7 +159,6 @@
 <p>MIT © Imperial College of Science, Technology and Medicine</p>
 </div>
 </div>
-
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

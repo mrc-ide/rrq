@@ -42,7 +42,7 @@
 <meta property="og:title" content="Kill a process running a heartbeat — heartbeat_kill" />
 <meta property="og:description" content="Send a kill signal (typically SIGTERM) to terminate a process
 that is running a heartbeat. This is used by
-rrq_controller() in order to tear down workers, even if
+rrq_controller in order to tear down workers, even if
 they are processing a task. When a heartbeat process is created,
 in its main loop it will listen for requests to kill via this
 function and will forward them to the worker. This is primarily
@@ -79,7 +79,7 @@ controller where tools::pskill() cannot be used." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.4.5</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.5.0</span>
       </span>
     </div>
 
@@ -141,7 +141,7 @@ controller where tools::pskill() cannot be used." />
     <div class="ref-description">
     <p>Send a kill signal (typically <code>SIGTERM</code>) to terminate a process
 that is running a heartbeat. This is used by
-<code><a href='rrq_controller.html'>rrq_controller()</a></code> in order to tear down workers, even if
+<code><a href='rrq_controller.html'>rrq_controller</a></code> in order to tear down workers, even if
 they are processing a task. When a heartbeat process is created,
 in its main loop it will listen for requests to kill via this
 function and will forward them to the worker. This is primarily
