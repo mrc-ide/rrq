@@ -247,7 +247,7 @@ test_that("Can offload storage for bulk tasks", {
   path <- tempfile()
   rrq_configure(name, store_max_size = 100, offload_path = path)
 
-  obj <- rrq_controller(name)
+  obj <- rrq_controller$new(name)
   obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
                          time_poll = 1, overwrite = TRUE)
 

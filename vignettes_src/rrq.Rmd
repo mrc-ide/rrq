@@ -9,6 +9,7 @@ vignette: >
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
+  error = FALSE,
   collapse = TRUE,
   comment = "#>"
 )
@@ -32,7 +33,7 @@ Without any great explanation, here is the basic approach to using rrq to run a 
 
 ```{r}
 id <- paste0("rrq:", ids::random_id(bytes = 4))
-obj <- rrq::rrq_controller(id)
+obj <- rrq::rrq_controller$new(id)
 ```
 
 This controller uses an "identifier" (here, `id` is `r id`) which can be anything you want but acts like a folder within the Redis server, distinguishing your queue from any others hosted on the same server.
@@ -233,7 +234,7 @@ Here we have some function `create` that we want to run first, doing some setup,
 Create an `rrq_controller` object and tell workers to read the `deps.R` file which contains these function definitions
 
 ```{r}
-obj <- rrq::rrq_controller(paste0("rrq:", ids::random_id(bytes = 4)))
+obj <- rrq::rrq_controller$new(paste0("rrq:", ids::random_id(bytes = 4)))
 obj$envir(rrq::rrq_envir(sources = "deps.R"))
 source("deps.R")
 ```
@@ -296,7 +297,7 @@ The easiest way to configure this is to save a worker configuration:
 
 ```{r}
 id <- paste0("rrq:", ids::random_id(bytes = 4))
-obj <- rrq::rrq_controller(id)
+obj <- rrq::rrq_controller$new(id)
 obj$worker_config_save("short", queue = "short")
 obj$worker_config_save("all", queue = c("short", "long"))
 obj$worker_config_list()
@@ -373,7 +374,7 @@ rrq::rrq_configure(id, store_max_size = 1000, offload_path = path)
 then we create the queue object as normal (and spawn a worker so that we can use it)
 
 ```{r}
-obj <- rrq::rrq_controller(id)
+obj <- rrq::rrq_controller$new(id)
 rrq::worker_spawn(obj, 1)
 ```
 

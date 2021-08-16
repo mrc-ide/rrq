@@ -2,12 +2,6 @@
 ##'
 ##' @title rrq queue controller
 ##'
-##' @param queue_id An identifier for the queue.  This will prefix all
-##'   keys in redis, so a prefix might be useful here depending on
-##'   your use case (e.g. \code{rrq:<user>:<id>})
-##'
-##' @param con A redis connection
-##'
 ##' @section Task lifecycle:
 ##'
 ##' * A task is queued with `$enqueue()`, at which point it becomes `PENDING`
@@ -116,14 +110,7 @@
 ##' ```
 ##'
 ##' @export
-rrq_controller <- function(queue_id, con = redux::hiredis()) {
-  assert_scalar_character(queue_id)
-  assert_is(con, "redis_api")
-  rrq_controller_$new(queue_id, con)
-}
-
-##' @rdname rrq_controller
-rrq_controller_ <- R6::R6Class(
+rrq_controller <- R6::R6Class(
   "rrq_controller",
   cloneable = FALSE,
 
@@ -137,10 +124,17 @@ rrq_controller_ <- R6::R6Class(
     ##' @field keys Internally used keys
     keys = NULL,
 
-    ##' @description Constructor (called by `rrq_controller()`)
-    ##' @param queue_id An identifier for the queue
-    ##' @param con A redis connection
-    initialize = function(queue_id, con) {
+    ##' @description Constructor
+    ##' @param queue_id An identifier for the queue.  This will prefix all
+    ##'   keys in redis, so a prefix might be useful here depending on
+    ##'   your use case (e.g. \code{rrq:<user>:<id>})
+    ##' @param con A redis connection. The default tries to create a redis
+    ##'   connection using default ports, or environment variables set as in
+    ##'   [redux::hiredis()]
+    initialize = function(queue_id, con = redux::hiredis()) {
+      assert_scalar_character(queue_id)
+      assert_is(con, "redis_api")
+
       self$con <- con
       self$queue_id <- queue_id
       self$keys <- rrq_keys(self$queue_id)

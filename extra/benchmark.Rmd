@@ -20,7 +20,7 @@ A simple benchmark attempt:
 ``` {r }
 root <- tempfile()
 context <- context::context_load(context::context_save(root))
-obj <- rrq::rrq_controller(context, redux::hiredis())
+obj <- rrq::rrq_controller$new(context, redux::hiredis())
 
 wid <- rrq::worker_spawn(obj, 2L, logdir = tempdir())
 ```

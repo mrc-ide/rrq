@@ -9,7 +9,7 @@ test_that("Can migrate storage", {
   invisible(lapply(dat$data, redis_restore, con))
 
   expect_error(
-    rrq_controller(dat$queue_id),
+    rrq_controller$new(dat$queue_id),
     "rrq database needs migrating; please run")
   expect_error(
     rrq_worker_from_config(dat$queue_id, "localhost"),
@@ -25,7 +25,7 @@ test_that("Can migrate storage", {
     rrq_migrate(dat$queue_id),
     "rrq database is up-to-date")
 
-  obj <- rrq_controller(dat$queue_id)
+  obj <- rrq_controller$new(dat$queue_id)
   expect_setequal(obj$task_list(), names(dat$tasks))
 
   expect_equal(obj$tasks_result(names(dat$tasks)), dat$tasks)
