@@ -151,9 +151,11 @@ test_that("wait success returns result", {
 })
 
 test_that("wait success returns error message", {
+  timeout <- if (interactive() 0.1 else 1
+  poll <- timeout / 2
   callback <- mockery::mock(stop("Failure"), cycle = TRUE)
   msg <- evaluate_promise(expect_error(
-    wait_success("my explanation", 0.1, callback, 0.05)))
+    wait_success("my explanation", timeout, callback, poll)))
   expect_equal(msg$messages, c("Failure\n", "Failure\n"))
   expect_equal(msg$result$message, "Timeout: my explanation\nFailure")
 })
