@@ -11,20 +11,20 @@ username <- function() {
                                    Sys.getenv("USERNAME"))))
 }
 
-vcapply <- function(x, fun, ...) {
-  vapply(x, fun, character(1), ...)
+vcapply <- function(X, FUN, ...) { # nolint
+  vapply(X, FUN, character(1), ...)
 }
 
-vnapply <- function(x, fun, ...) {
-  vapply(x, fun, numeric(1), ...)
+vnapply <- function(X, FUN, ...) { # nolint
+  vapply(X, FUN, numeric(1), ...)
 }
 
-viapply <- function(x, fun, ...) {
-  vapply(x, fun, integer(1), ...)
+viapply <- function(X, FUN, ...) { # nolint
+  vapply(X, FUN, integer(1), ...)
 }
 
-vlapply <- function(x, fun, ...) {
-  vapply(x, fun, logical(1), ...)
+vlapply <- function(X, FUN, ...) { # nolint
+  vapply(X, FUN, logical(1), ...)
 }
 
 

@@ -308,11 +308,11 @@ rrq_controller <- R6::R6Class(
     ##' @description Apply a function over a list of data. This is
     ##' equivalent to using `$enqueue()` over each element in the list.
     ##'
-    ##' @param x A list of data to apply our function against
+    ##' @param X A list of data to apply our function against
     ##'
-    ##' @param fun A function to be applied to each element of `x`
+    ##' @param FUN A function to be applied to each element of `X`
     ##'
-    ##' @param ... Additional arguments to `fun`
+    ##' @param ... Additional arguments to `FUN`
     ##'
     ##' @param dots As an alternative to `...`, you can provide the dots
     ##'   as a list of additional arguments. This may be easier to program
@@ -349,7 +349,7 @@ rrq_controller <- R6::R6Class(
     ##'   queue. If the dependent task fails then this task will be
     ##'   removed from the queue. Dependencies are applied to all
     ##'   tasks added to the queue.
-    lapply = function(x, fun, ..., dots = NULL,
+    lapply = function(X, FUN, ..., dots = NULL, # nolint
                       envir = parent.frame(), queue = NULL,
                       separate_process = FALSE, task_timeout = NULL,
                       depends_on = NULL,
@@ -358,7 +358,7 @@ rrq_controller <- R6::R6Class(
       if (is.null(dots)) {
         dots <- as.list(substitute(list(...)))[-1L]
       }
-      self$lapply_(x, substitute(fun), dots = dots, envir = envir,
+      self$lapply_(X, substitute(FUN), dots = dots, envir = envir,
                    queue = queue, separate_process = separate_process,
                    task_timeout = task_timeout,
                    depends_on = depends_on, collect_timeout = collect_timeout,
@@ -371,11 +371,11 @@ rrq_controller <- R6::R6Class(
     ##' overhead on the redis server as the values of the variables will
     ##' be copied over rather than using their names if possible.
     ##'
-    ##' @param x A list of data to apply our function against
+    ##' @param X A list of data to apply our function against
     ##'
-    ##' @param fun A function to be applied to each element of `x`
+    ##' @param FUN A function to be applied to each element of `X`
     ##'
-    ##' @param ... Additional arguments to `fun`
+    ##' @param ... Additional arguments to `FUN`
     ##'
     ##' @param dots As an alternative to `...`, you can provide the dots
     ##'   as a list of additional arguments. This may be easier to program
@@ -412,7 +412,7 @@ rrq_controller <- R6::R6Class(
     ##'   queue. If the dependent task fails then this task will be
     ##'   removed from the queue. Dependencies are applied to all
     ##'   tasks added to the queue.
-    lapply_ = function(x, fun, ..., dots = NULL,
+    lapply_ = function(X, FUN, ..., dots = NULL, # nolint
                        envir = parent.frame(), queue = NULL,
                        separate_process = FALSE, task_timeout = NULL,
                        depends_on = NULL, collect_timeout = Inf,
@@ -420,7 +420,7 @@ rrq_controller <- R6::R6Class(
       if (is.null(dots)) {
         dots <- list(...)
       }
-      rrq_lapply(self$con, self$keys, private$store, x, fun, dots, envir, queue,
+      rrq_lapply(self$con, self$keys, private$store, X, FUN, dots, envir, queue,
                  separate_process, task_timeout, depends_on,
                  collect_timeout, time_poll, progress)
     },
@@ -428,19 +428,19 @@ rrq_controller <- R6::R6Class(
     ##' @description Send a bulk set of tasks to your workers.
     ##' This function is a bit like a mash-up of [Map] and [do.call],
     ##' when used with a [data.frame] argument, which is typically what
-    ##' is provided. Rather than `$lapply()` which applies `fun` to each
-    ##' element of `x`, `enqueue_bulk will apply over each row of `x`,
+    ##' is provided. Rather than `$lapply()` which applies `FUN` to each
+    ##' element of `X`, `enqueue_bulk will apply over each row of `X`,
     ##' spreading the columms out as arguments. If you have a function
     ##' `f(a, b)` and a [data.frame] with columns `a` and `b` this
     ##' should feel intuitive.
     ##'
-    ##' @param x Typically a [data.frame], which you want to apply `fun`
+    ##' @param X Typically a [data.frame], which you want to apply `FUN`
     ##'   over, row-wise. The names of the `data.frame` must match the
     ##'   arguments of your function.
     ##'
-    ##' @param fun A function
+    ##' @param FUN A function
     ##'
-    ##' @param ... Additional arguments to add to every call to `fun`
+    ##' @param ... Additional arguments to add to every call to `FUN`
     ##'
     ##' @param dots As an alternative to `...`, you can provide the dots
     ##'   as a list of additional arguments. This may be easier to program
@@ -477,7 +477,7 @@ rrq_controller <- R6::R6Class(
     ##'   queue. If the dependent task fails then this task will be
     ##'   removed from the queue. Dependencies are applied to all
     ##'   tasks added to the queue.
-    enqueue_bulk = function(x, fun, ..., dots = NULL,
+    enqueue_bulk = function(X, FUN, ..., dots = NULL, # nolint
                             envir = parent.frame(), queue = NULL,
                             separate_process = FALSE, task_timeout = NULL,
                             depends_on = NULL, collect_timeout = Inf,
@@ -485,7 +485,7 @@ rrq_controller <- R6::R6Class(
       if (is.null(dots)) {
         dots <- as.list(substitute(list(...)))[-1L]
       }
-      self$enqueue_bulk_(x, substitute(fun), dots = dots, envir = envir,
+      self$enqueue_bulk_(X, substitute(FUN), dots = dots, envir = envir,
                          queue = queue, separate_process = separate_process,
                          task_timeout = task_timeout, depends_on = depends_on,
                          collect_timeout = collect_timeout,
@@ -498,13 +498,13 @@ rrq_controller <- R6::R6Class(
     ##' overhead on the redis server as the values of the variables will
     ##' be copied over rather than using their names if possible.
     ##'
-    ##' @param x Typically a [data.frame], which you want to apply `fun`
+    ##' @param X Typically a [data.frame], which you want to apply `FUN`
     ##'   over, row-wise. The names of the `data.frame` must match the
     ##'   arguments of your function.
     ##'
-    ##' @param fun A function
+    ##' @param FUN A function
     ##'
-    ##' @param ... Additional arguments to add to every call to `fun`
+    ##' @param ... Additional arguments to add to every call to `FUN`
     ##'
     ##' @param dots As an alternative to `...`, you can provide the dots
     ##'   as a list of additional arguments. This may be easier to program
@@ -541,7 +541,7 @@ rrq_controller <- R6::R6Class(
     ##'   queue. If the dependent task fails then this task will be
     ##'   removed from the queue. Dependencies are applied to all
     ##'   tasks added to the queue.
-    enqueue_bulk_ = function(x, fun, ..., dots = NULL,
+    enqueue_bulk_ = function(X, FUN, ..., dots = NULL, # nolint
                              envir = parent.frame(), queue = NULL,
                              separate_process = FALSE, task_timeout = NULL,
                              depends_on = NULL, collect_timeout = Inf,
@@ -549,7 +549,7 @@ rrq_controller <- R6::R6Class(
       if (is.null(dots)) {
         dots <- list(...)
       }
-      rrq_enqueue_bulk(self$con, self$keys, private$store, x, fun, dots,
+      rrq_enqueue_bulk(self$con, self$keys, private$store, X, FUN, dots,
                        envir, queue, separate_process, task_timeout, depends_on,
                        collect_timeout, time_poll, progress)
     },

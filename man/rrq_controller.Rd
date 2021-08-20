@@ -410,8 +410,8 @@ Apply a function over a list of data. This is
 equivalent to using \verb{$enqueue()} over each element in the list.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller$lapply(
-  x,
-  fun,
+  X,
+  FUN,
   ...,
   dots = NULL,
   envir = parent.frame(),
@@ -428,11 +428,11 @@ equivalent to using \verb{$enqueue()} over each element in the list.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{A list of data to apply our function against}
+\item{\code{X}}{A list of data to apply our function against}
 
-\item{\code{fun}}{A function to be applied to each element of \code{x}}
+\item{\code{FUN}}{A function to be applied to each element of \code{X}}
 
-\item{\code{...}}{Additional arguments to \code{fun}}
+\item{\code{...}}{Additional arguments to \code{FUN}}
 
 \item{\code{dots}}{As an alternative to \code{...}, you can provide the dots
 as a list of additional arguments. This may be easier to program
@@ -484,8 +484,8 @@ overhead on the redis server as the values of the variables will
 be copied over rather than using their names if possible.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller$lapply_(
-  x,
-  fun,
+  X,
+  FUN,
   ...,
   dots = NULL,
   envir = parent.frame(),
@@ -502,11 +502,11 @@ be copied over rather than using their names if possible.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{A list of data to apply our function against}
+\item{\code{X}}{A list of data to apply our function against}
 
-\item{\code{fun}}{A function to be applied to each element of \code{x}}
+\item{\code{FUN}}{A function to be applied to each element of \code{X}}
 
-\item{\code{...}}{Additional arguments to \code{fun}}
+\item{\code{...}}{Additional arguments to \code{FUN}}
 
 \item{\code{dots}}{As an alternative to \code{...}, you can provide the dots
 as a list of additional arguments. This may be easier to program
@@ -554,13 +554,13 @@ progress bar if in an interactive session.}
 Send a bulk set of tasks to your workers.
 This function is a bit like a mash-up of \link{Map} and \link{do.call},
 when used with a \link{data.frame} argument, which is typically what
-is provided. Rather than \verb{$lapply()} which applies \code{fun} to each
-element of \code{x}, \verb{enqueue_bulk will apply over each row of }x\verb{, spreading the columms out as arguments. If you have a function }f(a, b)\verb{and a [data.frame] with columns}a\code{and}b` this
+is provided. Rather than \verb{$lapply()} which applies \code{FUN} to each
+element of \code{X}, \verb{enqueue_bulk will apply over each row of }X\verb{, spreading the columms out as arguments. If you have a function }f(a, b)\verb{and a [data.frame] with columns}a\code{and}b` this
 should feel intuitive.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller$enqueue_bulk(
-  x,
-  fun,
+  X,
+  FUN,
   ...,
   dots = NULL,
   envir = parent.frame(),
@@ -577,13 +577,13 @@ should feel intuitive.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{Typically a \link{data.frame}, which you want to apply \code{fun}
+\item{\code{X}}{Typically a \link{data.frame}, which you want to apply \code{FUN}
 over, row-wise. The names of the \code{data.frame} must match the
 arguments of your function.}
 
-\item{\code{fun}}{A function}
+\item{\code{FUN}}{A function}
 
-\item{\code{...}}{Additional arguments to add to every call to \code{fun}}
+\item{\code{...}}{Additional arguments to add to every call to \code{FUN}}
 
 \item{\code{dots}}{As an alternative to \code{...}, you can provide the dots
 as a list of additional arguments. This may be easier to program
@@ -635,8 +635,8 @@ overhead on the redis server as the values of the variables will
 be copied over rather than using their names if possible.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller$enqueue_bulk_(
-  x,
-  fun,
+  X,
+  FUN,
   ...,
   dots = NULL,
   envir = parent.frame(),
@@ -653,13 +653,13 @@ be copied over rather than using their names if possible.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{Typically a \link{data.frame}, which you want to apply \code{fun}
+\item{\code{X}}{Typically a \link{data.frame}, which you want to apply \code{FUN}
 over, row-wise. The names of the \code{data.frame} must match the
 arguments of your function.}
 
-\item{\code{fun}}{A function}
+\item{\code{FUN}}{A function}
 
-\item{\code{...}}{Additional arguments to add to every call to \code{fun}}
+\item{\code{...}}{Additional arguments to add to every call to \code{FUN}}
 
 \item{\code{dots}}{As an alternative to \code{...}, you can provide the dots
 as a list of additional arguments. This may be easier to program
