@@ -72,6 +72,13 @@ worker logfile, we'll print this fairly often.
    be written to a response list with the same identifier as the
    message.
 
+Some messages interact with the worker timeout:
+
+* `PING`, `ECHO`, `EVAL`, `INFO` `PAUSE`, `RESUME` and `REFRESH` will reset the timer, as if a task had been run
+* `TIMEOUT_SET` explicitly interacts with the timer
+* `TIMEOUT_GET` does not reset the timer, reporting the remaining time
+* `STOP` causes the worker to exit, so has no interaction with the timer
+
 ## `PING`
 
 The `PING` message simply asks the worker to return `PONG`.  It's

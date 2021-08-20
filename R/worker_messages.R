@@ -22,7 +22,15 @@ run_message <- function(worker, private, msg) {
                 TIMEOUT_GET = run_message_timeout_get(worker, private),
                 run_message_unknown(cmd, args))
 
-  message_respond(worker, private, message_id, cmd, res)
+  response <- message_respond(worker, private, message_id, cmd, res)
+
+  command_resets_timer <- c("PING", "ECHO", "EVAL", "INFO", "PAUSE",
+                            "RESUME", "REFRESH")
+  if (cmd %in% command_resets_timer) {
+    private$timer <- NULL
+  }
+
+  response
 }
 
 run_message_ping <- function() {
