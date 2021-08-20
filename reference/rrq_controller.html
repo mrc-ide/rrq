@@ -73,7 +73,7 @@ rrq queue controller" />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.5.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.5.1</span>
       </span>
     </div>
 
@@ -504,8 +504,8 @@ calculation. See <code>$enqueue</code> for details.</p></dd>
 <p>Apply a function over a list of data. This is
 equivalent to using <code>$enqueue()</code> over each element in the list.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
 <p><div class="r"></p><pre><span class='va'>rrq_controller</span><span class='op'>$</span><span class='fu'>lapply</span><span class='op'>(</span>
-  <span class='va'>x</span>,
-  <span class='va'>fun</span>,
+  <span class='va'>X</span>,
+  <span class='va'>FUN</span>,
   <span class='va'>...</span>,
   dots <span class='op'>=</span> <span class='cn'>NULL</span>,
   envir <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>parent.frame</a></span><span class='op'>(</span><span class='op'>)</span>,
@@ -520,11 +520,11 @@ equivalent to using <code>$enqueue()</code> over each element in the list.</p><h
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
 <p><div class="arguments"></p><dl>
-<dt><code>x</code></dt><dd><p>A list of data to apply our function against</p></dd>
+<dt><code>X</code></dt><dd><p>A list of data to apply our function against</p></dd>
 
-<dt><code>fun</code></dt><dd><p>A function to be applied to each element of <code>x</code></p></dd>
+<dt><code>FUN</code></dt><dd><p>A function to be applied to each element of <code>X</code></p></dd>
 
-<dt><code>...</code></dt><dd><p>Additional arguments to <code>fun</code></p></dd>
+<dt><code>...</code></dt><dd><p>Additional arguments to <code>FUN</code></p></dd>
 
 <dt><code>dots</code></dt><dd><p>As an alternative to <code>...</code>, you can provide the dots
 as a list of additional arguments. This may be easier to program
@@ -571,8 +571,8 @@ With this version, both are passed by value; this may create more
 overhead on the redis server as the values of the variables will
 be copied over rather than using their names if possible.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
 <p><div class="r"></p><pre><span class='va'>rrq_controller</span><span class='op'>$</span><span class='fu'>lapply_</span><span class='op'>(</span>
-  <span class='va'>x</span>,
-  <span class='va'>fun</span>,
+  <span class='va'>X</span>,
+  <span class='va'>FUN</span>,
   <span class='va'>...</span>,
   dots <span class='op'>=</span> <span class='cn'>NULL</span>,
   envir <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>parent.frame</a></span><span class='op'>(</span><span class='op'>)</span>,
@@ -587,11 +587,11 @@ be copied over rather than using their names if possible.</p><h4 class='hasAncho
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
 <p><div class="arguments"></p><dl>
-<dt><code>x</code></dt><dd><p>A list of data to apply our function against</p></dd>
+<dt><code>X</code></dt><dd><p>A list of data to apply our function against</p></dd>
 
-<dt><code>fun</code></dt><dd><p>A function to be applied to each element of <code>x</code></p></dd>
+<dt><code>FUN</code></dt><dd><p>A function to be applied to each element of <code>X</code></p></dd>
 
-<dt><code>...</code></dt><dd><p>Additional arguments to <code>fun</code></p></dd>
+<dt><code>...</code></dt><dd><p>Additional arguments to <code>FUN</code></p></dd>
 
 <dt><code>dots</code></dt><dd><p>As an alternative to <code>...</code>, you can provide the dots
 as a list of additional arguments. This may be easier to program
@@ -635,12 +635,12 @@ progress bar if in an interactive session.</p></dd>
 <p>Send a bulk set of tasks to your workers.
 This function is a bit like a mash-up of <a href='https://rdrr.io/r/base/funprog.html'>Map</a> and <a href='https://rdrr.io/r/base/do.call.html'>do.call</a>,
 when used with a <a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a> argument, which is typically what
-is provided. Rather than <code>$lapply()</code> which applies <code>fun</code> to each
-element of <code>x</code>, <code>enqueue_bulk will apply over each row of </code>x<code>, spreading the columms out as arguments. If you have a function </code>f(a, b)<code>and a [data.frame] with columns</code>a<code>and</code>b` this
+is provided. Rather than <code>$lapply()</code> which applies <code>FUN</code> to each
+element of <code>X</code>, <code>enqueue_bulk will apply over each row of </code>X<code>, spreading the columms out as arguments. If you have a function </code>f(a, b)<code>and a [data.frame] with columns</code>a<code>and</code>b` this
 should feel intuitive.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
 <p><div class="r"></p><pre><span class='va'>rrq_controller</span><span class='op'>$</span><span class='fu'>enqueue_bulk</span><span class='op'>(</span>
-  <span class='va'>x</span>,
-  <span class='va'>fun</span>,
+  <span class='va'>X</span>,
+  <span class='va'>FUN</span>,
   <span class='va'>...</span>,
   dots <span class='op'>=</span> <span class='cn'>NULL</span>,
   envir <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>parent.frame</a></span><span class='op'>(</span><span class='op'>)</span>,
@@ -655,13 +655,13 @@ should feel intuitive.</p><h4 class='hasAnchor' id='arguments'><a class='anchor'
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
 <p><div class="arguments"></p><dl>
-<dt><code>x</code></dt><dd><p>Typically a <a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a>, which you want to apply <code>fun</code>
+<dt><code>X</code></dt><dd><p>Typically a <a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a>, which you want to apply <code>FUN</code>
 over, row-wise. The names of the <code>data.frame</code> must match the
 arguments of your function.</p></dd>
 
-<dt><code>fun</code></dt><dd><p>A function</p></dd>
+<dt><code>FUN</code></dt><dd><p>A function</p></dd>
 
-<dt><code>...</code></dt><dd><p>Additional arguments to add to every call to <code>fun</code></p></dd>
+<dt><code>...</code></dt><dd><p>Additional arguments to add to every call to <code>FUN</code></p></dd>
 
 <dt><code>dots</code></dt><dd><p>As an alternative to <code>...</code>, you can provide the dots
 as a list of additional arguments. This may be easier to program
@@ -708,8 +708,8 @@ With this version, both are passed by value; this may create more
 overhead on the redis server as the values of the variables will
 be copied over rather than using their names if possible.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
 <p><div class="r"></p><pre><span class='va'>rrq_controller</span><span class='op'>$</span><span class='fu'>enqueue_bulk_</span><span class='op'>(</span>
-  <span class='va'>x</span>,
-  <span class='va'>fun</span>,
+  <span class='va'>X</span>,
+  <span class='va'>FUN</span>,
   <span class='va'>...</span>,
   dots <span class='op'>=</span> <span class='cn'>NULL</span>,
   envir <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>parent.frame</a></span><span class='op'>(</span><span class='op'>)</span>,
@@ -724,13 +724,13 @@ be copied over rather than using their names if possible.</p><h4 class='hasAncho
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
 <p><div class="arguments"></p><dl>
-<dt><code>x</code></dt><dd><p>Typically a <a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a>, which you want to apply <code>fun</code>
+<dt><code>X</code></dt><dd><p>Typically a <a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a>, which you want to apply <code>FUN</code>
 over, row-wise. The names of the <code>data.frame</code> must match the
 arguments of your function.</p></dd>
 
-<dt><code>fun</code></dt><dd><p>A function</p></dd>
+<dt><code>FUN</code></dt><dd><p>A function</p></dd>
 
-<dt><code>...</code></dt><dd><p>Additional arguments to add to every call to <code>fun</code></p></dd>
+<dt><code>...</code></dt><dd><p>Additional arguments to add to every call to <code>FUN</code></p></dd>
 
 <dt><code>dots</code></dt><dd><p>As an alternative to <code>...</code>, you can provide the dots
 as a list of additional arguments. This may be easier to program
