@@ -390,3 +390,34 @@ test_that("send and wait", {
   expect_equal(sort(names(res)), sort(wid))
   expect_equal(unname(res), rep(list("BYE"), length(wid)))
 })
+
+
+test_that("Some messages reset timer", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
+  obj$message_send("TIMEOUT_SET", 100)
+  w$step(TRUE)
+  expect_is_function(r6_private(w)$timer)
+
+  id <- obj$message_send("TIMEOUT_GET")
+  w$step(TRUE)
+  expect_is_function(r6_private(w)$timer)
+
+  f <- function(cmd, args = NULL) {
+    obj$message_send("TIMEOUT_SET", 100)
+    w$step(TRUE)
+    stopifnot(is.function(r6_private(w)$timer))
+    id <- obj$message_send(cmd, args)
+    w$step(TRUE)
+    expect_null(r6_private(w)$timer)
+  }
+
+  suppressMessages(f("PING"))
+  suppressMessages(f("ECHO", "hello"))
+  capture.output(f("EVAL", "1 + 1"))
+  f("INFO")
+  f("PAUSE")
+  f("RESUME")
+  f("REFRESH")
+})
