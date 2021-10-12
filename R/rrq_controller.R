@@ -1461,7 +1461,7 @@ worker_delete_exited <- function(con, keys, worker_ids = NULL) {
   }
 
   if (length(worker_ids) > 0L) {
-    con$HDEL(keys$worker_name,   worker_ids)
+    con$SREM(keys$worker_name,   worker_ids)
     con$HDEL(keys$worker_status, worker_ids)
     con$HDEL(keys$worker_task,   worker_ids)
     con$HDEL(keys$worker_info,   worker_ids)
