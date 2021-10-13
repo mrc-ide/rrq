@@ -244,7 +244,6 @@ test_that("clean up worker when one still running", {
 
   id <- obj$message_send("STOP", worker_ids = w1$name)
 
-  ## This is doing something very odd
   expect_error(
     w1$step(), "BYE", class = "rrq_worker_stop")
 
