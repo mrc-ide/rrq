@@ -231,3 +231,34 @@ test_that("write_rrq_workers is deprecated", {
   mockery::expect_called(mock_worker_script, 1)
   expect_equal(mockery::mock_args(mock_worker_script)[[1]], list(path))
 })
+
+
+## this is a regression test for
+## https://github.com/mrc-ide/rrq/issues/56
+test_that("clean up worker when one still running", {
+  obj <- test_rrq()
+  w1 <- test_worker_blocking(obj)
+  w2 <- test_worker_blocking(obj)
+
+  expect_setequal(obj$worker_list(), c(w1$name, w2$name))
+
+  id <- obj$message_send("STOP", worker_ids = w1$name)
+
+  ## This is doing something very odd
+  expect_error(
+    w1$step(), "BYE", class = "rrq_worker_stop")
+
+  ## This is typically done by the handler:
+  w1$shutdown()
+
+  expect_equal(
+    obj$message_get_response(id, w1$name),
+    set_names(list("BYE"), w1$name))
+
+  expect_equal(obj$worker_list_exited(), w1$name)
+
+  expect_equal(obj$worker_delete_exited(), w1$name)
+  expect_setequal(obj$worker_list(), w2$name)
+  expect_equal(obj$worker_list_exited(), character(0))
+  expect_equal(obj$worker_delete_exited(), character(0))
+})
