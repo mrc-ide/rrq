@@ -948,17 +948,23 @@ test_that("offload storage in result", {
 
 test_that("collect times", {
   obj <- test_rrq("myfuns.R")
-  ## What is the pause here for? Something is taking much longer than
-  ## we expect
   w <- test_worker_blocking(obj)
 
-  t <- obj$enqueue(slowdouble(0.1))
-  expect_type(t, "character")
+  t1 <- obj$enqueue(slowdouble(0.1))
+  t2 <- obj$enqueue(slowdouble(0.1))
+  tt <- c(t1, t2)
+
+  times1 <- obj$task_times(tt)
+  expect_true(is.matrix(times1)) # testthat 3e makes this quite hard
+  expect_equal(dimnames(times1), list(tt, c("submit", "start", "complete")))
+  expect_type(times1, "double")
+  expect_equal(times1[tt, "start"], set_names(rep(NA_real_, 2), tt))
+  expect_equal(times1[tt, "complete"], set_names(rep(NA_real_, 2), tt))
+  expect_false(any(is.na(times1[tt, "submit"])))
+
   w$step(TRUE)
-  expect_equal(obj$task_wait(t, 2), 0.2)
-  expect_equal(obj$task_result(t), 0.2)
-  times <- obj$task_times(t)
-  expect_true(is.matrix(times)) # testthat 3e makes this quite hard
-  expect_equal(dimnames(times), list(t, c("submit", "start", "complete")))
-  expect_type(times, "double")
+  times2 <- obj$task_times(tt)
+  expect_equal(times2[t2, , drop = FALSE], times1[t2, , drop = FALSE])
+  expect_equal(obj$task_times(t2), times1[t2, , drop = FALSE])
+  expect_false(any(is.na(times2[t1, ])))
 })
