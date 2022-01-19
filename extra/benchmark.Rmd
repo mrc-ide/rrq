@@ -1,3 +1,10 @@
+---
+title: "rrq benchmarks"
+author: "Rich FitzJohn"
+date: "`r format(Sys.Date())`"
+output: github_document
+---
+
 # rrq benchmarks
 
 These benchmarks aim to measure the per-call overhead of the
@@ -29,10 +36,12 @@ Then over a matrix of numbers of tasks and workers:
 
 ```{r run_benchmarks}
 bench_rrq <- function(n, nworkers, nrep, obj) {
-  message(sprintf("%d / %d / %d", n, nrep, nworkers))
+  if (interactive()) {
+    message(sprintf("%d / %d / %d", n, nrep, nworkers))
+  }
   diff <- nworkers - obj$worker_len()
   if (diff > 0L) {
-    rrq::worker_spawn(obj, diff, logdir = tempdir())
+    suppressMessages(rrq::worker_spawn(obj, diff))
   } else if (diff < 0L) {
     obj$worker_stop(obj$worker_list()[seq_len(-diff)])
   }
@@ -43,7 +52,7 @@ bench_rrq <- function(n, nworkers, nrep, obj) {
 }
 
 n <- 2^c(1, 3, 5, 7, 9, 11)
-nw <- 1:8
+nw <- 1:4
 nrep <- 10
 dat <- expand.grid(n = n, nworkers = nw)
 times <- Map(bench_rrq, dat$n, dat$nworkers, nrep, list(obj))
