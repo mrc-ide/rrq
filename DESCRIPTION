@@ -1,6 +1,6 @@
 Package: rrq
 Title: Simple Redis Queue
-Version: 0.5.4
+Version: 0.5.5
 Authors@R: c(person("Rich", "FitzJohn", role = c("aut", "cre"),
                     email = "rich.fitzjohn@gmail.com"),
              person("Robert", "Ashton", role = "aut"),
