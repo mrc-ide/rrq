@@ -362,7 +362,7 @@ rrq_controller <- R6::R6Class(
                    queue = queue, separate_process = separate_process,
                    task_timeout = task_timeout,
                    depends_on = depends_on, collect_timeout = collect_timeout,
-                   time_poll = time_poll, progress = NULL)
+                   time_poll = time_poll, progress = progress)
     },
 
     ##' @description The "standard evaluation" version of `$lapply()`.
