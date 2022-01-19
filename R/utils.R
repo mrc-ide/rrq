@@ -217,3 +217,8 @@ is_serialized_object <- function(x) {
 squote <- function(x) {
   sprintf("'%s'", x)
 }
+
+
+timestamp <- function(time = Sys.time()) {
+  as.numeric(as.POSIXlt(time, tz = "UTC"))
+}

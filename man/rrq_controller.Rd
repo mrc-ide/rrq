@@ -162,6 +162,7 @@ ans <- obj$lapply_(1:10, quote(log), base = quote(b))
 \item \href{#method-task_delete}{\code{rrq_controller$task_delete()}}
 \item \href{#method-task_cancel}{\code{rrq_controller$task_cancel()}}
 \item \href{#method-task_data}{\code{rrq_controller$task_data()}}
+\item \href{#method-task_times}{\code{rrq_controller$task_times()}}
 \item \href{#method-queue_length}{\code{rrq_controller$queue_length()}}
 \item \href{#method-queue_list}{\code{rrq_controller$queue_list()}}
 \item \href{#method-queue_remove}{\code{rrq_controller$queue_remove()}}
@@ -1057,6 +1058,30 @@ Fetch internal data about a task from Redis
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{task_id}}{The id of the task}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-task_times"></a>}}
+\if{latex}{\out{\hypertarget{method-task_times}{}}}
+\subsection{Method \code{task_times()}}{
+Fetch times for tasks at points in their life cycle.
+For each task returns the time of submission, starting
+and completion (not necessarily successfully; this includes
+errors and interruptions).  If a task has not reacched a point
+yet (e.g., submitted but not run, or running but not finished)
+the time will be \code{NA}).  Times are returned in unix timestamp
+format in UTC; you can use \link[redux:redis_time]{redux::redis_time_to_r} to convert
+them to a POSIXt object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_times(task_ids)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{task_ids}}{Task ids to fetch times for.}
 }
 \if{html}{\out{</div>}}
 }

@@ -944,3 +944,21 @@ test_that("offload storage in result", {
   expect_equal(store$list(), character(0))
   expect_equal(dir(path), character(0))
 })
+
+
+test_that("collect times", {
+  obj <- test_rrq("myfuns.R")
+  ## What is the pause here for? Something is taking much longer than
+  ## we expect
+  w <- test_worker_blocking(obj)
+
+  t <- obj$enqueue(slowdouble(0.1))
+  expect_type(t, "character")
+  w$step(TRUE)
+  expect_equal(obj$task_wait(t, 2), 0.2)
+  expect_equal(obj$task_result(t), 0.2)
+  times <- obj$task_times(t)
+  expect_true(is.matrix(times)) # testthat 3e makes this quite hard
+  expect_equal(dimnames(times), list(t, c("submit", "start", "complete")))
+  expect_type(times, "double")
+})

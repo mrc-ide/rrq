@@ -761,6 +761,30 @@ rrq_controller <- R6::R6Class(
       task_data(self$con, self$keys, private$store, task_id)
     },
 
+    ##' @description Fetch times for tasks at points in their life cycle.
+    ##' For each task returns the time of submission, starting
+    ##' and completion (not necessarily successfully; this includes
+    ##' errors and interruptions).  If a task has not reacched a point
+    ##' yet (e.g., submitted but not run, or running but not finished)
+    ##' the time will be `NA`).  Times are returned in unix timestamp
+    ##' format in UTC; you can use [redux::redis_time_to_r] to convert
+    ##' them to a POSIXt object.
+    ##'
+    ##' @param task_ids Task ids to fetch times for.
+    task_times = function(task_ids) {
+      read_time_with_default <- function(key) {
+        time <- self$con$HMGET(key, task_ids)
+        time[vlapply(time, is.null)] <- NA_character_
+        as.numeric(list_to_character(time))
+      }
+      ret <- cbind(
+        submit = read_time_with_default(self$keys$task_time1),
+        start = read_time_with_default(self$keys$task_time2),
+        complete = read_time_with_default(self$keys$task_time3))
+      rownames(ret) <- task_ids
+      ret
+    },
+
     ##' @description Returns the number of tasks in the queue (waiting for
     ##' an available worker).
     ##'
@@ -1318,13 +1342,16 @@ task_submit_n <- function(con, keys, task_ids, dat, key_complete, queue,
   } else {
     cmds <- list()
   }
+
+  time <- timestamp()
   cmds <- c(
     cmds,
     list(
       redis$HMSET(keys$task_expr, task_ids, dat),
       redis$HMSET(keys$task_status, task_ids, rep_len(TASK_PENDING, n)),
       redis$HMSET(keys$task_queue, task_ids, rep_len(queue, n)),
-      redis$HMSET(keys$task_local, task_ids, rep_len(local, n))),
+      redis$HMSET(keys$task_local, task_ids, rep_len(local, n)),
+      redis$HMSET(keys$task_time1, task_ids, rep_len(time, n))),
     timeout)
   if (length(depends_on) > 0) {
     cmds <- c(
