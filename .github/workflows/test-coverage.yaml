@@ -52,6 +52,9 @@ jobs:
           remotes::install_github("r-lib/covr")
         shell: Rscript {0}
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+
       - name: Test coverage
         run: covr::codecov(clean = FALSE)
         shell: Rscript {0}
