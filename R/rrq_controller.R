@@ -778,9 +778,9 @@ rrq_controller <- R6::R6Class(
         as.numeric(list_to_character(time))
       }
       ret <- cbind(
-        submit = read_time_with_default(self$keys$task_time1),
-        start = read_time_with_default(self$keys$task_time2),
-        complete = read_time_with_default(self$keys$task_time3))
+        submit = read_time_with_default(self$keys$task_time_submit),
+        start = read_time_with_default(self$keys$task_time_start),
+        complete = read_time_with_default(self$keys$task_time_complete))
       rownames(ret) <- task_ids
       ret
     },
@@ -1351,7 +1351,7 @@ task_submit_n <- function(con, keys, task_ids, dat, key_complete, queue,
       redis$HMSET(keys$task_status, task_ids, rep_len(TASK_PENDING, n)),
       redis$HMSET(keys$task_queue, task_ids, rep_len(queue, n)),
       redis$HMSET(keys$task_local, task_ids, rep_len(local, n)),
-      redis$HMSET(keys$task_time1, task_ids, rep_len(time, n))),
+      redis$HMSET(keys$task_time_submit, task_ids, rep_len(time, n))),
     timeout)
   if (length(depends_on) > 0) {
     cmds <- c(

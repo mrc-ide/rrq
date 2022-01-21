@@ -36,15 +36,15 @@ rrq_keys_common <- function(queue_id) {
        task_progress  = sprintf("%s:task:progress",  queue_id),
        task_result    = sprintf("%s:task:result",    queue_id),
 
-       ## Times are 1: submit, 2: start, 3: complete (finish/error/cancel/etc)
-       task_time1     = sprintf("%s:task:time1",      queue_id),
-       task_time2     = sprintf("%s:task:time2",      queue_id),
-       task_time3     = sprintf("%s:task:time3",      queue_id),
-
        ## This is the key where we store the extra complete key we
        ## might push to at.
        task_complete  = sprintf("%s:task:complete",  queue_id),
        task_cancel    = sprintf("%s:task:cancel",    queue_id),
+
+       ## Used for tracking times through the task lifecycle
+       task_time_submit   = sprintf("%s:task:time_submit",   queue_id),
+       task_time_start    = sprintf("%s:task:time_start",    queue_id),
+       task_time_complete = sprintf("%s:task:time_complete", queue_id),
 
        deferred_set   = sprintf("%s:deferred", queue_id))
 }
