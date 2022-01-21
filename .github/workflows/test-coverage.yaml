@@ -3,6 +3,7 @@ on:
     branches:
       - main
       - master
+      - fix-coverage
   pull_request:
     branches:
       - main
@@ -12,9 +13,11 @@ name: test-coverage
 
 jobs:
   test-coverage:
-    runs-on: macOS-latest
+    runs-on: ubuntu-20.04
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      RSPM: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"
+
     steps:
       - uses: actions/checkout@v2
 
@@ -27,11 +30,6 @@ jobs:
         with:
           redis-version: "4.x"
 
-      - name: "[macOS] system dependencies"
-        if: runner.os == 'macOS'
-        run: |
-          brew install hiredis
-
       - name: Query dependencies
         run: |
           install.packages('remotes')
@@ -39,12 +37,13 @@ jobs:
           writeLines(sprintf("R-%i.%i", getRversion()$major, getRversion()$minor), ".github/R-version")
         shell: Rscript {0}
 
-      - name: Cache R packages
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.R_LIBS_USER }}
-          key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds') }}
-          restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
+      - name: Install system dependencies
+        run: |
+          while read -r cmd
+          do
+            eval sudo $cmd
+          done < <(Rscript -e 'writeLines(remotes::system_requirements("ubuntu", "20.04"))')
+          sudo apt install libcurl4-openssl-dev
 
       - name: Install dependencies
         run: |
