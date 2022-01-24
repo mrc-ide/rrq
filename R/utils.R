@@ -168,17 +168,18 @@ wait_success <- function(explanation, timeout, keep_going,
   t_end <- Sys.time() + timeout
   out <- NULL
   while (is.null(out)) {
-    out <- tryCatch(keep_going(),
-                     error = function(e) {
-                       if (Sys.time() > t_end) {
-                         e$message <- sprintf("Timeout: %s\n%s", explanation,
-                                              e$message)
-                         stop(e)
-                       } else {
-                         message(e$message)
-                       }
-                     })
-    Sys.sleep(poll)
+    out <- tryCatch(
+      keep_going(),
+      error = function(e) {
+        if (Sys.time() > t_end) {
+          e$message <- sprintf("Timeout: %s\n%s", explanation,
+                               e$message)
+          stop(e)
+        } else {
+          message(e$message)
+          Sys.sleep(poll)
+        }
+      })
   }
   out
 }
@@ -215,4 +216,9 @@ is_serialized_object <- function(x) {
 
 squote <- function(x) {
   sprintf("'%s'", x)
+}
+
+
+timestamp <- function(time = Sys.time()) {
+  as.numeric(as.POSIXlt(time, tz = "UTC"))
 }

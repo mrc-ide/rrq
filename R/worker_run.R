@@ -92,23 +92,24 @@ worker_run_task_start <- function(worker, private, task_id) {
   name <- worker$name
   dat <- private$con$pipeline(
     worker_log(redis, keys, "TASK_START", task_id, private$verbose),
-    redis$HSET(keys$worker_status, name,      WORKER_BUSY),
-    redis$HSET(keys$worker_task,   name,      task_id),
-    redis$HSET(keys$task_worker,   task_id,   name),
-    redis$HSET(keys$task_status,   task_id,   TASK_RUNNING),
-    redis$HGET(keys$task_complete, task_id),
-    redis$HGET(keys$task_local,    task_id),
-    redis$HGET(keys$task_expr,     task_id),
-    redis$HGET(keys$task_cancel,   task_id))
+    redis$HSET(keys$worker_status,   name,    WORKER_BUSY),
+    redis$HSET(keys$worker_task,     name,    task_id),
+    redis$HSET(keys$task_worker,     task_id, name),
+    redis$HSET(keys$task_status,     task_id, TASK_RUNNING),
+    redis$HSET(keys$task_time_start, task_id, timestamp()),
+    redis$HGET(keys$task_complete,   task_id),
+    redis$HGET(keys$task_local,      task_id),
+    redis$HGET(keys$task_expr,       task_id),
+    redis$HGET(keys$task_cancel,     task_id))
 
   ## This holds the bits of worker state we might need to refer to
   ## later for a running task:
-  private$active_task <- list(task_id = task_id, key_complete = dat[[6]])
+  private$active_task <- list(task_id = task_id, key_complete = dat[[7]])
 
   ## And this holds the data used in worker_run_task_to actually run
   ## the task
-  ret <- bin_to_object(dat[[8]])
-  ret$separate_process <- dat[[7]] == "FALSE" # NOTE: not a coersion
+  ret <- bin_to_object(dat[[9]])
+  ret$separate_process <- dat[[8]] == "FALSE" # NOTE: not a coersion
   ret$id <- task_id
   ret
 }
@@ -126,10 +127,11 @@ worker_run_task_cleanup <- function(worker, private, status, value) {
   task_result <- private$store$set(value, task_id)
 
   private$con$pipeline(
-    redis$HSET(keys$task_result,    task_id,  task_result),
-    redis$HSET(keys$task_status,    task_id,  status),
-    redis$HSET(keys$worker_status,  name,     WORKER_IDLE),
-    redis$HDEL(keys$worker_task,    name),
+    redis$HSET(keys$task_result,        task_id, task_result),
+    redis$HSET(keys$task_status,        task_id, status),
+    redis$HSET(keys$task_time_complete, task_id, timestamp()),
+    redis$HSET(keys$worker_status,      name,    WORKER_IDLE),
+    redis$HDEL(keys$worker_task,        name),
     redis$RPUSH(rrq_key_task_complete(keys$queue_id, task_id), task_id),
     if (!is.null(key_complete)) {
       redis$RPUSH(key_complete, task_id)

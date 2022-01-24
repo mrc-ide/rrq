@@ -944,3 +944,27 @@ test_that("offload storage in result", {
   expect_equal(store$list(), character(0))
   expect_equal(dir(path), character(0))
 })
+
+
+test_that("collect times", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t1 <- obj$enqueue(slowdouble(0.1))
+  t2 <- obj$enqueue(slowdouble(0.1))
+  tt <- c(t1, t2)
+
+  times1 <- obj$task_times(tt)
+  expect_true(is.matrix(times1)) # testthat 3e makes this quite hard
+  expect_equal(dimnames(times1), list(tt, c("submit", "start", "complete")))
+  expect_type(times1, "double")
+  expect_equal(times1[tt, "start"], set_names(rep(NA_real_, 2), tt))
+  expect_equal(times1[tt, "complete"], set_names(rep(NA_real_, 2), tt))
+  expect_false(any(is.na(times1[tt, "submit"])))
+
+  w$step(TRUE)
+  times2 <- obj$task_times(tt)
+  expect_equal(times2[t2, , drop = FALSE], times1[t2, , drop = FALSE])
+  expect_equal(obj$task_times(t2), times1[t2, , drop = FALSE])
+  expect_false(any(is.na(times2[t1, ])))
+})

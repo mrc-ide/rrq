@@ -2,15 +2,11 @@ RSCRIPT = Rscript --no-init-file
 
 all: benchmark.html
 
-%.md: %.Rmd
-	${RSCRIPT} -e "knitr::knit('$<')"
-	sed -i.bak 's/[[:space:]]*$$//' $@
-	rm -f $@.bak
-%.html: %.md
-	${RSCRIPT} -e 'markdown::markdownToHTML("$<", "$@")'
+benchmark.html: benchmark.Rmd
+	Rscript -e "rmarkdown::render('$<')"
 
 clean:
-	rm -f benchmark.Rmd benchmark.md benchmark.html
+	rm -f benchmark.md benchmark.html
 	rm -rf figure
 
 .SECONDARY: benchmark.md
