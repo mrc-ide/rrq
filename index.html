@@ -19,6 +19,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-home">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -31,18 +33,12 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.5.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.5.5</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
-<li>
-  <a href="index.html">
-    <span class="fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
 <li>
   <a href="articles/rrq.html">Get started</a>
 </li>
@@ -67,7 +63,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/mrc-ide/rrq/">
+  <a href="https://github.com/mrc-ide/rrq/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
      
   </a>
@@ -84,21 +80,21 @@
 
       </header><div class="row">
   <div class="contents col-md-9">
-<div id="rrq" class="section level1">
-<div class="page-header"><h1 class="hasAnchor">
-<a href="#rrq" class="anchor"></a>rrq</h1></div>
+<div class="section level1">
+<div class="page-header"><h1 id="rrq">rrq<a class="anchor" aria-label="anchor" href="#rrq"></a>
+</h1></div>
 <!-- badges: start -->
 
 <p>Task queues for R, implemented using Redis.</p>
-<div id="getting-started" class="section level2">
-<h2 class="hasAnchor">
-<a href="#getting-started" class="anchor"></a>Getting started</h2>
+<div class="section level2">
+<h2 id="getting-started">Getting started<a class="anchor" aria-label="anchor" href="#getting-started"></a>
+</h2>
 <p>Create an <code>rrq_controller</code> object</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="va"><a href="reference/rrq_controller.html">rrq_controller</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"rrq:readme"</span><span class="op">)</span></code></pre></div>
 <p>Submit work to the queue:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html">runif</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span><span class="op">)</span>
+<code class="sourceCode R"><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span><span class="op">)</span>
 <span class="va">t</span>
 <span class="co">#&gt; [1] "6a368aa506da1aabcd264ca859fa3322"</span></code></pre></div>
 <p>Query task process:</p>
@@ -134,28 +130,28 @@
 <span class="co">#&gt; 3 6a368aa506da1aabcd264ca859fa3322</span></code></pre></div>
 <p>For more information, see <code><a href="articles/rrq.html">vignette("rrq")</a></code></p>
 </div>
-<div id="installation" class="section level2">
-<h2 class="hasAnchor">
-<a href="#installation" class="anchor"></a>Installation</h2>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
 <p>Install from the mrc-ide package repository:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu">drat</span><span class="fu">:::</span><span class="fu">add</span><span class="op">(</span><span class="st">"mrc-ide"</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="st">"rrq"</span><span class="op">)</span></code></pre></div>
+<span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"rrq"</span><span class="op">)</span></code></pre></div>
 <p>Alternatively, install with <code>remotes</code>:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html">install_github</a></span><span class="op">(</span><span class="st">"mrc-ide/rrq"</span>, upgrade <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"mrc-ide/rrq"</span>, upgrade <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></code></pre></div>
 </div>
-<div id="testing" class="section level2">
-<h2 class="hasAnchor">
-<a href="#testing" class="anchor"></a>Testing</h2>
+<div class="section level2">
+<h2 id="testing">Testing<a class="anchor" aria-label="anchor" href="#testing"></a>
+</h2>
 <p>To test, we need a redis server that can be automatically connected to using the <code>redux</code> defaults. This is satisfied if you have an unauthenticated redis server running on localhost, otherwise you should update the environment variable <code>REDIS_URL</code> to point at a redis server. Do not use a production server, as the package will create and delete a lot of keys.</p>
 <p>A suitable redis server can be started using docker with</p>
 <pre><code>./scripts/redis start</code></pre>
 <p>(and stopped with <code>./scripts/redis stop</code>)</p>
 </div>
-<div id="license" class="section level2">
-<h2 class="hasAnchor">
-<a href="#license" class="anchor"></a>License</h2>
+<div class="section level2">
+<h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
+</h2>
 <p>MIT © Imperial College of Science, Technology and Medicine</p>
 </div>
 </div>
@@ -163,50 +159,61 @@
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <div class="links">
-<h2>Links</h2>
+<h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li>Browse source code at <br><a href="https://github.com/mrc-ide/rrq/">https://​github.com/​mrc-ide/​rrq/​</a>
-</li>
-<li>Report a bug at <br><a href="https://github.com/mrc-ide/rrq/issues">https://​github.com/​mrc-ide/​rrq/​issues</a>
-</li>
-</ul>
-</div>
-<div class="license">
-<h2>License</h2>
-<ul class="list-unstyled">
-<li>
-<a href="https://opensource.org/licenses/mit-license.php">MIT</a> + file <a href="LICENSE-text.html">LICENSE</a>
-</li>
-</ul>
-</div>
-<div class="developers">
-<h2>Developers</h2>
-<ul class="list-unstyled">
-<li>Rich FitzJohn <br><small class="roles"> Author, maintainer </small>  </li>
-<li>Robert Ashton <br><small class="roles"> Author </small>  </li>
-<li><a href="authors.html">All authors...</a></li>
+<li><a href="https://github.com/mrc-ide/rrq/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/mrc-ide/rrq/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 
-  <div class="dev-status">
-<h2>Dev status</h2>
+<div class="license">
+<h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
-<li><a href="http://www.repostatus.org/#wip"><img src="http://www.repostatus.org/badges/latest/wip.svg" alt="Project Status: WIP - Initial development is in progress, but there has not yet been a stable, usable release suitable for the public."></a></li>
-<li><a href="https://github.com/mrc-ide/rrq/actions"><img src="https://github.com/mrc-ide/rrq/workflows/R-CMD-check/badge.svg" alt="R build status"></a></li>
-<li><a href="https://codecov.io/github/mrc-ide/rrq?branch=master"><img src="https://codecov.io/github/mrc-ide/rrq/coverage.svg?branch=master" alt="codecov.io"></a></li>
-<li><a href="https://www.codefactor.io/repository/github/mrc-ide/rrq"><img src="https://www.codefactor.io/repository/github/mrc-ide/rrq/badge" alt="CodeFactor"></a></li>
+<li>
+<a href="https://opensource.org/licenses/mit-license.php" class="external-link">MIT</a> + file <a href="LICENSE-text.html">LICENSE</a>
+</li>
 </ul>
 </div>
+
+
+<div class="citation">
+<h2 data-toc-skip>Citation</h2>
+<ul class="list-unstyled">
+<li><a href="authors.html#citation">Citing rrq</a></li>
+</ul>
 </div>
+
+<div class="developers">
+<h2 data-toc-skip>Developers</h2>
+<ul class="list-unstyled">
+<li>Rich FitzJohn <br><small class="roles"> Author, maintainer </small>  </li>
+<li>Robert Ashton <br><small class="roles"> Author </small>  </li>
+<li><a href="authors.html">More about authors...</a></li>
+</ul>
+</div>
+
+<div class="dev-status">
+<h2 data-toc-skip>Dev status</h2>
+<ul class="list-unstyled">
+<li><a href="http://www.repostatus.org/#wip" class="external-link"><img src="http://www.repostatus.org/badges/latest/wip.svg" alt="Project Status: WIP - Initial development is in progress, but there has not yet been a stable, usable release suitable for the public."></a></li>
+<li><a href="https://github.com/mrc-ide/rrq/actions" class="external-link"><img src="https://github.com/mrc-ide/rrq/workflows/R-CMD-check/badge.svg" alt="R build status"></a></li>
+<li><a href="https://codecov.io/github/mrc-ide/rrq?branch=master" class="external-link"><img src="https://codecov.io/github/mrc-ide/rrq/coverage.svg?branch=master" alt="codecov.io"></a></li>
+<li><a href="https://www.codefactor.io/repository/github/mrc-ide/rrq" class="external-link"><img src="https://www.codefactor.io/repository/github/mrc-ide/rrq/badge" alt="CodeFactor"></a></li>
+</ul>
+</div>
+
+  </div>
 </div>
 
 
       <footer><div class="copyright">
-  <p>Developed by Rich FitzJohn, Robert Ashton.</p>
+  <p></p>
+<p>Developed by Rich FitzJohn, Robert Ashton.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
 </div>
 
       </footer>
@@ -214,6 +221,8 @@
 
   
 
+
+  
 
   </body>
 </html>
