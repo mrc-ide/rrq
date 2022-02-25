@@ -24,6 +24,19 @@ TASK_DEFERRED <- "DEFERRED"
 ## dependency errored so this tasks condition can never be satisfied
 TASK_IMPOSSIBLE <- "IMPOSSIBLE"
 
+
+TASK <- list(
+  ## Possible status for all known tasks (i.e. all non-missing statuses)
+  all = c(TASK_PENDING, TASK_RUNNING, TASK_COMPLETE, TASK_ERROR, TASK_CANCELLED,
+          TASK_DIED, TASK_TIMEOUT, TASK_MISSING, TASK_DEFERRED),
+  ## Possible status for all finished but incomplete/failed tasks
+  terminal_fail = c(TASK_ERROR, TASK_CANCELLED, TASK_DIED, TASK_TIMEOUT,
+                    TASK_IMPOSSIBLE),
+  ## Possible status for all unrun tasks
+  waiting = c(TASK_PENDING, TASK_DEFERRED))
+## Possible status for all finished tasks
+TASK$terminal <- c(TASK$terminal_fail, TASK_COMPLETE)
+
 WORKER_IDLE <- "IDLE"
 WORKER_BUSY <- "BUSY"
 WORKER_EXITED <- "EXITED"

@@ -6,7 +6,8 @@ worker_run_task <- function(worker, private, task_id) {
     res <- worker_run_task_local(task, worker, private)
   }
   task_status <- res$status
-  worker_queue_dependencies(private$con, private$keys, task_id, task_status)
+  worker_queue_dependencies(private$con, private$keys, private$store,
+                            task_id, task_status)
   worker_run_task_cleanup(worker, private, task_status, res$value)
 }
 
@@ -117,26 +118,19 @@ worker_run_task_start <- function(worker, private, task_id) {
 
 worker_run_task_cleanup <- function(worker, private, status, value) {
   task <- private$active_task
-  task_id <- task$task_id
   key_complete <- task$key_complete
 
   keys <- private$keys
   name <- worker$name
   log_status <- paste0("TASK_", status)
 
-  task_result <- private$store$set(value, task_id)
+  run_task_cleanup(private$con, keys, private$store, task$task_id,
+                   status, value)
 
   private$con$pipeline(
-    redis$HSET(keys$task_result,        task_id, task_result),
-    redis$HSET(keys$task_status,        task_id, status),
-    redis$HSET(keys$task_time_complete, task_id, timestamp()),
     redis$HSET(keys$worker_status,      name,    WORKER_IDLE),
     redis$HDEL(keys$worker_task,        name),
-    redis$RPUSH(rrq_key_task_complete(keys$queue_id, task_id), task_id),
-    if (!is.null(key_complete)) {
-      redis$RPUSH(key_complete, task_id)
-    },
-    worker_log(redis, keys, log_status, task_id, private$verbose))
+    worker_log(redis, keys, log_status, task$task_id, private$verbose))
 
   private$active_task <- NULL
   invisible()

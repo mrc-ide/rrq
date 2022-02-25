@@ -1,4 +1,4 @@
-worker_queue_dependencies <- function(con, keys, task_id, task_status) {
+worker_queue_dependencies <- function(con, keys, store, task_id, task_status) {
   dependent_keys <- rrq_key_task_dependents(keys$queue_id, task_id)
   dependent_ids <- con$SMEMBERS(dependent_keys)
   if (length(dependent_ids) == 0) {
@@ -6,23 +6,25 @@ worker_queue_dependencies <- function(con, keys, task_id, task_status) {
   }
 
   if (identical(task_status, TASK_ERROR)) {
-    cancel_dependencies(con, keys, task_id)
+    cancel_dependencies(con, keys, store, task_id)
   } else {
     queue_dependencies(con, keys, task_id, dependent_ids)
   }
   invisible(TRUE)
 }
 
-cancel_dependencies <- function(con, keys, ids) {
+cancel_dependencies <- function(con, keys, store, ids) {
   dependent_keys <- rrq_key_task_dependents(keys$queue_id, ids)
   dependent_ids <- unique(unlist(lapply(dependent_keys, con$SMEMBERS)))
   n <- length(dependent_ids)
+
+  value <- worker_task_failed(TASK_IMPOSSIBLE)
+  lapply(dependent_ids, function(id) {
+    run_task_cleanup(con, keys, store, id, TASK_IMPOSSIBLE, value)
+  })
+
   if (n > 0) {
-    con$pipeline(
-      redis$HMSET(keys$task_status, dependent_ids, rep_len(TASK_IMPOSSIBLE, n)),
-      redis$SREM(keys$deferred_set, dependent_ids)
-    )
-    cancel_dependencies(con, keys, dependent_ids)
+    cancel_dependencies(con, keys, store, dependent_ids)
   }
 }
 
