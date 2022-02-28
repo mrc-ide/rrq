@@ -124,8 +124,8 @@ worker_run_task_cleanup <- function(worker, private, status, value) {
   name <- worker$name
   log_status <- paste0("TASK_", status)
 
-  run_task_cleanup(private$con, keys, private$store, task$task_id,
-                   status, list(value))
+  run_task_cleanup(private$con, keys, private$store, task$task_id, status,
+                   value)
 
   private$con$pipeline(
     redis$HSET(keys$worker_status,      name,    WORKER_IDLE),

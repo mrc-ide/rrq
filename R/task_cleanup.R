@@ -1,5 +1,5 @@
-run_task_cleanup <- function(con, keys, store, task_ids, statuses, values) {
-  cleanup_one <- function(task_id, status, value) {
+run_task_cleanup <- function(con, keys, store, task_ids, status, value) {
+  cleanup_one <- function(task_id) {
     task_result <- store$set(value, task_id)
     key_complete <- con$HGET(keys$task_complete, task_id)
     list(
@@ -13,6 +13,6 @@ run_task_cleanup <- function(con, keys, store, task_ids, statuses, values) {
       redis$SREM(keys$deferred_set, task_id)
     )
   }
-  cmds <- Map(cleanup_one, task_ids, statuses, values)
+  cmds <- Map(cleanup_one, task_ids)
   con$pipeline(.commands = unlist(cmds, FALSE, FALSE))
 }
