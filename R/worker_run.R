@@ -6,8 +6,15 @@ worker_run_task <- function(worker, private, task_id) {
     res <- worker_run_task_local(task, worker, private)
   }
   task_status <- res$status
-  worker_queue_dependencies(private$con, private$keys, private$store,
-                            task_id, task_status)
+  dependent_ids <- get_dependent_ids(private$con, private$keys$queue_id,
+                                     task_id)
+  if (length(dependent_ids) > 0) {
+    if (identical(task_status, TASK_COMPLETE)) {
+      queue_dependencies(private$con, private$keys, task_id, dependent_ids)
+    } else {
+      cancel_dependencies(private$con, private$keys, private$store, task_id)
+    }
+  }
   worker_run_task_cleanup(worker, private, task_status, res$value)
 }
 

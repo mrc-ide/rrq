@@ -1368,6 +1368,14 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
   response <- con$pipeline(.commands = cmds)
 
   ## If any dependencies will never be satisfied then cleanup and error
+  ## We do it this way around i.e. queue then check status of dependencies to
+  ## avoid a race condition. If we were to check status of dependencies
+  ## then queue we could get into condition where e.g.
+  ## 1. Run report B which depends on report A
+  ## 2. Check status of A and it is running
+  ## 3. Add B to the queue
+  ## In the time between 2 and 3 A could have finished and failed meaning that
+  ## the dependency of B will never be satisfied and it will never be run.
   if (any(response$status %in% TASK$terminal_fail)) {
     run_task_cleanup(con, keys, store, task_ids, TASK_IMPOSSIBLE,
                      worker_task_failed(TASK_IMPOSSIBLE))

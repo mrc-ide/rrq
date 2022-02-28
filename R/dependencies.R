@@ -1,16 +1,6 @@
-worker_queue_dependencies <- function(con, keys, store, task_id, task_status) {
-  dependent_keys <- rrq_key_task_dependents(keys$queue_id, task_id)
-  dependent_ids <- con$SMEMBERS(dependent_keys)
-  if (length(dependent_ids) == 0) {
-    return()
-  }
-
-  if (identical(task_status, TASK_ERROR)) {
-    cancel_dependencies(con, keys, store, task_id)
-  } else {
-    queue_dependencies(con, keys, task_id, dependent_ids)
-  }
-  invisible(TRUE)
+get_dependent_ids <- function(con, queue_id, task_id) {
+  dependent_keys <- rrq_key_task_dependents(queue_id, task_id)
+  con$SMEMBERS(dependent_keys)
 }
 
 cancel_dependencies <- function(con, keys, store, ids) {
@@ -27,6 +17,11 @@ cancel_dependencies <- function(con, keys, store, ids) {
 }
 
 queue_dependencies <- function(con, keys, task_id, deferred_task_ids) {
+  dependent_keys <- rrq_key_task_dependents(keys$queue_id, task_id)
+  dependent_ids <- con$SMEMBERS(dependent_keys)
+  if (length(dependent_ids) == 0) {
+    return()
+  }
   dependency_keys <- rrq_key_task_dependencies(keys$queue_id, deferred_task_ids)
   res <- con$pipeline(.commands = c(
     lapply(dependency_keys, redis$SREM, task_id),
