@@ -131,7 +131,7 @@ test_that("task_overview", {
   expect_equal(
     obj$task_overview(),
     list(PENDING = 0, RUNNING = 0, COMPLETE = 0, ERROR = 0, CANCELLED = 0,
-         DIED = 0, TIMEOUT = 0, MISSING = 0, DEFERRED = 0))
+         DIED = 0, TIMEOUT = 0, IMPOSSIBLE = 0, DEFERRED = 0))
 
   t1 <- obj$enqueue(sin(1))
   t2 <- obj$enqueue(sin(1))
@@ -140,7 +140,7 @@ test_that("task_overview", {
   expect_equal(
     obj$task_overview(),
     list(PENDING = 3, RUNNING = 0, COMPLETE = 0, ERROR = 0, CANCELLED = 0,
-         DIED = 0, TIMEOUT = 0, MISSING = 0, DEFERRED = 0))
+         DIED = 0, TIMEOUT = 0, IMPOSSIBLE = 0, DEFERRED = 0))
 })
 
 
