@@ -17,11 +17,6 @@ cancel_dependencies <- function(con, keys, store, ids) {
 }
 
 queue_dependencies <- function(con, keys, task_id, deferred_task_ids) {
-  dependent_keys <- rrq_key_task_dependents(keys$queue_id, task_id)
-  dependent_ids <- con$SMEMBERS(dependent_keys)
-  if (length(dependent_ids) == 0) {
-    return()
-  }
   dependency_keys <- rrq_key_task_dependencies(keys$queue_id, deferred_task_ids)
   res <- con$pipeline(.commands = c(
     lapply(dependency_keys, redis$SREM, task_id),
