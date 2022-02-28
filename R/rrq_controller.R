@@ -1232,7 +1232,7 @@ task_delete <- function(con, keys, store, task_ids, check = TRUE) {
   ## B. Their dependencies have not already been deleted or set to ERRORED, etc.
   ## i.e. their dependencies are also DEFERRED
   status <- res[seq_along(task_ids)]
-  ids_to_cancel <- task_ids[unlist(status) %in% TASK$waiting]
+  ids_to_cancel <- task_ids[unlist(status) %in% TASK$unstarted]
   dependents <- unique(unlist(res[ids_to_cancel]))
   if (length(dependents) > 0) {
     status_dependent <- con$HMGET(keys$task_status, dependents)
@@ -1275,7 +1275,7 @@ task_cancel <- function(con, keys, store, scripts, task_id, wait = FALSE,
 
   task_status <- dat$status %||% TASK_MISSING
 
-  if (!(task_status %in% c(TASK$waiting, TASK_RUNNING))) {
+  if (!(task_status %in% TASK$unfinished)) {
     stop(sprintf("Task %s is not cancelable (%s)", task_id, task_status))
   }
 

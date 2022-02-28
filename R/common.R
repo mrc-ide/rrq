@@ -32,8 +32,11 @@ TASK <- list(
   ## Possible status for all finished but incomplete/failed tasks
   terminal_fail = c(TASK_ERROR, TASK_CANCELLED, TASK_DIED, TASK_TIMEOUT,
                     TASK_IMPOSSIBLE),
-  ## Possible status for all unrun tasks
-  waiting = c(TASK_PENDING, TASK_DEFERRED))
+  ## Possible status for all non-started tasks
+  unstarted = c(TASK_PENDING, TASK_DEFERRED),
+  ## Possible status for all non-finished tasks
+  unfinished = c(TASK_PENDING, TASK_DEFERRED, TASK_RUNNING))
+
 ## Possible status for all finished tasks
 TASK$terminal <- c(TASK$terminal_fail, TASK_COMPLETE)
 
