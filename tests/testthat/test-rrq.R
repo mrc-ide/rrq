@@ -994,4 +994,3 @@ test_that("collect times", {
   expect_equal(obj$task_times(t2), times1[t2, , drop = FALSE])
   expect_false(any(is.na(times2[t1, ])))
 })
-
