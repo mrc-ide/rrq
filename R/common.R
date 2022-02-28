@@ -28,7 +28,7 @@ TASK_IMPOSSIBLE <- "IMPOSSIBLE"
 TASK <- list(
   ## Possible status for all known tasks (i.e. all non-missing statuses)
   all = c(TASK_PENDING, TASK_RUNNING, TASK_COMPLETE, TASK_ERROR, TASK_CANCELLED,
-          TASK_DIED, TASK_TIMEOUT, TASK_MISSING, TASK_DEFERRED),
+          TASK_DIED, TASK_TIMEOUT, TASK_IMPOSSIBLE, TASK_DEFERRED),
   ## Possible status for all finished but incomplete/failed tasks
   terminal_fail = c(TASK_ERROR, TASK_CANCELLED, TASK_DIED, TASK_TIMEOUT,
                     TASK_IMPOSSIBLE),
