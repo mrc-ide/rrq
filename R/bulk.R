@@ -38,7 +38,7 @@ rrq_bulk_submit <- function(con, keys, store, x, fun, dots, do_call,
   }
 
   key_complete <- rrq_key_task_complete(keys$queue_id)
-  task_submit_n(con, keys, task_ids, dat, key_complete, queue,
+  task_submit_n(con, keys, store, task_ids, dat, key_complete, queue,
                 separate_process, task_timeout,
                 depends_on = depends_on)
   ret <- list(task_ids = task_ids,

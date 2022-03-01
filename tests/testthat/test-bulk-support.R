@@ -15,9 +15,9 @@ test_that("match_fun_envir can deal with namespaced functions", {
 
 
 test_that("match_fun_envir can deal with hidden functions", {
-  expected <- list(name = quote(ids:::as_integer_bignum),
-                   value = ids:::as_integer_bignum)
-  expect_equal(match_fun_envir(quote(ids:::as_integer_bignum)), expected)
+  expected <- list(name = quote(ids:::cases),
+                   value = ids:::cases)
+  expect_equal(match_fun_envir(quote(ids:::cases)), expected)
 })
 
 
@@ -47,8 +47,8 @@ test_that("match_fun", {
   expect_identical(match_fun("add", e), e$add)
   expect_error(match_fun(1, e), "Could not find function")
   expect_identical(match_fun(quote(ids::random_id), e), ids::random_id)
-  expect_identical(match_fun(quote(ids:::as_integer_bignum), e),
-                   ids:::as_integer_bignum)
+  expect_identical(match_fun(quote(ids:::cases), e),
+                   ids:::cases)
 })
 
 

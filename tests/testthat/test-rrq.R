@@ -130,7 +130,8 @@ test_that("task_overview", {
 
   expect_equal(
     obj$task_overview(),
-    list(PENDING = 0, RUNNING = 0, COMPLETE = 0, ERROR = 0))
+    list(PENDING = 0, RUNNING = 0, COMPLETE = 0, ERROR = 0, CANCELLED = 0,
+         DIED = 0, TIMEOUT = 0, IMPOSSIBLE = 0, DEFERRED = 0))
 
   t1 <- obj$enqueue(sin(1))
   t2 <- obj$enqueue(sin(1))
@@ -138,7 +139,8 @@ test_that("task_overview", {
 
   expect_equal(
     obj$task_overview(),
-    list(PENDING = 3, RUNNING = 0, COMPLETE = 0, ERROR = 0))
+    list(PENDING = 3, RUNNING = 0, COMPLETE = 0, ERROR = 0, CANCELLED = 0,
+         DIED = 0, TIMEOUT = 0, IMPOSSIBLE = 0, DEFERRED = 0))
 })
 
 
@@ -825,6 +827,30 @@ test_that("can get deferred tasks", {
 
   tasks <- obj$deferred_list()
   expect_setequal(obj$deferred_list(), list())
+})
+
+
+test_that("can use task_wait with impossible tasks", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t <- obj$enqueue(only_positive(-1))
+  t2 <- obj$enqueue(sin(0), depends_on = t)
+
+  expect_equal(obj$queue_list(), t)
+  expect_equal(unname(obj$task_status(t)), "PENDING")
+  expect_equal(unname(obj$task_status(t2)), "DEFERRED")
+
+  w$step(TRUE)
+  out <- obj$task_wait(t, 2)
+  expect_equal(unname(obj$task_status(t)), "ERROR")
+
+  ## task wait returns for an impossible task
+  expect_equal(unname(obj$task_status(t2)), "IMPOSSIBLE")
+  out <- obj$task_wait(t2, 2)
+  ## Not just a timeout error - it has returned
+  expect_s3_class(out, "rrq_task_error")
+  expect_equal(out$message, "Task not successful: IMPOSSIBLE")
 })
 
 

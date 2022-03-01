@@ -301,7 +301,7 @@ rrq_controller <- R6::R6Class(
       verify_dependencies_exist(self, depends_on)
       dat <- expression_prepare(expr, envir, private$store, task_id,
                                 export = export)
-      task_submit(self$con, self$keys, task_id, dat, queue,
+      task_submit(self$con, self$keys, private$store, task_id, dat, queue,
                   separate_process, timeout, at_front, depends_on)
     },
 
@@ -1156,9 +1156,8 @@ task_progress <- function(con, keys, task_id) {
 
 
 task_overview <- function(con, keys, task_ids) {
-  lvls <- c(TASK_PENDING, TASK_RUNNING, TASK_COMPLETE, TASK_ERROR)
   status <- task_status(con, keys, task_ids)
-  lvls <- c(lvls, setdiff(unique(status), lvls))
+  lvls <- c(TASK$all, setdiff(unique(status), TASK$all))
   as.list(table(factor(status, lvls)))
 }
 
@@ -1185,11 +1184,11 @@ task_preceeding <- function(con, keys, task_id, queue) {
   queue_contents[seq_len(task_position - 1)]
 }
 
-task_submit <- function(con, keys, task_id, dat, queue,
+task_submit <- function(con, keys, store, task_id, dat, queue,
                         separate_process, timeout, at_front = FALSE,
                         depends_on = NULL) {
-  task_submit_n(con, keys, task_id, list(object_to_bin(dat)), NULL, queue,
-                separate_process, timeout, at_front, depends_on)
+  task_submit_n(con, keys, store, task_id, list(object_to_bin(dat)), NULL,
+                queue, separate_process, timeout, at_front, depends_on)
 }
 
 task_delete <- function(con, keys, store, task_ids, check = TRUE) {
@@ -1233,18 +1232,15 @@ task_delete <- function(con, keys, store, task_ids, check = TRUE) {
   ## B. Their dependencies have not already been deleted or set to ERRORED, etc.
   ## i.e. their dependencies are also DEFERRED
   status <- res[seq_along(task_ids)]
-  ids_to_cancel <- task_ids[unlist(status) %in% c(TASK_PENDING, TASK_DEFERRED)]
+  ids_to_cancel <- task_ids[unlist(status) %in% TASK$unstarted]
   dependents <- unique(unlist(res[ids_to_cancel]))
   if (length(dependents) > 0) {
     status_dependent <- con$HMGET(keys$task_status, dependents)
     cancel <- dependents[status_dependent == TASK_DEFERRED]
     if (length(cancel) > 0) {
-      con$pipeline(
-        redis$HMSET(keys$task_status, cancel,
-                    rep_len(TASK_IMPOSSIBLE, length(cancel))),
-        redis$SREM(keys$deferred_set, cancel)
-      )
-      cancel_dependencies(con, keys, cancel)
+      run_task_cleanup(con, keys, store, cancel, TASK_IMPOSSIBLE,
+                       worker_task_failed(TASK_IMPOSSIBLE))
+      cancel_dependencies(con, keys, store, cancel)
     }
   }
 
@@ -1277,11 +1273,11 @@ task_cancel <- function(con, keys, store, scripts, task_id, wait = FALSE,
 
   task_status <- dat$status %||% TASK_MISSING
 
-  if (!(task_status %in% c(TASK_PENDING, TASK_DEFERRED, TASK_RUNNING))) {
+  if (!(task_status %in% TASK$unfinished)) {
     stop(sprintf("Task %s is not cancelable (%s)", task_id, task_status))
   }
 
-  cancel_dependencies(con, keys, task_id)
+  cancel_dependencies(con, keys, store, task_id)
 
   if (task_status == TASK_RUNNING) {
     if (dat$local != "FALSE") {
@@ -1314,7 +1310,7 @@ task_data <- function(con, keys, store, task_id) {
 }
 
 
-task_submit_n <- function(con, keys, task_ids, dat, key_complete, queue,
+task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
                           separate_process, timeout, at_front = FALSE,
                           depends_on = NULL) {
   n <- length(dat)
@@ -1372,17 +1368,20 @@ task_submit_n <- function(con, keys, task_ids, dat, key_complete, queue,
   response <- con$pipeline(.commands = cmds)
 
   ## If any dependencies will never be satisfied then cleanup and error
-  incomplete_status <- c(TASK_ERROR, TASK_DIED, TASK_CANCELLED,
-                         TASK_IMPOSSIBLE)
-  if (any(response$status %in% incomplete_status)) {
-    n <- length(task_ids)
-    con$pipeline(
-      redis$HMSET(keys$task_status, task_ids, rep_len(TASK_IMPOSSIBLE, n)),
-      redis$SREM(keys$deferred_set, task_ids)
-    )
-    cancel_dependencies(con, keys, task_ids)
-    incomplete <- response$status[response$status %in% incomplete_status]
-    names(incomplete) <- depends_on[response$status %in% incomplete_status]
+  ## We do it this way around i.e. queue then check status of dependencies to
+  ## avoid a race condition. If we were to check status of dependencies
+  ## then queue we could get into condition where e.g.
+  ## 1. Run report B which depends on report A
+  ## 2. Check status of A and it is running
+  ## 3. Add B to the queue
+  ## In the time between 2 and 3 A could have finished and failed meaning that
+  ## the dependency of B will never be satisfied and it will never be run.
+  if (any(response$status %in% TASK$terminal_fail)) {
+    run_task_cleanup(con, keys, store, task_ids, TASK_IMPOSSIBLE,
+                     worker_task_failed(TASK_IMPOSSIBLE))
+    cancel_dependencies(con, keys, store, task_ids)
+    incomplete <- response$status[response$status %in% TASK$terminal_fail]
+    names(incomplete) <- depends_on[response$status %in% TASK$terminal_fail]
     stop(sprintf("Failed to queue as dependent tasks failed:\n%s",
                  paste0(paste0(names(incomplete), ": ", incomplete),
                         collapse = ", ")))
