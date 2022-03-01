@@ -175,7 +175,7 @@ test_that("Cope with dying subprocess task", {
   t <- obj$enqueue(pid_and_sleep(path, 600), separate_process = TRUE)
 
   wait_status(t, obj)
-  wait_timeout("File did not appear", 5, function() !file.exists(path))
+  wait_timeout("File did not appear", 10, function() !file.exists(path))
 
   pid_sub <- as.integer(readLines(path))
   tools::pskill(pid_sub)
