@@ -269,6 +269,29 @@ rrq_worker <- R6::R6Class(
       worker_run_task_local(task, self, private)
     },
 
+    task_log = function(task_id) {
+      dat <- private$con$pipeline(
+        filename = redis$HGET(private$keys$task_logfile, task_id),
+        status = redis$HGET(private$keys$task_status, task_id),
+        worker = redis$HGET(private$keys$task_worker, task_id))
+      filename <- self$con$HGET(self$keys$task_logfile, task_id)
+
+      if (is.null(filename)) {
+        ## 3 options here:
+        if (dat$status == TASK_MISSING) {
+          stop(sprintf("Unknown task '%s'", task_id))
+        } else {
+          ## Could be because the worker does not support it, or
+          ## because we are not running on a separate process.
+          stop(sprintf("Task log not enabled for '%s'", task_id))
+        }
+      }
+
+      if (!file.exists(filename)) {
+        stop(sprintf("Logfile '%s' does not exist on this host", filename))
+      }
+    },
+
     ##' @description Stop the worker
     ##'
     ##' @param status the worker status; typically be one of `OK` or `ERROR`
