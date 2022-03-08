@@ -2,13 +2,14 @@ worker_config_save <- function(con, keys, name,
                                time_poll = NULL, timeout = NULL,
                                queue = NULL,
                                heartbeat_period = NULL,
+                               logdir = NULL,
                                verbose = NULL,
                                overwrite = TRUE) {
   key <- keys$worker_config
   write <- overwrite || con$HEXISTS(key, name) == 0
   if (write) {
     config <- worker_config_make(time_poll, timeout, queue, heartbeat_period,
-                                 verbose)
+                                 logdir, verbose)
     con$HSET(key, name, object_to_bin(config))
     invisible(config)
   } else {
@@ -27,7 +28,8 @@ worker_config_read <- function(con, keys, name) {
 
 
 worker_config_make <- function(time_poll = NULL, timeout = NULL, queue = NULL,
-                               heartbeat_period = NULL, verbose = NULL) {
+                               heartbeat_period = NULL, logdir = NULL,
+                               verbose = NULL) {
   if (!is.null(time_poll)) {
     assert_scalar_integer_like(time_poll)
   }
@@ -40,6 +42,11 @@ worker_config_make <- function(time_poll = NULL, timeout = NULL, queue = NULL,
   if (!is.null(heartbeat_period)) {
     assert_scalar_integer_like(heartbeat_period)
   }
+  if (!is.null(logdir)) {
+    assert_scalar_character(logdir)
+  } else {
+    logdir <- TRUE
+  }
   if (!is.null(verbose)) {
     assert_scalar_logical(verbose)
   } else {
@@ -50,6 +57,7 @@ worker_config_make <- function(time_poll = NULL, timeout = NULL, queue = NULL,
                  timeout = timeout,
                  queue = queue,
                  heartbeat_period = heartbeat_period,
+                 logdir = logdir,
                  verbose = verbose)
   config[!vlapply(config, is.null)]
 }

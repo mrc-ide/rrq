@@ -38,11 +38,21 @@ worker_run_task_separate_process <- function(task, worker, private) {
   task_id <- task$id
   key_cancel <- keys$task_cancel
 
+  if (is.null(private$logdir)) {
+    logfile <- "|" # callr::r_bg default
+    stderr <- "|"
+  } else {
+    logfile <- file.path(private$logdir, task_id)
+    dir.create(private$logdir, FALSE, TRUE)
+    con$HSET(keys$task_logfile, task_id, logfile)
+    stderr <- "2>&1"
+  }
+
   worker$log("REMOTE", task_id)
   px <- callr::r_bg(function(redis_config, queue_id, worker_id, task_id)
     remote_run_task(redis_config, queue_id, worker_id, task_id),
     list(redis_config, queue_id, worker_id, task_id),
-    package = "rrq", supervise = TRUE)
+    package = "rrq", supervise = TRUE, stdout = logfile, stderr = stderr)
 
   ## Will make configurable in mrc-2357:
   timeout_poll <- 1

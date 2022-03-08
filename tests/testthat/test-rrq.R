@@ -994,3 +994,21 @@ test_that("collect times", {
   expect_equal(obj$task_times(t2), times1[t2, , drop = FALSE])
   expect_false(any(is.na(times2[t1, ])))
 })
+
+
+test_that("log jobs in separate process", {
+  skip_if_not_installed("callr")
+  obj <- test_rrq("myfuns.R")
+
+  logdir <- tempfile()
+  obj$worker_config_save("localhost", logdir = logdir, verbose = FALSE)
+  w <- test_worker_blocking(obj)
+
+  t <- obj$enqueue(noisydouble(0.1), separate_process = TRUE)
+  w$step(TRUE)
+
+  expect_equal(obj$task_wait(t, 2), 0.2)
+  expect_equal(obj$task_result(t), 0.2)
+
+  readLines(obj$con$HGET(obj$keys$task_logfile, t))
+})

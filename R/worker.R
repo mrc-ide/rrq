@@ -45,6 +45,7 @@ rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
                  time_poll = config$time_poll,
                  timeout = config$timeout,
                  heartbeat_period = config$heartbeat_period,
+                 logdir = config$logdir,
                  verbose = config$verbose)
 }
 
@@ -91,6 +92,9 @@ rrq_worker <- R6::R6Class(
     ##'   [`rrq::heartbeat`]) which can be used to build fault
     ##'   tolerant queues.
     ##'
+    ##' @param logdir Optional directory to log output from tasks queued
+    ##'   into a separate process.
+    ##'
     ##' @param verbose Logical, indicating if the worker should print
     ##'   logging output to the screen.  Logging to screen has a small but
     ##'   measurable performance cost, and if you will not collect system
@@ -108,8 +112,8 @@ rrq_worker <- R6::R6Class(
     initialize = function(queue_id, con = redux::hiredis(),
                           key_alive = NULL, worker_name = NULL,
                           queue = NULL, time_poll = NULL, timeout = NULL,
-                          heartbeat_period = NULL, verbose = TRUE,
-                          register = TRUE) {
+                          heartbeat_period = NULL, logdir = NULL,
+                          verbose = TRUE, register = TRUE) {
       assert_is(con, "redis_api")
 
       private$con <- con
@@ -117,6 +121,7 @@ rrq_worker <- R6::R6Class(
       lockBinding("name", self)
       private$keys <- rrq_keys(queue_id, self$name)
       private$verbose <- verbose
+      private$logdir <- logdir
 
       rrq_migrate_check(private$con, private$keys, TRUE)
 
@@ -298,6 +303,7 @@ rrq_worker <- R6::R6Class(
     queue = NULL,
     store = NULL,
     time_poll = NULL,
+    logdir = NULL,
     verbose = NULL
   ))
 

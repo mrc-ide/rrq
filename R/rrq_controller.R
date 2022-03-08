@@ -989,15 +989,20 @@ rrq_controller <- R6::R6Class(
     ##'   logs from the worker then it is wasted time.  Logging to the
     ##'   redis server is always enabled.
     ##'
+    ##' @param logdir Optional log directory to use for writing logs when
+    ##'   queuing tasks in a separate process. If given, then logs will be
+    ##'   saved to `<logdir>/<task_id>`
+    ##'
     ##' @param overwrite Logical, indicating if an existing configuration
     ##'   with this `name` should be overwritten if it exists (if
     ##'   `overwrite = FALSE` and the configuration exists an error will
     ##'   be thrown).
     worker_config_save = function(name, time_poll = NULL, timeout = NULL,
                                   queue = NULL, heartbeat_period = NULL,
-                                  verbose = NULL, overwrite = TRUE) {
+                                  logdir = NULL, verbose = NULL,
+                                  overwrite = TRUE) {
       worker_config_save(self$con, self$keys, name, time_poll, timeout, queue,
-                         heartbeat_period, verbose, overwrite)
+                         heartbeat_period, logdir, verbose, overwrite)
     },
 
     ##' @description Return names of worker configurations saved by
