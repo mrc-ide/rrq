@@ -540,7 +540,7 @@ On Linux this is fairly straightforward, either by [downloading and building the
 
 On macOS the source will compile, or you can install a redis server via homebrew
 
-On Windows you can [install redis via WSL](https://redislabs.com/blog/redis-on-windows-10/). There have also been various ports.
+On Windows you can [install redis via WSL](https://redis.com/blog/redis-on-windows-10/). There have also been various ports.
 
 ### Use a different server
 
