@@ -1069,7 +1069,7 @@ Fetch internal data about a task from Redis
 Fetch times for tasks at points in their life cycle.
 For each task returns the time of submission, starting
 and completion (not necessarily successfully; this includes
-errors and interruptions).  If a task has not reacched a point
+errors and interruptions).  If a task has not reached a point
 yet (e.g., submitted but not run, or running but not finished)
 the time will be \code{NA}).  Times are returned in unix timestamp
 format in UTC; you can use \link[redux:redis_time]{redux::redis_time_to_r} to convert
