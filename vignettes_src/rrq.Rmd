@@ -36,7 +36,7 @@ id <- paste0("rrq:", ids::random_id(bytes = 4))
 obj <- rrq::rrq_controller$new(id)
 ```
 
-This controller uses an "identifier" (here, `id` is `r id`) which can be anything you want but acts like a folder within the Redis server, distinguishing your queue from any others hosted on the same server.
+This controller uses an "identifier" (here, `id` is ``r id``) which can be anything you want but acts like a folder within the Redis server, distinguishing your queue from any others hosted on the same server.
 
 Submit a task to the queue with the `$enqueue()` method, returning a key for that task
 
@@ -162,7 +162,7 @@ For the most common case, where you have script files that contain function defi
 
 So, for example, suppose we want to source a file "myfuns.R" which contains some code
 
-```{r results = "asis"}
+```{r results = "asis", echo = FALSE}
 writeLines(c("```r", readLines("myfuns.R"), "```"))
 ```
 
@@ -225,7 +225,7 @@ If a prerequisite task fails for any reason (an error, is cancelled, or its work
 
 For example, suppose that we have code:
 
-```{r results = "asis"}
+```{r results = "asis", echo = FALSE}
 writeLines(c("```r", readLines("deps.R"), "```"))
 ```
 
@@ -263,8 +263,6 @@ however, the group of tasks submitted as part of the `$lapply` call will be `DEF
 obj$task_status(id_use$task_ids)
 obj$queue_list()
 ```
-
-obj$task_result(id_use$task_ids[[1]])
 
 Once the first task is processed by a worker, the status changes:
 
@@ -363,7 +361,7 @@ To allow for this workflow, `rrq` supports configuring its object store (`rrq::o
 
 To configure this you must use `rrq::rrq_configure` *before attaching either a controller or a worker to the queue*. The configuration interface here will change in future, but we will maintain backward compatibility with the current options.
 
-To configure storage so that every object that is greater than 1MB is saved to disk, you could write:
+To configure storage so that every object that is greater than 1KB is saved to disk, you could write:
 
 ```{r}
 id <- paste0("rrq:", ids::random_id(bytes = 4))
@@ -378,7 +376,7 @@ obj <- rrq::rrq_controller$new(id)
 rrq::worker_spawn(obj, 1)
 ```
 
-It's not that hard to get to 1MB of data, we can do that by simulating a big pile of random numbers:
+It's not hard at all to get to 1KB of data, we can do that by simulating a big pile of random numbers:
 
 ```{r}
 t <- obj$enqueue(runif(200000))
@@ -443,6 +441,98 @@ We provide a docker image that you can use (`mrcide/rrq`), though typically you 
 
 We use rrq to orchestrate workers in web applications where a number of workers carry out long running calculations for a HTTP API written using [plumber](https://www.rplumber.io/) and [porcelain](https://reside-ic.github.io/porcelain/).
 
+## Worker heartbeat
+
+If you use many workers, particularly on different machines, you may not notice if some disappear. Possible causes of this include:
+
+* Your task crashes a worker (e.g., you run some C++ code that segfaults)
+* Your worker is killed by the operating system (e.g., the system is running low on RAM and your process is targeted by the out-of-memory killer)
+* The machine reboots or shuts down
+* The redis server goes down temporarily, causing the worker to exit when writing back results
+
+By default, if this happens when your worker is running a task, that task status will forever be stuck in `RUNNING`.
+
+`rrq` provides a simple heartbeat process, if requested, to detect when a worker has disppeared. To do this, we run a second process on each worker that periodically writes to the Redis database on a key that will expire in a time slightly longer than that period, in effect making a [dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch) - see `rrq::rrq_heartbeat` for details.
+
+To enable the heartbeat, save a worker configuration with the `heartbeat_period` set to some number of seconds. Below we use 2 seconds so that this example runs reasonably quickly, but in practice something like 60 might be slightly less load on your Redis server.
+
+```{r}
+id <- paste0("rrq:", ids::random_id(bytes = 4))
+obj <- rrq::rrq_controller$new(id)
+res <- obj$worker_config_save("localhost", heartbeat_period = 2)
+```
+
+Then, launch a worker
+
+```{r}
+rrq::worker_spawn(obj, 1)
+```
+
+Our worker will print information indicating that the heartbeat is enabled (use `obj$worker_process_log()`)
+
+```{r, echo = FALSE}
+writeLines(obj$worker_process_log(obj$worker_list()))
+```
+
+We also have a heartbeat key here that we can inspect:
+
+```{r}
+info <- obj$worker_info()[[1]]
+obj$con$EXISTS(info$heartbeat_key)
+obj$con$PTTL(info$heartbeat_key) # in milliseconds
+```
+
+We queue some slow job onto the worker:
+
+```{r}
+t <- obj$enqueue({Sys.sleep(10); runif(1)})
+```
+
+```{r, include = FALSE}
+Sys.sleep(1)
+```
+
+Then we kill the worker:
+
+```{r}
+tools::pskill(obj$worker_info()[[1]]$pid)
+```
+
+Of course, immediately our key still exists:
+
+```{r}
+obj$con$EXISTS(info$heartbeat_key)
+```
+
+but eventually it will expire:
+
+```{r}
+Sys.sleep(6)
+obj$con$EXISTS(info$heartbeat_key)
+```
+
+So far as `rrq` is concerned, at this point your task is still running
+
+```{r}
+obj$task_status(t)
+```
+
+Handling this situation is still completely manual.  You can detect lost workers jobs with:
+
+```{r}
+obj$worker_detect_exited()
+```
+
+this will also "orphan" the task
+
+```{r}
+obj$task_status(t)
+```
+
+Any tasks that were dependent on this task will now be marked as `IMPOSSIBLE`.
+
+In a future version we will support automatic re-queuing of jobs assigned to disappeared workers.
+
 ## Getting a Redis server
 
 There are several options to get started with Redis, the best one will likely depend on your platform and needs.
@@ -467,6 +557,6 @@ On macOS the source will compile, or you can install a redis server via homebrew
 
 On Windows you can [install redis via WSL](https://redislabs.com/blog/redis-on-windows-10/). There have also been various ports.
 
-### Use a different server
+### Use Redis on a different machine
 
 If you have redis running on a different machine (this will be the case if you're using redis to distribute tasks over a number of different machines) you will need to tell `rrq` and `redux` where to find it. The simplest way is to set the environment variable `REDIS_HOST` to the name of the machine if it is running with default ports, or set `REDUX_URL` if you need more control. Alternatively, when connecting to the server above, you can manually construct your `redux::hiredis` object and pass in any configuration option you need; see the documentation for `redux::redis_config` for details.
