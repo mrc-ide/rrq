@@ -452,7 +452,7 @@ If you use many workers, particularly on different machines, you may not notice 
 
 By default, if this happens when your worker is running a task, that task status will forever be stuck in `RUNNING`.
 
-`rrq` provides a simple heartbeat process, if requested, to detect when a worker has disppeared. To do this, we run a second process on each worker that periodically writes to the Redis database on a key that will expire in a time slightly longer than that period, in effect making a [dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch) - see `rrq::rrq_heartbeat` for details.
+`rrq` provides a simple heartbeat process, if requested, to detect when a worker has disappeared. To do this, we run a second process on each worker that periodically writes to the Redis database on a key that will expire in a time slightly longer than that period, in effect making a [dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch) - see `rrq::rrq_heartbeat` for details.
 
 To enable the heartbeat, save a worker configuration with the `heartbeat_period` set to some number of seconds. Below we use 2 seconds so that this example runs reasonably quickly, but in practice something like 60 might be slightly less load on your Redis server.
 

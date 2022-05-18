@@ -1,5 +1,6 @@
 CodeFactor
 HPC
+POSIXt
 Rdata
 Redis
 WIP
@@ -34,6 +35,7 @@ pid
 rds
 redis
 rrq's
+segfaults
 storr
 undeferred
 unpauses
