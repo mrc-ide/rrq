@@ -1,8 +1,8 @@
 pandoc: 2.7.3
-pkgdown: 2.0.2
+pkgdown: 2.0.3
 pkgdown_sha: ~
 articles:
   messages: messages.html
   rrq: rrq.html
-last_built: 2022-04-04T11:37Z
+last_built: 2022-05-18T14:09Z
 
