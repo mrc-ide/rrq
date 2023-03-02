@@ -1409,7 +1409,7 @@ the "default" queue (e.g., \code{queue = c("high", "default", "low")}) to set th
 
 \item{\code{heartbeat_period}}{Optional period for the heartbeat.  If
 non-NULL then a heartbeat process will be started (using
-\code{\link{heartbeat}} which can be used to build fault tolerant queues.}
+\code{\link{rrq_heartbeat}} which can be used to build fault tolerant queues.}
 
 \item{\code{verbose}}{Logical, indicating if the worker should print
 logging output to the screen.  Logging to screen has a small but

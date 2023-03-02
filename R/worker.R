@@ -88,7 +88,7 @@ rrq_worker <- R6::R6Class(
     ##'
     ##' @param heartbeat_period Optional period for the heartbeat.  If
     ##'   non-NULL then a heartbeat process will be started (using
-    ##'   [`rrq::heartbeat`]) which can be used to build fault
+    ##'   [`rrq::rrq_heartbeat`]) which can be used to build fault
     ##'   tolerant queues.
     ##'
     ##' @param verbose Logical, indicating if the worker should print
