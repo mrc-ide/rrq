@@ -60,6 +60,12 @@ jobs:
         run: |
           cp vignettes_src/* vignettes
 
+      - name: Install self
+        if: runner.os == 'Windows'
+        run: |
+          install.packages(".", repos = NULL, type = "source")
+        shell: Rscript {0}
+
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
