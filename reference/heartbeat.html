@@ -92,15 +92,15 @@ instance has died.</p>
 <h3 id="method-new-">Method <code>new()</code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
 <p>Create a heartbeat object</p><div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span class="va"><a href="../reference/heartbeat.html">heartbeat</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>
-  <span class="va">key</span>,
-  <span class="va">period</span>,
-  expire <span class="op">=</span> <span class="fl">3</span> <span class="op">*</span> <span class="va">period</span>,
-  value <span class="op">=</span> <span class="va">expire</span>,
-  config <span class="op">=</span> <span class="cn">NULL</span>,
-  start <span class="op">=</span> <span class="cn">TRUE</span>,
-  timeout <span class="op">=</span> <span class="fl">10</span>
-<span class="op">)</span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/heartbeat.html">heartbeat</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span>  <span class="va">key</span>,</span>
+<span>  <span class="va">period</span>,</span>
+<span>  expire <span class="op">=</span> <span class="fl">3</span> <span class="op">*</span> <span class="va">period</span>,</span>
+<span>  value <span class="op">=</span> <span class="va">expire</span>,</span>
+<span>  config <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  start <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  timeout <span class="op">=</span> <span class="fl">10</span></span>
+<span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -151,7 +151,7 @@ generally left alone.</p></dd>
 <p>Report if heartbeat process is running. This will be
 <code>TRUE</code> if the process has been started and has not stopped.</p><div class="section">
 <h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span class="va">heartbeat</span><span class="op">$</span><span class="fu">is_running</span><span class="op">(</span><span class="op">)</span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">heartbeat</span><span class="op">$</span><span class="fu">is_running</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 
@@ -160,7 +160,7 @@ generally left alone.</p></dd>
 <p>Start the heartbeat process. An error will be thrown
 if it is already running.</p><div class="section">
 <h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span class="va">heartbeat</span><span class="op">$</span><span class="fu">start</span><span class="op">(</span><span class="op">)</span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">heartbeat</span><span class="op">$</span><span class="fu">start</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 
@@ -168,7 +168,7 @@ if it is already running.</p><div class="section">
 <h3 id="method-stop-">Method <code><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop()</a></code><a class="anchor" aria-label="anchor" href="#method-stop-"></a></h3>
 <p>Stop the heartbeat process</p><div class="section">
 <h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span class="va">heartbeat</span><span class="op">$</span><span class="kw">stop</span><span class="op">(</span>wait <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">heartbeat</span><span class="op">$</span><span class="kw">stop</span><span class="op">(</span>wait <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -186,7 +186,7 @@ second)</p></dd>
 <h3 id="method-format-">Method <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code><a class="anchor" aria-label="anchor" href="#method-format-"></a></h3>
 <p>Format method, used by R6 to nicely print the object</p><div class="section">
 <h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span class="va">heartbeat</span><span class="op">$</span><span class="fu">format</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">heartbeat</span><span class="op">$</span><span class="fu">format</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -204,32 +204,32 @@ second)</p></dd>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
-<span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">redis_available</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in">  <span class="va">rand_str</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in">    <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">letters</span>, <span class="fl">20</span>, <span class="cn">TRUE</span><span class="op">)</span>, collapse <span class="op">=</span> <span class="st">""</span><span class="op">)</span></span>
-<span class="r-in">  <span class="op">}</span></span>
-<span class="r-in">  <span class="va">key</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"rrq:heartbeat:%s"</span>, <span class="fu">rand_str</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in">  <span class="va">h</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="va">heartbeat</span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">key</span>, <span class="fl">1</span>, expire <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span class="r-in">  <span class="va">con</span> <span class="op">&lt;-</span> <span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span><span class="op">(</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in">  <span class="co"># The heartbeat key exists</span></span>
-<span class="r-in">  <span class="va">con</span><span class="op">$</span><span class="fu">EXISTS</span><span class="op">(</span><span class="va">key</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in">  <span class="co"># And has an expiry of less than 2000ms</span></span>
-<span class="r-in">  <span class="va">con</span><span class="op">$</span><span class="fu">PTTL</span><span class="op">(</span><span class="va">key</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in">  <span class="co"># We can manually stop the heartbeat, and 2s later the key will</span></span>
-<span class="r-in">  <span class="co"># stop existing</span></span>
-<span class="r-in">  <span class="va">h</span><span class="op">$</span><span class="kw">stop</span><span class="op">(</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in">  <span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span></span>
-<span class="r-in">  <span class="va">con</span><span class="op">$</span><span class="fu">EXISTS</span><span class="op">(</span><span class="va">key</span><span class="op">)</span> <span class="co"># 0</span></span>
-<span class="r-in"></span>
-<span class="r-in">  <span class="co"># This is required to close any processes opened by this</span></span>
-<span class="r-in">  <span class="co"># example, normally you would not need this.</span></span>
-<span class="r-in">  <span class="fu">processx</span><span class="fu">:::</span><span class="fu"><a href="http://processx.r-lib.org/reference/supervisor_kill.html" class="external-link">supervisor_kill</a></span><span class="op">(</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">redis_available</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="va">rand_str</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">letters</span>, <span class="fl">20</span>, <span class="cn">TRUE</span><span class="op">)</span>, collapse <span class="op">=</span> <span class="st">""</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">}</span></span></span>
+<span class="r-in"><span>  <span class="va">key</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"rrq:heartbeat:%s"</span>, <span class="fu">rand_str</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="va">h</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="va">heartbeat</span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">key</span>, <span class="fl">1</span>, expire <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="va">con</span> <span class="op">&lt;-</span> <span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span>  <span class="co"># The heartbeat key exists</span></span></span>
+<span class="r-in"><span>  <span class="va">con</span><span class="op">$</span><span class="fu">EXISTS</span><span class="op">(</span><span class="va">key</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span>  <span class="co"># And has an expiry of less than 2000ms</span></span></span>
+<span class="r-in"><span>  <span class="va">con</span><span class="op">$</span><span class="fu">PTTL</span><span class="op">(</span><span class="va">key</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span>  <span class="co"># We can manually stop the heartbeat, and 2s later the key will</span></span></span>
+<span class="r-in"><span>  <span class="co"># stop existing</span></span></span>
+<span class="r-in"><span>  <span class="va">h</span><span class="op">$</span><span class="kw">stop</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="va">con</span><span class="op">$</span><span class="fu">EXISTS</span><span class="op">(</span><span class="va">key</span><span class="op">)</span> <span class="co"># 0</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span>  <span class="co"># This is required to close any processes opened by this</span></span></span>
+<span class="r-in"><span>  <span class="co"># example, normally you would not need this.</span></span></span>
+<span class="r-in"><span>  <span class="fu">processx</span><span class="fu">:::</span><span class="fu"><a href="http://processx.r-lib.org/reference/supervisor_kill.html" class="external-link">supervisor_kill</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -244,7 +244,7 @@ second)</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

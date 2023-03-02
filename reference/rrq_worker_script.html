@@ -72,7 +72,7 @@ Details.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">rrq_worker_script</span><span class="op">(</span><span class="va">path</span>, versioned <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rrq_worker_script</span><span class="op">(</span><span class="va">path</span>, versioned <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -81,6 +81,8 @@ Details.</p>
 <dd><p>The path to write to. Should be a directory (or one
 will be created if it does not yet exist). The final script will
 be <code>file.path(path, "rrq_worker")</code></p></dd>
+
+
 <dt>versioned</dt>
 <dd><p>Logical, indicating if we should write a
 versioned R script that will use the same path to <code>Rscript</code> as
@@ -88,10 +90,13 @@ the running session. If <code>FALSE</code> we use <code>#!/usr/bin/env Rscript</
 which will pick up <code>Rscript</code> from the path. You may want to use
 a versioned script in tests or if you have multiple R versions
 installed simultaneously.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>Invisibly, the path to the script</p>
+    
+
+<p>Invisibly, the path to the script</p>
     </div>
     <div id="details">
     <h2>Details</h2>
@@ -120,8 +125,8 @@ environment variable (see <code><a href="https://rdrr.io/pkg/redux/man/hiredis.h
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="va">path</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="fu">rrq_worker_script</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines</a></span><span class="op">(</span><span class="va">path</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">path</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="fu">rrq_worker_script</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines</a></span><span class="op">(</span><span class="va">path</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "#!/usr/bin/env Rscript"  "rrq:::rrq_worker_main()"</span>
 </code></pre></div>
     </div>
@@ -137,7 +142,7 @@ environment variable (see <code><a href="https://rdrr.io/pkg/redux/man/hiredis.h
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

@@ -76,13 +76,13 @@ objects will be saved (using <code><a href="object_store.html">object_store</a><
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">rrq_configure</span><span class="op">(</span>
-  <span class="va">queue_id</span>,
-  con <span class="op">=</span> <span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span><span class="op">(</span><span class="op">)</span>,
-  <span class="va">...</span>,
-  store_max_size <span class="op">=</span> <span class="cn">Inf</span>,
-  offload_path <span class="op">=</span> <span class="cn">NULL</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rrq_configure</span><span class="op">(</span></span>
+<span>  <span class="va">queue_id</span>,</span>
+<span>  con <span class="op">=</span> <span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  <span class="va">...</span>,</span>
+<span>  store_max_size <span class="op">=</span> <span class="cn">Inf</span>,</span>
+<span>  offload_path <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -90,27 +90,38 @@ objects will be saved (using <code><a href="object_store.html">object_store</a><
     <dl><dt>queue_id</dt>
 <dd><p>The queue id; the same as you would pass to
 <a href="rrq_controller.html">rrq_controller</a></p></dd>
+
+
 <dt>con</dt>
 <dd><p>A redis connection</p></dd>
+
+
 <dt>...</dt>
 <dd><p>Additional arguments - this must be empty. This
 argument exists so that all additional arguments must be passed
 by name.</p></dd>
+
+
 <dt>store_max_size</dt>
 <dd><p>The maximum object size, in bytes, before
 being moved to the offload store. If given, then larger data
 will be saved in <code>offload_path</code> (using
 <code><a href="object_store_offload_disk.html">object_store_offload_disk</a></code>)</p></dd>
+
+
 <dt>offload_path</dt>
 <dd><p>The path to create an offload store at (passed
 to <code><a href="object_store_offload_disk.html">object_store_offload_disk</a></code>). The directory will be
 created if it does not exist. If not given (or <code>NULL</code>) but
 <code>store_max_size</code> is finite, then trying to save large objects
 will throw an error.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>Invisibly, a list with processed configuration information</p>
+    
+
+<p>Invisibly, a list with processed configuration information</p>
     </div>
     <div id="storage">
     <h2>Storage</h2>
@@ -154,7 +165,7 @@ a <code>store_max_size</code> of less than 1MB will be sensible.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

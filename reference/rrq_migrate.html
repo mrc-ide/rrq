@@ -74,7 +74,7 @@ will be thrown indicating how you can run this function.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">rrq_migrate</span><span class="op">(</span><span class="va">queue_id</span>, con <span class="op">=</span> <span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rrq_migrate</span><span class="op">(</span><span class="va">queue_id</span>, con <span class="op">=</span> <span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -82,12 +82,17 @@ will be thrown indicating how you can run this function.</p>
     <dl><dt>queue_id</dt>
 <dd><p>The name of the rrq queue (as passed to
 <a href="rrq_controller.html">rrq_controller</a></p></dd>
+
+
 <dt>con</dt>
 <dd><p>A redis connection</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>Nothing, called for its side effects</p>
+    
+
+<p>Nothing, called for its side effects</p>
     </div>
     <div id="compatibility">
     <h2>Compatibility</h2>
@@ -123,7 +128,7 @@ and task outputs).</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

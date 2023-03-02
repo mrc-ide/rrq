@@ -124,7 +124,7 @@ long as they share a common filesystem."><!-- mathjax --><script src="https://cd
     <div class="ref-description">
     <p>When you create a task with rrq and that task uses local variables
 these need to be copied over to the worker that will evaluate the
-task. So, if we had</p><div class="sourceCode"><pre><code><span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu">f</span><span class="op">(</span><span class="va">a</span>, <span class="va">b</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+task. So, if we had</p><div class="sourceCode"><pre><code><span><span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu">f</span><span class="op">(</span><span class="va">a</span>, <span class="va">b</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 
 <p>that would be the objects <code>a</code> and <code>b</code> from the context where
 <code>enqueue</code> was called. There are a few considerations here:</p><ul><li><p>The names <code>a</code> and <code>b</code> are only useful in the immediate context
@@ -201,7 +201,7 @@ and is used internally by <a href="rrq_controller.html">rrq_controller</a></p>
 <h3 id="method-new-">Method <code>new()</code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
 <p>Create a new object store (or connect to an existing one)</p><div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span class="va"><a href="../reference/object_store.html">object_store</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">con</span>, <span class="va">prefix</span>, max_size <span class="op">=</span> <span class="cn">Inf</span>, offload <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/object_store.html">object_store</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">con</span>, <span class="va">prefix</span>, max_size <span class="op">=</span> <span class="cn">Inf</span>, offload <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -238,7 +238,7 @@ an error will be thrown.</p></dd>
 <h3 id="method-list-">Method <code><a href="https://rdrr.io/r/base/list.html" class="external-link">list()</a></code><a class="anchor" aria-label="anchor" href="#method-list-"></a></h3>
 <p>List all hashes of data known to this data store</p><div class="section">
 <h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span class="va">object_store</span><span class="op">$</span><span class="fu">list</span><span class="op">(</span><span class="op">)</span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">object_store</span><span class="op">$</span><span class="fu">list</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 
@@ -246,7 +246,7 @@ an error will be thrown.</p></dd>
 <h3 id="method-tags-">Method <code>tags()</code><a class="anchor" aria-label="anchor" href="#method-tags-"></a></h3>
 <p>List all tags known to this data store</p><div class="section">
 <h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span class="va">object_store</span><span class="op">$</span><span class="fu">tags</span><span class="op">(</span><span class="op">)</span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">object_store</span><span class="op">$</span><span class="fu">tags</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 
@@ -254,7 +254,7 @@ an error will be thrown.</p></dd>
 <h3 id="method-get-">Method <code><a href="https://rdrr.io/r/base/get.html" class="external-link">get()</a></code><a class="anchor" aria-label="anchor" href="#method-get-"></a></h3>
 <p>Get a single object by its hash</p><div class="section">
 <h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span class="va">object_store</span><span class="op">$</span><span class="fu">get</span><span class="op">(</span><span class="va">hash</span><span class="op">)</span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">object_store</span><span class="op">$</span><span class="fu">get</span><span class="op">(</span><span class="va">hash</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -272,7 +272,7 @@ an error will be thrown.</p></dd>
 method accepts a vector of hash (length 0, 1, or more than 1)
 and returns a list of the same length.</p><div class="section">
 <h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span class="va">object_store</span><span class="op">$</span><span class="fu">mget</span><span class="op">(</span><span class="va">hash</span><span class="op">)</span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">object_store</span><span class="op">$</span><span class="fu">mget</span><span class="op">(</span><span class="va">hash</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -289,7 +289,7 @@ and returns a list of the same length.</p><div class="section">
 <p>Set an object into the object store, returning the hash
 of that object.</p><div class="section">
 <h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span class="va">object_store</span><span class="op">$</span><span class="fu">set</span><span class="op">(</span><span class="va">value</span>, <span class="va">tag</span>, serialize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">object_store</span><span class="op">$</span><span class="fu">set</span><span class="op">(</span><span class="va">value</span>, <span class="va">tag</span>, serialize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -323,7 +323,7 @@ this method sets a list of objects into the store at once,
 and returns a character vector of hashes the same length as the
 list of values.</p><div class="section">
 <h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span class="va">object_store</span><span class="op">$</span><span class="fu">mset</span><span class="op">(</span><span class="va">value</span>, <span class="va">tag</span>, serialize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">object_store</span><span class="op">$</span><span class="fu">mset</span><span class="op">(</span><span class="va">value</span>, <span class="va">tag</span>, serialize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -358,7 +358,7 @@ the location may be <code>redis</code> (stored directly in the redis server),
 <code>offload</code> (stored in the offload storage) or <code>NA</code> (if not found,
 and if <code>error = FALSE</code>).</p><div class="section">
 <h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span class="va">object_store</span><span class="op">$</span><span class="fu">location</span><span class="op">(</span><span class="va">hash</span>, error <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">object_store</span><span class="op">$</span><span class="fu">location</span><span class="op">(</span><span class="va">hash</span>, error <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -382,7 +382,7 @@ tags from any hashes they references and if that means that no tag
 points to a hash then the data at that hash will be removed. We return
 (invisibly) a character vector of any dropped hashes.</p><div class="section">
 <h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span class="va">object_store</span><span class="op">$</span><span class="fu">drop</span><span class="op">(</span><span class="va">tag</span><span class="op">)</span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">object_store</span><span class="op">$</span><span class="fu">drop</span><span class="op">(</span><span class="va">tag</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -399,7 +399,7 @@ points to a hash then the data at that hash will be removed. We return
 <p>Remove all data from the store, and all the stores
 metadata</p><div class="section">
 <h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span class="va">object_store</span><span class="op">$</span><span class="fu">destroy</span><span class="op">(</span><span class="op">)</span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">object_store</span><span class="op">$</span><span class="fu">destroy</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 
@@ -419,7 +419,7 @@ metadata</p><div class="section">
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

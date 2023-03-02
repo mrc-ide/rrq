@@ -72,7 +72,7 @@ sent as a progress value (e.g., a string, a list, etc).</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">rrq_task_progress_update</span><span class="op">(</span><span class="va">value</span>, error <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rrq_task_progress_update</span><span class="op">(</span><span class="va">value</span>, error <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -84,12 +84,15 @@ from a <code><a href="rrq_controller.html">rrq_controller</a></code> with the
 <code>task_progress</code> method.  A value of <code>NULL</code> will appear
 to clear the status, as <code>NULL</code> will also be returned if no
 status is found for a task.</p></dd>
+
+
 <dt>error</dt>
 <dd><p>Logical, indicating if we should throw an error if
 not running as an <code>rrq</code> task. Set this to <code>FALSE</code> if
 you want code to work without modification within and outside of
 an <code>rrq</code> job, or to <code>TRUE</code> if you want to be sure that
 progress messages have made it to the server.</p></dd>
+
 </dl></div>
     <div id="details">
     <h2>Details</h2>
@@ -104,10 +107,11 @@ using the <code>task_progress</code> method and providing the
 <p>It is also possible to register progress <em>without</em> acquiring
 a dependency on <code>rrq</code>.  If your package/script includes code
 like:</p>
-<div class="sourceCode"><pre><code><span class="va">progress</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">message</span><span class="op">)</span> <span class="op">{</span>
-  <span class="fu"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">signalCondition</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/structure.html" class="external-link">structure</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>message <span class="op">=</span> <span class="va">message</span><span class="op">)</span>,
-                            class <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"progress"</span>, <span class="st">"condition"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
-<span class="op">}</span></code></pre></div>
+<div class="sourceCode"><pre><code><span></span>
+<span><span class="va">progress</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">message</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">signalCondition</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/structure.html" class="external-link">structure</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>message <span class="op">=</span> <span class="va">message</span><span class="op">)</span>,</span>
+<span>                            class <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"progress"</span>, <span class="st">"condition"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
 
 <p>(this function can be called anything - the important bit is the
 body function body - you must return an object with a
@@ -130,7 +134,7 @@ without using rrq, this function will appear to do nothing.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

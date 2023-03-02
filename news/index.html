@@ -62,67 +62,87 @@
 
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.4.1" id="rrq-041">rrq 0.4.1<a class="anchor" aria-label="anchor" href="#rrq-041"></a></h2>
-<ul><li>Expose <code><a href="../reference/rrq_worker_from_config.html">rrq::rrq_worker_from_config</a></code>, which is a simpler way of constructing worker objects. The worker object itself (<code><a href="../reference/rrq_worker.html">rrq::rrq_worker</a></code>) loses its helper constructor function and is documented (mrc-2297)</li></ul></div>
+<ul><li>Expose <code><a href="../reference/rrq_worker_from_config.html">rrq::rrq_worker_from_config</a></code>, which is a simpler way of constructing worker objects. The worker object itself (<code><a href="../reference/rrq_worker.html">rrq::rrq_worker</a></code>) loses its helper constructor function and is documented (mrc-2297)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.3.2" id="rrq-032">rrq 0.3.2<a class="anchor" aria-label="anchor" href="#rrq-032"></a></h2>
-<ul><li>All tasks get a key that can be checked with a blocking wait (mrc-2392)</li></ul></div>
+<ul><li>All tasks get a key that can be checked with a blocking wait (mrc-2392)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.3.1" id="rrq-031">rrq 0.3.1<a class="anchor" aria-label="anchor" href="#rrq-031"></a></h2>
-<ul><li>Direct control over environment export for <code>$enqueue()</code> with new argument <code>export</code> (mrc-2369)</li></ul></div>
+<ul><li>Direct control over environment export for <code>$enqueue()</code> with new argument <code>export</code> (mrc-2369)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.19" id="rrq-0219">rrq 0.2.19<a class="anchor" aria-label="anchor" href="#rrq-0219"></a></h2>
-<ul><li>Add new <code>enqueue_bulk</code> method (previously deleted in 0.2.0) (mrc-2261)</li></ul></div>
+<ul><li>Add new <code>enqueue_bulk</code> method (previously deleted in 0.2.0) (mrc-2261)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.15" id="rrq-0215">rrq 0.2.15<a class="anchor" aria-label="anchor" href="#rrq-0215"></a></h2>
 <ul><li>
-<code>enqueue</code> can add a task with dependencies i.e. tasks which must be complete before this task can be run via <code>depends_on</code> (mrc-2255)</li></ul></div>
+<code>enqueue</code> can add a task with dependencies i.e. tasks which must be complete before this task can be run via <code>depends_on</code> (mrc-2255)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.14" id="rrq-0214">rrq 0.2.14<a class="anchor" aria-label="anchor" href="#rrq-0214"></a></h2>
 <ul><li>
-<code>enqueue</code> can add a task to start of the queue via <code>at_front = TRUE</code> (mrc-2254)</li></ul></div>
+<code>enqueue</code> can add a task to start of the queue via <code>at_front = TRUE</code> (mrc-2254)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.13" id="rrq-0213">rrq 0.2.13<a class="anchor" aria-label="anchor" href="#rrq-0213"></a></h2>
-<ul><li>Run tasks in a separate process (with some overhead) with new argument <code>separate_process = TRUE</code> to <code>$enqueue()</code>. Use this to ensure isolation between tasks (mrc-2068)</li></ul></div>
+<ul><li>Run tasks in a separate process (with some overhead) with new argument <code>separate_process = TRUE</code> to <code>$enqueue()</code>. Use this to ensure isolation between tasks (mrc-2068)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.12" id="rrq-0212">rrq 0.2.12<a class="anchor" aria-label="anchor" href="#rrq-0212"></a></h2>
-<ul><li>Add <code>task_preceeding</code> function to controller to list tasks in front of a particular task in the queue (vimc-4502)</li></ul></div>
+<ul><li>Add <code>task_preceeding</code> function to controller to list tasks in front of a particular task in the queue (vimc-4502)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.11" id="rrq-0211">rrq 0.2.11<a class="anchor" aria-label="anchor" href="#rrq-0211"></a></h2>
-<ul><li>Support for multiple queues, with varying priorities. This can be used to create workers that listen to overlapping queues, with “fast” and “slow” queues (mrc-2068)</li></ul></div>
+<ul><li>Support for multiple queues, with varying priorities. This can be used to create workers that listen to overlapping queues, with “fast” and “slow” queues (mrc-2068)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.10" id="rrq-0210">rrq 0.2.10<a class="anchor" aria-label="anchor" href="#rrq-0210"></a></h2>
-<ul><li>Gracefully detect multiple killed workers (<a href="https://github.com/mrc-ide/rrq/issues/22" class="external-link">#22</a>, reported by <a href="https://github.com/MartinHanewald" class="external-link">@MartinHanewald</a>)</li></ul></div>
+<ul><li>Gracefully detect multiple killed workers (<a href="https://github.com/mrc-ide/rrq/issues/22" class="external-link">#22</a>, reported by <a href="https://github.com/MartinHanewald" class="external-link">@MartinHanewald</a>)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.9" id="rrq-029">rrq 0.2.9<a class="anchor" aria-label="anchor" href="#rrq-029"></a></h2>
 <ul><li>
-<code>$lapply</code> and friends restored after being removed during the refactor for version 0.2.0 (mrc-558)</li></ul></div>
+<code>$lapply</code> and friends restored after being removed during the refactor for version 0.2.0 (mrc-558)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.8" id="rrq-028">rrq 0.2.8<a class="anchor" aria-label="anchor" href="#rrq-028"></a></h2>
-<ul><li>Expand documentation (mrc-1800)</li></ul></div>
+<ul><li>Expand documentation (mrc-1800)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.7" id="rrq-027">rrq 0.2.7<a class="anchor" aria-label="anchor" href="#rrq-027"></a></h2>
-<ul><li>rrq progress now passes all fields in underlying condition (mrc-1772)</li></ul></div>
+<ul><li>rrq progress now passes all fields in underlying condition (mrc-1772)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.6" id="rrq-026">rrq 0.2.6<a class="anchor" aria-label="anchor" href="#rrq-026"></a></h2>
-<ul><li>Update <code>worker_spawn</code> to work with breaking change in docopt (mrc-1667)</li></ul></div>
+<ul><li>Update <code>worker_spawn</code> to work with breaking change in docopt (mrc-1667)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.5" id="rrq-025">rrq 0.2.5<a class="anchor" aria-label="anchor" href="#rrq-025"></a></h2>
-<ul><li>New <code>$task_data</code> method for getting underlying task data (mrc-1304)</li></ul></div>
+<ul><li>New <code>$task_data</code> method for getting underlying task data (mrc-1304)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.4" id="rrq-024">rrq 0.2.4<a class="anchor" aria-label="anchor" href="#rrq-024"></a></h2>
-<ul><li>Better error message is given when non-existent task is cancelled (mrc-1259)</li></ul></div>
+<ul><li>Better error message is given when non-existent task is cancelled (mrc-1259)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.3" id="rrq-023">rrq 0.2.3<a class="anchor" aria-label="anchor" href="#rrq-023"></a></h2>
-<ul><li>New <code>$worker_detect_exited</code> for detecting exited workers when a heartbeat is used (mrc-1231)</li></ul></div>
+<ul><li>New <code>$worker_detect_exited</code> for detecting exited workers when a heartbeat is used (mrc-1231)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.2" id="rrq-022">rrq 0.2.2<a class="anchor" aria-label="anchor" href="#rrq-022"></a></h2>
-<ul><li>Tasks can now be interrupted with <code>$task_cancel</code> if running with a heartbeat enabled (mrc-734)</li></ul></div>
+<ul><li>Tasks can now be interrupted with <code>$task_cancel</code> if running with a heartbeat enabled (mrc-734)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.1" id="rrq-021">rrq 0.2.1<a class="anchor" aria-label="anchor" href="#rrq-021"></a></h2>
-<ul><li>Add support for within-task progress updates, using the <code><a href="../reference/rrq_task_progress_update.html">rrq::rrq_task_progress_update</a></code> function, which can be called from any task run from <code>rrq</code> and queried with <code>$task_progress</code> from a <code>rrq_controller</code> (mrc-600)</li></ul></div>
+<ul><li>Add support for within-task progress updates, using the <code><a href="../reference/rrq_task_progress_update.html">rrq::rrq_task_progress_update</a></code> function, which can be called from any task run from <code>rrq</code> and queried with <code>$task_progress</code> from a <code>rrq_controller</code> (mrc-600)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.0" id="rrq-020">rrq 0.2.0<a class="anchor" aria-label="anchor" href="#rrq-020"></a></h2>
-<ul><li>Rewrite of the package to simplify queue creation and dependency chain (mrc-538 / <a href="https://github.com/mrc-ide/rrq/issues/9" class="external-link">#9</a>, mrc-519 / <a href="https://github.com/mrc-ide/rrq/issues/8" class="external-link">#8</a>, mrc-472 / <a href="https://github.com/mrc-ide/rrq/issues/7" class="external-link">#7</a>)</li></ul></div>
+<ul><li>Rewrite of the package to simplify queue creation and dependency chain (mrc-538 / <a href="https://github.com/mrc-ide/rrq/issues/9" class="external-link">#9</a>, mrc-519 / <a href="https://github.com/mrc-ide/rrq/issues/8" class="external-link">#8</a>, mrc-472 / <a href="https://github.com/mrc-ide/rrq/issues/7" class="external-link">#7</a>)</li>
+</ul></div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -137,7 +157,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

@@ -72,41 +72,54 @@ configurations by running <code>$worker_config_save</code> from the
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">rrq_worker_from_config</span><span class="op">(</span>
-  <span class="va">queue_id</span>,
-  worker_config <span class="op">=</span> <span class="st">"localhost"</span>,
-  worker_name <span class="op">=</span> <span class="cn">NULL</span>,
-  key_alive <span class="op">=</span> <span class="cn">NULL</span>,
-  con <span class="op">=</span> <span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span><span class="op">(</span><span class="op">)</span>,
-  timeout <span class="op">=</span> <span class="fl">5</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rrq_worker_from_config</span><span class="op">(</span></span>
+<span>  <span class="va">queue_id</span>,</span>
+<span>  worker_config <span class="op">=</span> <span class="st">"localhost"</span>,</span>
+<span>  worker_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  key_alive <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  con <span class="op">=</span> <span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  timeout <span class="op">=</span> <span class="fl">5</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>queue_id</dt>
 <dd><p>The name of the queue</p></dd>
+
+
 <dt>worker_config</dt>
 <dd><p>Optional name of the configuration. The
 default "localhost" configuration always exists.</p></dd>
+
+
 <dt>worker_name</dt>
 <dd><p>The name of the worker (if not given a random
 name is used)</p></dd>
+
+
 <dt>key_alive</dt>
 <dd><p>Optional key to write to, indicating that the
 worker is alive. This can be passed to
 <code><a href="rrq_expect_worker.html">rrq_expect_worker</a></code> so that a controlling process can
 wait for workers to come up.</p></dd>
+
+
 <dt>con</dt>
 <dd><p>Redis configuration</p></dd>
+
+
 <dt>timeout</dt>
 <dd><p>How long to try and read the worker config for. Will
 attempt to read once a second and throw an error if config cannot
 be located after <code>timeout</code> seconds.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A <code><a href="rrq_worker.html">rrq_worker</a></code> object. If you want to "run" the
+    
+
+<p>A <code><a href="rrq_worker.html">rrq_worker</a></code> object. If you want to "run" the
 worker, you would want to use the <code>$loop()</code> method of this
 object. Other methods are for advanced use.</p>
     </div>
@@ -123,7 +136,7 @@ object. Other methods are for advanced use.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>
