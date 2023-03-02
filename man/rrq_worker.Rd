@@ -22,23 +22,23 @@ but will sit and poll a queue for jobs.
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{rrq_worker$new()}}
-\item \href{#method-info}{\code{rrq_worker$info()}}
-\item \href{#method-log}{\code{rrq_worker$log()}}
-\item \href{#method-load_envir}{\code{rrq_worker$load_envir()}}
-\item \href{#method-poll}{\code{rrq_worker$poll()}}
-\item \href{#method-step}{\code{rrq_worker$step()}}
-\item \href{#method-loop}{\code{rrq_worker$loop()}}
-\item \href{#method-format}{\code{rrq_worker$format()}}
-\item \href{#method-timer_start}{\code{rrq_worker$timer_start()}}
-\item \href{#method-progress}{\code{rrq_worker$progress()}}
-\item \href{#method-task_eval}{\code{rrq_worker$task_eval()}}
-\item \href{#method-shutdown}{\code{rrq_worker$shutdown()}}
+\item \href{#method-rrq_worker-new}{\code{rrq_worker$new()}}
+\item \href{#method-rrq_worker-info}{\code{rrq_worker$info()}}
+\item \href{#method-rrq_worker-log}{\code{rrq_worker$log()}}
+\item \href{#method-rrq_worker-load_envir}{\code{rrq_worker$load_envir()}}
+\item \href{#method-rrq_worker-poll}{\code{rrq_worker$poll()}}
+\item \href{#method-rrq_worker-step}{\code{rrq_worker$step()}}
+\item \href{#method-rrq_worker-loop}{\code{rrq_worker$loop()}}
+\item \href{#method-rrq_worker-format}{\code{rrq_worker$format()}}
+\item \href{#method-rrq_worker-timer_start}{\code{rrq_worker$timer_start()}}
+\item \href{#method-rrq_worker-progress}{\code{rrq_worker$progress()}}
+\item \href{#method-rrq_worker-task_eval}{\code{rrq_worker$task_eval()}}
+\item \href{#method-rrq_worker-shutdown}{\code{rrq_worker$shutdown()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-rrq_worker-new"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_worker-new}{}}}
 \subsection{Method \code{new()}}{
 Constructor
 \subsection{Usage}{
@@ -105,8 +105,8 @@ in a separate process.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-info"></a>}}
-\if{latex}{\out{\hypertarget{method-info}{}}}
+\if{html}{\out{<a id="method-rrq_worker-info"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_worker-info}{}}}
 \subsection{Method \code{info()}}{
 Return information about this worker, a list of
 key-value pairs.
@@ -116,8 +116,8 @@ key-value pairs.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-log"></a>}}
-\if{latex}{\out{\hypertarget{method-log}{}}}
+\if{html}{\out{<a id="method-rrq_worker-log"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_worker-log}{}}}
 \subsection{Method \code{log()}}{
 Create a log entry. This will print a human readable
 format to screen and a machine-readable format to the redis database.
@@ -136,8 +136,8 @@ format to screen and a machine-readable format to the redis database.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-load_envir"></a>}}
-\if{latex}{\out{\hypertarget{method-load_envir}{}}}
+\if{html}{\out{<a id="method-rrq_worker-load_envir"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_worker-load_envir}{}}}
 \subsection{Method \code{load_envir()}}{
 Load the worker environment by creating a new
 environment object and running the create hook (if configured).
@@ -148,8 +148,8 @@ See \verb{$envir} on \code{\link{rrq_controller}} for details.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-poll"></a>}}
-\if{latex}{\out{\hypertarget{method-poll}{}}}
+\if{html}{\out{<a id="method-rrq_worker-poll"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_worker-poll}{}}}
 \subsection{Method \code{poll()}}{
 Poll for work
 \subsection{Usage}{
@@ -167,8 +167,8 @@ zero. Intended primarily for use in the tests.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-step"></a>}}
-\if{latex}{\out{\hypertarget{method-step}{}}}
+\if{html}{\out{<a id="method-rrq_worker-step"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_worker-step}{}}}
 \subsection{Method \code{step()}}{
 Take a single "step". This consists of
 \enumerate{
@@ -191,8 +191,8 @@ zero. Intended primarily for use in the tests.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-loop"></a>}}
-\if{latex}{\out{\hypertarget{method-loop}{}}}
+\if{html}{\out{<a id="method-rrq_worker-loop"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_worker-loop}{}}}
 \subsection{Method \code{loop()}}{
 The main worker loop. Use this to set up the main
 worker event loop, which will continue until exiting (via a timeout
@@ -212,8 +212,8 @@ zero. Intended primarily for use in the tests.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-format"></a>}}
-\if{latex}{\out{\hypertarget{method-format}{}}}
+\if{html}{\out{<a id="method-rrq_worker-format"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_worker-format}{}}}
 \subsection{Method \code{format()}}{
 Create a nice string representation of the worker.
 Used automatically to print the worker by R6.
@@ -223,8 +223,8 @@ Used automatically to print the worker by R6.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-timer_start"></a>}}
-\if{latex}{\out{\hypertarget{method-timer_start}{}}}
+\if{html}{\out{<a id="method-rrq_worker-timer_start"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_worker-timer_start}{}}}
 \subsection{Method \code{timer_start()}}{
 Start the timer
 \subsection{Usage}{
@@ -233,8 +233,8 @@ Start the timer
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-progress"></a>}}
-\if{latex}{\out{\hypertarget{method-progress}{}}}
+\if{html}{\out{<a id="method-rrq_worker-progress"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_worker-progress}{}}}
 \subsection{Method \code{progress()}}{
 Submit a progress message. See
 \code{\link[=rrq_task_progress_update]{rrq_task_progress_update()}} for details of this mechanism.
@@ -262,8 +262,8 @@ progress messages have made it to the server.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-task_eval"></a>}}
-\if{latex}{\out{\hypertarget{method-task_eval}{}}}
+\if{html}{\out{<a id="method-rrq_worker-task_eval"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_worker-task_eval}{}}}
 \subsection{Method \code{task_eval()}}{
 Evaluate a task
 \subsection{Usage}{
@@ -280,8 +280,8 @@ this identifier does not exist.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-shutdown"></a>}}
-\if{latex}{\out{\hypertarget{method-shutdown}{}}}
+\if{html}{\out{<a id="method-rrq_worker-shutdown"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_worker-shutdown}{}}}
 \subsection{Method \code{shutdown()}}{
 Stop the worker
 \subsection{Usage}{

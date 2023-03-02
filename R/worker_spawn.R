@@ -33,10 +33,10 @@
 ##'   (when \code{timeout} is at least 0)
 ##'
 ##' @export
-worker_spawn <- function(obj, n = 1, logdir = NULL,
-                         timeout = 600, worker_config = "localhost",
-                         worker_name_base = NULL,
-                         time_poll = 1, progress = NULL) {
+rrq_worker_spawn <- function(obj, n = 1, logdir = NULL,
+                             timeout = 600, worker_config = "localhost",
+                             worker_name_base = NULL,
+                             time_poll = 1, progress = NULL) {
   assert_is(obj, "rrq_controller")
   if (!(worker_config %in% obj$worker_config_list())) {
     stop(sprintf("Invalid rrq worker configuration key '%s'", worker_config))
@@ -69,7 +69,7 @@ worker_spawn <- function(obj, n = 1, logdir = NULL,
   }
 
   if (timeout > 0) {
-    worker_wait(obj, key_alive, timeout, time_poll, progress)
+    rrq_worker_wait(obj, key_alive, timeout, time_poll, progress)
   } else {
     list(key_alive = key_alive,
          names = worker_names)
@@ -77,11 +77,11 @@ worker_spawn <- function(obj, n = 1, logdir = NULL,
 }
 
 ##' @export
-##' @rdname worker_spawn
+##' @rdname rrq_worker_spawn
 ##' @param key_alive A key name (generated from
-##'   \code{\link{rrq_expect_worker}} or \code{worker_spawn})
-worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
-                        progress = NULL) {
+##'   \code{\link{rrq_expect_worker}} or \code{rrq_worker_spawn})
+rrq_worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
+                            progress = NULL) {
   con <- obj$con
   keys <- obj$keys
 
@@ -117,7 +117,7 @@ worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
 
 ##' Register that workers are expected.  This generates a key that one
 ##' or more workers will write to when they start up (as used by
-##' \code{worker_spawn}).
+##' \code{rrq_worker_spawn}).
 ##' @title Register expected workers
 ##' @param obj A rrq_controller object
 ##' @param names Names of expected workers

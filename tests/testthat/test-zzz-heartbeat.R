@@ -4,8 +4,8 @@ test_that("basic interaction with heartbeat works", {
   key <- sprintf("rrq:heartbeat:basic:%s", ids::random_id())
   period <- 1
   expire <- 2
-  obj <- heartbeat$new(key, period, expire = expire, start = FALSE)
-  expect_s3_class(obj, "heartbeat")
+  obj <- rrq_heartbeat$new(key, period, expire = expire, start = FALSE)
+  expect_s3_class(obj, "rrq_heartbeat")
   expect_s3_class(obj, "R6")
 
   con <- test_hiredis()
@@ -43,7 +43,7 @@ test_that("Garbage collection", {
   expire <- 2
   con <- test_hiredis()
 
-  obj <- heartbeat$new(key, period, expire = expire)
+  obj <- rrq_heartbeat$new(key, period, expire = expire)
   expect_equal(con$EXISTS(key), 1)
   expect_true(obj$is_running())
 
@@ -66,7 +66,7 @@ test_that("Kill process", {
 
   px <- callr::r_bg(function(key) {
     config <- redux::redis_config()
-    obj <- heartbeat$new(key, 1, 2, config = config)
+    obj <- rrq_heartbeat$new(key, 1, 2, config = config)
     Sys.sleep(120)
   }, list(key = key), package = "rrq")
   pid <- px$get_pid()
@@ -75,7 +75,7 @@ test_that("Kill process", {
   wait_timeout("Process did not start up in time", 5, function()
     con$EXISTS(key) == 0 && px$is_alive(), poll = 0.2)
 
-  heartbeat_kill(con, key, tools::SIGTERM)
+  rrq_heartbeat_kill(con, key, tools::SIGTERM)
 
   wait_timeout("Process did stop in time", 5, function()
     px$is_alive(), poll = 0.2)
@@ -93,7 +93,7 @@ test_that("Interrupt process", {
 
   px <- callr::r_bg(function(key, path) {
     config <- redux::redis_config()
-    obj <- heartbeat$new(key, 1, 2, config = config)
+    obj <- rrq_heartbeat$new(key, 1, 2, config = config)
     writeLines("1", path)
     tryCatch(
       Sys.sleep(120),
@@ -113,7 +113,7 @@ test_that("Interrupt process", {
     !file.exists(path), poll = 0.1)
   expect_equal(readLines(path), "1")
 
-  heartbeat_kill(con, key, tools::SIGINT)
+  rrq_heartbeat_kill(con, key, tools::SIGINT)
 
   wait_timeout("File did not update in time", 5, function()
     readLines(path) == "1" && px$is_alive(), poll = 0.1)
@@ -131,7 +131,7 @@ test_that("dying process", {
 
   px <- callr::r_bg(function(key) {
     config <- redux::redis_config()
-    obj <- heartbeat$new(key, 1, 2, config = config)
+    obj <- rrq_heartbeat$new(key, 1, 2, config = config)
     Sys.sleep(120)
   }, list(key = key), package = "rrq")
 
@@ -154,9 +154,9 @@ test_that("dying process", {
 test_that("invalid times", {
   key <- sprintf("rrq:heartbeat:confail:%s", ids::random_id())
   period <- 10
-  expect_error(heartbeat$new(key, period, expire = period),
+  expect_error(rrq_heartbeat$new(key, period, expire = period),
                "expire must be longer than period")
-  expect_error(heartbeat$new(key, period, expire = period - 1),
+  expect_error(rrq_heartbeat$new(key, period, expire = period - 1),
                "expire must be longer than period")
 })
 
@@ -165,7 +165,7 @@ test_that("print", {
   skip_if_no_redis()
   key <- sprintf("rrq:heartbeat:print:%s", ids::random_id())
   period <- 1
-  obj <- heartbeat$new(key, period, start = FALSE)
+  obj <- rrq_heartbeat$new(key, period, start = FALSE)
   str <- capture.output(tmp <- print(obj))
   expect_identical(tmp, obj)
   expect_match(str, "<heartbeat>", fixed = TRUE, all = FALSE)
@@ -179,7 +179,7 @@ test_that("handle startup failure", {
   key <- sprintf("rrq:heartbeat:basic:%s", ids::random_id())
   period <- 5
   expire <- 10
-  obj <- heartbeat$new(key, period, expire = expire, start = FALSE)
+  obj <- rrq_heartbeat$new(key, period, expire = expire, start = FALSE)
 
   ## Then we'll break the config:
   private <- environment(obj$initialize)$private

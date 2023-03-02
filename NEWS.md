@@ -1,3 +1,7 @@
+# rrq 0.6.0
+
+* Renamed some functions with `rrq_` prefix; you must now use `rrq_worker_spawn()` (not `worker_spawn`), `rrq_worker_wait`, `rrq_heartbeat` and `rrq_heartbeat_kill` (mrc-2682)
+
 # rrq 0.4.1
 
 * Expose `rrq::rrq_worker_from_config`, which is a simpler way of constructing worker objects. The worker object itself (`rrq::rrq_worker`) loses its helper constructor function and is documented (mrc-2297)

@@ -29,13 +29,17 @@ Details.
 }
 \details{
 If you need to launch rrq workers from a script, it's convenient
-not to have to embed R code like:\preformatted{Rscript -e 'rrq::worker_from_config("myqueue")'
-}
+not to have to embed R code like:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{Rscript -e 'rrq::worker_from_config("myqueue")'
+}\if{html}{\out{</div>}}
 
 as this is error-prone and unpleasant to read. You can use the
 function \code{rrq_worker_script} to write out a small helper script
-which lets you write:\preformatted{./path/rrq_worker myqueue
-}
+which lets you write:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{./path/rrq_worker myqueue
+}\if{html}{\out{</div>}}
 
 instead.
 
@@ -52,8 +56,10 @@ To change the redis connection settings, set the \code{REDIS_URL}
 environment variable (see \code{\link[redux:hiredis]{redux::hiredis()}} for details).
 
 For example to create a worker \code{myworker} with configuration
-\code{myconfig} on queue \code{myqueue} you might use\preformatted{./rrq_worker --config=myconfig --name=myworker myqueue
-}
+\code{myconfig} on queue \code{myqueue} you might use
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{./rrq_worker --config=myconfig --name=myworker myqueue
+}\if{html}{\out{</div>}}
 }
 \examples{
 path <- rrq::rrq_worker_script(tempfile())

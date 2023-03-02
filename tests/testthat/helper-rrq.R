@@ -102,7 +102,7 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE) {
 test_worker_spawn <- function(obj, ..., timeout = 10) {
   skip_on_cran()
   skip_on_windows()
-  suppressMessages(worker_spawn(obj, ..., timeout = timeout))
+  suppressMessages(rrq_worker_spawn(obj, ..., timeout = timeout))
 }
 
 

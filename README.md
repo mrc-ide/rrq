@@ -44,7 +44,7 @@ Run tasks on workers in the background
 
 
 ```r
-rrq::worker_spawn(obj)
+rrq::rrq_worker_spawn(obj)
 #> Spawning 1 worker with prefix endocrinous_anemonecrab
 #> [1] "endocrinous_anemonecrab_1"
 ```

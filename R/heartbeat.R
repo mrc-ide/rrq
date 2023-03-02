@@ -3,7 +3,7 @@ worker_heartbeat <- function(con, keys, period, verbose) {
     key <- keys$worker_heartbeat
     worker_log(con, keys, "HEARTBEAT", key, verbose)
     config <- con$config()
-    ret <- heartbeat$new(key, period, config = config)
+    ret <- rrq_heartbeat$new(key, period, config = config)
     worker_log(con, keys, "HEARTBEAT", "OK", verbose)
     ret
   }

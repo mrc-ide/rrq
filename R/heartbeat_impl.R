@@ -15,7 +15,7 @@
 ##'     paste(sample(letters, 20, TRUE), collapse = "")
 ##'   }
 ##'   key <- sprintf("rrq:heartbeat:%s", rand_str())
-##'   h <- rrq::heartbeat$new(key, 1, expire = 2)
+##'   h <- rrq::rrq_heartbeat$new(key, 1, expire = 2)
 ##'   con <- redux::hiredis()
 ##'
 ##'   # The heartbeat key exists
@@ -37,8 +37,8 @@
 ##' }
 ##' @importFrom R6 R6Class
 ##' @rdname heartbeat
-heartbeat <- R6::R6Class(
-  "heartbeat",
+rrq_heartbeat <- R6::R6Class(
+  "rrq_heartbeat",
 
   cloneable = FALSE,
 
@@ -211,9 +211,9 @@ heartbeat <- R6::R6Class(
 ##'
 ##'   # We can send it a SIGTERM signal over redis using:
 ##'   con <- redux::hiredis()
-##'   rrq::heartbeat_kill(con, key, tools::SIGTERM)
+##'   rrq::rrq_heartbeat_kill(con, key, tools::SIGTERM)
 ##' }
-heartbeat_kill <- function(con, key, signal = tools::SIGTERM) {
+rrq_heartbeat_kill <- function(con, key, signal = tools::SIGTERM) {
   assert_scalar_character(key)
   con$RPUSH(heartbeat_key_kill(key), signal)
   invisible()

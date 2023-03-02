@@ -1,6 +1,6 @@
 Package: rrq
 Title: Simple Redis Queue
-Version: 0.5.7
+Version: 0.6.0
 Authors@R: c(person("Rich", "FitzJohn", role = c("aut", "cre"),
                     email = "rich.fitzjohn@gmail.com"),
              person("Robert", "Ashton", role = "aut"),
@@ -28,7 +28,7 @@ Suggests:
     storr,
     testthat,
     withr
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.2
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Language: en-GB

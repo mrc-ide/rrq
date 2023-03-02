@@ -23,7 +23,7 @@ A controller to throw jobs at:
 ```{r}
 id <- paste0("rrq:", ids::random_id(bytes = 4))
 obj <- rrq::rrq_controller$new(id)
-rrq::worker_spawn(obj, 1)
+rrq::rrq_worker_spawn(obj, 1)
 ```
 
 Running a thousand trivial jobs (look in particular at `elapsed` as we're interested in wall time)
@@ -41,7 +41,7 @@ bench_rrq <- function(n, nworkers, nrep, obj) {
   }
   diff <- nworkers - obj$worker_len()
   if (diff > 0L) {
-    suppressMessages(rrq::worker_spawn(obj, diff))
+    suppressMessages(rrq::rrq_worker_spawn(obj, diff))
   } else if (diff < 0L) {
     obj$worker_stop(obj$worker_list()[seq_len(-diff)])
   }

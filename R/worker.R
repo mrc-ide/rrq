@@ -345,7 +345,7 @@ worker_initialise <- function(worker, private, key_alive, timeout,
   worker$log("ALIVE")
 
   ## This announces that we're up; things may monitor this
-  ## queue, and worker_spawn does a BLPOP to
+  ## queue, and rrq_worker_spawn does a BLPOP to
   if (!is.null(key_alive)) {
     con$RPUSH(key_alive, worker$name)
   }

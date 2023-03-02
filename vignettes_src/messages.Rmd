@@ -42,7 +42,7 @@ In order to do this, we're going to need a queue and a worker:
 ```{r}
 obj <- rrq::rrq_controller$new("rrq:messages")
 logdir <- tempfile()
-worker_id <- rrq::worker_spawn(obj, logdir = logdir)
+worker_id <- rrq::rrq_worker_spawn(obj, logdir = logdir)
 ```
 
 On startup the worker log contains:

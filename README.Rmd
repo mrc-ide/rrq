@@ -45,7 +45,7 @@ obj$task_status(t)
 Run tasks on workers in the background
 
 ```{r}
-rrq::worker_spawn(obj)
+rrq::rrq_worker_spawn(obj)
 ```
 
 Collect task results when complete

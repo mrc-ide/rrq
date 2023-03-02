@@ -66,7 +66,7 @@ test_that("Sensible error message on missing config", {
 test_that("Sensible error if requesting workers on empty key", {
   obj <- test_rrq()
   expect_error(
-    worker_wait(obj, "no workers here", timeout = 10, time_poll = 1),
+    rrq_worker_wait(obj, "no workers here", timeout = 10, time_poll = 1),
     "No workers expected on that key")
 })
 
