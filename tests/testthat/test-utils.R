@@ -58,6 +58,7 @@ test_that("version_string", {
   expect_match(version_string(dat),
                sprintf("%s \\[.*\\]$", dat$version))
   dat$repository <- NULL
+  dat$sha <- NULL
   expect_match(version_string(dat),
                sprintf("%s \\[LOCAL\\]$", dat$version))
   dat$sha <- "aaa"
