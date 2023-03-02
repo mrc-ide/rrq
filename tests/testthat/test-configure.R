@@ -36,6 +36,7 @@ test_that("Can't set a conflicting configuration", {
 
 
 test_that("Can set an identical configuration", {
+  skip_if_no_redis()
   name <- sprintf("rrq:%s", ids::random_id())
   config1 <- rrq_configure(name, store_max_size = 100)
   config2 <- rrq_configure(name, store_max_size = 100)
