@@ -28,6 +28,12 @@ jobs:
         with:
           use-public-rspm: true
 
+      - name: Start Redis
+        if: runner.os != 'Windows'
+        uses: shogo82148/actions-setup-redis@v1
+        with:
+          redis-version: "5.x"
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::pkgdown, local::.
