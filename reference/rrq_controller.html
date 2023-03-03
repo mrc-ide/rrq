@@ -18,7 +18,7 @@ rrq queue controller"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.2</span>
       </span>
     </div>
 
@@ -176,15 +176,14 @@ expected, so you can use the names directly:</p>
     <div id="public-fields">
     <h2>Public fields</h2>
     <p></p><div class="r6-fields"><dl><dt><code>con</code></dt>
-<dd><p>The redis connection</p></dd>
+<dd><p>The redis connection. This is part of the
+public API and can be used to access the same redis database
+as the queue.</p></dd>
 
 
 <dt><code>queue_id</code></dt>
-<dd><p>The queue id used on creation</p></dd>
-
-
-<dt><code>keys</code></dt>
-<dd><p>Internally used keys</p></dd>
+<dd><p>The queue id used on creation. This is read-only
+after creation.</p></dd>
 
 
 </dl><p></p></div>
