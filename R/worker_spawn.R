@@ -57,7 +57,8 @@ rrq_worker_spawn <- function(obj, n = 1, logdir = NULL,
   message(sprintf("Spawning %d %s with prefix %s",
                   n, ngettext(n, "worker", "workers"), worker_name_base))
 
-  obj$con$HMSET(obj$keys$worker_process, worker_names, logfile)
+  keys <- rrq_keys(obj$queue_id)
+  obj$con$HMSET(keys$worker_process, worker_names, logfile)
 
   for (i in seq_len(n)) {
     args <- c(obj$queue_id,
@@ -82,8 +83,9 @@ rrq_worker_spawn <- function(obj, n = 1, logdir = NULL,
 ##'   \code{\link{rrq_expect_worker}} or \code{rrq_worker_spawn})
 rrq_worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
                             progress = NULL) {
+  assert_is(obj, "rrq_controller")
   con <- obj$con
-  keys <- obj$keys
+  keys <- rrq_keys(obj$queue_id)
 
   bin <- con$HGET(keys$worker_expect, key_alive)
   if (is.null(bin)) {
@@ -123,8 +125,10 @@ rrq_worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
 ##' @param names Names of expected workers
 ##' @export
 rrq_expect_worker <- function(obj, names) {
+  assert_is(obj, "rrq_controller")
   key_alive <- rrq_key_worker_alive(obj$queue_id)
-  obj$con$HSET(obj$keys$worker_expect, key_alive, object_to_bin(names))
+  keys <- rrq_keys(obj$queue_id)
+  obj$con$HSET(keys$worker_expect, key_alive, object_to_bin(names))
   key_alive
 }
 
@@ -143,8 +147,9 @@ worker_print_failed_logs <- function(logs) {
   } else {
     header <- sprintf("Log files recovered for %d %s\n",
                       length(logs), ngettext(length(logs), "worker", "workers"))
-    log_str <- vcapply(logs, function(x)
-      paste(sprintf("  %s\n", x), collapse = ""))
+    log_str <- vcapply(logs, function(x) {
+      paste(sprintf("  %s\n", x), collapse = "")
+    })
     txt <- c(header, sprintf("%s\n%s", names(logs), log_str))
     cat(paste(txt, collapse = "\n"))
   }

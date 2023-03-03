@@ -158,7 +158,7 @@ test_that("Can't kill non-local workers", {
 
   info <- obj$worker_info(w$name)[[w$name]]
   info$hostname <- paste0(info$hostname, "_but_on_mars")
-  obj$con$HSET(obj$keys$worker_info, w$name, object_to_bin(info))
+  obj$con$HSET(queue_keys(obj)$worker_info, w$name, object_to_bin(info))
   expect_error(
     obj$worker_stop(w$name, "kill_local"),
     "Not all workers are local:")

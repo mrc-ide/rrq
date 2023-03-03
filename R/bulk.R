@@ -62,9 +62,9 @@ rrq_bulk_prepare_lapply <- function(store, task_ids, x, fun, dots, envir) {
 }
 
 
-## Bulk lapply(X, FUN, ...) => [FUN(X[[1]][[1]], X[[1]][[2]], ...),
-##                              FUN(X[[2]][[2]], X[[2]][[2]], ...),
-##                              ...]
+## > Bulk lapply(X, FUN, ...) => [FUN(X[[1]][[1]], X[[1]][[2]], ...),
+## >                              FUN(X[[2]][[2]], X[[2]][[2]], ...),
+## >                              ...]
 rrq_bulk_prepare_call <- function(store, task_ids, x, fun, dots, envir) {
   len <- length(x[[1L]])
   nms <- names(x[[1L]])

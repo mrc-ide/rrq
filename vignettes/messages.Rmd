@@ -21,22 +21,22 @@ In order to do this, we're going to need a queue and a worker:
 obj <- rrq::rrq_controller$new("rrq:messages")
 logdir <- tempfile()
 worker_id <- rrq::rrq_worker_spawn(obj, logdir = logdir)
-#> Spawning 1 worker with prefix daydreaming_englishpointer
+#> Spawning 1 worker with prefix ungeometric_pitbull
 ```
 
 On startup the worker log contains:
 
 ```plain
-[2023-03-02 16:00:32] QUEUE default
-[2023-03-02 16:00:32] ENVIR new
-[2023-03-02 16:00:32] ALIVE
+[2023-03-03 16:53:18] QUEUE default
+[2023-03-03 16:53:18] ENVIR new
+[2023-03-03 16:53:18] ALIVE
                                  __
                 ______________ _/ /
       ______   / ___/ ___/ __ `/ /_____
      /_____/  / /  / /  / /_/ /_/_____/
  ______      /_/  /_/   \__, (_)   ______
 /_____/                   /_/     /_____/
-    worker:        daydreaming_englishpointer_1
+    worker:        ungeometric_pitbull_1
     rrq_version:   0.6.0 [LOCAL]
     platform:      x86_64-pc-linux-gnu (64-bit)
     running:       Ubuntu 20.04.5 LTS
@@ -44,7 +44,7 @@ On startup the worker log contains:
     username:      rfitzjoh
     queue:         rrq:messages:queue:default
     wd:            /home/rfitzjoh/Documents/src/rrq/vignettes_src
-    pid:           1075257
+    pid:           1262841
     redis_host:    127.0.0.1
     redis_port:    6379
     heartbeat_key: <not set>
@@ -93,16 +93,16 @@ The message id is going to be useful for getting responses:
 
 ```r
 message_id
-#> [1] "1677772832.720337"
+#> [1] "1677862398.427401"
 ```
 
 (this is derived from the current time, according to Redis which is
 the central reference point of time for the whole system).
 
 ```plain
-[2023-03-02 16:00:32] MESSAGE PING
+[2023-03-03 16:53:18] MESSAGE PING
 PONG
-[2023-03-02 16:00:32] RESPONSE PING
+[2023-03-03 16:53:18] RESPONSE PING
 ```
 
 The logfile prints:
@@ -116,10 +116,10 @@ We can access the same bits of information in the worker log:
 
 ```r
 obj$worker_log_tail(n = Inf)
-#>                      worker_id       time  command message
-#> 1 daydreaming_englishpointer_1 1677772833    ALIVE
-#> 2 daydreaming_englishpointer_1 1677772833  MESSAGE    PING
-#> 3 daydreaming_englishpointer_1 1677772833 RESPONSE    PING
+#>               worker_id       time  command message
+#> 1 ungeometric_pitbull_1 1677862398    ALIVE
+#> 2 ungeometric_pitbull_1 1677862398  MESSAGE    PING
+#> 3 ungeometric_pitbull_1 1677862398 RESPONSE    PING
 ```
 
 This includes the `ALIVE` message as the worker comes up.
@@ -132,8 +132,8 @@ We already know that our worker has a response, but we can ask anyway:
 
 ```r
 obj$message_has_response(message_id)
-#> daydreaming_englishpointer_1
-#>                         TRUE
+#> ungeometric_pitbull_1
+#>                  TRUE
 ```
 
 Or inversely we can as what messages a given worker has responses for:
@@ -141,7 +141,7 @@ Or inversely we can as what messages a given worker has responses for:
 
 ```r
 obj$message_response_ids(worker_id)
-#> [1] "1677772832.720337"
+#> [1] "1677862398.427401"
 ```
 
 To fetch the responses from all workers it was sent to (always
@@ -150,7 +150,7 @@ returning a named list):
 
 ```r
 obj$message_get_response(message_id)
-#> $daydreaming_englishpointer_1
+#> $ungeometric_pitbull_1
 #> [1] "PONG"
 ```
 
@@ -159,7 +159,7 @@ or to fetch the response from a given worker:
 
 ```r
 obj$message_get_response(message_id, worker_id)
-#> $daydreaming_englishpointer_1
+#> $ungeometric_pitbull_1
 #> [1] "PONG"
 ```
 
@@ -168,7 +168,7 @@ The response can be deleted by passing `delete = TRUE` to this method:
 
 ```r
 obj$message_get_response(message_id, worker_id, delete = TRUE)
-#> $daydreaming_englishpointer_1
+#> $ungeometric_pitbull_1
 #> [1] "PONG"
 ```
 
@@ -177,7 +177,7 @@ after which recalling the message will throw an error:
 
 ```r
 obj$message_get_response(message_id, worker_id)
-#> Error in message_get_response(self$con, self$keys, message_id, worker_ids, : Response missing for workers: daydreaming_englishpointer_1
+#> Error in message_get_response(self$con, private$keys, message_id, worker_ids, : Response missing for workers: ungeometric_pitbull_1
 ```
 
 There is also a `timeout` argument that lets you wait until a response is
@@ -186,10 +186,10 @@ ready (as in `$task_wait()`).
 
 ```r
 obj$enqueue(Sys.sleep(2))
-#> [1] "1053b99c4999bd8711397e67bd7a0bf4"
+#> [1] "e3ff668893f185f9c6e6915fb204038b"
 message_id <- obj$message_send("PING")
 obj$message_get_response(message_id, worker_id, delete = TRUE, timeout = 10)
-#> $daydreaming_englishpointer_1
+#> $ungeometric_pitbull_1
 #> [1] "PONG"
 ```
 
@@ -198,14 +198,14 @@ Looking at the log will show what went on here:
 
 ```r
 obj$worker_log_tail(n = 4)
-#>                      worker_id       time       command
-#> 1 daydreaming_englishpointer_1 1677772833    TASK_START
-#> 2 daydreaming_englishpointer_1 1677772835 TASK_COMPLETE
-#> 3 daydreaming_englishpointer_1 1677772835       MESSAGE
-#> 4 daydreaming_englishpointer_1 1677772835      RESPONSE
+#>               worker_id       time       command
+#> 1 ungeometric_pitbull_1 1677862398    TASK_START
+#> 2 ungeometric_pitbull_1 1677862400 TASK_COMPLETE
+#> 3 ungeometric_pitbull_1 1677862400       MESSAGE
+#> 4 ungeometric_pitbull_1 1677862400      RESPONSE
 #>                            message
-#> 1 1053b99c4999bd8711397e67bd7a0bf4
-#> 2 1053b99c4999bd8711397e67bd7a0bf4
+#> 1 e3ff668893f185f9c6e6915fb204038b
+#> 2 e3ff668893f185f9c6e6915fb204038b
 #> 3                             PING
 #> 4                             PING
 ```
@@ -220,11 +220,11 @@ completed, the response takes a while to come back.  Equivalently,
 from the worker log:
 
 ```plain
-[2023-03-02 16:00:32] TASK_START 1053b99c4999bd8711397e67bd7a0bf4
-[2023-03-02 16:00:34] TASK_COMPLETE 1053b99c4999bd8711397e67bd7a0bf4
-[2023-03-02 16:00:34] MESSAGE PING
+[2023-03-03 16:53:18] TASK_START e3ff668893f185f9c6e6915fb204038b
+[2023-03-03 16:53:20] TASK_COMPLETE e3ff668893f185f9c6e6915fb204038b
+[2023-03-03 16:53:20] MESSAGE PING
 PONG
-[2023-03-02 16:00:34] RESPONSE PING
+[2023-03-03 16:53:20] RESPONSE PING
 ```
 
 ## `ECHO`
@@ -237,14 +237,14 @@ response.
 ```r
 message_id <- obj$message_send("ECHO", "hello world!")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $daydreaming_englishpointer_1
+#> $ungeometric_pitbull_1
 #> [1] "OK"
 ```
 
 ```plain
-[2023-03-02 16:00:34] MESSAGE ECHO
+[2023-03-03 16:53:20] MESSAGE ECHO
 hello world!
-[2023-03-02 16:00:34] RESPONSE ECHO
+[2023-03-03 16:53:20] RESPONSE ECHO
 ```
 
 ## `INFO`
@@ -257,7 +257,7 @@ worker started up:
 ```r
 obj$worker_info()[[worker_id]]
 #> $worker
-#> [1] "daydreaming_englishpointer_1"
+#> [1] "ungeometric_pitbull_1"
 #>
 #> $rrq_version
 #> [1] "0.6.0 [LOCAL]"
@@ -281,7 +281,7 @@ obj$worker_info()[[worker_id]]
 #> [1] "/home/rfitzjoh/Documents/src/rrq/vignettes_src"
 #>
 #> $pid
-#> [1] 1075257
+#> [1] 1262841
 #>
 #> $redis_host
 #> [1] "127.0.0.1"
@@ -303,38 +303,38 @@ field:
 
 ```r
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $daydreaming_englishpointer_1
-#> $daydreaming_englishpointer_1$worker
-#> [1] "daydreaming_englishpointer_1"
+#> $ungeometric_pitbull_1
+#> $ungeometric_pitbull_1$worker
+#> [1] "ungeometric_pitbull_1"
 #>
-#> $daydreaming_englishpointer_1$rrq_version
+#> $ungeometric_pitbull_1$rrq_version
 #> [1] "0.6.0 [LOCAL]"
 #>
-#> $daydreaming_englishpointer_1$platform
+#> $ungeometric_pitbull_1$platform
 #> [1] "x86_64-pc-linux-gnu (64-bit)"
 #>
-#> $daydreaming_englishpointer_1$running
+#> $ungeometric_pitbull_1$running
 #> [1] "Ubuntu 20.04.5 LTS"
 #>
-#> $daydreaming_englishpointer_1$hostname
+#> $ungeometric_pitbull_1$hostname
 #> [1] "wpia-dide300"
 #>
-#> $daydreaming_englishpointer_1$username
+#> $ungeometric_pitbull_1$username
 #> [1] "rfitzjoh"
 #>
-#> $daydreaming_englishpointer_1$queue
+#> $ungeometric_pitbull_1$queue
 #> [1] "rrq:messages:queue:default"
 #>
-#> $daydreaming_englishpointer_1$wd
+#> $ungeometric_pitbull_1$wd
 #> [1] "/home/rfitzjoh/Documents/src/rrq/vignettes_src"
 #>
-#> $daydreaming_englishpointer_1$pid
-#> [1] 1075257
+#> $ungeometric_pitbull_1$pid
+#> [1] 1262841
 #>
-#> $daydreaming_englishpointer_1$redis_host
+#> $ungeometric_pitbull_1$redis_host
 #> [1] "127.0.0.1"
 #>
-#> $daydreaming_englishpointer_1$redis_port
+#> $ungeometric_pitbull_1$redis_port
 #> [1] 6379
 ```
 
@@ -349,7 +349,7 @@ in which queued code is evaluated in.
 ```r
 message_id <- obj$message_send("EVAL", "1 + 1")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $daydreaming_englishpointer_1
+#> $ungeometric_pitbull_1
 #> [1] 2
 ```
 
@@ -365,15 +365,15 @@ The `PAUSE` / `RESUME` messages can be used to prevent workers from picking up n
 
 ```r
 obj$worker_status()
-#> daydreaming_englishpointer_1
-#>                       "IDLE"
+#> daydreaming_englishpointer_1        ungeometric_pitbull_1
+#>                     "EXITED"                       "IDLE"
 message_id <- obj$message_send("PAUSE")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $daydreaming_englishpointer_1
+#> $ungeometric_pitbull_1
 #> [1] "OK"
 obj$worker_status()
-#> daydreaming_englishpointer_1
-#>                     "PAUSED"
+#> daydreaming_englishpointer_1        ungeometric_pitbull_1
+#>                     "EXITED"                     "PAUSED"
 ```
 
 Once paused workers ignore tasks, which stay on the queue:
@@ -382,7 +382,7 @@ Once paused workers ignore tasks, which stay on the queue:
 ```r
 t <- obj$enqueue(runif(5))
 obj$task_status(t)
-#> bd10e887ec393fa5d3e0fb7c327256a4
+#> f5ffb36505c2326e7a2eeb4539be9429
 #>                        "PENDING"
 ```
 
@@ -392,10 +392,10 @@ Sending a `RESUME` message unpauses the worker:
 ```r
 message_id <- obj$message_send("RESUME")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $daydreaming_englishpointer_1
+#> $ungeometric_pitbull_1
 #> [1] "OK"
 obj$task_wait(t, 5)
-#> [1] 0.3054221 0.1104526 0.5232754 0.4802496 0.1537227
+#> [1] 0.7687190 0.8578942 0.7801871 0.5873694 0.4274717
 ```
 
 ## `SET_TIMEOUT` / `GET_TIMEOUT`
@@ -405,7 +405,7 @@ Workers will quit after being left idle for more than a certain time; this is th
 
 ```r
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $daydreaming_englishpointer_1
+#> $ungeometric_pitbull_1
 #>   timeout remaining
 #>       Inf       Inf
 ```
@@ -415,7 +415,7 @@ We can set this to a finite value, in seconds:
 
 ```r
 obj$message_send_and_wait("TIMEOUT_SET", 600, worker_ids = worker_id)
-#> $daydreaming_englishpointer_1
+#> $ungeometric_pitbull_1
 #> [1] "OK"
 ```
 
@@ -426,38 +426,40 @@ Once set, the `TIMEOUT_GET` returns the length of time remaining before the work
 
 ```r
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $daydreaming_englishpointer_1
+#> $ungeometric_pitbull_1
 #>   timeout remaining
-#>  600.0000  599.9439
+#>  600.0000  599.9371
 Sys.sleep(5)
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $daydreaming_englishpointer_1
+#> $ungeometric_pitbull_1
 #>   timeout remaining
-#>  600.0000  594.8841
+#>  600.0000  594.8674
 ```
 
 One useful pattern is to send work to workers, then set the timeout to zero. This means that when work is complete they will exit (almost) immediately:
 
 
 ```r
-grp <- obj$lapply(1:5, function(x) {Sys.sleep(0.5); runif(x)},
-                  collect_timeout = 0)
+grp <- obj$lapply(1:5, function(x) {
+  Sys.sleep(0.5)
+  runif(x)
+}, collect_timeout = 0)
 obj$message_send("TIMEOUT_SET", 0, worker_id)
 obj$tasks_wait(grp$task_ids)
-#> $`7fb96d946759cd60c7196c11e7ca6b18`
-#> [1] 0.4899313
+#> $`031a12b07f4ce1d4e4e6ed4e8ec67200`
+#> [1] 0.7483771
 #>
-#> $bedb5747554168762e4354466ff7294f
-#> [1] 0.4449506 0.6267295
+#> $`36fa43de806307f7f76caddcc273c925`
+#> [1] 0.5262275 0.1064741
 #>
-#> $`77ea371b0958c9f0779a1e3b1a3c8ca2`
-#> [1] 0.58798073 0.51911478 0.08662847
+#> $a429291aa5c1c63d3bb2e7b7ba3ebde6
+#> [1] 0.8414561 0.5551033 0.8266272
 #>
-#> $`534579c90508fbe6a12905690f3ccb7f`
-#> [1] 0.6736881 0.2618442 0.3343125 0.1529253
+#> $af441b5765dc42f0d4af46e1f172724b
+#> [1] 0.7019179 0.4470992 0.8532993 0.1675170
 #>
-#> $`7e4daf2105ff801c4d34f2618bfa5560`
-#> [1] 0.8377901 0.2176834 0.6200284 0.9909534 0.8590731
+#> $`0033271592707f91fc34cd693c690a3c`
+#> [1] 0.3673637 0.1391727 0.2012789 0.5991020 0.9787287
 ```
 
 The worker will remain idle for 60s (by default) which is the length of time that one poll for work lasts, then it will exit.
@@ -465,10 +467,10 @@ The worker will remain idle for 60s (by default) which is the length of time tha
 
 ```r
 obj$worker_status(worker_id)
-#> daydreaming_englishpointer_1
-#>                       "IDLE"
+#> ungeometric_pitbull_1
+#>                "IDLE"
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $daydreaming_englishpointer_1
+#> $ungeometric_pitbull_1
 #>   timeout remaining
 #>         0         0
 ```

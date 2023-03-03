@@ -503,21 +503,21 @@ test_that("task can be queued with dependency", {
 
   ## Original dependencies are stored
   original_deps_keys <- rrq_key_task_dependencies_original(
-    obj$keys$queue_id, t3)
+    obj$queue_id, t3)
   expect_setequal(obj$con$SMEMBERS(original_deps_keys), c(t, t2))
 
   ## Pending dependencies are stored
-  dependency_keys <- rrq_key_task_dependencies(obj$keys$queue_id, t3)
+  dependency_keys <- rrq_key_task_dependencies(obj$queue_id, t3)
   expect_setequal(obj$con$SMEMBERS(dependency_keys), c(t, t2))
 
   ## Inverse depends_on relationship is stored
-  dependent_keys <- rrq_key_task_dependents(obj$keys$queue_id, c(t, t2))
+  dependent_keys <- rrq_key_task_dependents(obj$queue_id, c(t, t2))
   for (key in dependent_keys) {
     expect_equal(obj$con$SMEMBERS(key), list(t3))
   }
 
   ## t3 is in deferred set
-  deferred_set <- obj$keys$deferred_set
+  deferred_set <- queue_keys(obj)$deferred_set
   expect_equal(obj$con$SMEMBERS(deferred_set), list(t3))
 
   ## Function to retrieve status of t3 and see what it is waiting for
@@ -583,7 +583,7 @@ test_that("queueing with depends_on errored task fails", {
                fixed = TRUE)
 
   ## deferred set is empty
-  deferred_set <- obj$keys$deferred_set
+  deferred_set <- queue_keys(obj)$deferred_set
   expect_equal(obj$con$SMEMBERS(deferred_set), list())
 
   ## Task is set to impossible
@@ -618,7 +618,7 @@ test_that("dependent tasks updated if dependency fails", {
   expect_equal(unname(obj$task_status(t3)), "IMPOSSIBLE")
   expect_equal(unname(obj$task_status(t4)), "IMPOSSIBLE")
   expect_equal(obj$queue_list(), character(0))
-  deferred_set <- obj$keys$deferred_set
+  deferred_set <- queue_keys(obj)$deferred_set
   expect_equal(obj$con$SMEMBERS(deferred_set), list())
 })
 
@@ -635,7 +635,7 @@ test_that("multiple tasks can be queued with same dependency", {
   expect_equal(unname(obj$task_status(t3)), "DEFERRED")
 
   ## t3 is in deferred set
-  deferred_set <- obj$keys$deferred_set
+  deferred_set <- queue_keys(obj)$deferred_set
   expect_setequal(obj$con$SMEMBERS(deferred_set), c(t2, t3))
 
   w$step(TRUE)
@@ -658,7 +658,7 @@ test_that("deferred task is added to specified queue", {
   t3 <- obj$enqueue(sin(0), depends_on = t, queue = "a")
   expect_equal(obj$queue_list(), t)
   expect_equal(obj$queue_list("a"), character(0))
-  deferred_set <- obj$keys$deferred_set
+  deferred_set <- queue_keys(obj)$deferred_set
   expect_setequal(obj$con$SMEMBERS(deferred_set), list(t2, t3))
 
   w$step(TRUE)
@@ -681,7 +681,7 @@ test_that("task set to impossible cannot be added to queue", {
   expect_equal(unname(obj$task_status(t2)), "PENDING")
   expect_equal(unname(obj$task_status(t3)), "DEFERRED")
   expect_equal(obj$queue_list(), c(t, t2))
-  deferred_set <- obj$keys$deferred_set
+  deferred_set <- queue_keys(obj)$deferred_set
   expect_equal(obj$con$SMEMBERS(deferred_set), list(t3))
 
   w$step(TRUE)
@@ -713,7 +713,7 @@ test_that("deferred task delete", {
 
   expect_setequal(obj$task_list(), c(t1, t2, t3, t4))
   expect_equal(obj$queue_list(), t1)
-  deferred_set <- obj$keys$deferred_set
+  deferred_set <- queue_keys(obj)$deferred_set
   expect_setequal(obj$con$SMEMBERS(deferred_set), list(t2, t3, t4))
 
   obj$task_delete(t2)
@@ -776,7 +776,7 @@ test_that("deferred task cancel", {
 
   expect_setequal(obj$task_list(), c(t1, t2, t3, t4))
   expect_equal(obj$queue_list(), t1)
-  deferred_set <- obj$keys$deferred_set
+  deferred_set <- queue_keys(obj)$deferred_set
   expect_setequal(obj$con$SMEMBERS(deferred_set), list(t2, t3, t4))
 
   obj$task_cancel(t2)
@@ -865,7 +865,7 @@ test_that("submit a task with a timeout requires separate process", {
 test_that("submit a task with a timeout", {
   obj <- test_rrq("myfuns.R")
   t <- obj$enqueue(slowdouble(10), timeout = 1, separate_process = TRUE)
-  expect_equal(obj$con$HGET(obj$keys$task_timeout, t), "1")
+  expect_equal(obj$con$HGET(queue_keys(obj)$task_timeout, t), "1")
 
   w <- test_worker_blocking(obj)
   w$step(TRUE)
