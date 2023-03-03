@@ -994,3 +994,16 @@ test_that("collect times", {
   expect_equal(obj$task_times(t2), times1[t2, , drop = FALSE])
   expect_false(any(is.na(times2[t1, ])))
 })
+
+test_that("cancel multiple tasks", {
+  obj <- test_rrq()
+  t <- obj$enqueue(sqrt(1))
+  t2 <- obj$enqueue(sqrt(1), queue = "other")
+  expect_equal(obj$task_status(t), set_names(TASK_PENDING, t))
+  expect_equal(obj$task_status(2), set_names(TASK_PENDING, t))
+  obj$task_cancel(c(t, t2))
+  expect_equal(obj$task_status(t), set_names(TASK_MISSING, t))
+  expect_equal(obj$task_status(t2), set_names(TASK_MISSING, t))
+  expect_equal(obj$queue_list(), character(0))
+  expect_equal(obj$queue_list("other"), character(0))
+})

@@ -738,7 +738,7 @@ rrq_controller <- R6::R6Class(
     ##' `separate_process = TRUE`). Dependent tasks will be marked as
     ##' impossible.
     ##'
-    ##' @param task_id Id of the task to cancel
+    ##' @param task_ids Id or vector of ids of the task(s) to cancel
     ##'
     ##' @param wait Wait for the task to be stopped, if it was running. If
     ##'   `delete` is `TRUE`, then we will always wait for the task to stop.
@@ -748,7 +748,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @return Nothing if successfully cancelled, otherwise throws an
     ##' error with task_id and status e.g. Task 123 is not running (MISSING)
-    task_cancel = function(task_id, wait = TRUE, delete = TRUE) {
+    task_cancel = function(task_ids, wait = TRUE, delete = TRUE) {
       task_cancel(self$con, self$keys, private$store, private$scripts,
                   task_id, wait, delete)
     },
@@ -1247,7 +1247,7 @@ task_delete <- function(con, keys, store, task_ids, check = TRUE) {
   invisible()
 }
 
-task_cancel <- function(con, keys, store, scripts, task_id, wait = FALSE,
+task_cancel <- function(con, keys, store, scripts, task_ids, wait = FALSE,
                         delete = TRUE) {
   ## There are several steps here, which will all be executed in one
   ## block which removes the possibility of race conditions:
@@ -1265,33 +1265,54 @@ task_cancel <- function(con, keys, store, scripts, task_id, wait = FALSE,
   ##
   ## * Retrieve the status so that we know the task status before any
   ##   change can happen.
-  dat <- con$pipeline(
-    dropped = redis$EVALSHA(scripts$queue_delete, 1L, keys$task_queue, task_id),
-    cancel = redis$HSET(keys$task_cancel, task_id, "TRUE"),
-    status = redis$HGET(keys$task_status, task_id),
-    local = redis$HGET(keys$task_local, task_id))
+  browser()
+  dat <- con$pipeline(.commands =
+    set_names(lapply(task_ids, function(task_id) {
+      c(
+        dropped = redis$EVALSHA(scripts$queue_delete, 1L, keys$task_queue, task_id),
+        cancel = redis$HSET(keys$task_cancel, task_id, "TRUE"),
+        status = redis$HGET(keys$task_status, task_id),
+        local = redis$HGET(keys$task_local, task_id),
+      )
+    }), task_ids)
+  )
 
-  task_status <- dat$status %||% TASK_MISSING
+  task_status <- lapply(dat, function(x) x$status %||% TASK_MISSING)
+  tasks_not_cancelled <- names(task_status[(task_status %in% TASK$unfinished)])
 
-  if (!(task_status %in% TASK$unfinished)) {
-    stop(sprintf("Task %s is not cancelable (%s)", task_id, task_status))
+  if (length(tasks_not_cancelled) > 0) {
+    lapply(tasks_not_cancelled, function(task_id) {
+      task_status <- tasks_status[[task_id]]
+      message(sprintf("Task %s is not cancelable (%s)", task_id, task_status))
+    })
   }
 
-  cancel_dependencies(con, keys, store, task_id)
+  tasks_cancelled <- names(task_status[!names(task_status) %in% tasks_not_cancelled])
+  if (length(tasks_cancelled) == 0) {
+    stop("No tasks cancelled successfully")
+  }
 
-  if (task_status == TASK_RUNNING) {
-    if (dat$local != "FALSE") {
-      stop(sprintf(
-        "Can't cancel running task '%s' as not in separate process", task_id))
-    }
-    if (delete || wait) {
-      timeout_wait <- 10
-      wait_status_change(con, keys, task_id, TASK_RUNNING, timeout_wait)
+  lapply(tasks_cancelled,
+         function(task_id) cancel_dependencies(con, keys, store, task_id))
+
+  tasks_running <- names(task_status[task_status == TASK_RUNNING])
+  if (length(tasks_running > 0)) {
+    for (task_id in tasks_running) {
+      if (dat[[task_id]]$local != "FALSE") {
+        message(sprintf(
+          "Can't cancel running task '%s' as not in separate process", task_id))
+      }
+      if (delete || wait) {
+        timeout_wait <- 10
+        wait_status_change(con, keys, task_id, TASK_RUNNING, timeout_wait)
+      }
     }
   }
 
   if (delete) {
-    task_delete(con, keys, store, task_id, FALSE)
+    for (task_id in names(dat)) {
+      task_delete(con, keys, store, task_id, FALSE)
+    }
   }
 
   invisible(NULL)
