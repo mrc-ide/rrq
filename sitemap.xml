@@ -28,9 +28,6 @@
     <loc>/reference/heartbeat.html</loc>
   </url>
   <url>
-    <loc>/reference/heartbeat_kill.html</loc>
-  </url>
-  <url>
     <loc>/reference/index.html</loc>
   </url>
   <url>
@@ -52,6 +49,9 @@
     <loc>/reference/rrq_expect_worker.html</loc>
   </url>
   <url>
+    <loc>/reference/rrq_heartbeat_kill.html</loc>
+  </url>
+  <url>
     <loc>/reference/rrq_migrate.html</loc>
   </url>
   <url>
@@ -67,6 +67,6 @@
     <loc>/reference/rrq_worker_script.html</loc>
   </url>
   <url>
-    <loc>/reference/worker_spawn.html</loc>
+    <loc>/reference/rrq_worker_spawn.html</loc>
   </url>
 </urlset>

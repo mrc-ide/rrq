@@ -18,7 +18,7 @@ rrq queue worker"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.5.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.0</span>
       </span>
     </div>
 
@@ -87,19 +87,19 @@ but will sit and poll a queue for jobs.</p>
 <div class="section">
 <h3 id="public-methods">Public methods<a class="anchor" aria-label="anchor" href="#public-methods"></a></h3>
 
-<ul><li><p><a href="#method-new"><code>rrq_worker$new()</code></a></p></li>
-<li><p><a href="#method-info"><code>rrq_worker$info()</code></a></p></li>
-<li><p><a href="#method-log"><code>rrq_worker$log()</code></a></p></li>
-<li><p><a href="#method-load_envir"><code>rrq_worker$load_envir()</code></a></p></li>
-<li><p><a href="#method-poll"><code>rrq_worker$poll()</code></a></p></li>
-<li><p><a href="#method-step"><code>rrq_worker$step()</code></a></p></li>
-<li><p><a href="#method-loop"><code>rrq_worker$loop()</code></a></p></li>
-<li><p><a href="#method-format"><code>rrq_worker$format()</code></a></p></li>
-<li><p><a href="#method-timer_start"><code>rrq_worker$timer_start()</code></a></p></li>
-<li><p><a href="#method-progress"><code>rrq_worker$progress()</code></a></p></li>
-<li><p><a href="#method-task_eval"><code>rrq_worker$task_eval()</code></a></p></li>
-<li><p><a href="#method-shutdown"><code>rrq_worker$shutdown()</code></a></p></li>
-</ul></div><p></p><hr><a id="method-new"></a><div class="section">
+<ul><li><p><a href="#method-rrq_worker-new"><code>rrq_worker$new()</code></a></p></li>
+<li><p><a href="#method-rrq_worker-info"><code>rrq_worker$info()</code></a></p></li>
+<li><p><a href="#method-rrq_worker-log"><code>rrq_worker$log()</code></a></p></li>
+<li><p><a href="#method-rrq_worker-load_envir"><code>rrq_worker$load_envir()</code></a></p></li>
+<li><p><a href="#method-rrq_worker-poll"><code>rrq_worker$poll()</code></a></p></li>
+<li><p><a href="#method-rrq_worker-step"><code>rrq_worker$step()</code></a></p></li>
+<li><p><a href="#method-rrq_worker-loop"><code>rrq_worker$loop()</code></a></p></li>
+<li><p><a href="#method-rrq_worker-format"><code>rrq_worker$format()</code></a></p></li>
+<li><p><a href="#method-rrq_worker-timer_start"><code>rrq_worker$timer_start()</code></a></p></li>
+<li><p><a href="#method-rrq_worker-progress"><code>rrq_worker$progress()</code></a></p></li>
+<li><p><a href="#method-rrq_worker-task_eval"><code>rrq_worker$task_eval()</code></a></p></li>
+<li><p><a href="#method-rrq_worker-shutdown"><code>rrq_worker$shutdown()</code></a></p></li>
+</ul></div><p></p><hr><a id="method-rrq_worker-new"></a><div class="section">
 <h3 id="method-new-">Method <code>new()</code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
 <p>Constructor</p><div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
@@ -161,7 +161,7 @@ run by all workers.</p></dd>
 <dt><code>heartbeat_period</code></dt>
 <dd><p>Optional period for the heartbeat.  If
 non-NULL then a heartbeat process will be started (using
-<code><a href="heartbeat.html">heartbeat</a></code>) which can be used to build fault
+<code><a href="heartbeat.html">rrq_heartbeat</a></code>) which can be used to build fault
 tolerant queues.</p></dd>
 
 
@@ -184,7 +184,7 @@ in a separate process.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-info"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_worker-info"></a><div class="section">
 <h3 id="method-info-">Method <code>info()</code><a class="anchor" aria-label="anchor" href="#method-info-"></a></h3>
 <p>Return information about this worker, a list of
 key-value pairs.</p><div class="section">
@@ -193,7 +193,7 @@ key-value pairs.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-log"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_worker-log"></a><div class="section">
 <h3 id="method-log-">Method <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">log()</a></code><a class="anchor" aria-label="anchor" href="#method-log-"></a></h3>
 <p>Create a log entry. This will print a human readable
 format to screen and a machine-readable format to the redis database.</p><div class="section">
@@ -214,7 +214,7 @@ format to screen and a machine-readable format to the redis database.</p><div cl
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-load_envir"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_worker-load_envir"></a><div class="section">
 <h3 id="method-load-envir-">Method <code>load_envir()</code><a class="anchor" aria-label="anchor" href="#method-load-envir-"></a></h3>
 <p>Load the worker environment by creating a new
 environment object and running the create hook (if configured).
@@ -224,7 +224,7 @@ See <code>$envir</code> on <code><a href="rrq_controller.html">rrq_controller</a
 </div>
 
 
-</div><p></p><hr><a id="method-poll"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_worker-poll"></a><div class="section">
 <h3 id="method-poll-">Method <code>poll()</code><a class="anchor" aria-label="anchor" href="#method-poll-"></a></h3>
 <p>Poll for work</p><div class="section">
 <h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
@@ -242,7 +242,7 @@ zero. Intended primarily for use in the tests.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-step"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_worker-step"></a><div class="section">
 <h3 id="method-step-">Method <code><a href="https://rdrr.io/r/stats/step.html" class="external-link">step()</a></code><a class="anchor" aria-label="anchor" href="#method-step-"></a></h3>
 <p>Take a single "step". This consists of</p><ol><li><p>Poll for work (<code>$poll()</code>)</p></li>
 <li><p>If work found, run it (either a task or a message)</p></li>
@@ -263,7 +263,7 @@ zero. Intended primarily for use in the tests.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-loop"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_worker-loop"></a><div class="section">
 <h3 id="method-loop-">Method <code>loop()</code><a class="anchor" aria-label="anchor" href="#method-loop-"></a></h3>
 <p>The main worker loop. Use this to set up the main
 worker event loop, which will continue until exiting (via a timeout
@@ -283,7 +283,7 @@ zero. Intended primarily for use in the tests.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-format"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_worker-format"></a><div class="section">
 <h3 id="method-format-">Method <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code><a class="anchor" aria-label="anchor" href="#method-format-"></a></h3>
 <p>Create a nice string representation of the worker.
 Used automatically to print the worker by R6.</p><div class="section">
@@ -292,7 +292,7 @@ Used automatically to print the worker by R6.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-timer_start"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_worker-timer_start"></a><div class="section">
 <h3 id="method-timer-start-">Method <code>timer_start()</code><a class="anchor" aria-label="anchor" href="#method-timer-start-"></a></h3>
 <p>Start the timer</p><div class="section">
 <h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
@@ -300,7 +300,7 @@ Used automatically to print the worker by R6.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-progress"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_worker-progress"></a><div class="section">
 <h3 id="method-progress-">Method <code>progress()</code><a class="anchor" aria-label="anchor" href="#method-progress-"></a></h3>
 <p>Submit a progress message. See
 <code><a href="rrq_task_progress_update.html">rrq_task_progress_update()</a></code> for details of this mechanism.</p><div class="section">
@@ -330,7 +330,7 @@ progress messages have made it to the server.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-task_eval"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_worker-task_eval"></a><div class="section">
 <h3 id="method-task-eval-">Method <code>task_eval()</code><a class="anchor" aria-label="anchor" href="#method-task-eval-"></a></h3>
 <p>Evaluate a task</p><div class="section">
 <h4 id="usage-10">Usage<a class="anchor" aria-label="anchor" href="#usage-10"></a></h4>
@@ -347,7 +347,7 @@ this identifier does not exist.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-shutdown"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_worker-shutdown"></a><div class="section">
 <h3 id="method-shutdown-">Method <code>shutdown()</code><a class="anchor" aria-label="anchor" href="#method-shutdown-"></a></h3>
 <p>Stop the worker</p><div class="section">
 <h4 id="usage-11">Usage<a class="anchor" aria-label="anchor" href="#usage-11"></a></h4>

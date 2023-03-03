@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.5.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.0</span>
       </span>
     </div>
 
@@ -60,6 +60,10 @@
       <small>Source: <a href="https://github.com/mrc-ide/rrq/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="0.6.0" id="rrq-060">rrq 0.6.0<a class="anchor" aria-label="anchor" href="#rrq-060"></a></h2>
+<ul><li>Renamed some functions with <code>rrq_</code> prefix; you must now use <code><a href="../reference/rrq_worker_spawn.html">rrq_worker_spawn()</a></code> (not <code>worker_spawn</code>), <code>rrq_worker_wait</code>, <code>rrq_heartbeat</code> and <code>rrq_heartbeat_kill</code> (mrc-2682)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.4.1" id="rrq-041">rrq 0.4.1<a class="anchor" aria-label="anchor" href="#rrq-041"></a></h2>
 <ul><li>Expose <code><a href="../reference/rrq_worker_from_config.html">rrq::rrq_worker_from_config</a></code>, which is a simpler way of constructing worker objects. The worker object itself (<code><a href="../reference/rrq_worker.html">rrq::rrq_worker</a></code>) loses its helper constructor function and is documented (mrc-2297)</li>

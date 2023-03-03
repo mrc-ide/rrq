@@ -18,7 +18,7 @@ rrq queue controller"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.5.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.0</span>
       </span>
     </div>
 
@@ -155,23 +155,23 @@ current timeout.</p></li>
 <code>enqueue</code> interface. In the majority of cases you can ignore the
 details and use the <code>lapply</code> method in much the same way as you
 would in normal R. Assuming that <code>obj</code> is your <code>rrq_controller</code>
-object, you might write:</p><div class="sourceCode"><pre><code><span><span class="va">ans</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">lapply</span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, <span class="va">sqrt</span><span class="op">)</span></span></code></pre></div>
-
+object, you might write:</p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>ans <span class="ot">&lt;-</span> obj<span class="sc">$</span><span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, sqrt)</span></code></pre><p></p></div>
 <p>which will return the same thing as <code>lapply(1:10, sqrt)</code> (provided
 that you have a Redis server running and workers registered)</p>
 <p>There is some sleight of hand here, though as we need to identify
 that it is the <em>symbol</em> <code>sqrt</code> that matters there corresponding
 to the builtin <a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a> function. You can make this more explicit
-by passing in the name of the function using <code>$lapply_()</code></p><div class="sourceCode"><pre><code><span><span class="va">ans</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">lapply</span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, <span class="fu"><a href="https://rdrr.io/r/base/substitute.html" class="external-link">quote</a></span><span class="op">(</span><span class="va">sqrt</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-
-<p>The same treatment applies to the dots; this is allowed:</p><div class="sourceCode"><pre><code><span><span class="va">b</span> <span class="op">&lt;-</span> <span class="fl">2</span></span>
-<span><span class="va">ans</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">lapply</span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, <span class="va">log</span>, base <span class="op">=</span> <span class="va">b</span><span class="op">)</span></span></code></pre></div>
-
+by passing in the name of the function using <code>$lapply_()</code></p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>ans <span class="ot">&lt;-</span> obj<span class="sc">$</span><span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="fu">quote</span>(sqrt))</span></code></pre><p></p></div>
+<p>The same treatment applies to the dots; this is allowed:</p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>ans <span class="ot">&lt;-</span> obj<span class="sc">$</span><span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, log, <span class="at">base =</span> b)</span></code></pre><p></p></div>
 <p>But this will look up the bindings of <code>log</code> and <code>b</code> in the context
 in which the call is made. This may not always do what is
-expected, so you can use the names directly:</p><div class="sourceCode"><pre><code><span><span class="va">b</span> <span class="op">&lt;-</span> <span class="fl">2</span></span>
-<span><span class="va">ans</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">lapply_</span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, <span class="fu"><a href="https://rdrr.io/r/base/substitute.html" class="external-link">quote</a></span><span class="op">(</span><span class="va">log</span><span class="op">)</span>, base <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/substitute.html" class="external-link">quote</a></span><span class="op">(</span><span class="va">b</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-
+expected, so you can use the names directly:</p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>ans <span class="ot">&lt;-</span> obj<span class="sc">$</span><span class="fu">lapply_</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="fu">quote</span>(log), <span class="at">base =</span> <span class="fu">quote</span>(b))</span></code></pre><p></p></div>
     </div>
     <div id="public-fields">
     <h2>Public fields</h2>
@@ -195,56 +195,56 @@ expected, so you can use the names directly:</p><div class="sourceCode"><pre><co
 <div class="section">
 <h3 id="public-methods">Public methods<a class="anchor" aria-label="anchor" href="#public-methods"></a></h3>
 
-<ul><li><p><a href="#method-new"><code>rrq_controller$new()</code></a></p></li>
-<li><p><a href="#method-destroy"><code>rrq_controller$destroy()</code></a></p></li>
-<li><p><a href="#method-envir"><code>rrq_controller$envir()</code></a></p></li>
-<li><p><a href="#method-enqueue"><code>rrq_controller$enqueue()</code></a></p></li>
-<li><p><a href="#method-enqueue_"><code>rrq_controller$enqueue_()</code></a></p></li>
-<li><p><a href="#method-lapply"><code>rrq_controller$lapply()</code></a></p></li>
-<li><p><a href="#method-lapply_"><code>rrq_controller$lapply_()</code></a></p></li>
-<li><p><a href="#method-enqueue_bulk"><code>rrq_controller$enqueue_bulk()</code></a></p></li>
-<li><p><a href="#method-enqueue_bulk_"><code>rrq_controller$enqueue_bulk_()</code></a></p></li>
-<li><p><a href="#method-bulk_wait"><code>rrq_controller$bulk_wait()</code></a></p></li>
-<li><p><a href="#method-task_list"><code>rrq_controller$task_list()</code></a></p></li>
-<li><p><a href="#method-task_exists"><code>rrq_controller$task_exists()</code></a></p></li>
-<li><p><a href="#method-task_status"><code>rrq_controller$task_status()</code></a></p></li>
-<li><p><a href="#method-task_progress"><code>rrq_controller$task_progress()</code></a></p></li>
-<li><p><a href="#method-task_overview"><code>rrq_controller$task_overview()</code></a></p></li>
-<li><p><a href="#method-task_position"><code>rrq_controller$task_position()</code></a></p></li>
-<li><p><a href="#method-task_preceeding"><code>rrq_controller$task_preceeding()</code></a></p></li>
-<li><p><a href="#method-task_result"><code>rrq_controller$task_result()</code></a></p></li>
-<li><p><a href="#method-tasks_result"><code>rrq_controller$tasks_result()</code></a></p></li>
-<li><p><a href="#method-task_wait"><code>rrq_controller$task_wait()</code></a></p></li>
-<li><p><a href="#method-tasks_wait"><code>rrq_controller$tasks_wait()</code></a></p></li>
-<li><p><a href="#method-task_delete"><code>rrq_controller$task_delete()</code></a></p></li>
-<li><p><a href="#method-task_cancel"><code>rrq_controller$task_cancel()</code></a></p></li>
-<li><p><a href="#method-task_data"><code>rrq_controller$task_data()</code></a></p></li>
-<li><p><a href="#method-task_times"><code>rrq_controller$task_times()</code></a></p></li>
-<li><p><a href="#method-queue_length"><code>rrq_controller$queue_length()</code></a></p></li>
-<li><p><a href="#method-queue_list"><code>rrq_controller$queue_list()</code></a></p></li>
-<li><p><a href="#method-queue_remove"><code>rrq_controller$queue_remove()</code></a></p></li>
-<li><p><a href="#method-deferred_list"><code>rrq_controller$deferred_list()</code></a></p></li>
-<li><p><a href="#method-worker_len"><code>rrq_controller$worker_len()</code></a></p></li>
-<li><p><a href="#method-worker_list"><code>rrq_controller$worker_list()</code></a></p></li>
-<li><p><a href="#method-worker_list_exited"><code>rrq_controller$worker_list_exited()</code></a></p></li>
-<li><p><a href="#method-worker_info"><code>rrq_controller$worker_info()</code></a></p></li>
-<li><p><a href="#method-worker_status"><code>rrq_controller$worker_status()</code></a></p></li>
-<li><p><a href="#method-worker_log_tail"><code>rrq_controller$worker_log_tail()</code></a></p></li>
-<li><p><a href="#method-worker_task_id"><code>rrq_controller$worker_task_id()</code></a></p></li>
-<li><p><a href="#method-worker_delete_exited"><code>rrq_controller$worker_delete_exited()</code></a></p></li>
-<li><p><a href="#method-worker_stop"><code>rrq_controller$worker_stop()</code></a></p></li>
-<li><p><a href="#method-worker_detect_exited"><code>rrq_controller$worker_detect_exited()</code></a></p></li>
-<li><p><a href="#method-worker_process_log"><code>rrq_controller$worker_process_log()</code></a></p></li>
-<li><p><a href="#method-worker_config_save"><code>rrq_controller$worker_config_save()</code></a></p></li>
-<li><p><a href="#method-worker_config_list"><code>rrq_controller$worker_config_list()</code></a></p></li>
-<li><p><a href="#method-worker_config_read"><code>rrq_controller$worker_config_read()</code></a></p></li>
-<li><p><a href="#method-worker_load"><code>rrq_controller$worker_load()</code></a></p></li>
-<li><p><a href="#method-message_send"><code>rrq_controller$message_send()</code></a></p></li>
-<li><p><a href="#method-message_has_response"><code>rrq_controller$message_has_response()</code></a></p></li>
-<li><p><a href="#method-message_get_response"><code>rrq_controller$message_get_response()</code></a></p></li>
-<li><p><a href="#method-message_response_ids"><code>rrq_controller$message_response_ids()</code></a></p></li>
-<li><p><a href="#method-message_send_and_wait"><code>rrq_controller$message_send_and_wait()</code></a></p></li>
-</ul></div><p></p><hr><a id="method-new"></a><div class="section">
+<ul><li><p><a href="#method-rrq_controller-new"><code>rrq_controller$new()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-destroy"><code>rrq_controller$destroy()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-envir"><code>rrq_controller$envir()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-enqueue"><code>rrq_controller$enqueue()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-enqueue_"><code>rrq_controller$enqueue_()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-lapply"><code>rrq_controller$lapply()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-lapply_"><code>rrq_controller$lapply_()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-enqueue_bulk"><code>rrq_controller$enqueue_bulk()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-enqueue_bulk_"><code>rrq_controller$enqueue_bulk_()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-bulk_wait"><code>rrq_controller$bulk_wait()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-task_list"><code>rrq_controller$task_list()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-task_exists"><code>rrq_controller$task_exists()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-task_status"><code>rrq_controller$task_status()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-task_progress"><code>rrq_controller$task_progress()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-task_overview"><code>rrq_controller$task_overview()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-task_position"><code>rrq_controller$task_position()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-task_preceeding"><code>rrq_controller$task_preceeding()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-task_result"><code>rrq_controller$task_result()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-tasks_result"><code>rrq_controller$tasks_result()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-task_wait"><code>rrq_controller$task_wait()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-tasks_wait"><code>rrq_controller$tasks_wait()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-task_delete"><code>rrq_controller$task_delete()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-task_cancel"><code>rrq_controller$task_cancel()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-task_data"><code>rrq_controller$task_data()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-task_times"><code>rrq_controller$task_times()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-queue_length"><code>rrq_controller$queue_length()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-queue_list"><code>rrq_controller$queue_list()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-queue_remove"><code>rrq_controller$queue_remove()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-deferred_list"><code>rrq_controller$deferred_list()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-worker_len"><code>rrq_controller$worker_len()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-worker_list"><code>rrq_controller$worker_list()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-worker_list_exited"><code>rrq_controller$worker_list_exited()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-worker_info"><code>rrq_controller$worker_info()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-worker_status"><code>rrq_controller$worker_status()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-worker_log_tail"><code>rrq_controller$worker_log_tail()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-worker_task_id"><code>rrq_controller$worker_task_id()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-worker_delete_exited"><code>rrq_controller$worker_delete_exited()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-worker_stop"><code>rrq_controller$worker_stop()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-worker_detect_exited"><code>rrq_controller$worker_detect_exited()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-worker_process_log"><code>rrq_controller$worker_process_log()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-worker_config_save"><code>rrq_controller$worker_config_save()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-worker_config_list"><code>rrq_controller$worker_config_list()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-worker_config_read"><code>rrq_controller$worker_config_read()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-worker_load"><code>rrq_controller$worker_load()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-message_send"><code>rrq_controller$message_send()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-message_has_response"><code>rrq_controller$message_has_response()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-message_get_response"><code>rrq_controller$message_get_response()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-message_response_ids"><code>rrq_controller$message_response_ids()</code></a></p></li>
+<li><p><a href="#method-rrq_controller-message_send_and_wait"><code>rrq_controller$message_send_and_wait()</code></a></p></li>
+</ul></div><p></p><hr><a id="method-rrq_controller-new"></a><div class="section">
 <h3 id="method-new-">Method <code>new()</code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
 <p>Constructor</p><div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
@@ -268,7 +268,7 @@ connection using default ports, or environment variables set as in
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-destroy"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-destroy"></a><div class="section">
 <h3 id="method-destroy-">Method <code>destroy()</code><a class="anchor" aria-label="anchor" href="#method-destroy-"></a></h3>
 <p>Entirely destroy a queue, by deleting all keys
 associated with it from the Redis database. This is a very
@@ -308,7 +308,7 @@ using <code>type = "message"</code></p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-envir"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-envir"></a><div class="section">
 <h3 id="method-envir-">Method <code>envir()</code><a class="anchor" aria-label="anchor" href="#method-envir-"></a></h3>
 <p>Register a function to create an environment when
 creating a worker. When a worker starts, they will run this
@@ -335,7 +335,7 @@ message to all workers to update their environment.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-enqueue"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-enqueue"></a><div class="section">
 <h3 id="method-enqueue-">Method <code>enqueue()</code><a class="anchor" aria-label="anchor" href="#method-enqueue-"></a></h3>
 <p>Queue an expression</p><div class="section">
 <h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
@@ -418,7 +418,7 @@ have configured your worker environment.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-enqueue_"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-enqueue_"></a><div class="section">
 <h3 id="method-enqueue--1">Method <code>enqueue_()</code><a class="anchor" aria-label="anchor" href="#method-enqueue--1"></a></h3>
 <p>Queue an expression</p><div class="section">
 <h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
@@ -489,7 +489,7 @@ calculation. See <code>$enqueue</code> for details.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-lapply"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-lapply"></a><div class="section">
 <h3 id="method-lapply-">Method <code><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply()</a></code><a class="anchor" aria-label="anchor" href="#method-lapply-"></a></h3>
 <p>Apply a function over a list of data. This is
 equivalent to using <code>$enqueue()</code> over each element in the list.</p><div class="section">
@@ -581,7 +581,7 @@ progress bar if in an interactive session.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-lapply_"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-lapply_"></a><div class="section">
 <h3 id="method-lapply--1">Method <code>lapply_()</code><a class="anchor" aria-label="anchor" href="#method-lapply--1"></a></h3>
 <p>The "standard evaluation" version of <code>$lapply()</code>.
 This differs in how the function is found and how dots are passed.
@@ -676,7 +676,7 @@ progress bar if in an interactive session.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-enqueue_bulk"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-enqueue_bulk"></a><div class="section">
 <h3 id="method-enqueue-bulk-">Method <code>enqueue_bulk()</code><a class="anchor" aria-label="anchor" href="#method-enqueue-bulk-"></a></h3>
 <p>Send a bulk set of tasks to your workers.
 This function is a bit like a mash-up of <a href="https://rdrr.io/r/base/funprog.html" class="external-link">Map</a> and <a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a>,
@@ -774,7 +774,7 @@ progress bar if in an interactive session.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-enqueue_bulk_"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-enqueue_bulk_"></a><div class="section">
 <h3 id="method-enqueue-bulk--1">Method <code>enqueue_bulk_()</code><a class="anchor" aria-label="anchor" href="#method-enqueue-bulk--1"></a></h3>
 <p>The "standard evaluation" version of <code>$enqueue_bulk()</code>.
 This differs in how the function is found and how dots are passed.
@@ -871,7 +871,7 @@ progress bar if in an interactive session.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-bulk_wait"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-bulk_wait"></a><div class="section">
 <h3 id="method-bulk-wait-">Method <code>bulk_wait()</code><a class="anchor" aria-label="anchor" href="#method-bulk-wait-"></a></h3>
 <p>Wait for a group of tasks</p><div class="section">
 <h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
@@ -916,7 +916,7 @@ to prevent build-up of lots of task information in Redis.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-task_list"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-task_list"></a><div class="section">
 <h3 id="method-task-list-">Method <code>task_list()</code><a class="anchor" aria-label="anchor" href="#method-task-list-"></a></h3>
 <p>List ids of all tasks known to this rrq controller</p><div class="section">
 <h4 id="usage-10">Usage<a class="anchor" aria-label="anchor" href="#usage-10"></a></h4>
@@ -924,7 +924,7 @@ to prevent build-up of lots of task information in Redis.</p></dd>
 </div>
 
 
-</div><p></p><hr><a id="method-task_exists"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-task_exists"></a><div class="section">
 <h3 id="method-task-exists-">Method <code>task_exists()</code><a class="anchor" aria-label="anchor" href="#method-task-exists-"></a></h3>
 <p>Test if task with id <code>task_ids</code> is known to this
 rrq controller</p><div class="section">
@@ -941,7 +941,7 @@ rrq controller</p><div class="section">
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-task_status"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-task_status"></a><div class="section">
 <h3 id="method-task-status-">Method <code>task_status()</code><a class="anchor" aria-label="anchor" href="#method-task-status-"></a></h3>
 <p>Return a character vector of task statuses. The name
 of each element corresponds to a task id, and the value will be
@@ -961,7 +961,7 @@ all task ids known to this rrq controller is returned.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-task_progress"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-task_progress"></a><div class="section">
 <h3 id="method-task-progress-">Method <code>task_progress()</code><a class="anchor" aria-label="anchor" href="#method-task-progress-"></a></h3>
 <p>Retrieve task progress, if set. This will be <code>NULL</code>
 if progress has never been registered, otherwise whatever value
@@ -979,7 +979,7 @@ was set - can be an arbitrary R object.</p><div class="section">
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-task_overview"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-task_overview"></a><div class="section">
 <h3 id="method-task-overview-">Method <code>task_overview()</code><a class="anchor" aria-label="anchor" href="#method-task-overview-"></a></h3>
 <p>Provide a high level overview of task statuses
 for a set of task ids, being the count in major categories of
@@ -999,7 +999,7 @@ all task ids known to this rrq controller is used.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-task_position"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-task_position"></a><div class="section">
 <h3 id="method-task-position-">Method <code>task_position()</code><a class="anchor" aria-label="anchor" href="#method-task-position-"></a></h3>
 <p>Find the position of one or more tasks in the queue.</p><div class="section">
 <h4 id="usage-15">Usage<a class="anchor" aria-label="anchor" href="#usage-15"></a></h4>
@@ -1027,7 +1027,7 @@ indicating its position (with 1) being the next task to run.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-task_preceeding"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-task_preceeding"></a><div class="section">
 <h3 id="method-task-preceeding-">Method <code>task_preceeding()</code><a class="anchor" aria-label="anchor" href="#method-task-preceeding-"></a></h3>
 <p>List the tasks in front of <code>task_id</code> in the queue.
 If the task is missing from the queue this will return NULL. If
@@ -1051,7 +1051,7 @@ vector.</p><div class="section">
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-task_result"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-task_result"></a><div class="section">
 <h3 id="method-task-result-">Method <code>task_result()</code><a class="anchor" aria-label="anchor" href="#method-task-result-"></a></h3>
 <p>Get the result for a single task (see <code>$tasks_result</code>
 for a method for efficiently getting multiple results at once).
@@ -1070,7 +1070,7 @@ error otherwise.</p><div class="section">
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-tasks_result"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-tasks_result"></a><div class="section">
 <h3 id="method-tasks-result-">Method <code>tasks_result()</code><a class="anchor" aria-label="anchor" href="#method-tasks-result-"></a></h3>
 <p>Get the results of a group of tasks, returning them as a
 list.</p><div class="section">
@@ -1088,7 +1088,7 @@ is wanted.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-task_wait"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-task_wait"></a><div class="section">
 <h3 id="method-task-wait-">Method <code>task_wait()</code><a class="anchor" aria-label="anchor" href="#method-task-wait-"></a></h3>
 <p>Poll for a task to complete, returning the result
 when completed. If the task has already completed this is
@@ -1135,7 +1135,7 @@ progress bar if in an interactive session.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-tasks_wait"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-tasks_wait"></a><div class="section">
 <h3 id="method-tasks-wait-">Method <code>tasks_wait()</code><a class="anchor" aria-label="anchor" href="#method-tasks-wait-"></a></h3>
 <p>Poll for a group of tasks to complete, returning the
 result as list when completed. If the tasks have already completed
@@ -1175,7 +1175,7 @@ progress bar if in an interactive session.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-task_delete"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-task_delete"></a><div class="section">
 <h3 id="method-task-delete-">Method <code>task_delete()</code><a class="anchor" aria-label="anchor" href="#method-task-delete-"></a></h3>
 <p>Delete one or more tasks</p><div class="section">
 <h4 id="usage-21">Usage<a class="anchor" aria-label="anchor" href="#usage-21"></a></h4>
@@ -1197,7 +1197,7 @@ desirable behaviour.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-task_cancel"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-task_cancel"></a><div class="section">
 <h3 id="method-task-cancel-">Method <code>task_cancel()</code><a class="anchor" aria-label="anchor" href="#method-task-cancel-"></a></h3>
 <p>Cancel a single task. If the task is <code>PENDING</code> it
 will be deleted. If <code>RUNNING</code> then the task will be stopped if
@@ -1232,7 +1232,7 @@ was successful).</p></dd>
 error with task_id and status e.g. Task 123 is not running (MISSING)</p>
 </div>
 
-</div><p></p><hr><a id="method-task_data"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-task_data"></a><div class="section">
 <h3 id="method-task-data-">Method <code>task_data()</code><a class="anchor" aria-label="anchor" href="#method-task-data-"></a></h3>
 <p>Fetch internal data about a task from Redis
 (expert use only).</p><div class="section">
@@ -1249,7 +1249,7 @@ error with task_id and status e.g. Task 123 is not running (MISSING)</p>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-task_times"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-task_times"></a><div class="section">
 <h3 id="method-task-times-">Method <code>task_times()</code><a class="anchor" aria-label="anchor" href="#method-task-times-"></a></h3>
 <p>Fetch times for tasks at points in their life cycle.
 For each task returns the time of submission, starting
@@ -1272,7 +1272,7 @@ them to a POSIXt object.</p><div class="section">
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-queue_length"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-queue_length"></a><div class="section">
 <h3 id="method-queue-length-">Method <code>queue_length()</code><a class="anchor" aria-label="anchor" href="#method-queue-length-"></a></h3>
 <p>Returns the number of tasks in the queue (waiting for
 an available worker).</p><div class="section">
@@ -1290,7 +1290,7 @@ an available worker).</p><div class="section">
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-queue_list"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-queue_list"></a><div class="section">
 <h3 id="method-queue-list-">Method <code>queue_list()</code><a class="anchor" aria-label="anchor" href="#method-queue-list-"></a></h3>
 <p>Returns the keys in the task queue.</p><div class="section">
 <h4 id="usage-26">Usage<a class="anchor" aria-label="anchor" href="#usage-26"></a></h4>
@@ -1307,7 +1307,7 @@ an available worker).</p><div class="section">
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-queue_remove"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-queue_remove"></a><div class="section">
 <h3 id="method-queue-remove-">Method <code>queue_remove()</code><a class="anchor" aria-label="anchor" href="#method-queue-remove-"></a></h3>
 <p>Remove task ids from a queue.</p><div class="section">
 <h4 id="usage-27">Usage<a class="anchor" aria-label="anchor" href="#usage-27"></a></h4>
@@ -1328,7 +1328,7 @@ an available worker).</p><div class="section">
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-deferred_list"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-deferred_list"></a><div class="section">
 <h3 id="method-deferred-list-">Method <code>deferred_list()</code><a class="anchor" aria-label="anchor" href="#method-deferred-list-"></a></h3>
 <p>Return deferred tasks and what they are waiting on.
 Note this is in an arbitrary order, tasks will be added to the
@@ -1338,7 +1338,7 @@ queue as their dependencies are satisfied.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-worker_len"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-worker_len"></a><div class="section">
 <h3 id="method-worker-len-">Method <code>worker_len()</code><a class="anchor" aria-label="anchor" href="#method-worker-len-"></a></h3>
 <p>Returns the number of active workers</p><div class="section">
 <h4 id="usage-29">Usage<a class="anchor" aria-label="anchor" href="#usage-29"></a></h4>
@@ -1346,7 +1346,7 @@ queue as their dependencies are satisfied.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-worker_list"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-worker_list"></a><div class="section">
 <h3 id="method-worker-list-">Method <code>worker_list()</code><a class="anchor" aria-label="anchor" href="#method-worker-list-"></a></h3>
 <p>Returns the ids of active workers</p><div class="section">
 <h4 id="usage-30">Usage<a class="anchor" aria-label="anchor" href="#usage-30"></a></h4>
@@ -1354,7 +1354,7 @@ queue as their dependencies are satisfied.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-worker_list_exited"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-worker_list_exited"></a><div class="section">
 <h3 id="method-worker-list-exited-">Method <code>worker_list_exited()</code><a class="anchor" aria-label="anchor" href="#method-worker-list-exited-"></a></h3>
 <p>Returns the ids of workers known to have exited</p><div class="section">
 <h4 id="usage-31">Usage<a class="anchor" aria-label="anchor" href="#usage-31"></a></h4>
@@ -1362,7 +1362,7 @@ queue as their dependencies are satisfied.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-worker_info"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-worker_info"></a><div class="section">
 <h3 id="method-worker-info-">Method <code>worker_info()</code><a class="anchor" aria-label="anchor" href="#method-worker-info-"></a></h3>
 <p>Returns a list of information about active
 workers (or exited workers if <code>worker_ids</code> includes them).</p><div class="section">
@@ -1380,7 +1380,7 @@ all active workers are used.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-worker_status"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-worker_status"></a><div class="section">
 <h3 id="method-worker-status-">Method <code>worker_status()</code><a class="anchor" aria-label="anchor" href="#method-worker-status-"></a></h3>
 <p>Returns a character vector of current worker statuses</p><div class="section">
 <h4 id="usage-33">Usage<a class="anchor" aria-label="anchor" href="#usage-33"></a></h4>
@@ -1397,7 +1397,7 @@ all active workers are used.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-worker_log_tail"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-worker_log_tail"></a><div class="section">
 <h3 id="method-worker-log-tail-">Method <code>worker_log_tail()</code><a class="anchor" aria-label="anchor" href="#method-worker-log-tail-"></a></h3>
 <p>Returns the last (few) elements in the worker
 log. The log will be returned as a <a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a> of entries
@@ -1424,7 +1424,7 @@ last entry. Use <code>Inf</code> or <code>0</code> to indicate that you want all
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-worker_task_id"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-worker_task_id"></a><div class="section">
 <h3 id="method-worker-task-id-">Method <code>worker_task_id()</code><a class="anchor" aria-label="anchor" href="#method-worker-task-id-"></a></h3>
 <p>Returns the task id that each worker is working on,
 if any.</p><div class="section">
@@ -1442,7 +1442,7 @@ all active workers are used.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-worker_delete_exited"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-worker_delete_exited"></a><div class="section">
 <h3 id="method-worker-delete-exited-">Method <code>worker_delete_exited()</code><a class="anchor" aria-label="anchor" href="#method-worker-delete-exited-"></a></h3>
 <p>Cleans up workers known to have exited</p><div class="section">
 <h4 id="usage-36">Usage<a class="anchor" aria-label="anchor" href="#usage-36"></a></h4>
@@ -1459,7 +1459,7 @@ rrq looks for exited workers.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-worker_stop"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-worker_stop"></a><div class="section">
 <h3 id="method-worker-stop-">Method <code>worker_stop()</code><a class="anchor" aria-label="anchor" href="#method-worker-stop-"></a></h3>
 <p>Stop workers.</p><div class="section">
 <h4 id="usage-37">Usage<a class="anchor" aria-label="anchor" href="#usage-37"></a></h4>
@@ -1508,7 +1508,7 @@ progress bar if in an interactive session.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-worker_detect_exited"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-worker_detect_exited"></a><div class="section">
 <h3 id="method-worker-detect-exited-">Method <code>worker_detect_exited()</code><a class="anchor" aria-label="anchor" href="#method-worker-detect-exited-"></a></h3>
 <p>Detects exited workers through a lapsed heartbeat</p><div class="section">
 <h4 id="usage-38">Usage<a class="anchor" aria-label="anchor" href="#usage-38"></a></h4>
@@ -1516,12 +1516,12 @@ progress bar if in an interactive session.</p></dd>
 </div>
 
 
-</div><p></p><hr><a id="method-worker_process_log"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-worker_process_log"></a><div class="section">
 <h3 id="method-worker-process-log-">Method <code>worker_process_log()</code><a class="anchor" aria-label="anchor" href="#method-worker-process-log-"></a></h3>
 <p>Return the contents of a worker's process log, if
 it is located on the same physical storage (including network
 storage) as the controller. This will generally behave for
-workers started with <a href="worker_spawn.html">worker_spawn</a> but may require significant
+workers started with <a href="rrq_worker_spawn.html">rrq_worker_spawn</a> but may require significant
 care otherwise.</p><div class="section">
 <h4 id="usage-39">Usage<a class="anchor" aria-label="anchor" href="#usage-39"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">worker_process_log</span><span class="op">(</span><span class="va">worker_id</span><span class="op">)</span></span></code></pre></div><p></p></div>
@@ -1536,7 +1536,7 @@ care otherwise.</p><div class="section">
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-worker_config_save"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-worker_config_save"></a><div class="section">
 <h3 id="method-worker-config-save-">Method <code>worker_config_save()</code><a class="anchor" aria-label="anchor" href="#method-worker-config-save-"></a></h3>
 <p>Save a worker configuration, which can be used to
 start workers with a set of options with the cli. These
@@ -1585,7 +1585,7 @@ the "default" queue (e.g., <code>queue = c("high", "default", "low")</code>) to 
 <dt><code>heartbeat_period</code></dt>
 <dd><p>Optional period for the heartbeat.  If
 non-NULL then a heartbeat process will be started (using
-<code><a href="heartbeat.html">heartbeat</a></code> which can be used to build fault tolerant queues.</p></dd>
+<code><a href="heartbeat.html">rrq_heartbeat</a></code> which can be used to build fault tolerant queues.</p></dd>
 
 
 <dt><code>verbose</code></dt>
@@ -1606,7 +1606,7 @@ be thrown).</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-worker_config_list"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-worker_config_list"></a><div class="section">
 <h3 id="method-worker-config-list-">Method <code>worker_config_list()</code><a class="anchor" aria-label="anchor" href="#method-worker-config-list-"></a></h3>
 <p>Return names of worker configurations saved by
 <code>$worker_config_save</code></p><div class="section">
@@ -1615,7 +1615,7 @@ be thrown).</p></dd>
 </div>
 
 
-</div><p></p><hr><a id="method-worker_config_read"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-worker_config_read"></a><div class="section">
 <h3 id="method-worker-config-read-">Method <code>worker_config_read()</code><a class="anchor" aria-label="anchor" href="#method-worker-config-read-"></a></h3>
 <p>Return the value of a of worker configuration saved by
 <code>$worker_config_save</code></p><div class="section">
@@ -1636,7 +1636,7 @@ interface may change).</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-worker_load"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-worker_load"></a><div class="section">
 <h3 id="method-worker-load-">Method <code>worker_load()</code><a class="anchor" aria-label="anchor" href="#method-worker-load-"></a></h3>
 
 <div class="section">
@@ -1654,7 +1654,7 @@ all active workers are used.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-message_send"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-message_send"></a><div class="section">
 <h3 id="method-message-send-">Method <code>message_send()</code><a class="anchor" aria-label="anchor" href="#method-message-send-"></a></h3>
 <p>Send a message to workers. Sending a message returns
 a message id, which can be used to poll for a response with the
@@ -1682,7 +1682,7 @@ to. If <code>NULL</code> then the message will be sent to all active workers.</p
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-message_has_response"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-message_has_response"></a><div class="section">
 <h3 id="method-message-has-response-">Method <code>message_has_response()</code><a class="anchor" aria-label="anchor" href="#method-message-has-response-"></a></h3>
 <p>Detect if a response is available for a message</p><div class="section">
 <h4 id="usage-45">Usage<a class="anchor" aria-label="anchor" href="#usage-45"></a></h4>
@@ -1712,7 +1712,7 @@ of workers that the message was sent to!)</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-message_get_response"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-message_get_response"></a><div class="section">
 <h3 id="method-message-get-response-">Method <code>message_get_response()</code><a class="anchor" aria-label="anchor" href="#method-message-get-response-"></a></h3>
 <p>Get response to messages, waiting until the
 message has been responded to.</p><div class="section">
@@ -1773,7 +1773,7 @@ progress bar if in an interactive session.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-message_response_ids"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-message_response_ids"></a><div class="section">
 <h3 id="method-message-response-ids-">Method <code>message_response_ids()</code><a class="anchor" aria-label="anchor" href="#method-message-response-ids-"></a></h3>
 <p>Return ids for messages with responses for a
 particular worker.</p><div class="section">
@@ -1790,7 +1790,7 @@ particular worker.</p><div class="section">
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-message_send_and_wait"></a><div class="section">
+</div><p></p><hr><a id="method-rrq_controller-message_send_and_wait"></a><div class="section">
 <h3 id="method-message-send-and-wait-">Method <code>message_send_and_wait()</code><a class="anchor" aria-label="anchor" href="#method-message-send-and-wait-"></a></h3>
 <p>Send a message and wait for responses.
 This is a helper function around <code>message_send</code> and

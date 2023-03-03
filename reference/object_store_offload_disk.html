@@ -18,7 +18,7 @@ Disk-based offload"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.5.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.0</span>
       </span>
     </div>
 
@@ -79,13 +79,13 @@ intended at all for direct user-use.</p>
 <div class="section">
 <h3 id="public-methods">Public methods<a class="anchor" aria-label="anchor" href="#public-methods"></a></h3>
 
-<ul><li><p><a href="#method-new"><code>object_store_offload_disk$new()</code></a></p></li>
-<li><p><a href="#method-mset"><code>object_store_offload_disk$mset()</code></a></p></li>
-<li><p><a href="#method-mget"><code>object_store_offload_disk$mget()</code></a></p></li>
-<li><p><a href="#method-mdel"><code>object_store_offload_disk$mdel()</code></a></p></li>
-<li><p><a href="#method-list"><code>object_store_offload_disk$list()</code></a></p></li>
-<li><p><a href="#method-destroy"><code>object_store_offload_disk$destroy()</code></a></p></li>
-</ul></div><p></p><hr><a id="method-new"></a><div class="section">
+<ul><li><p><a href="#method-object_store_offload_disk-new"><code>object_store_offload_disk$new()</code></a></p></li>
+<li><p><a href="#method-object_store_offload_disk-mset"><code>object_store_offload_disk$mset()</code></a></p></li>
+<li><p><a href="#method-object_store_offload_disk-mget"><code>object_store_offload_disk$mget()</code></a></p></li>
+<li><p><a href="#method-object_store_offload_disk-mdel"><code>object_store_offload_disk$mdel()</code></a></p></li>
+<li><p><a href="#method-object_store_offload_disk-list"><code>object_store_offload_disk$list()</code></a></p></li>
+<li><p><a href="#method-object_store_offload_disk-destroy"><code>object_store_offload_disk$destroy()</code></a></p></li>
+</ul></div><p></p><hr><a id="method-object_store_offload_disk-new"></a><div class="section">
 <h3 id="method-new-">Method <code>new()</code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
 <p>Create the store</p><div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
@@ -102,7 +102,7 @@ created if it does not yet exist.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-mset"></a><div class="section">
+</div><p></p><hr><a id="method-object_store_offload_disk-mset"></a><div class="section">
 <h3 id="method-mset-">Method <code>mset()</code><a class="anchor" aria-label="anchor" href="#method-mset-"></a></h3>
 <p>Save a number of values to disk</p><div class="section">
 <h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
@@ -123,7 +123,7 @@ created if it does not yet exist.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-mget"></a><div class="section">
+</div><p></p><hr><a id="method-object_store_offload_disk-mget"></a><div class="section">
 <h3 id="method-mget-">Method <code><a href="https://rdrr.io/r/base/get.html" class="external-link">mget()</a></code><a class="anchor" aria-label="anchor" href="#method-mget-"></a></h3>
 <p>Retrieve a number of objects from the store</p><div class="section">
 <h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
@@ -140,7 +140,7 @@ The objects will be deserialised before return.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-mdel"></a><div class="section">
+</div><p></p><hr><a id="method-object_store_offload_disk-mdel"></a><div class="section">
 <h3 id="method-mdel-">Method <code>mdel()</code><a class="anchor" aria-label="anchor" href="#method-mdel-"></a></h3>
 <p>Delete a number of objects from the store</p><div class="section">
 <h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
@@ -156,7 +156,7 @@ The objects will be deserialised before return.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-list"></a><div class="section">
+</div><p></p><hr><a id="method-object_store_offload_disk-list"></a><div class="section">
 <h3 id="method-list-">Method <code><a href="https://rdrr.io/r/base/list.html" class="external-link">list()</a></code><a class="anchor" aria-label="anchor" href="#method-list-"></a></h3>
 <p>List hashes stored in this offload store</p><div class="section">
 <h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
@@ -164,7 +164,7 @@ The objects will be deserialised before return.</p></dd>
 </div>
 
 
-</div><p></p><hr><a id="method-destroy"></a><div class="section">
+</div><p></p><hr><a id="method-object_store_offload_disk-destroy"></a><div class="section">
 <h3 id="method-destroy-">Method <code>destroy()</code><a class="anchor" aria-label="anchor" href="#method-destroy-"></a></h3>
 <p>Completely delete the store (by deleting the directory)</p><div class="section">
 <h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>

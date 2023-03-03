@@ -20,7 +20,7 @@ Details."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/ma
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.5.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.0</span>
       </span>
     </div>
 
@@ -101,14 +101,12 @@ installed simultaneously.</p></dd>
     <div id="details">
     <h2>Details</h2>
     <p>If you need to launch rrq workers from a script, it's convenient
-not to have to embed R code like:</p><div class="sourceCode"><pre><code>Rscript -e 'rrq::worker_from_config("myqueue")'
-</code></pre></div>
-
+not to have to embed R code like:</p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>Rscript <span class="sc">-</span>e <span class="st">'rrq::worker_from_config("myqueue")'</span></span></code></pre><p></p></div>
 <p>as this is error-prone and unpleasant to read. You can use the
 function <code>rrq_worker_script</code> to write out a small helper script
-which lets you write:</p><div class="sourceCode"><pre><code>./path/rrq_worker myqueue
-</code></pre></div>
-
+which lets you write:</p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>.<span class="sc">/</span>path<span class="sc">/</span>rrq_worker myqueue</span></code></pre><p></p></div>
 <p>instead.</p>
 <p>The helper script supports the same arguments as
 <code>[rrq::rrq_worker_from_config()]</code>:</p><ul><li><p><code>queue_id</code> as the sole positional argument</p></li>
@@ -118,9 +116,8 @@ which lets you write:</p><div class="sourceCode"><pre><code>./path/rrq_worker my
 </ul><p>To change the redis connection settings, set the <code>REDIS_URL</code>
 environment variable (see <code><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">redux::hiredis()</a></code> for details).</p>
 <p>For example to create a worker <code>myworker</code> with configuration
-<code>myconfig</code> on queue <code>myqueue</code> you might use</p><div class="sourceCode"><pre><code>./rrq_worker --config=myconfig --name=myworker myqueue
-</code></pre></div>
-
+<code>myconfig</code> on queue <code>myqueue</code> you might use</p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>.<span class="sc">/</span>rrq_worker <span class="sc">--</span>config<span class="ot">=</span>myconfig <span class="sc">--</span>name<span class="ot">=</span>myworker myqueue</span></code></pre><p></p></div>
     </div>
 
     <div id="ref-examples">
