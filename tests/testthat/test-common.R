@@ -8,3 +8,7 @@ test_that("task all contains all task statuses", {
                       function(key) get(key, envir = asNamespace("rrq")))
   expect_setequal(task_all, TASK$all)
 })
+
+test_that("can get version info", {
+  expect_match(version_info(), "\\d+\\.\\d+\\.\\d+")
+})

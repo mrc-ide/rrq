@@ -53,20 +53,6 @@ test_that("assert_scalar_logical", {
 })
 
 
-test_that("version_string", {
-  dat <- version_info("R6")
-  expect_match(version_string(dat),
-               sprintf("%s \\[.*\\]$", dat$version))
-  dat$repository <- NULL
-  dat$sha <- NULL
-  expect_match(version_string(dat),
-               sprintf("%s \\[LOCAL\\]$", dat$version))
-  dat$sha <- "aaa"
-  expect_match(version_string(dat),
-               sprintf("%s \\[aaa\\]$", dat$version))
-})
-
-
 test_that("bin_to_object_safe", {
   d <- runif(10)
   x <- object_to_bin(d)
