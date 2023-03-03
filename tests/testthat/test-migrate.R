@@ -32,10 +32,10 @@ test_that("Can migrate storage", {
 
   ## Rerun the tasks to show we can load them correctly
   con$HMSET(
-    obj$keys$task_status,
+    queue_keys(obj)$task_status,
     names(dat$tasks),
     rep(TASK_PENDING, length(dat$tasks)))
-  con$RPUSH(rrq_key_queue(obj$keys$queue_id, NULL), names(dat$tasks))
+  con$RPUSH(rrq_key_queue(obj$queue_id, NULL), names(dat$tasks))
 
   w <- test_worker_blocking(obj)
   w$loop(TRUE)

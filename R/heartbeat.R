@@ -27,6 +27,7 @@ heartbeat_time_remaining <- function(obj) {
 
 cleanup_orphans <- function(obj, time) {
   worker_id <- names(time)[time < 0]
+  keys <- rrq_keys(obj$queue_id)
 
   if (length(worker_id) == 0L) {
     return(invisible(NULL))
@@ -45,13 +46,13 @@ cleanup_orphans <- function(obj, time) {
       "Orphaning %s %s:\n%s",
       length(task_id), ngettext(sum(i), "task", "tasks"),
       paste0("  - ", task_id, collapse = "\n")))
-    obj$con$HMSET(obj$keys$task_status, task_id[i],
+    obj$con$HMSET(keys$task_status, task_id[i],
                   rep(TASK_DIED, sum(i)))
   }
 
-  obj$con$HMSET(obj$keys$worker_status, worker_id,
+  obj$con$HMSET(keys$worker_status, worker_id,
                 rep(WORKER_LOST, length(worker_id)))
-  obj$con$SREM(obj$keys$worker_name, worker_id)
+  obj$con$SREM(keys$worker_name, worker_id)
 
   invisible(task_id)
 }

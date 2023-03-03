@@ -106,7 +106,10 @@ Running tasks is a little different to many R-parallel backends, because we do n
 Consider enqueing this expression
 
 ```{r}
-t <- obj$enqueue({Sys.sleep(2); runif(1)})
+t <- obj$enqueue({
+  Sys.sleep(2)
+  runif(1)
+})
 ```
 
 This has created a task that will sleep for 2 seconds then return a random number
@@ -139,7 +142,10 @@ In addition there are rarer ways a task can end (`CANCELLED`, `DIED`, `TIMEOUT`)
 Above, we slept for a few seconds in order for the task to become finished. However, this is an extremely common operation, so `rrq` provides a `$task_wait` method which will wait until a task finishes, then returns the result.
 
 ```{r}
-t <- obj$enqueue({Sys.sleep(2); runif(1)})
+t <- obj$enqueue({
+  Sys.sleep(2)
+  runif(1)
+})
 obj$task_wait(t)
 ```
 
@@ -485,7 +491,10 @@ obj$con$PTTL(info$heartbeat_key) # in milliseconds
 We queue some slow job onto the worker:
 
 ```{r}
-t <- obj$enqueue({Sys.sleep(10); runif(1)})
+t <- obj$enqueue({
+  Sys.sleep(10)
+  runif(1)
+})
 ```
 
 ```{r, include = FALSE}

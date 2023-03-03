@@ -135,11 +135,12 @@ ans <- obj$lapply_(1:10, quote(log), base = quote(b))
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{con}}{The redis connection}
+\item{\code{con}}{The redis connection. This is part of the
+public API and can be used to access the same redis database
+as the queue.}
 
-\item{\code{queue_id}}{The queue id used on creation}
-
-\item{\code{keys}}{Internally used keys}
+\item{\code{queue_id}}{The queue id used on creation. This is read-only
+after creation.}
 }
 \if{html}{\out{</div>}}
 }

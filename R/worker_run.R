@@ -39,10 +39,13 @@ worker_run_task_separate_process <- function(task, worker, private) {
   key_cancel <- keys$task_cancel
 
   worker$log("REMOTE", task_id)
-  px <- callr::r_bg(function(redis_config, queue_id, worker_id, task_id)
-    remote_run_task(redis_config, queue_id, worker_id, task_id),
+  px <- callr::r_bg(
+    function(redis_config, queue_id, worker_id, task_id) {
+      remote_run_task(redis_config, queue_id, worker_id, task_id)
+    },
     list(redis_config, queue_id, worker_id, task_id),
-    package = "rrq", supervise = TRUE)
+    package = "rrq",
+    supervise = TRUE)
 
   ## Will make configurable in mrc-2357:
   timeout_poll <- 1
@@ -73,8 +76,9 @@ worker_run_task_separate_process <- function(task, worker, private) {
       ## A look through the callr sources suggests this is correct.
       return(tryCatch(
         px$get_result(),
-        error = function(e)
-          list(value = worker_task_failed(TASK_DIED), status = TASK_DIED)))
+        error = function(e) {
+          list(value = worker_task_failed(TASK_DIED), status = TASK_DIED)
+        }))
     }
     if (!is.null(con$HGET(key_cancel, task_id))) {
       return(task_terminate("CANCEL", TASK_CANCELLED))

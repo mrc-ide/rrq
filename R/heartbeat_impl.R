@@ -148,8 +148,8 @@ rrq_heartbeat <- R6::R6Class(
       private$process <- NULL
 
       if (wait) {
-        wait_timeout("Did not stop in time", private$timeout, function()
-          process$is_alive())
+        wait_timeout("Did not stop in time", private$timeout,
+                     function() process$is_alive())
       }
 
       invisible(self)

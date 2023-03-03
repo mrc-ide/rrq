@@ -53,8 +53,8 @@ test_that("Garbage collection", {
   ## We might have to wait up to 'expire' seconds for this key to
   ## disappear. We could add an attempt to clean up into the finaliser
   ## but that will cause stalls on garbage collection, which is rude.
-  wait_timeout("Key not expired in time", expire, function()
-    con$EXISTS(key) == 1)
+  wait_timeout("Key not expired in time", expire,
+               function() con$EXISTS(key) == 1)
   expect_equal(con$EXISTS(key), 0)
 })
 
@@ -72,13 +72,15 @@ test_that("Kill process", {
   pid <- px$get_pid()
 
   con <- test_hiredis()
-  wait_timeout("Process did not start up in time", 5, function()
-    con$EXISTS(key) == 0 && px$is_alive(), poll = 0.2)
+  wait_timeout("Process did not start up in time", 5,
+               function() con$EXISTS(key) == 0 && px$is_alive(),
+               poll = 0.2)
 
   rrq_heartbeat_kill(con, key, tools::SIGTERM)
 
-  wait_timeout("Process did stop in time", 5, function()
-    px$is_alive(), poll = 0.2)
+  wait_timeout("Process did stop in time", 5,
+               function() px$is_alive(),
+               poll = 0.2)
   expect_false(px$is_alive())
   expect_equal(con$EXISTS(key), 0)
 })
@@ -103,20 +105,23 @@ test_that("Interrupt process", {
   }, list(key = key, path = path), package = "rrq")
 
   con <- test_hiredis()
-  wait_timeout("Process did not start up in time", 5, function()
-    con$EXISTS(key) == 0 && px$is_alive(), poll = 0.2)
+  wait_timeout("Process did not start up in time", 5,
+               function() con$EXISTS(key) == 0 && px$is_alive(),
+               poll = 0.2)
 
   expect_equal(con$EXISTS(key), 1)
   expect_true(px$is_alive())
 
-  wait_timeout("File did not update in time", 5, function()
-    !file.exists(path), poll = 0.1)
+  wait_timeout("File did not update in time", 5,
+               function() !file.exists(path),
+               poll = 0.1)
   expect_equal(readLines(path), "1")
 
   rrq_heartbeat_kill(con, key, tools::SIGINT)
 
-  wait_timeout("File did not update in time", 5, function()
-    readLines(path) == "1" && px$is_alive(), poll = 0.1)
+  wait_timeout("File did not update in time", 5,
+               function() readLines(path) == "1" && px$is_alive(),
+               poll = 0.1)
 
   expect_equal(readLines(path), "2")
   expect_true(px$is_alive())
@@ -136,8 +141,9 @@ test_that("dying process", {
   }, list(key = key), package = "rrq")
 
   con <- test_hiredis()
-  wait_timeout("Process did not start up in time", 5, function()
-    con$EXISTS(key) == 0 && px$is_alive(), poll = 0.2)
+  wait_timeout("Process did not start up in time", 5,
+               function() con$EXISTS(key) == 0 && px$is_alive(),
+               poll = 0.2)
 
   expect_equal(con$EXISTS(key), 1)
   expect_true(px$is_alive())

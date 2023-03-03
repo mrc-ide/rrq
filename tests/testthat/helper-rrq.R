@@ -138,6 +138,11 @@ r6_private <- function(x) {
 }
 
 
+queue_keys <- function(x) {
+  r6_private(x)$keys
+}
+
+
 ## Functions change type from function to closure at 4.1, preventing
 ## use of expect_type
 expect_is_function <- function(x) {

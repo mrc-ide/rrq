@@ -198,8 +198,9 @@ message_get_response <- function(con, keys, message_id, worker_ids = NULL,
                 paste(worker_ids[!done], collapse = ", ")))
   }
 
-  res <- lapply(response_keys, function(k)
-    bin_to_object(con$HGET(k, message_id))$result)
+  res <- lapply(response_keys, function(k) {
+    bin_to_object(con$HGET(k, message_id))$result
+  })
 
   if (delete) {
     for (k in response_keys) {

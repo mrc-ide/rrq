@@ -73,7 +73,8 @@ test_that("NSE - use namespaced function", {
   w <- test_worker_blocking(obj)
   grp <- obj$lapply(1:10, ids::adjective_animal, collect_timeout = 0)
 
-  dat <- bin_to_object(obj$con$HGET(obj$keys$task_expr, grp$task_ids[[1]]))
+  dat <- bin_to_object(
+    obj$con$HGET(queue_keys(obj)$task_expr, grp$task_ids[[1]]))
   expect_equal(dat, list(expr = quote(ids::adjective_animal(1L))))
 
   w$loop(immediate = TRUE)
@@ -92,7 +93,8 @@ test_that("NSE - use namespaced function with lazy dots", {
   grp <- obj$lapply(1:10, ids::adjective_animal, style = mystyle,
                     collect_timeout = 0)
 
-  dat <- bin_to_object(obj$con$HGET(obj$keys$task_expr, grp$task_ids[[1]]))
+  dat <- bin_to_object(
+    obj$con$HGET(queue_keys(obj)$task_expr, grp$task_ids[[1]]))
   expect_equal(dat,
                list(expr = quote(ids::adjective_animal(1L, style = mystyle)),
                     objects = c(mystyle = hash_data(object_to_bin(mystyle)))))
@@ -161,43 +163,43 @@ test_that("bulk tasks can be queued with dependency", {
   grp_id_1 <- grp$task_ids[[1]]
   grp_id_2 <- grp$task_ids[[2]]
   original_grp_dep_id_1 <- rrq_key_task_dependencies_original(
-    obj$keys$queue_id, grp_id_1)
+    obj$queue_id, grp_id_1)
   expect_setequal(obj$con$SMEMBERS(original_grp_dep_id_1), c(t, t2))
   original_grp_dep_id_2 <- rrq_key_task_dependencies_original(
-    obj$keys$queue_id, grp_id_2)
+    obj$queue_id, grp_id_2)
   expect_setequal(obj$con$SMEMBERS(original_grp_dep_id_2), c(t, t2))
   original_deps_keys_t3 <- rrq_key_task_dependencies_original(
-    obj$keys$queue_id, t3)
+    obj$queue_id, t3)
   expect_setequal(obj$con$SMEMBERS(original_deps_keys_t3), grp$task_ids)
 
   ## Pending dependencies are stored
-  grp_dep_id_1 <- rrq_key_task_dependencies(obj$keys$queue_id, grp_id_1)
+  grp_dep_id_1 <- rrq_key_task_dependencies(obj$queue_id, grp_id_1)
   expect_setequal(obj$con$SMEMBERS(grp_dep_id_1), c(t, t2))
-  grp_dep_id_2 <- rrq_key_task_dependencies(obj$keys$queue_id, grp_id_2)
+  grp_dep_id_2 <- rrq_key_task_dependencies(obj$queue_id, grp_id_2)
   expect_setequal(obj$con$SMEMBERS(grp_dep_id_2), c(t, t2))
-  dependency_keys_t3 <- rrq_key_task_dependencies(obj$keys$queue_id, t3)
+  dependency_keys_t3 <- rrq_key_task_dependencies(obj$queue_id, t3)
   expect_setequal(obj$con$SMEMBERS(dependency_keys_t3), grp$task_ids)
 
   ## Inverse depends_on relationship is stored
-  dependent_keys_t <- rrq_key_task_dependents(obj$keys$queue_id, t)
+  dependent_keys_t <- rrq_key_task_dependents(obj$queue_id, t)
   for (key in dependent_keys_t) {
     expect_setequal(obj$con$SMEMBERS(key), grp$task_ids)
   }
-  dependent_keys_t2 <- rrq_key_task_dependents(obj$keys$queue_id, t2)
+  dependent_keys_t2 <- rrq_key_task_dependents(obj$queue_id, t2)
   for (key in dependent_keys_t2) {
     expect_setequal(obj$con$SMEMBERS(key), grp$task_ids)
   }
-  grp_dependents_1 <- rrq_key_task_dependents(obj$keys$queue_id, grp_id_1)
+  grp_dependents_1 <- rrq_key_task_dependents(obj$queue_id, grp_id_1)
   for (key in grp_dependents_1) {
     expect_setequal(obj$con$SMEMBERS(key), t3)
   }
-  grp_dependents_2 <- rrq_key_task_dependents(obj$keys$queue_id, grp_id_2)
+  grp_dependents_2 <- rrq_key_task_dependents(obj$queue_id, grp_id_2)
   for (key in grp_dependents_2) {
     expect_setequal(obj$con$SMEMBERS(key), t3)
   }
 
   ## Items are in deferred queue
-  deferred_set <- obj$keys$deferred_set
+  deferred_set <- queue_keys(obj)$deferred_set
   expect_setequal(obj$con$SMEMBERS(deferred_set), c(grp$task_ids, t3))
 
   w$step(TRUE)
