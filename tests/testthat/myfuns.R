@@ -81,7 +81,7 @@ run_with_progress_signal <- function(n, wait) {
 
 dirty_double <- function(value) {
   prev <- .GlobalEnv$.rrq_dirty_double
-  globalenv()$.rrq_dirty_double <- value
+  .GlobalEnv$.rrq_dirty_double <- value
   list(prev, value * 2)
 }
 
