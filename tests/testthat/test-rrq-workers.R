@@ -261,3 +261,23 @@ test_that("clean up worker when one still running", {
   expect_equal(obj$worker_list_exited(), character(0))
   expect_equal(obj$worker_delete_exited(), character(0))
 })
+
+
+test_that("can get worker info", {
+  skip_if_not_installed("callr")
+  skip_on_os("windows")
+
+  obj <- test_rrq()
+  res <- obj$worker_config_save("localhost", heartbeat_period = 3)
+  wid <- test_worker_spawn(obj)
+  on.exit(obj$worker_stop(wid, "kill_local"))
+
+  info <- obj$worker_info(wid)
+  expect_length(info, 1)
+  expect_equal(names(info), wid)
+  expect_setequal(names(info[[wid]]),
+                  c("worker", "rrq_version", "platform", "running", "hostname",
+                    "username", "queue", "wd", "pid", "redis_host",
+                    "redis_port", "heartbeat_key"))
+  expect_equal(info[[wid]]$rrq_version, version_info())
+})

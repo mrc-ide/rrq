@@ -306,7 +306,7 @@ worker_info_collect <- function(worker, private) {
   sys <- sessionInfo()
   redis_config <- private$con$config()
   dat <- list(worker = worker$name,
-              rrq_version = version_string(),
+              rrq_version = version_info(),
               platform = sys$platform,
               running = sys$running,
               hostname = hostname(),

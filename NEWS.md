@@ -1,3 +1,7 @@
+# rrq 0.6.1
+
+* Simplify version information returned by `worker_info` (mrc-2295)
+
 # rrq 0.6.0
 
 * Renamed some functions with `rrq_` prefix; you must now use `rrq_worker_spawn()` (not `worker_spawn`), `rrq_worker_wait`, `rrq_heartbeat` and `rrq_heartbeat_kill` (mrc-2682)
