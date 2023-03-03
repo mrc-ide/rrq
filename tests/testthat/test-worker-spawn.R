@@ -5,10 +5,10 @@ test_that("Don't wait", {
   expect_match(res$names, "_[0-9]+$")
   expect_type(res$key_alive, "character")
 
-  ans <- worker_wait(obj, res$key_alive, timeout = 10, time_poll = 1)
+  ans <- rrq_worker_wait(obj, res$key_alive, timeout = 10, time_poll = 1)
   expect_setequal(ans, res$names)
 
-  ans <- worker_wait(obj, res$key_alive, timeout = 10, time_poll = 1)
+  ans <- rrq_worker_wait(obj, res$key_alive, timeout = 10, time_poll = 1)
   expect_equal(ans, res$names)
 })
 
@@ -21,7 +21,7 @@ test_that("failed spawn", {
   unlink(file.path(root, "myfuns.R"))
 
   dat <- evaluate_promise(
-    try(worker_spawn(obj, 2, timeout = 2),
+    try(rrq_worker_spawn(obj, 2, timeout = 2),
         silent = TRUE))
 
   expect_s3_class(dat$result, "try-error")

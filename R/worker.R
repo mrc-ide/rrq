@@ -88,7 +88,7 @@ rrq_worker <- R6::R6Class(
     ##'
     ##' @param heartbeat_period Optional period for the heartbeat.  If
     ##'   non-NULL then a heartbeat process will be started (using
-    ##'   [`rrq::heartbeat`]) which can be used to build fault
+    ##'   [`rrq::rrq_heartbeat`]) which can be used to build fault
     ##'   tolerant queues.
     ##'
     ##' @param verbose Logical, indicating if the worker should print
@@ -345,7 +345,7 @@ worker_initialise <- function(worker, private, key_alive, timeout,
   worker$log("ALIVE")
 
   ## This announces that we're up; things may monitor this
-  ## queue, and worker_spawn does a BLPOP to
+  ## queue, and rrq_worker_spawn does a BLPOP to
   if (!is.null(key_alive)) {
     con$RPUSH(key_alive, worker$name)
   }

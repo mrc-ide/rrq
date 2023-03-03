@@ -6,8 +6,10 @@
 \description{
 When you create a task with rrq and that task uses local variables
 these need to be copied over to the worker that will evaluate the
-task. So, if we had\preformatted{obj$enqueue(f(a, b))
-}
+task. So, if we had
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{obj$enqueue(f(a, b))
+}\if{html}{\out{</div>}}
 
 that would be the objects \code{a} and \code{b} from the context where
 \code{enqueue} was called. There are a few considerations here:
@@ -79,21 +81,21 @@ and is used internally by \link{rrq_controller}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{object_store$new()}}
-\item \href{#method-list}{\code{object_store$list()}}
-\item \href{#method-tags}{\code{object_store$tags()}}
-\item \href{#method-get}{\code{object_store$get()}}
-\item \href{#method-mget}{\code{object_store$mget()}}
-\item \href{#method-set}{\code{object_store$set()}}
-\item \href{#method-mset}{\code{object_store$mset()}}
-\item \href{#method-location}{\code{object_store$location()}}
-\item \href{#method-drop}{\code{object_store$drop()}}
-\item \href{#method-destroy}{\code{object_store$destroy()}}
+\item \href{#method-object_store-new}{\code{object_store$new()}}
+\item \href{#method-object_store-list}{\code{object_store$list()}}
+\item \href{#method-object_store-tags}{\code{object_store$tags()}}
+\item \href{#method-object_store-get}{\code{object_store$get()}}
+\item \href{#method-object_store-mget}{\code{object_store$mget()}}
+\item \href{#method-object_store-set}{\code{object_store$set()}}
+\item \href{#method-object_store-mset}{\code{object_store$mset()}}
+\item \href{#method-object_store-location}{\code{object_store$location()}}
+\item \href{#method-object_store-drop}{\code{object_store$drop()}}
+\item \href{#method-object_store-destroy}{\code{object_store$destroy()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-object_store-new"></a>}}
+\if{latex}{\out{\hypertarget{method-object_store-new}{}}}
 \subsection{Method \code{new()}}{
 Create a new object store (or connect to an existing one)
 \subsection{Usage}{
@@ -124,8 +126,8 @@ an error will be thrown.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-list"></a>}}
-\if{latex}{\out{\hypertarget{method-list}{}}}
+\if{html}{\out{<a id="method-object_store-list"></a>}}
+\if{latex}{\out{\hypertarget{method-object_store-list}{}}}
 \subsection{Method \code{list()}}{
 List all hashes of data known to this data store
 \subsection{Usage}{
@@ -134,8 +136,8 @@ List all hashes of data known to this data store
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-tags"></a>}}
-\if{latex}{\out{\hypertarget{method-tags}{}}}
+\if{html}{\out{<a id="method-object_store-tags"></a>}}
+\if{latex}{\out{\hypertarget{method-object_store-tags}{}}}
 \subsection{Method \code{tags()}}{
 List all tags known to this data store
 \subsection{Usage}{
@@ -144,8 +146,8 @@ List all tags known to this data store
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get"></a>}}
-\if{latex}{\out{\hypertarget{method-get}{}}}
+\if{html}{\out{<a id="method-object_store-get"></a>}}
+\if{latex}{\out{\hypertarget{method-object_store-get}{}}}
 \subsection{Method \code{get()}}{
 Get a single object by its hash
 \subsection{Usage}{
@@ -161,8 +163,8 @@ Get a single object by its hash
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-mget"></a>}}
-\if{latex}{\out{\hypertarget{method-mget}{}}}
+\if{html}{\out{<a id="method-object_store-mget"></a>}}
+\if{latex}{\out{\hypertarget{method-object_store-mget}{}}}
 \subsection{Method \code{mget()}}{
 Get a number objects by their hashes. Unlike \verb{$get()} this
 method accepts a vector of hash (length 0, 1, or more than 1)
@@ -180,8 +182,8 @@ and returns a list of the same length.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-set"></a>}}
-\if{latex}{\out{\hypertarget{method-set}{}}}
+\if{html}{\out{<a id="method-object_store-set"></a>}}
+\if{latex}{\out{\hypertarget{method-object_store-set}{}}}
 \subsection{Method \code{set()}}{
 Set an object into the object store, returning the hash
 of that object.
@@ -209,8 +211,8 @@ serialised with \code{redux::object_to_bin} (or with
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-mset"></a>}}
-\if{latex}{\out{\hypertarget{method-mset}{}}}
+\if{html}{\out{<a id="method-object_store-mset"></a>}}
+\if{latex}{\out{\hypertarget{method-object_store-mset}{}}}
 \subsection{Method \code{mset()}}{
 Set a number of objects into the store. Unlike \verb{$set()},
 this method sets a list of objects into the store at once,
@@ -241,8 +243,8 @@ serialised with \code{redux::object_to_bin} (or with
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-location"></a>}}
-\if{latex}{\out{\hypertarget{method-location}{}}}
+\if{html}{\out{<a id="method-object_store-location"></a>}}
+\if{latex}{\out{\hypertarget{method-object_store-location}{}}}
 \subsection{Method \code{location()}}{
 Return the storage locations of a set of hashes. Currently
 the location may be \code{redis} (stored directly in the redis server),
@@ -264,8 +266,8 @@ a hash is unknown}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-drop"></a>}}
-\if{latex}{\out{\hypertarget{method-drop}{}}}
+\if{html}{\out{<a id="method-object_store-drop"></a>}}
+\if{latex}{\out{\hypertarget{method-object_store-drop}{}}}
 \subsection{Method \code{drop()}}{
 Delete tags from the store. This will dissociate the
 tags from any hashes they references and if that means that no tag
@@ -284,8 +286,8 @@ points to a hash then the data at that hash will be removed. We return
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-destroy"></a>}}
-\if{latex}{\out{\hypertarget{method-destroy}{}}}
+\if{html}{\out{<a id="method-object_store-destroy"></a>}}
+\if{latex}{\out{\hypertarget{method-object_store-destroy}{}}}
 \subsection{Method \code{destroy()}}{
 Remove all data from the store, and all the stores
 metadata

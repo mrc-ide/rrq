@@ -101,8 +101,10 @@ The bulk interface is a bit more complicated than the basic
 \code{enqueue} interface. In the majority of cases you can ignore the
 details and use the \code{lapply} method in much the same way as you
 would in normal R. Assuming that \code{obj} is your \code{rrq_controller}
-object, you might write:\preformatted{ans <- obj$lapply(1:10, sqrt)
-}
+object, you might write:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{ans <- obj$lapply(1:10, sqrt)
+}\if{html}{\out{</div>}}
 
 which will return the same thing as \code{lapply(1:10, sqrt)} (provided
 that you have a Redis server running and workers registered)
@@ -110,18 +112,24 @@ that you have a Redis server running and workers registered)
 There is some sleight of hand here, though as we need to identify
 that it is the \emph{symbol} \code{sqrt} that matters there corresponding
 to the builtin \link{sqrt} function. You can make this more explicit
-by passing in the name of the function using \verb{$lapply_()}\preformatted{ans <- obj$lapply(1:10, quote(sqrt))
-}
+by passing in the name of the function using \verb{$lapply_()}
 
-The same treatment applies to the dots; this is allowed:\preformatted{b <- 2
+\if{html}{\out{<div class="sourceCode">}}\preformatted{ans <- obj$lapply(1:10, quote(sqrt))
+}\if{html}{\out{</div>}}
+
+The same treatment applies to the dots; this is allowed:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{b <- 2
 ans <- obj$lapply(1:10, log, base = b)
-}
+}\if{html}{\out{</div>}}
 
 But this will look up the bindings of \code{log} and \code{b} in the context
 in which the call is made. This may not always do what is
-expected, so you can use the names directly:\preformatted{b <- 2
+expected, so you can use the names directly:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{b <- 2
 ans <- obj$lapply_(1:10, quote(log), base = quote(b))
-}
+}\if{html}{\out{</div>}}
 }
 
 \section{Public fields}{
@@ -138,60 +146,60 @@ ans <- obj$lapply_(1:10, quote(log), base = quote(b))
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{rrq_controller$new()}}
-\item \href{#method-destroy}{\code{rrq_controller$destroy()}}
-\item \href{#method-envir}{\code{rrq_controller$envir()}}
-\item \href{#method-enqueue}{\code{rrq_controller$enqueue()}}
-\item \href{#method-enqueue_}{\code{rrq_controller$enqueue_()}}
-\item \href{#method-lapply}{\code{rrq_controller$lapply()}}
-\item \href{#method-lapply_}{\code{rrq_controller$lapply_()}}
-\item \href{#method-enqueue_bulk}{\code{rrq_controller$enqueue_bulk()}}
-\item \href{#method-enqueue_bulk_}{\code{rrq_controller$enqueue_bulk_()}}
-\item \href{#method-bulk_wait}{\code{rrq_controller$bulk_wait()}}
-\item \href{#method-task_list}{\code{rrq_controller$task_list()}}
-\item \href{#method-task_exists}{\code{rrq_controller$task_exists()}}
-\item \href{#method-task_status}{\code{rrq_controller$task_status()}}
-\item \href{#method-task_progress}{\code{rrq_controller$task_progress()}}
-\item \href{#method-task_overview}{\code{rrq_controller$task_overview()}}
-\item \href{#method-task_position}{\code{rrq_controller$task_position()}}
-\item \href{#method-task_preceeding}{\code{rrq_controller$task_preceeding()}}
-\item \href{#method-task_result}{\code{rrq_controller$task_result()}}
-\item \href{#method-tasks_result}{\code{rrq_controller$tasks_result()}}
-\item \href{#method-task_wait}{\code{rrq_controller$task_wait()}}
-\item \href{#method-tasks_wait}{\code{rrq_controller$tasks_wait()}}
-\item \href{#method-task_delete}{\code{rrq_controller$task_delete()}}
-\item \href{#method-task_cancel}{\code{rrq_controller$task_cancel()}}
-\item \href{#method-task_data}{\code{rrq_controller$task_data()}}
-\item \href{#method-task_times}{\code{rrq_controller$task_times()}}
-\item \href{#method-queue_length}{\code{rrq_controller$queue_length()}}
-\item \href{#method-queue_list}{\code{rrq_controller$queue_list()}}
-\item \href{#method-queue_remove}{\code{rrq_controller$queue_remove()}}
-\item \href{#method-deferred_list}{\code{rrq_controller$deferred_list()}}
-\item \href{#method-worker_len}{\code{rrq_controller$worker_len()}}
-\item \href{#method-worker_list}{\code{rrq_controller$worker_list()}}
-\item \href{#method-worker_list_exited}{\code{rrq_controller$worker_list_exited()}}
-\item \href{#method-worker_info}{\code{rrq_controller$worker_info()}}
-\item \href{#method-worker_status}{\code{rrq_controller$worker_status()}}
-\item \href{#method-worker_log_tail}{\code{rrq_controller$worker_log_tail()}}
-\item \href{#method-worker_task_id}{\code{rrq_controller$worker_task_id()}}
-\item \href{#method-worker_delete_exited}{\code{rrq_controller$worker_delete_exited()}}
-\item \href{#method-worker_stop}{\code{rrq_controller$worker_stop()}}
-\item \href{#method-worker_detect_exited}{\code{rrq_controller$worker_detect_exited()}}
-\item \href{#method-worker_process_log}{\code{rrq_controller$worker_process_log()}}
-\item \href{#method-worker_config_save}{\code{rrq_controller$worker_config_save()}}
-\item \href{#method-worker_config_list}{\code{rrq_controller$worker_config_list()}}
-\item \href{#method-worker_config_read}{\code{rrq_controller$worker_config_read()}}
-\item \href{#method-worker_load}{\code{rrq_controller$worker_load()}}
-\item \href{#method-message_send}{\code{rrq_controller$message_send()}}
-\item \href{#method-message_has_response}{\code{rrq_controller$message_has_response()}}
-\item \href{#method-message_get_response}{\code{rrq_controller$message_get_response()}}
-\item \href{#method-message_response_ids}{\code{rrq_controller$message_response_ids()}}
-\item \href{#method-message_send_and_wait}{\code{rrq_controller$message_send_and_wait()}}
+\item \href{#method-rrq_controller-new}{\code{rrq_controller$new()}}
+\item \href{#method-rrq_controller-destroy}{\code{rrq_controller$destroy()}}
+\item \href{#method-rrq_controller-envir}{\code{rrq_controller$envir()}}
+\item \href{#method-rrq_controller-enqueue}{\code{rrq_controller$enqueue()}}
+\item \href{#method-rrq_controller-enqueue_}{\code{rrq_controller$enqueue_()}}
+\item \href{#method-rrq_controller-lapply}{\code{rrq_controller$lapply()}}
+\item \href{#method-rrq_controller-lapply_}{\code{rrq_controller$lapply_()}}
+\item \href{#method-rrq_controller-enqueue_bulk}{\code{rrq_controller$enqueue_bulk()}}
+\item \href{#method-rrq_controller-enqueue_bulk_}{\code{rrq_controller$enqueue_bulk_()}}
+\item \href{#method-rrq_controller-bulk_wait}{\code{rrq_controller$bulk_wait()}}
+\item \href{#method-rrq_controller-task_list}{\code{rrq_controller$task_list()}}
+\item \href{#method-rrq_controller-task_exists}{\code{rrq_controller$task_exists()}}
+\item \href{#method-rrq_controller-task_status}{\code{rrq_controller$task_status()}}
+\item \href{#method-rrq_controller-task_progress}{\code{rrq_controller$task_progress()}}
+\item \href{#method-rrq_controller-task_overview}{\code{rrq_controller$task_overview()}}
+\item \href{#method-rrq_controller-task_position}{\code{rrq_controller$task_position()}}
+\item \href{#method-rrq_controller-task_preceeding}{\code{rrq_controller$task_preceeding()}}
+\item \href{#method-rrq_controller-task_result}{\code{rrq_controller$task_result()}}
+\item \href{#method-rrq_controller-tasks_result}{\code{rrq_controller$tasks_result()}}
+\item \href{#method-rrq_controller-task_wait}{\code{rrq_controller$task_wait()}}
+\item \href{#method-rrq_controller-tasks_wait}{\code{rrq_controller$tasks_wait()}}
+\item \href{#method-rrq_controller-task_delete}{\code{rrq_controller$task_delete()}}
+\item \href{#method-rrq_controller-task_cancel}{\code{rrq_controller$task_cancel()}}
+\item \href{#method-rrq_controller-task_data}{\code{rrq_controller$task_data()}}
+\item \href{#method-rrq_controller-task_times}{\code{rrq_controller$task_times()}}
+\item \href{#method-rrq_controller-queue_length}{\code{rrq_controller$queue_length()}}
+\item \href{#method-rrq_controller-queue_list}{\code{rrq_controller$queue_list()}}
+\item \href{#method-rrq_controller-queue_remove}{\code{rrq_controller$queue_remove()}}
+\item \href{#method-rrq_controller-deferred_list}{\code{rrq_controller$deferred_list()}}
+\item \href{#method-rrq_controller-worker_len}{\code{rrq_controller$worker_len()}}
+\item \href{#method-rrq_controller-worker_list}{\code{rrq_controller$worker_list()}}
+\item \href{#method-rrq_controller-worker_list_exited}{\code{rrq_controller$worker_list_exited()}}
+\item \href{#method-rrq_controller-worker_info}{\code{rrq_controller$worker_info()}}
+\item \href{#method-rrq_controller-worker_status}{\code{rrq_controller$worker_status()}}
+\item \href{#method-rrq_controller-worker_log_tail}{\code{rrq_controller$worker_log_tail()}}
+\item \href{#method-rrq_controller-worker_task_id}{\code{rrq_controller$worker_task_id()}}
+\item \href{#method-rrq_controller-worker_delete_exited}{\code{rrq_controller$worker_delete_exited()}}
+\item \href{#method-rrq_controller-worker_stop}{\code{rrq_controller$worker_stop()}}
+\item \href{#method-rrq_controller-worker_detect_exited}{\code{rrq_controller$worker_detect_exited()}}
+\item \href{#method-rrq_controller-worker_process_log}{\code{rrq_controller$worker_process_log()}}
+\item \href{#method-rrq_controller-worker_config_save}{\code{rrq_controller$worker_config_save()}}
+\item \href{#method-rrq_controller-worker_config_list}{\code{rrq_controller$worker_config_list()}}
+\item \href{#method-rrq_controller-worker_config_read}{\code{rrq_controller$worker_config_read()}}
+\item \href{#method-rrq_controller-worker_load}{\code{rrq_controller$worker_load()}}
+\item \href{#method-rrq_controller-message_send}{\code{rrq_controller$message_send()}}
+\item \href{#method-rrq_controller-message_has_response}{\code{rrq_controller$message_has_response()}}
+\item \href{#method-rrq_controller-message_get_response}{\code{rrq_controller$message_get_response()}}
+\item \href{#method-rrq_controller-message_response_ids}{\code{rrq_controller$message_response_ids()}}
+\item \href{#method-rrq_controller-message_send_and_wait}{\code{rrq_controller$message_send_and_wait()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-rrq_controller-new"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-new}{}}}
 \subsection{Method \code{new()}}{
 Constructor
 \subsection{Usage}{
@@ -213,8 +221,8 @@ connection using default ports, or environment variables set as in
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-destroy"></a>}}
-\if{latex}{\out{\hypertarget{method-destroy}{}}}
+\if{html}{\out{<a id="method-rrq_controller-destroy"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-destroy}{}}}
 \subsection{Method \code{destroy()}}{
 Entirely destroy a queue, by deleting all keys
 associated with it from the Redis database. This is a very
@@ -250,8 +258,8 @@ using \code{type = "message"}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-envir"></a>}}
-\if{latex}{\out{\hypertarget{method-envir}{}}}
+\if{html}{\out{<a id="method-rrq_controller-envir"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-envir}{}}}
 \subsection{Method \code{envir()}}{
 Register a function to create an environment when
 creating a worker. When a worker starts, they will run this
@@ -276,8 +284,8 @@ message to all workers to update their environment.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-enqueue"></a>}}
-\if{latex}{\out{\hypertarget{method-enqueue}{}}}
+\if{html}{\out{<a id="method-rrq_controller-enqueue"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-enqueue}{}}}
 \subsection{Method \code{enqueue()}}{
 Queue an expression
 \subsection{Usage}{
@@ -346,8 +354,8 @@ have configured your worker environment.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-enqueue_"></a>}}
-\if{latex}{\out{\hypertarget{method-enqueue_}{}}}
+\if{html}{\out{<a id="method-rrq_controller-enqueue_"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-enqueue_}{}}}
 \subsection{Method \code{enqueue_()}}{
 Queue an expression
 \subsection{Usage}{
@@ -404,8 +412,8 @@ calculation. See \verb{$enqueue} for details.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-lapply"></a>}}
-\if{latex}{\out{\hypertarget{method-lapply}{}}}
+\if{html}{\out{<a id="method-rrq_controller-lapply"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-lapply}{}}}
 \subsection{Method \code{lapply()}}{
 Apply a function over a list of data. This is
 equivalent to using \verb{$enqueue()} over each element in the list.
@@ -475,8 +483,8 @@ progress bar if in an interactive session.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-lapply_"></a>}}
-\if{latex}{\out{\hypertarget{method-lapply_}{}}}
+\if{html}{\out{<a id="method-rrq_controller-lapply_"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-lapply_}{}}}
 \subsection{Method \code{lapply_()}}{
 The "standard evaluation" version of \verb{$lapply()}.
 This differs in how the function is found and how dots are passed.
@@ -549,8 +557,8 @@ progress bar if in an interactive session.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-enqueue_bulk"></a>}}
-\if{latex}{\out{\hypertarget{method-enqueue_bulk}{}}}
+\if{html}{\out{<a id="method-rrq_controller-enqueue_bulk"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-enqueue_bulk}{}}}
 \subsection{Method \code{enqueue_bulk()}}{
 Send a bulk set of tasks to your workers.
 This function is a bit like a mash-up of \link{Map} and \link{do.call},
@@ -626,8 +634,8 @@ progress bar if in an interactive session.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-enqueue_bulk_"></a>}}
-\if{latex}{\out{\hypertarget{method-enqueue_bulk_}{}}}
+\if{html}{\out{<a id="method-rrq_controller-enqueue_bulk_"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-enqueue_bulk_}{}}}
 \subsection{Method \code{enqueue_bulk_()}}{
 The "standard evaluation" version of \verb{$enqueue_bulk()}.
 This differs in how the function is found and how dots are passed.
@@ -702,8 +710,8 @@ progress bar if in an interactive session.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-bulk_wait"></a>}}
-\if{latex}{\out{\hypertarget{method-bulk_wait}{}}}
+\if{html}{\out{<a id="method-rrq_controller-bulk_wait"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-bulk_wait}{}}}
 \subsection{Method \code{bulk_wait()}}{
 Wait for a group of tasks
 \subsection{Usage}{
@@ -740,8 +748,8 @@ to prevent build-up of lots of task information in Redis.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-task_list"></a>}}
-\if{latex}{\out{\hypertarget{method-task_list}{}}}
+\if{html}{\out{<a id="method-rrq_controller-task_list"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-task_list}{}}}
 \subsection{Method \code{task_list()}}{
 List ids of all tasks known to this rrq controller
 \subsection{Usage}{
@@ -750,8 +758,8 @@ List ids of all tasks known to this rrq controller
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-task_exists"></a>}}
-\if{latex}{\out{\hypertarget{method-task_exists}{}}}
+\if{html}{\out{<a id="method-rrq_controller-task_exists"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-task_exists}{}}}
 \subsection{Method \code{task_exists()}}{
 Test if task with id \code{task_ids} is known to this
 rrq controller
@@ -768,8 +776,8 @@ rrq controller
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-task_status"></a>}}
-\if{latex}{\out{\hypertarget{method-task_status}{}}}
+\if{html}{\out{<a id="method-rrq_controller-task_status"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-task_status}{}}}
 \subsection{Method \code{task_status()}}{
 Return a character vector of task statuses. The name
 of each element corresponds to a task id, and the value will be
@@ -789,8 +797,8 @@ all task ids known to this rrq controller is returned.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-task_progress"></a>}}
-\if{latex}{\out{\hypertarget{method-task_progress}{}}}
+\if{html}{\out{<a id="method-rrq_controller-task_progress"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-task_progress}{}}}
 \subsection{Method \code{task_progress()}}{
 Retrieve task progress, if set. This will be \code{NULL}
 if progress has never been registered, otherwise whatever value
@@ -808,8 +816,8 @@ was set - can be an arbitrary R object.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-task_overview"></a>}}
-\if{latex}{\out{\hypertarget{method-task_overview}{}}}
+\if{html}{\out{<a id="method-rrq_controller-task_overview"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-task_overview}{}}}
 \subsection{Method \code{task_overview()}}{
 Provide a high level overview of task statuses
 for a set of task ids, being the count in major categories of
@@ -829,8 +837,8 @@ all task ids known to this rrq controller is used.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-task_position"></a>}}
-\if{latex}{\out{\hypertarget{method-task_position}{}}}
+\if{html}{\out{<a id="method-rrq_controller-task_position"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-task_position}{}}}
 \subsection{Method \code{task_position()}}{
 Find the position of one or more tasks in the queue.
 \subsection{Usage}{
@@ -854,8 +862,8 @@ indicating its position (with 1) being the next task to run.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-task_preceeding"></a>}}
-\if{latex}{\out{\hypertarget{method-task_preceeding}{}}}
+\if{html}{\out{<a id="method-rrq_controller-task_preceeding"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-task_preceeding}{}}}
 \subsection{Method \code{task_preceeding()}}{
 List the tasks in front of \code{task_id} in the queue.
 If the task is missing from the queue this will return NULL. If
@@ -877,8 +885,8 @@ vector.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-task_result"></a>}}
-\if{latex}{\out{\hypertarget{method-task_result}{}}}
+\if{html}{\out{<a id="method-rrq_controller-task_result"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-task_result}{}}}
 \subsection{Method \code{task_result()}}{
 Get the result for a single task (see \verb{$tasks_result}
 for a method for efficiently getting multiple results at once).
@@ -897,8 +905,8 @@ error otherwise.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-tasks_result"></a>}}
-\if{latex}{\out{\hypertarget{method-tasks_result}{}}}
+\if{html}{\out{<a id="method-rrq_controller-tasks_result"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-tasks_result}{}}}
 \subsection{Method \code{tasks_result()}}{
 Get the results of a group of tasks, returning them as a
 list.
@@ -916,8 +924,8 @@ is wanted.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-task_wait"></a>}}
-\if{latex}{\out{\hypertarget{method-task_wait}{}}}
+\if{html}{\out{<a id="method-rrq_controller-task_wait"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-task_wait}{}}}
 \subsection{Method \code{task_wait()}}{
 Poll for a task to complete, returning the result
 when completed. If the task has already completed this is
@@ -958,8 +966,8 @@ progress bar if in an interactive session.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-tasks_wait"></a>}}
-\if{latex}{\out{\hypertarget{method-tasks_wait}{}}}
+\if{html}{\out{<a id="method-rrq_controller-tasks_wait"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-tasks_wait}{}}}
 \subsection{Method \code{tasks_wait()}}{
 Poll for a group of tasks to complete, returning the
 result as list when completed. If the tasks have already completed
@@ -993,8 +1001,8 @@ progress bar if in an interactive session.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-task_delete"></a>}}
-\if{latex}{\out{\hypertarget{method-task_delete}{}}}
+\if{html}{\out{<a id="method-rrq_controller-task_delete"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-task_delete}{}}}
 \subsection{Method \code{task_delete()}}{
 Delete one or more tasks
 \subsection{Usage}{
@@ -1014,8 +1022,8 @@ desirable behaviour.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-task_cancel"></a>}}
-\if{latex}{\out{\hypertarget{method-task_cancel}{}}}
+\if{html}{\out{<a id="method-rrq_controller-task_cancel"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-task_cancel}{}}}
 \subsection{Method \code{task_cancel()}}{
 Cancel a single task. If the task is \code{PENDING} it
 will be deleted. If \code{RUNNING} then the task will be stopped if
@@ -1045,8 +1053,8 @@ error with task_id and status e.g. Task 123 is not running (MISSING)
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-task_data"></a>}}
-\if{latex}{\out{\hypertarget{method-task_data}{}}}
+\if{html}{\out{<a id="method-rrq_controller-task_data"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-task_data}{}}}
 \subsection{Method \code{task_data()}}{
 Fetch internal data about a task from Redis
 (expert use only).
@@ -1063,8 +1071,8 @@ Fetch internal data about a task from Redis
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-task_times"></a>}}
-\if{latex}{\out{\hypertarget{method-task_times}{}}}
+\if{html}{\out{<a id="method-rrq_controller-task_times"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-task_times}{}}}
 \subsection{Method \code{task_times()}}{
 Fetch times for tasks at points in their life cycle.
 For each task returns the time of submission, starting
@@ -1087,8 +1095,8 @@ them to a POSIXt object.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-queue_length"></a>}}
-\if{latex}{\out{\hypertarget{method-queue_length}{}}}
+\if{html}{\out{<a id="method-rrq_controller-queue_length"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-queue_length}{}}}
 \subsection{Method \code{queue_length()}}{
 Returns the number of tasks in the queue (waiting for
 an available worker).
@@ -1106,8 +1114,8 @@ an available worker).
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-queue_list"></a>}}
-\if{latex}{\out{\hypertarget{method-queue_list}{}}}
+\if{html}{\out{<a id="method-rrq_controller-queue_list"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-queue_list}{}}}
 \subsection{Method \code{queue_list()}}{
 Returns the keys in the task queue.
 \subsection{Usage}{
@@ -1124,8 +1132,8 @@ Returns the keys in the task queue.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-queue_remove"></a>}}
-\if{latex}{\out{\hypertarget{method-queue_remove}{}}}
+\if{html}{\out{<a id="method-rrq_controller-queue_remove"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-queue_remove}{}}}
 \subsection{Method \code{queue_remove()}}{
 Remove task ids from a queue.
 \subsection{Usage}{
@@ -1144,8 +1152,8 @@ Remove task ids from a queue.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-deferred_list"></a>}}
-\if{latex}{\out{\hypertarget{method-deferred_list}{}}}
+\if{html}{\out{<a id="method-rrq_controller-deferred_list"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-deferred_list}{}}}
 \subsection{Method \code{deferred_list()}}{
 Return deferred tasks and what they are waiting on.
 Note this is in an arbitrary order, tasks will be added to the
@@ -1156,8 +1164,8 @@ queue as their dependencies are satisfied.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-worker_len"></a>}}
-\if{latex}{\out{\hypertarget{method-worker_len}{}}}
+\if{html}{\out{<a id="method-rrq_controller-worker_len"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-worker_len}{}}}
 \subsection{Method \code{worker_len()}}{
 Returns the number of active workers
 \subsection{Usage}{
@@ -1166,8 +1174,8 @@ Returns the number of active workers
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-worker_list"></a>}}
-\if{latex}{\out{\hypertarget{method-worker_list}{}}}
+\if{html}{\out{<a id="method-rrq_controller-worker_list"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-worker_list}{}}}
 \subsection{Method \code{worker_list()}}{
 Returns the ids of active workers
 \subsection{Usage}{
@@ -1176,8 +1184,8 @@ Returns the ids of active workers
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-worker_list_exited"></a>}}
-\if{latex}{\out{\hypertarget{method-worker_list_exited}{}}}
+\if{html}{\out{<a id="method-rrq_controller-worker_list_exited"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-worker_list_exited}{}}}
 \subsection{Method \code{worker_list_exited()}}{
 Returns the ids of workers known to have exited
 \subsection{Usage}{
@@ -1186,8 +1194,8 @@ Returns the ids of workers known to have exited
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-worker_info"></a>}}
-\if{latex}{\out{\hypertarget{method-worker_info}{}}}
+\if{html}{\out{<a id="method-rrq_controller-worker_info"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-worker_info}{}}}
 \subsection{Method \code{worker_info()}}{
 Returns a list of information about active
 workers (or exited workers if \code{worker_ids} includes them).
@@ -1205,8 +1213,8 @@ all active workers are used.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-worker_status"></a>}}
-\if{latex}{\out{\hypertarget{method-worker_status}{}}}
+\if{html}{\out{<a id="method-rrq_controller-worker_status"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-worker_status}{}}}
 \subsection{Method \code{worker_status()}}{
 Returns a character vector of current worker statuses
 \subsection{Usage}{
@@ -1223,8 +1231,8 @@ all active workers are used.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-worker_log_tail"></a>}}
-\if{latex}{\out{\hypertarget{method-worker_log_tail}{}}}
+\if{html}{\out{<a id="method-rrq_controller-worker_log_tail"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-worker_log_tail}{}}}
 \subsection{Method \code{worker_log_tail()}}{
 Returns the last (few) elements in the worker
 log. The log will be returned as a \link{data.frame} of entries
@@ -1249,8 +1257,8 @@ last entry. Use \code{Inf} or \code{0} to indicate that you want all log entries
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-worker_task_id"></a>}}
-\if{latex}{\out{\hypertarget{method-worker_task_id}{}}}
+\if{html}{\out{<a id="method-rrq_controller-worker_task_id"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-worker_task_id}{}}}
 \subsection{Method \code{worker_task_id()}}{
 Returns the task id that each worker is working on,
 if any.
@@ -1268,8 +1276,8 @@ all active workers are used.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-worker_delete_exited"></a>}}
-\if{latex}{\out{\hypertarget{method-worker_delete_exited}{}}}
+\if{html}{\out{<a id="method-rrq_controller-worker_delete_exited"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-worker_delete_exited}{}}}
 \subsection{Method \code{worker_delete_exited()}}{
 Cleans up workers known to have exited
 \subsection{Usage}{
@@ -1286,8 +1294,8 @@ rrq looks for exited workers.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-worker_stop"></a>}}
-\if{latex}{\out{\hypertarget{method-worker_stop}{}}}
+\if{html}{\out{<a id="method-rrq_controller-worker_stop"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-worker_stop}{}}}
 \subsection{Method \code{worker_stop()}}{
 Stop workers.
 \subsection{Usage}{
@@ -1328,8 +1336,8 @@ progress bar if in an interactive session.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-worker_detect_exited"></a>}}
-\if{latex}{\out{\hypertarget{method-worker_detect_exited}{}}}
+\if{html}{\out{<a id="method-rrq_controller-worker_detect_exited"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-worker_detect_exited}{}}}
 \subsection{Method \code{worker_detect_exited()}}{
 Detects exited workers through a lapsed heartbeat
 \subsection{Usage}{
@@ -1338,13 +1346,13 @@ Detects exited workers through a lapsed heartbeat
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-worker_process_log"></a>}}
-\if{latex}{\out{\hypertarget{method-worker_process_log}{}}}
+\if{html}{\out{<a id="method-rrq_controller-worker_process_log"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-worker_process_log}{}}}
 \subsection{Method \code{worker_process_log()}}{
 Return the contents of a worker's process log, if
 it is located on the same physical storage (including network
 storage) as the controller. This will generally behave for
-workers started with \link{worker_spawn} but may require significant
+workers started with \link{rrq_worker_spawn} but may require significant
 care otherwise.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_process_log(worker_id)}\if{html}{\out{</div>}}
@@ -1359,8 +1367,8 @@ care otherwise.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-worker_config_save"></a>}}
-\if{latex}{\out{\hypertarget{method-worker_config_save}{}}}
+\if{html}{\out{<a id="method-rrq_controller-worker_config_save"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-worker_config_save}{}}}
 \subsection{Method \code{worker_config_save()}}{
 Save a worker configuration, which can be used to
 start workers with a set of options with the cli. These
@@ -1401,7 +1409,7 @@ the "default" queue (e.g., \code{queue = c("high", "default", "low")}) to set th
 
 \item{\code{heartbeat_period}}{Optional period for the heartbeat.  If
 non-NULL then a heartbeat process will be started (using
-\code{\link{heartbeat}} which can be used to build fault tolerant queues.}
+\code{\link{rrq_heartbeat}} which can be used to build fault tolerant queues.}
 
 \item{\code{verbose}}{Logical, indicating if the worker should print
 logging output to the screen.  Logging to screen has a small but
@@ -1418,8 +1426,8 @@ be thrown).}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-worker_config_list"></a>}}
-\if{latex}{\out{\hypertarget{method-worker_config_list}{}}}
+\if{html}{\out{<a id="method-rrq_controller-worker_config_list"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-worker_config_list}{}}}
 \subsection{Method \code{worker_config_list()}}{
 Return names of worker configurations saved by
 \verb{$worker_config_save}
@@ -1429,8 +1437,8 @@ Return names of worker configurations saved by
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-worker_config_read"></a>}}
-\if{latex}{\out{\hypertarget{method-worker_config_read}{}}}
+\if{html}{\out{<a id="method-rrq_controller-worker_config_read"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-worker_config_read}{}}}
 \subsection{Method \code{worker_config_read()}}{
 Return the value of a of worker configuration saved by
 \verb{$worker_config_save}
@@ -1451,8 +1459,8 @@ interface may change).}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-worker_load"></a>}}
-\if{latex}{\out{\hypertarget{method-worker_load}{}}}
+\if{html}{\out{<a id="method-rrq_controller-worker_load"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-worker_load}{}}}
 \subsection{Method \code{worker_load()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_load(worker_ids = NULL)}\if{html}{\out{</div>}}
@@ -1468,8 +1476,8 @@ all active workers are used.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-message_send"></a>}}
-\if{latex}{\out{\hypertarget{method-message_send}{}}}
+\if{html}{\out{<a id="method-rrq_controller-message_send"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-message_send}{}}}
 \subsection{Method \code{message_send()}}{
 Send a message to workers. Sending a message returns
 a message id, which can be used to poll for a response with the
@@ -1493,8 +1501,8 @@ to. If \code{NULL} then the message will be sent to all active workers.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-message_has_response"></a>}}
-\if{latex}{\out{\hypertarget{method-message_has_response}{}}}
+\if{html}{\out{<a id="method-rrq_controller-message_has_response"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-message_has_response}{}}}
 \subsection{Method \code{message_has_response()}}{
 Detect if a response is available for a message
 \subsection{Usage}{
@@ -1520,8 +1528,8 @@ of workers that the message was sent to!)}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-message_get_response"></a>}}
-\if{latex}{\out{\hypertarget{method-message_get_response}{}}}
+\if{html}{\out{<a id="method-rrq_controller-message_get_response"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-message_get_response}{}}}
 \subsection{Method \code{message_get_response()}}{
 Get response to messages, waiting until the
 message has been responded to.
@@ -1570,8 +1578,8 @@ progress bar if in an interactive session.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-message_response_ids"></a>}}
-\if{latex}{\out{\hypertarget{method-message_response_ids}{}}}
+\if{html}{\out{<a id="method-rrq_controller-message_response_ids"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-message_response_ids}{}}}
 \subsection{Method \code{message_response_ids()}}{
 Return ids for messages with responses for a
 particular worker.
@@ -1588,8 +1596,8 @@ particular worker.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-message_send_and_wait"></a>}}
-\if{latex}{\out{\hypertarget{method-message_send_and_wait}{}}}
+\if{html}{\out{<a id="method-rrq_controller-message_send_and_wait"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-message_send_and_wait}{}}}
 \subsection{Method \code{message_send_and_wait()}}{
 Send a message and wait for responses.
 This is a helper function around \code{message_send} and

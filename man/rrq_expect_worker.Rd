@@ -14,5 +14,5 @@ rrq_expect_worker(obj, names)
 \description{
 Register that workers are expected.  This generates a key that one
 or more workers will write to when they start up (as used by
-\code{worker_spawn}).
+\code{rrq_worker_spawn}).
 }

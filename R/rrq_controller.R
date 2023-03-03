@@ -942,7 +942,7 @@ rrq_controller <- R6::R6Class(
     ##' @description Return the contents of a worker's process log, if
     ##' it is located on the same physical storage (including network
     ##' storage) as the controller. This will generally behave for
-    ##' workers started with [worker_spawn] but may require significant
+    ##' workers started with [rrq_worker_spawn] but may require significant
     ##' care otherwise.
     ##'
     ##' @param worker_id The worker for which the log is required
@@ -981,7 +981,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param heartbeat_period Optional period for the heartbeat.  If
     ##'   non-NULL then a heartbeat process will be started (using
-    ##' [`rrq::heartbeat`] which can be used to build fault tolerant queues.
+    ##' [`rrq::rrq_heartbeat`] which can be used to build fault tolerant queues.
     ##'
     ##' @param verbose Logical, indicating if the worker should print
     ##'   logging output to the screen.  Logging to screen has a small but
@@ -1525,7 +1525,7 @@ worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
            paste(worker_ids[is.na(heartbeat_key)], collapse = ", "))
     }
     for (key in heartbeat_key) {
-      heartbeat_kill(con, key, tools::SIGTERM)
+      rrq_heartbeat_kill(con, key, tools::SIGTERM)
     }
   } else { # kill_local
     info <- worker_info(con, keys, worker_ids)

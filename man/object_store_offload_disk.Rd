@@ -15,17 +15,17 @@ intended at all for direct user-use.
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{object_store_offload_disk$new()}}
-\item \href{#method-mset}{\code{object_store_offload_disk$mset()}}
-\item \href{#method-mget}{\code{object_store_offload_disk$mget()}}
-\item \href{#method-mdel}{\code{object_store_offload_disk$mdel()}}
-\item \href{#method-list}{\code{object_store_offload_disk$list()}}
-\item \href{#method-destroy}{\code{object_store_offload_disk$destroy()}}
+\item \href{#method-object_store_offload_disk-new}{\code{object_store_offload_disk$new()}}
+\item \href{#method-object_store_offload_disk-mset}{\code{object_store_offload_disk$mset()}}
+\item \href{#method-object_store_offload_disk-mget}{\code{object_store_offload_disk$mget()}}
+\item \href{#method-object_store_offload_disk-mdel}{\code{object_store_offload_disk$mdel()}}
+\item \href{#method-object_store_offload_disk-list}{\code{object_store_offload_disk$list()}}
+\item \href{#method-object_store_offload_disk-destroy}{\code{object_store_offload_disk$destroy()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-object_store_offload_disk-new"></a>}}
+\if{latex}{\out{\hypertarget{method-object_store_offload_disk-new}{}}}
 \subsection{Method \code{new()}}{
 Create the store
 \subsection{Usage}{
@@ -42,8 +42,8 @@ created if it does not yet exist.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-mset"></a>}}
-\if{latex}{\out{\hypertarget{method-mset}{}}}
+\if{html}{\out{<a id="method-object_store_offload_disk-mset"></a>}}
+\if{latex}{\out{\hypertarget{method-object_store_offload_disk-mset}{}}}
 \subsection{Method \code{mset()}}{
 Save a number of values to disk
 \subsection{Usage}{
@@ -62,8 +62,8 @@ Save a number of values to disk
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-mget"></a>}}
-\if{latex}{\out{\hypertarget{method-mget}{}}}
+\if{html}{\out{<a id="method-object_store_offload_disk-mget"></a>}}
+\if{latex}{\out{\hypertarget{method-object_store_offload_disk-mget}{}}}
 \subsection{Method \code{mget()}}{
 Retrieve a number of objects from the store
 \subsection{Usage}{
@@ -80,8 +80,8 @@ The objects will be deserialised before return.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-mdel"></a>}}
-\if{latex}{\out{\hypertarget{method-mdel}{}}}
+\if{html}{\out{<a id="method-object_store_offload_disk-mdel"></a>}}
+\if{latex}{\out{\hypertarget{method-object_store_offload_disk-mdel}{}}}
 \subsection{Method \code{mdel()}}{
 Delete a number of objects from the store
 \subsection{Usage}{
@@ -97,8 +97,8 @@ Delete a number of objects from the store
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-list"></a>}}
-\if{latex}{\out{\hypertarget{method-list}{}}}
+\if{html}{\out{<a id="method-object_store_offload_disk-list"></a>}}
+\if{latex}{\out{\hypertarget{method-object_store_offload_disk-list}{}}}
 \subsection{Method \code{list()}}{
 List hashes stored in this offload store
 \subsection{Usage}{
@@ -107,8 +107,8 @@ List hashes stored in this offload store
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-destroy"></a>}}
-\if{latex}{\out{\hypertarget{method-destroy}{}}}
+\if{html}{\out{<a id="method-object_store_offload_disk-destroy"></a>}}
+\if{latex}{\out{\hypertarget{method-object_store_offload_disk-destroy}{}}}
 \subsection{Method \code{destroy()}}{
 Completely delete the store (by deleting the directory)
 \subsection{Usage}{
