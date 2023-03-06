@@ -138,9 +138,8 @@ rrq_controller <- R6::R6Class(
       self$con <- con
       self$queue_id <- queue_id
       private$keys <- rrq_keys(self$queue_id)
+      rrq_version_check(self$con, private$keys)
       self$worker_config_save("localhost", overwrite = FALSE)
-
-      rrq_migrate_check(self$con, private$keys, TRUE)
 
       private$store <- rrq_object_store(self$con, private$keys)
       private$scripts <- rrq_scripts_load(self$con)
