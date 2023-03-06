@@ -143,7 +143,7 @@ rrq_controller <- R6::R6Class(
       ## what version of the data we're talking. Later we may need to
       ## migrate old data, which will require us to detect old data
       ## and know what to move it to.
-      con$SET(keys$version, version_info())
+      con$SET(private$keys$version, version_info())
       self$worker_config_save("localhost", overwrite = FALSE)
 
       private$store <- rrq_object_store(self$con, private$keys)
