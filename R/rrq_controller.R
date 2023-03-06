@@ -138,12 +138,7 @@ rrq_controller <- R6::R6Class(
       self$con <- con
       self$queue_id <- queue_id
       private$keys <- rrq_keys(self$queue_id)
-
-      ## Set rrq's version number against the data so that we know
-      ## what version of the data we're talking. Later we may need to
-      ## migrate old data, which will require us to detect old data
-      ## and know what to move it to.
-      con$SET(private$keys$version, version_info())
+      rrq_version_check(self$con, private$keys)
       self$worker_config_save("localhost", overwrite = FALSE)
 
       private$store <- rrq_object_store(self$con, private$keys)

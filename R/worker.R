@@ -118,7 +118,7 @@ rrq_worker <- R6::R6Class(
       private$keys <- rrq_keys(queue_id, self$name)
       private$verbose <- verbose
 
-      rrq_migrate_check(private$con, private$keys, TRUE)
+      rrq_version_check(private$con, private$keys)
 
       queue <- worker_queue(queue)
       private$queue <- rrq_key_queue(queue_id, queue)
