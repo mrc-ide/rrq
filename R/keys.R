@@ -27,8 +27,6 @@ rrq_keys_common <- function(queue_id) {
        worker_info         = sprintf("%s:worker:info",         queue_id),
        worker_expect       = sprintf("%s:worker:expect",       queue_id),
        worker_process      = sprintf("%s:worker:process",      queue_id),
-       worker_timeout_poll = sprintf("%s:worker:timeout_poll", queue_id),
-       worker_timeout_die  = sprintf("%s:worker:timeout_die",  queue_id),
 
        task_expr      = sprintf("%s:task:expr",      queue_id),
        task_status    = sprintf("%s:task:status",    queue_id),
