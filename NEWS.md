@@ -1,3 +1,7 @@
+# rrq 0.6.4
+
+* Make separate process timeouts `timeout_poll` and `timeout_die` configurable via the worker config.
+
 # rrq 0.6.1
 
 * Simplify version information returned by `worker_info` (mrc-2295)
