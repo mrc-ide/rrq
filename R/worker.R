@@ -141,8 +141,8 @@ rrq_worker <- R6::R6Class(
 
       private$store <- rrq_object_store(private$con, private$keys)
       private$time_poll <- time_poll %||% 60
-      private$timeout_poll <- timeout_poll %||% 1
-      private$timeout_die <- timeout_die %||% 2
+      private$timeout_poll <- timeout_poll
+      private$timeout_die <- timeout_die
 
       self$load_envir()
       if (register) {

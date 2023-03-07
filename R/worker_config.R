@@ -4,8 +4,8 @@ worker_config_save <- function(con, keys, name,
                                heartbeat_period = NULL,
                                verbose = NULL,
                                overwrite = TRUE,
-                               timeout_poll = 1,
-                               timeout_die = 2) {
+                               timeout_poll = NULL,
+                               timeout_die = NULL) {
   key <- keys$worker_config
   write <- overwrite || con$HEXISTS(key, name) == 0
   if (write) {
@@ -30,7 +30,7 @@ worker_config_read <- function(con, keys, name) {
 
 worker_config_make <- function(time_poll = NULL, timeout = NULL, queue = NULL,
                                heartbeat_period = NULL, verbose = NULL,
-                               timeout_poll = 1, timeout_die = 2) {
+                               timeout_poll = NULL, timeout_die = NULL) {
   if (!is.null(time_poll)) {
     assert_scalar_integer_like(time_poll)
   }
