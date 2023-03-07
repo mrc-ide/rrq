@@ -75,7 +75,8 @@ test_that("task warnings are returned", {
   expect_equal(length(r1$warnings), 2)
   expect_equal(r1$warnings, sprintf("This is warning number %d", 1:2))
 
-  expect_match(r1$trace, "^warning_then_error", all = FALSE)
+  expect_s3_class(r1$trace, "rlang_trace")
+  expect_match(format(r1$trace), "warning_then_error", all = FALSE)
 })
 
 

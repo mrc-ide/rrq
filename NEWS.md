@@ -1,3 +1,7 @@
+# rrq 0.6.5
+
+* Error traces now come from `rlang` and are much nicer to read (mrc-4060)
+
 # rrq 0.6.4
 
 * Make separate process timeouts `timeout_poll` and `timeout_die` configurable via the worker config.

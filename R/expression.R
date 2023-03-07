@@ -1,9 +1,9 @@
 expression_eval_safely <- function(expr, envir) {
+  top <- rlang::current_env()
   warnings <- collector()
-  trace <- collector()
 
   handler <- function(e) {
-    e$trace <- trace$get()
+    e$trace <- top$trace
     w <- warnings$get()
     if (length(w) > 0) {
       e$warnings <- w
@@ -16,7 +16,9 @@ expression_eval_safely <- function(expr, envir) {
     withCallingHandlers(
       eval(expr, envir),
       warning = function(e) warnings$add(e$message),
-      error = function(e) trace$add(utils::limitedLabels(sys.calls()))),
+      error = function(e) {
+        top$trace <- rlang::trace_back(top)
+      }),
     error = handler)
 
   list(value = value,
