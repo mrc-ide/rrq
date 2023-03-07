@@ -1,0 +1,249 @@
+---
+title: "Fault tolerance"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fault tolerance}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  error = FALSE,
+  collapse = TRUE,
+  comment = "#>"
+)
+
+lang_output <- function(x, lang) {
+  cat(c(sprintf("```%s", lang), x, "```"), sep = "\n")
+}
+```
+
+In a perfect world, nothing would fail, and this vignette would not be needed. But here we are.
+
+When you run tasks within a single process and things go wrong, you know immediately you see it happen. With a queuing system like rrq it's less obvious when something bad has happened because the task is running on another process, possibly on a different machine!
+
+* Plain errors (handled briefly below) is the simplest sort of fault to recover from. Your task throws an error, `rrq` picks this up and marks the task as errored, and moves on to the next thing. You can then see that this error has happened as its status.
+* If your task crashes the process it can take out the worker (depending on how you have configured rrq; see below). In this case nothing updates the task status, and your task appears to stay running forever. This situation also arises if your process is killed by the operating system (e.g., out of memory) or via some other condition (e.g., an administrator terminating the process).
+* If your task is running on another machine and that machine becomes unreachable (switched off, disconnects from the network, etc) your task will never appear to finish.
+
+This vignette discusses how you can mitigate against and recover from these sorts of issues.
+
+## Error handling
+
+We start with the simplest sort of fault, and can just as easily happen locally as remotely with `rrq`. In this case the handling is fairly well defined and there's not much you need to do. This section is not really "fault tolerance" at all, but simply how rrq handles errors and what you can do about it.
+
+Consider this simple function which would fit a linear model between two variables:
+
+```{r results = "asis", echo = FALSE}
+lang_output("r", "fault.R")
+```
+
+
+```{r}
+obj <- rrq::rrq_controller$new(paste0("rrq:", ids::random_id(bytes = 4)))
+obj$envir(rrq::rrq_envir(sources = "fault.R"))
+source("fault.R")
+rrq::rrq_worker_spawn(obj)
+```
+
+In the happy case, everything works as expected:
+
+```{r}
+x <- runif(5)
+y <- 2 * x + rnorm(length(x), 0, 0.2)
+t <- obj$enqueue(fit_model(x, y))
+obj$task_wait(t, 10)
+obj$task_status(t)
+```
+
+But if we provide invalid input, the task will error:
+
+```{r}
+t <- obj$enqueue(fit_model(x, NULL))
+obj$task_wait(t, 10)
+```
+
+The first thing to note here is that the task does not throw an error when you fetch the result, either via `task_wait` as above, or via `task_result`:
+
+```{r}
+obj$task_result(t)
+```
+
+However, the result will be an object of `rrq_task_error` which you can test for using `inherits`:
+
+```{r}
+r <- obj$task_result(r)
+inherits(r, "task_error")
+```
+
+(this object also inherits from `error` and `condition` so behaves as expected, if you are used to handling errors directly). If you want this error to propagate upwards you can simply throw it yourself:
+
+```{r, error = TRUE}
+stop(r)
+```
+
+However, `rrq` does not throw it for you because otherwise interacting with task results would require you to use `tryCatch` or similar everywhere there is a chance of an error, and because the errors are usually interesting.
+
+Included in the error is the full stack trace from the worker process (here wrapped in `writeLines` so that prints nicely)
+
+```{r}
+r$trace
+```
+
+This process is unchanged if the task is run in a separate process (with `separate_process = TRUE` passed to `enqueue`), with the same status and return type, and with the trace information available after failure.
+
+## Recovery via separate processes
+
+Running tasks in separate processes (e.g., `obj$enqueue(mytask(), separate_process = TRUE)`) is the simplest way of making things more fault tolerant because this creates a layer of isolation between the worker and the task. If your task crashes R (e.g., a segmentation fault due to a bug in your C/C++ code) or is killed by the operating system then the worker process survives and can update the keys in Redis directly.
+
+The downside of using separate processes is that it is much slower; compare the time taken to queue, run an retrieve a trivial task run in the same worker process (look at the `elapsed` entry)
+
+```{r}
+system.time(
+  obj$task_wait(obj$enqueue(identity(1)), 10))
+```
+
+with the same task run in a separate process on the worker
+
+```{r}
+system.time(
+  obj$task_wait(obj$enqueue(identity(1), separate_process = TRUE), 10))
+```
+
+We expect this difference to be ~100 fold in local workers. Almost all the cost is due to the overhead of starting and terminating a fresh R session. If your queue uses a lot of packages there will be additional overhead here too as these are loaded. However, this cost is fixed and will decrease as a fraction of the total running time as the running time of your task increases. So for long-running tasks the additional safety of separate processes is probably worthwhile. For smaller tasks you may want to make sure you run a heartbeat process so that you can handle failures via that route.
+
+Consider running some long running job; this one simply sleeps for an hour
+
+```{r}
+t <- obj$enqueue(Sys.sleep(3600), separate_process = TRUE)
+```
+
+```{r, include = FALSE}
+pid <- function() {
+  for (i in 1:10) {
+    log <- obj$worker_log_tail(n = 1)
+    if (log$command == "REMOTE_PID") {
+      return(as.integer(log$message))
+    }
+    Sys.sleep(0.2)
+  }
+  stop("Failure to get pid from worker")
+}()
+```
+
+To simulate the process crashing, we've killed it:
+
+```{r}
+tools::pskill(pid)
+```
+
+```{r, include = TRUE}
+## We need to wait here for a minute because the kill won't be instant
+obj$task_wait(t, 10)
+```
+
+Because the task was run in a separate process, our worker could detect that the task has died unexpectedly:
+
+```
+obj$task_status(t)
+```
+
+This is different to the error status above (that was `r rrq:::TASK_ERROR`).
+
+Retrieving the result has similar behaviour to the error case; we don't throw but instead return an object of class `rrq_task_error` (which also inherits from `error` and `condition`). However, this time there's really not much extra information in the error:
+
+```
+r <- obj$task_result(t)
+r
+```
+
+There's also no trace available
+
+```{r}
+r$trace
+```
+
+## Loss of workers
+
+In this section we outline what you can do about unexplained and unreported failures in your task, or loss of workers. This will typically be that your worker has crashed (due to your task crashing it perhaps), killed (e.g., by the operating system or an administrator) or the loss of the machine that it is working on.
+
+In order to enable fault tolerance for this sort of issue, you first need to enable a "heatbeat" on the worker processes. This is a second process on each worker that periodically writes to the Redis database on a key that will expire in a time slightly longer than that period, in effect making a [dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch) - see `rrq::rrq_heartbeat` for details. So if the worker process dies for any reason, then after a while we'll detect that as its key has expired. We can then take some action.
+
+```{r, include = FALSE}
+obj$worker_stop()
+```
+
+To enable the heartbeat, save a worker configuration before starting a worker:
+
+```{r}
+obj$worker_config_save("localhost", heartbeat_period = 3)
+```
+
+When you spawn a worker it will pick up this configuration, and we'll be able to detect if it has died.
+
+```{r}
+w <- rrq::rrq_worker_spawn(obj)
+```
+
+In order to simulate the loss of the worker, we need its [process id (PID)](https://en.wikipedia.org/wiki/Process_identifier), which we can get from the controller object:
+
+```{r}
+w_pid <- obj$worker_info()[[w]]$pid
+w_pid
+```
+
+Now, we can queue some long running process, which this worker will start:
+
+```{r}
+t <- obj$enqueue(Sys.sleep(3600))
+```
+
+```{r, include = FALSE}
+Sys.sleep(1)
+```
+
+The worker wil pick the task up fairly quickly, and the status will change to `RUNNING`:
+
+```{r}
+obj$task_status(t)
+obj$worker_status(w)
+```
+
+We kill the worker:
+
+```{r}
+tools::pskill(w_pid)
+```
+
+Because the worker has been killed, it can't write to redis to tell us that the task can't be completed, so this status will never change:
+
+```{r}
+obj$task_status(t)
+obj$worker_status(w)
+```
+
+However, if we wait until after the heartbeat key will have expired (9s = 3 * 3s, the time we saved above)
+
+```{r}
+Sys.sleep(10)
+```
+
+We can then use the `worker_detect_exited()` method to clean up
+
+```{r}
+obj$worker_detect_exited()
+```
+
+At this point, the statuses of our task and worker are correct:
+
+```{r}
+obj$task_status(t)
+obj$worker_status(w)
+```
+
+This is still not terribly useful, as we have not provided any mechanism to automatically requeue a lost task or restart a dead worker.
+
+```{r}
+obj$task_result(t)
+```
