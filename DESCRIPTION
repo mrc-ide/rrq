@@ -1,6 +1,6 @@
 Package: rrq
 Title: Simple Redis Queue
-Version: 0.6.4
+Version: 0.6.5
 Authors@R: c(person("Rich", "FitzJohn", role = c("aut", "cre"),
                     email = "rich.fitzjohn@gmail.com"),
              person("Robert", "Ashton", role = "aut"),
@@ -17,7 +17,8 @@ Imports:
     ids,
     openssl,
     progress,
-    redux (>= 1.0.0)
+    redux (>= 1.0.0),
+    rlang
 Suggests:
     callr (>= 3.7.0),
     knitr,
