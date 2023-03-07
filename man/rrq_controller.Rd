@@ -1425,14 +1425,14 @@ with this \code{name} should be overwritten if it exists (if
 \code{overwrite = FALSE} and the configuration exists an error will
 be thrown).}
 
-\item{\code{timeout_poll}}{Optionally timeout for how long to wait for
-a background process to produce stdout or stderr. Only used
+\item{\code{timeout_poll}}{Optional timeout indicating how long to wait
+for a background process to produce stdout or stderr. Only used
 for tasks queued with \code{separate_process} \code{TRUE}.}
 
-\item{\code{timeout_die}}{Optionally how long to wait for a background
-process to respond to SIGTERM before we stop the controlling
-process. Only used for tasks queued with \code{separate_process}
-\code{TRUE}.}
+\item{\code{timeout_die}}{Optional timeout indicating how long to wait
+wait for the background process to respond to SIGTERM before
+we stop the worker. Only used for tasks queued with
+\code{separate_process} \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }

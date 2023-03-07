@@ -108,14 +108,14 @@ rrq_worker <- R6::R6Class(
     ##'   temporary worker. This is passed as `FALSE` when running a task
     ##'   in a separate process.
     ##'
-    ##' @param timeout_poll Optionally timeout for how long to wait for
-    ##'   a background process to produce stdout or stderr. Only used
+    ##' @param timeout_poll Optional timeout indicating how long to wait
+    ##'   for a background process to produce stdout or stderr. Only used
     ##'   for tasks queued with `separate_process` `TRUE`.
     ##'
-    ##' @param timeout_die Optionally how long to wait for a background
-    ##'   process to respond to SIGTERM before we stop the controlling
-    ##'   process. Only used for tasks queued with `separate_process`
-    ##'   `TRUE`.
+    ##' @param timeout_die Optional timeout indicating how long to wait
+    ##'   wait for the background process to respond to SIGTERM before
+    ##'   we stop the worker. Only used for tasks queued with
+    ##'   `separate_process` `TRUE`.
     initialize = function(queue_id, con = redux::hiredis(),
                           key_alive = NULL, worker_name = NULL,
                           queue = NULL, time_poll = NULL, timeout = NULL,

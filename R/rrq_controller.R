@@ -995,14 +995,14 @@ rrq_controller <- R6::R6Class(
     ##'   `overwrite = FALSE` and the configuration exists an error will
     ##'   be thrown).
     ##'
-    ##' @param timeout_poll Optionally timeout for how long to wait for
-    ##'   a background process to produce stdout or stderr. Only used
+    ##' @param timeout_poll Optional timeout indicating how long to wait
+    ##'   for a background process to produce stdout or stderr. Only used
     ##'   for tasks queued with `separate_process` `TRUE`.
     ##'
-    ##' @param timeout_die Optionally how long to wait for a background
-    ##'   process to respond to SIGTERM before we stop the controlling
-    ##'   process. Only used for tasks queued with `separate_process`
-    ##'   `TRUE`.
+    ##' @param timeout_die Optional timeout indicating how long to wait
+    ##'   wait for the background process to respond to SIGTERM before
+    ##'   we stop the worker. Only used for tasks queued with
+    ##'   `separate_process` `TRUE`.
     worker_config_save = function(name, time_poll = NULL, timeout = NULL,
                                   queue = NULL, heartbeat_period = NULL,
                                   verbose = NULL, overwrite = TRUE,

@@ -103,14 +103,14 @@ set to \code{FALSE} if you need to impersonate a worker, or create a
 temporary worker. This is passed as \code{FALSE} when running a task
 in a separate process.}
 
-\item{\code{timeout_poll}}{Optionally timeout for how long to wait for
-a background process to produce stdout or stderr. Only used
+\item{\code{timeout_poll}}{Optional timeout indicating how long to wait
+for a background process to produce stdout or stderr. Only used
 for tasks queued with \code{separate_process} \code{TRUE}.}
 
-\item{\code{timeout_die}}{Optionally how long to wait for a background
-process to respond to SIGTERM before we stop the controlling
-process. Only used for tasks queued with \code{separate_process}
-\code{TRUE}.}
+\item{\code{timeout_die}}{Optional timeout indicating how long to wait
+wait for the background process to respond to SIGTERM before
+we stop the worker. Only used for tasks queued with
+\code{separate_process} \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
