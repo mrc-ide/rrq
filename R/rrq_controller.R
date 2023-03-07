@@ -231,9 +231,6 @@ rrq_controller <- R6::R6Class(
     ##'   is `TRUE`. If given, then if the task takes longer than this
     ##'   time it will be stopped and the task status set to `TIMEOUT`.
     ##'
-    ##' @param at_front Logical, if TRUE then add the task to the front
-    ##'   of the queue.
-    ##'
     ##' @param depends_on Vector or list of IDs of tasks which must have
     ##'   completed before this job can be run. Once all dependent tasks
     ##'   have been successfully run, this task will get added to the
@@ -252,11 +249,9 @@ rrq_controller <- R6::R6Class(
     ##'   have configured your worker environment.
     enqueue = function(expr, envir = parent.frame(), queue = NULL,
                        separate_process = FALSE, timeout = NULL,
-                       at_front = FALSE, depends_on = NULL,
-                       export = NULL) {
+                       depends_on = NULL, export = NULL) {
       self$enqueue_(substitute(expr), envir, queue,
-                    separate_process, timeout, at_front, depends_on,
-                    export)
+                    separate_process, timeout, depends_on, export)
     },
 
     ##' @description Queue an expression
@@ -283,9 +278,6 @@ rrq_controller <- R6::R6Class(
     ##' @param timeout Optionally, a maximum allowed running time, in
     ##'   seconds (see `$enqueue` for details).
     ##'
-    ##' @param at_front Logical, if TRUE then add the task to the front
-    ##'   of the queue.
-    ##'
     ##' @param depends_on Vector or list of IDs of tasks which must have
     ##'   completed before this job can be run. Once all dependent tasks
     ##'   have been successfully run, this task will get added to the
@@ -296,13 +288,13 @@ rrq_controller <- R6::R6Class(
     ##'   calculation. See `$enqueue` for details.
     enqueue_ = function(expr, envir = parent.frame(),
                         queue = NULL, separate_process = FALSE, timeout = NULL,
-                        at_front = FALSE, depends_on = NULL, export = NULL) {
+                        depends_on = NULL, export = NULL) {
       task_id <- ids::random_id()
       verify_dependencies_exist(self, depends_on)
       dat <- expression_prepare(expr, envir, private$store, task_id,
                                 export = export)
       task_submit(self$con, private$keys, private$store, task_id, dat, queue,
-                  separate_process, timeout, at_front, depends_on)
+                  separate_process, timeout, depends_on)
     },
 
     ##' @description Apply a function over a list of data. This is
@@ -1199,10 +1191,9 @@ task_preceeding <- function(con, keys, task_id, queue) {
 }
 
 task_submit <- function(con, keys, store, task_id, dat, queue,
-                        separate_process, timeout, at_front = FALSE,
-                        depends_on = NULL) {
+                        separate_process, timeout, depends_on = NULL) {
   task_submit_n(con, keys, store, task_id, list(object_to_bin(dat)), NULL,
-                queue, separate_process, timeout, at_front, depends_on)
+                queue, separate_process, timeout, depends_on)
 }
 
 task_delete <- function(con, keys, store, task_ids, check = TRUE) {
@@ -1325,8 +1316,7 @@ task_data <- function(con, keys, store, task_id) {
 
 
 task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
-                          separate_process, timeout, at_front = FALSE,
-                          depends_on = NULL) {
+                          separate_process, timeout, depends_on = NULL) {
   n <- length(dat)
   queue <- queue %||% QUEUE_DEFAULT
   key_queue <- rrq_key_queue(keys$queue_id, queue)
@@ -1374,8 +1364,6 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
       lapply(dependent_keys, redis$SADD, task_ids),
       list(redis$SADD(keys$deferred_set, task_ids))
     )
-  } else if (at_front) {
-    cmds <- c(cmds, list(redis$LPUSH(key_queue, task_ids)))
   } else {
     cmds <- c(cmds, list(redis$RPUSH(key_queue, task_ids)))
   }

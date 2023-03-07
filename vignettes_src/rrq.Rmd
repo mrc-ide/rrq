@@ -339,10 +339,6 @@ obj$task_wait(id, timeout = 10)
 
 Note that there is no validation to check that any worker is listening on any queue when you submit a task. Indeed there can't be as new workers can be added at any time (so at the point of submission perhaps there were no workers).
 
-### Jump the queue
-
-Almost always you will want to use a first-in-first-out queueing system, which is the default that rrq supports. However when queuing you can specify `at_front = TRUE` and jump to the front of the queue.
-
 ## Running tasks in separate processes
 
 Running a task in a separate process offers some additional features at a cost of a little more overhead per task.

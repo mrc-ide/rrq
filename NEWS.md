@@ -1,3 +1,7 @@
+# rrq 0.6.6
+
+* Drop `at_front` argument (introduced in rrq 0.2.14), tasks can no longer jump the queue (mrc-4069)
+
 # rrq 0.6.5
 
 * Error traces now come from `rlang` and are much nicer to read (mrc-4060)
