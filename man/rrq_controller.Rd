@@ -1382,7 +1382,9 @@ correspond to arguments to \link{rrq_worker}.
   queue = NULL,
   heartbeat_period = NULL,
   verbose = NULL,
-  overwrite = TRUE
+  overwrite = TRUE,
+  timeout_poll = 1,
+  timeout_die = 2
 )}\if{html}{\out{</div>}}
 }
 
@@ -1422,6 +1424,15 @@ redis server is always enabled.}
 with this \code{name} should be overwritten if it exists (if
 \code{overwrite = FALSE} and the configuration exists an error will
 be thrown).}
+
+\item{\code{timeout_poll}}{Optionally timeout for how long to wait for
+a background process to produce stdout or stderr. Only used
+for tasks queued with \code{separate_process} \code{TRUE}.}
+
+\item{\code{timeout_die}}{Optionally how long to wait for a background
+process to respond to SIGTERM before we stop the controlling
+process. Only used for tasks queued with \code{separate_process}
+\code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }

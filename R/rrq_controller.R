@@ -1000,7 +1000,7 @@ rrq_controller <- R6::R6Class(
     ##'   for tasks queued with `separate_process` `TRUE`.
     ##'
     ##' @param timeout_die Optionally how long to wait for a background
-    ##'   process to respond to SIGINT before we stop the controlling
+    ##'   process to respond to SIGTERM before we stop the controlling
     ##'   process. Only used for tasks queued with `separate_process`
     ##'   `TRUE`.
     worker_config_save = function(name, time_poll = NULL, timeout = NULL,
