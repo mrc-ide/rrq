@@ -18,7 +18,7 @@ rrq queue worker"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.4</span>
       </span>
     </div>
 
@@ -113,7 +113,9 @@ but will sit and poll a queue for jobs.</p>
 <span>  timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  heartbeat_period <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  register <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  register <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  timeout_poll <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  timeout_die <span class="op">=</span> <span class="fl">2</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -179,6 +181,19 @@ registered with the controller. Typically this is <code>TRUE</code>, but
 set to <code>FALSE</code> if you need to impersonate a worker, or create a
 temporary worker. This is passed as <code>FALSE</code> when running a task
 in a separate process.</p></dd>
+
+
+<dt><code>timeout_poll</code></dt>
+<dd><p>Optional timeout indicating how long to wait
+for a background process to produce stdout or stderr. Only used
+for tasks queued with <code>separate_process</code> <code>TRUE</code>.</p></dd>
+
+
+<dt><code>timeout_die</code></dt>
+<dd><p>Optional timeout indicating how long to wait
+wait for the background process to respond to SIGTERM before
+we stop the worker. Only used for tasks queued with
+<code>separate_process</code> <code>TRUE</code>.</p></dd>
 
 
 </dl><p></p></div>
