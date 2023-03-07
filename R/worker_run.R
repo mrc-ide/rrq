@@ -37,6 +37,8 @@ worker_run_task_separate_process <- function(task, worker, private) {
   worker_id <- worker$name
   task_id <- task$id
   key_cancel <- keys$task_cancel
+  timeout_poll <- private$timeout_poll
+  timeout_die <- private$timeout_die
 
   worker$log("REMOTE", task_id)
   px <- callr::r_bg(
@@ -46,10 +48,6 @@ worker_run_task_separate_process <- function(task, worker, private) {
     list(redis_config, queue_id, worker_id, task_id),
     package = "rrq",
     supervise = TRUE)
-
-  ## Will make configurable in mrc-2357:
-  timeout_poll <- 1
-  timeout_die <- 2
 
   timeout_task <- con$HGET(keys$task_timeout, task_id)
   if (!is.null(timeout_task)) {

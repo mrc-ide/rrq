@@ -994,11 +994,22 @@ rrq_controller <- R6::R6Class(
     ##'   with this `name` should be overwritten if it exists (if
     ##'   `overwrite = FALSE` and the configuration exists an error will
     ##'   be thrown).
+    ##'
+    ##' @param timeout_poll Optional timeout indicating how long to wait
+    ##'   for a background process to produce stdout or stderr. Only used
+    ##'   for tasks queued with `separate_process` `TRUE`.
+    ##'
+    ##' @param timeout_die Optional timeout indicating how long to wait
+    ##'   wait for the background process to respond to SIGTERM before
+    ##'   we stop the worker. Only used for tasks queued with
+    ##'   `separate_process` `TRUE`.
     worker_config_save = function(name, time_poll = NULL, timeout = NULL,
                                   queue = NULL, heartbeat_period = NULL,
-                                  verbose = NULL, overwrite = TRUE) {
+                                  verbose = NULL, overwrite = TRUE,
+                                  timeout_poll = 1, timeout_die = 2) {
       worker_config_save(self$con, private$keys, name, time_poll, timeout,
-                         queue, heartbeat_period, verbose, overwrite)
+                         queue, heartbeat_period, verbose, overwrite,
+                         timeout_poll, timeout_die)
     },
 
     ##' @description Return names of worker configurations saved by

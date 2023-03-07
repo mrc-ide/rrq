@@ -45,7 +45,9 @@ rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
                  time_poll = config$time_poll,
                  timeout = config$timeout,
                  heartbeat_period = config$heartbeat_period,
-                 verbose = config$verbose)
+                 verbose = config$verbose,
+                 timeout_poll = config$timeout_poll,
+                 timeout_die = config$timeout_die)
 }
 
 
@@ -105,11 +107,20 @@ rrq_worker <- R6::R6Class(
     ##'   set to `FALSE` if you need to impersonate a worker, or create a
     ##'   temporary worker. This is passed as `FALSE` when running a task
     ##'   in a separate process.
+    ##'
+    ##' @param timeout_poll Optional timeout indicating how long to wait
+    ##'   for a background process to produce stdout or stderr. Only used
+    ##'   for tasks queued with `separate_process` `TRUE`.
+    ##'
+    ##' @param timeout_die Optional timeout indicating how long to wait
+    ##'   wait for the background process to respond to SIGTERM before
+    ##'   we stop the worker. Only used for tasks queued with
+    ##'   `separate_process` `TRUE`.
     initialize = function(queue_id, con = redux::hiredis(),
                           key_alive = NULL, worker_name = NULL,
                           queue = NULL, time_poll = NULL, timeout = NULL,
                           heartbeat_period = NULL, verbose = TRUE,
-                          register = TRUE) {
+                          register = TRUE, timeout_poll = 1, timeout_die = 2) {
       assert_is(con, "redis_api")
 
       private$con <- con
@@ -130,6 +141,8 @@ rrq_worker <- R6::R6Class(
 
       private$store <- rrq_object_store(private$con, private$keys)
       private$time_poll <- time_poll %||% 60
+      private$timeout_poll <- timeout_poll
+      private$timeout_die <- timeout_die
 
       self$load_envir()
       if (register) {
@@ -298,7 +311,9 @@ rrq_worker <- R6::R6Class(
     queue = NULL,
     store = NULL,
     time_poll = NULL,
-    verbose = NULL
+    verbose = NULL,
+    timeout_poll = NULL,
+    timeout_die = NULL
   ))
 
 

@@ -52,7 +52,9 @@ Constructor
   timeout = NULL,
   heartbeat_period = NULL,
   verbose = TRUE,
-  register = TRUE
+  register = TRUE,
+  timeout_poll = 1,
+  timeout_die = 2
 )}\if{html}{\out{</div>}}
 }
 
@@ -100,6 +102,15 @@ registered with the controller. Typically this is \code{TRUE}, but
 set to \code{FALSE} if you need to impersonate a worker, or create a
 temporary worker. This is passed as \code{FALSE} when running a task
 in a separate process.}
+
+\item{\code{timeout_poll}}{Optional timeout indicating how long to wait
+for a background process to produce stdout or stderr. Only used
+for tasks queued with \code{separate_process} \code{TRUE}.}
+
+\item{\code{timeout_die}}{Optional timeout indicating how long to wait
+wait for the background process to respond to SIGTERM before
+we stop the worker. Only used for tasks queued with
+\code{separate_process} \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }

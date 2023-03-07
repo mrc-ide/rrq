@@ -4,7 +4,8 @@ test_that("rrq_default configuration", {
   obj <- test_rrq()
   expect_equal(obj$worker_config_list(), "localhost")
   expect_equal(obj$worker_config_read("localhost"),
-               list(time_poll = 1, verbose = FALSE))
+               list(time_poll = 1, verbose = FALSE,
+                    timeout_poll = 1, timeout_die = 2))
 })
 
 
@@ -118,7 +119,8 @@ test_that("rrq_default configuration", {
   ## possibly not what is wanted)
   obj <- test_rrq()
   res1 <- obj$worker_config_save("new", timeout = 1, overwrite = FALSE)
-  expect_equal(res1, list(timeout = 1, verbose = TRUE))
+  expect_equal(res1, list(timeout = 1, verbose = TRUE,
+                          timeout_poll = 1, timeout_die = 2))
   res2 <- obj$worker_config_save("new", timeout = 2, overwrite = FALSE)
   expect_null(res2)
   expect_equal(obj$worker_config_read("new"), res1)
@@ -131,5 +133,26 @@ test_that("verbose is validated", {
     obj$worker_config_save("quiet", verbose = "no thank you"),
     "verbose must be logical")
   obj$worker_config_save("quiet", verbose = FALSE)
-  expect_equal(obj$worker_config_read("quiet"), list(verbose = FALSE))
+  expect_equal(obj$worker_config_read("quiet"),
+               list(verbose = FALSE, timeout_poll = 1, timeout_die = 2))
+})
+
+test_that("timeout_poll is validated", {
+  obj <- test_rrq()
+  expect_error(
+    obj$worker_config_save("poll", timeout_poll = "5"),
+    "timeout_poll must be integer like")
+  obj$worker_config_save("poll", timeout_poll = 5)
+  expect_equal(obj$worker_config_read("poll"),
+               list(verbose = TRUE, timeout_poll = 5, timeout_die = 2))
+})
+
+test_that("timeout_die is validated", {
+  obj <- test_rrq()
+  expect_error(
+    obj$worker_config_save("die", timeout_die = "5"),
+    "timeout_die must be integer like")
+  obj$worker_config_save("die", timeout_die = 5)
+  expect_equal(obj$worker_config_read("die"),
+               list(verbose = TRUE, timeout_poll = 1, timeout_die = 5))
 })
