@@ -11,8 +11,7 @@ of the controller at the point the task is sent and so we need
 to store the values referenced by a and b without
 reference to the names - we do this by naming the new values
 after their value. That is, the name becomes the hash of the
-object, computed by openssl::sha256() after serialisation, as
-a form of content-addressable storage.
+object, computed by rlang::hash(), as a form of content-addressable storage.
 When doing this we note that we might end up using the value
 referenced by a or b many times in different tasks so we
 should not re-save the data more than needed, and we should not
@@ -77,7 +76,7 @@ long as they share a common filesystem."><!-- mathjax --><script src="https://cd
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.8</span>
       </span>
     </div>
 
@@ -132,8 +131,7 @@ of the controller at the point the task is sent and so we need
 to store the <em>values</em> referenced by <code>a</code> and <code>b</code> without
 reference to the names - we do this by naming the new values
 after their value. That is, the name becomes the hash of the
-object, computed by <code><a href="https://rdrr.io/pkg/openssl/man/hash.html" class="external-link">openssl::sha256()</a></code> after serialisation, as
-a form of <a href="https://en.wikipedia.org/wiki/Content-addressable_storage" class="external-link">content-addressable storage</a>.</p></li>
+object, computed by <code><a href="https://rlang.r-lib.org/reference/hash.html" class="external-link">rlang::hash()</a></code>, as a form of <a href="https://en.wikipedia.org/wiki/Content-addressable_storage" class="external-link">content-addressable storage</a>.</p></li>
 <li><p>When doing this we note that we might end up using the value
 referenced by <code>a</code> or <code>b</code> many times in different tasks so we
 should not re-save the data more than needed, and we should not
