@@ -448,24 +448,6 @@ test_that("Delete job after cancellation", {
 })
 
 
-test_that("task can be added to front of queue", {
-  obj <- test_rrq("myfuns.R")
-  w <- test_worker_blocking(obj)
-
-  t <- obj$enqueue(sin(0))
-  expect_equal(obj$queue_list(), t)
-  t2 <- obj$enqueue(sin(pi / 2), at_front = TRUE)
-  expect_equal(obj$queue_list(), c(t2, t))
-
-  expect_equal(unname(obj$task_status(t)), "PENDING")
-  expect_equal(unname(obj$task_status(t2)), "PENDING")
-  w$step(TRUE)
-  expect_equal(obj$task_wait(t2, 2), 1)
-  expect_equal(unname(obj$task_status(t)), "PENDING")
-  expect_equal(unname(obj$task_status(t2)), "COMPLETE")
-})
-
-
 test_that("can check task exists", {
   obj <- test_rrq("myfuns.R")
   t <- obj$enqueue(sin(0))

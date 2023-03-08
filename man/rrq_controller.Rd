@@ -296,7 +296,6 @@ Queue an expression
   queue = NULL,
   separate_process = FALSE,
   timeout = NULL,
-  at_front = FALSE,
   depends_on = NULL,
   export = NULL
 )}\if{html}{\out{</div>}}
@@ -331,9 +330,6 @@ seconds. This parameter only has an effect if \code{separate_process}
 is \code{TRUE}. If given, then if the task takes longer than this
 time it will be stopped and the task status set to \code{TIMEOUT}.}
 
-\item{\code{at_front}}{Logical, if TRUE then add the task to the front
-of the queue.}
-
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
 completed before this job can be run. Once all dependent tasks
 have been successfully run, this task will get added to the
@@ -366,7 +362,6 @@ Queue an expression
   queue = NULL,
   separate_process = FALSE,
   timeout = NULL,
-  at_front = FALSE,
   depends_on = NULL,
   export = NULL
 )}\if{html}{\out{</div>}}
@@ -396,9 +391,6 @@ details).}
 
 \item{\code{timeout}}{Optionally, a maximum allowed running time, in
 seconds (see \verb{$enqueue} for details).}
-
-\item{\code{at_front}}{Logical, if TRUE then add the task to the front
-of the queue.}
 
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
 completed before this job can be run. Once all dependent tasks
