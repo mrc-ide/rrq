@@ -1,3 +1,7 @@
+# rrq 0.6.7
+
+* Nicer errors that tell you what the contain, particularly when they have stack traces or warnings (mrc-1260)
+
 # rrq 0.6.6
 
 * Drop `at_front` argument (introduced in rrq 0.2.14), tasks can no longer jump the queue (mrc-4069)

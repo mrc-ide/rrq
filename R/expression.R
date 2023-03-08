@@ -1,5 +1,6 @@
 expression_eval_safely <- function(expr, envir) {
   top <- rlang::current_env()
+  top$success <- TRUE
   warnings <- collector()
 
   handler <- function(e) {
@@ -8,7 +9,6 @@ expression_eval_safely <- function(expr, envir) {
     if (length(w) > 0) {
       e$warnings <- w
     }
-    class(e) <- c("rrq_task_error", class(e))
     e
   }
 
@@ -17,12 +17,12 @@ expression_eval_safely <- function(expr, envir) {
       eval(expr, envir),
       warning = function(e) warnings$add(e$message),
       error = function(e) {
+        top$success <- FALSE
         top$trace <- rlang::trace_back(top)
       }),
     error = handler)
 
-  list(value = value,
-       success = !inherits(value, "rrq_task_error"))
+  list(value = value, success = top$success)
 }
 
 

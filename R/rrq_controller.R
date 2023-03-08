@@ -1243,8 +1243,7 @@ task_delete <- function(con, keys, store, task_ids, check = TRUE) {
     status_dependent <- con$HMGET(keys$task_status, dependents)
     cancel <- dependents[status_dependent == TASK_DEFERRED]
     if (length(cancel) > 0) {
-      run_task_cleanup(con, keys, store, cancel, TASK_IMPOSSIBLE,
-                       worker_task_failed(TASK_IMPOSSIBLE))
+      run_task_cleanup(con, keys, store, cancel, TASK_IMPOSSIBLE, NULL)
       cancel_dependencies(con, keys, store, cancel)
     }
   }
@@ -1379,8 +1378,7 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
   ## In the time between 2 and 3 A could have finished and failed meaning that
   ## the dependency of B will never be satisfied and it will never be run.
   if (any(response$status %in% TASK$terminal_fail)) {
-    run_task_cleanup(con, keys, store, task_ids, TASK_IMPOSSIBLE,
-                     worker_task_failed(TASK_IMPOSSIBLE))
+    run_task_cleanup(con, keys, store, task_ids, TASK_IMPOSSIBLE, NULL)
     cancel_dependencies(con, keys, store, task_ids)
     incomplete <- response$status[response$status %in% TASK$terminal_fail]
     names(incomplete) <- depends_on[response$status %in% TASK$terminal_fail]
