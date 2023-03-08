@@ -2,6 +2,7 @@
 
 S3method(format,rrq_task_error)
 S3method(mean,worker_load)
+S3method(print,rrq_task_error)
 export(object_store)
 export(rrq_configure)
 export(rrq_controller)
