@@ -18,7 +18,7 @@ rrq queue controller"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.5</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.6</span>
       </span>
     </div>
 
@@ -344,7 +344,6 @@ message to all workers to update their environment.</p></dd>
 <span>  queue <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  separate_process <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  at_front <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  depends_on <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  export <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
@@ -388,11 +387,6 @@ is <code>TRUE</code>. If given, then if the task takes longer than this
 time it will be stopped and the task status set to <code>TIMEOUT</code>.</p></dd>
 
 
-<dt><code>at_front</code></dt>
-<dd><p>Logical, if TRUE then add the task to the front
-of the queue.</p></dd>
-
-
 <dt><code>depends_on</code></dt>
 <dd><p>Vector or list of IDs of tasks which must have
 completed before this job can be run. Once all dependent tasks
@@ -427,7 +421,6 @@ have configured your worker environment.</p></dd>
 <span>  queue <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  separate_process <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  at_front <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  depends_on <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  export <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
@@ -465,11 +458,6 @@ details).</p></dd>
 <dt><code>timeout</code></dt>
 <dd><p>Optionally, a maximum allowed running time, in
 seconds (see <code>$enqueue</code> for details).</p></dd>
-
-
-<dt><code>at_front</code></dt>
-<dd><p>Logical, if TRUE then add the task to the front
-of the queue.</p></dd>
 
 
 <dt><code>depends_on</code></dt>
