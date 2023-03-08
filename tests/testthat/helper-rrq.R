@@ -101,9 +101,18 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
   obj$worker_config_save("localhost", time_poll = 1, verbose = verbose)
   obj$envir(create)
 
-  withr::defer_parent(obj$destroy())
+  withr::defer_parent(test_rrq_cleanup(obj))
 
   obj
+}
+
+
+test_rrq_cleanup <- function(obj) {
+  worker_is_separate <- vnapply(obj$worker_info(), "[[", "pid") != Sys.getpid()
+  if (any(worker_is_separate) && !all(worker_is_separate)) {
+    warning("This test is likely to leak worker keys", immediate. = TRUE)
+  }
+  obj$destroy(worker_stop_timeout = if (all(worker_is_separate)) 10 else 0)
 }
 
 
