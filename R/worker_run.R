@@ -24,8 +24,13 @@ worker_run_task_local <- function(task, worker, private) {
   result <- withCallingHandlers(
     expression_eval_safely(task$expr, e),
     progress = function(e) worker$progress(unclass(e), FALSE))
-  list(value = result$value,
-       status = if (result$success) TASK_COMPLETE else TASK_ERROR)
+  if (result$success) {
+    list(value = result$value,
+         status = TASK_COMPLETE)
+  } else {
+    list(value = rrq_task_error(result$value, private$keys$queue_id, task$id),
+         status = TASK_ERROR)
+  }
 }
 
 
@@ -58,7 +63,8 @@ worker_run_task_separate_process <- function(task, worker, private) {
     worker$log(log)
     px$signal(tools::SIGTERM)
     wait_timeout("Waiting for task to stop", timeout_die, px$is_alive)
-    list(value = worker_task_failed(status), status = status)
+    list(value = worker_task_failed(status, queue_id, task_id),
+         status = status)
   }
 
   repeat {
@@ -75,7 +81,8 @@ worker_run_task_separate_process <- function(task, worker, private) {
       return(tryCatch(
         px$get_result(),
         error = function(e) {
-          list(value = worker_task_failed(TASK_DIED), status = TASK_DIED)
+          list(value = worker_task_failed(TASK_DIED, queue_id, task_id),
+               status = TASK_DIED)
         }))
     }
     if (!is.null(con$HGET(key_cancel, task_id))) {
@@ -151,9 +158,19 @@ process_poll <- function(px, timeout) {
 }
 
 
-worker_task_failed <- function(reason) {
-  ret <- list(message = sprintf("Task not successful: %s", reason),
-              reason = reason)
-  class(ret) <- c("rrq_task_error", "error", "condition")
-  ret
+worker_task_failed <- function(reason, queue_id, task_id) {
+  err <- structure(
+    list(message = sprintf("Task not successful: %s", reason),
+         reason = reason),
+    class = c("error", "condition"))
+  rrq_task_error(err, queue_id, task_id)
+}
+
+
+## I wonder if we should also save the queue id here too?
+rrq_task_error <- function(e, queue_id, task_id) {
+  e$queue_id <- queue_id
+  e$task_id <- task_id
+  class(e) <- c("rrq_task_error", class(e))
+  e
 }

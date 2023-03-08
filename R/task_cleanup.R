@@ -1,5 +1,6 @@
 run_task_cleanup <- function(con, keys, store, task_ids, status, value) {
   cleanup_one <- function(task_id) {
+    value <- value %||% worker_task_failed(status, keys$queue_id, task_id)
     task_result <- store$set(value, task_id)
     key_complete <- con$HGET(keys$task_complete, task_id)
     list(

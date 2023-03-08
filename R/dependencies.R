@@ -8,8 +8,7 @@ cancel_dependencies <- function(con, keys, store, ids) {
   dependent_ids <- unique(unlist(lapply(dependent_keys, con$SMEMBERS)))
   n <- length(dependent_ids)
 
-  run_task_cleanup(con, keys, store, dependent_ids, TASK_IMPOSSIBLE,
-                   worker_task_failed(TASK_IMPOSSIBLE))
+  run_task_cleanup(con, keys, store, dependent_ids, TASK_IMPOSSIBLE, NULL)
 
   if (n > 0) {
     cancel_dependencies(con, keys, store, dependent_ids)
