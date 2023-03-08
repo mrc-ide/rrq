@@ -154,7 +154,7 @@ test_that("Hash large data", {
   h <- hash_data(d)
   expect_equal(
     h,
-    "a7c744c13cc101ed66c29f672f92455547889cc586ce6d44fe76ae824958ea51")
+    "2e414e29f36fec53be8f411a22e2539d")
 })
 
 

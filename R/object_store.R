@@ -21,8 +21,7 @@
 ##'   to store the *values* referenced by `a` and `b` without
 ##'   reference to the names - we do this by naming the new values
 ##'   after their value. That is, the name becomes the hash of the
-##'   object, computed by [openssl::sha256()] after serialisation, as
-##'   a form of [content-addressable
+##'   object, computed by [rlang::hash()], as a form of [content-addressable
 ##'   storage](https://en.wikipedia.org/wiki/Content-addressable_storage).
 ##' * When doing this we note that we might end up using the value
 ##'   referenced by `a` or `b` many times in different tasks so we
