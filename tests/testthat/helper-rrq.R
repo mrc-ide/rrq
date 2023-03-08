@@ -70,8 +70,10 @@ test_store <- function(..., prefix = NULL) {
 }
 
 
-test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE) {
+test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
+                     name = NULL) {
   skip_if_no_redis()
+  skip_if_not_installed("withr")
   Sys.setenv(R_TESTS = "")
 
   dir.create(root)
@@ -80,7 +82,11 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE) {
     sources <- file.path(root, sources)
   }
 
-  name <- sprintf("rrq:%s", ids::random_id())
+  if (is.null(name)) {
+    name <- sprintf("rrq:%s", ids::random_id())
+  } else {
+    name <- sprintf("rrq:%s:%s", name, ids::random_id())
+  }
 
   create_env <- new.env(parent = globalenv())
   create_env$sources <- sources
@@ -94,7 +100,9 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE) {
   obj <- rrq_controller$new(name)
   obj$worker_config_save("localhost", time_poll = 1, verbose = verbose)
   obj$envir(create)
-  reg.finalizer(obj, function(e) obj$destroy())
+
+  withr::defer_parent(obj$destroy())
+
   obj
 }
 
