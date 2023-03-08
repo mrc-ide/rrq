@@ -28,7 +28,8 @@ worker_run_task_local <- function(task, worker, private) {
     list(value = result$value,
          status = TASK_COMPLETE)
   } else {
-    list(value = rrq_task_error(result$value, private$keys$queue_id, task$id),
+    list(value = rrq_task_error(result$value, TASK_ERROR,
+                                private$keys$queue_id, task$id),
          status = TASK_ERROR)
   }
 }
@@ -158,19 +159,18 @@ process_poll <- function(px, timeout) {
 }
 
 
-worker_task_failed <- function(reason, queue_id, task_id) {
-  err <- structure(
-    list(message = sprintf("Task not successful: %s", reason),
-         reason = reason),
+worker_task_failed <- function(status, queue_id, task_id) {
+  e <- structure(
+    list(message = sprintf("Task not successful: %s", status)),
     class = c("error", "condition"))
-  rrq_task_error(err, queue_id, task_id)
+  rrq_task_error(e, status, queue_id, task_id)
 }
 
 
-## I wonder if we should also save the queue id here too?
-rrq_task_error <- function(e, queue_id, task_id) {
+rrq_task_error <- function(e, status, queue_id, task_id) {
   e$queue_id <- queue_id
   e$task_id <- task_id
+  e$status <- status
   class(e) <- c("rrq_task_error", class(e))
   e
 }

@@ -52,6 +52,7 @@ test_that("task errors are returned", {
   expect_null(res$warnings)
   expect_equal(res$task_id, t2)
   expect_equal(res$queue_id, obj$queue_id)
+  expect_equal(res$status, TASK_ERROR)
 
   t3 <- obj$enqueue(nonexistant_function(-1))
   w$step(TRUE)
@@ -60,6 +61,7 @@ test_that("task errors are returned", {
   expect_null(res$warnings)
   expect_equal(res$task_id, t3)
   expect_equal(res$queue_id, obj$queue_id)
+  expect_equal(res$status, TASK_ERROR)
 })
 
 
@@ -431,7 +433,7 @@ test_that("Cancel job sent to new process", {
                c("ALIVE", "TASK_START", "REMOTE", "CANCEL", "TASK_CANCELLED"))
   expect_equal(obj$task_status(t), set_names(TASK_CANCELLED, t))
   expect_equal(obj$task_result(t),
-               worker_task_failed(TASK_CANCELLED))
+               worker_task_failed(TASK_CANCELLED, obj$queue_id, t))
 })
 
 
@@ -863,7 +865,7 @@ test_that("submit a task with a timeout", {
 
   expect_equal(obj$task_status(t), set_names(TASK_TIMEOUT, t))
   expect_equal(obj$task_result(t),
-               worker_task_failed(TASK_TIMEOUT))
+               worker_task_failed(TASK_TIMEOUT, obj$queue_id, t))
 
   expect_equal(obj$worker_log_tail(w$name, Inf)$command,
                c("ALIVE", "TASK_START", "REMOTE", "TIMEOUT", "TASK_TIMEOUT"))
