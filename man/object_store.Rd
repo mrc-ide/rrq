@@ -19,8 +19,7 @@ of the controller at the point the task is sent and so we need
 to store the \emph{values} referenced by \code{a} and \code{b} without
 reference to the names - we do this by naming the new values
 after their value. That is, the name becomes the hash of the
-object, computed by \code{\link[openssl:hash]{openssl::sha256()}} after serialisation, as
-a form of \href{https://en.wikipedia.org/wiki/Content-addressable_storage}{content-addressable storage}.
+object, computed by \code{\link[rlang:hash]{rlang::hash()}}, as a form of \href{https://en.wikipedia.org/wiki/Content-addressable_storage}{content-addressable storage}.
 \item When doing this we note that we might end up using the value
 referenced by \code{a} or \code{b} many times in different tasks so we
 should not re-save the data more than needed, and we should not
