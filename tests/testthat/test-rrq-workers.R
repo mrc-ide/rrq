@@ -273,6 +273,7 @@ test_that("can get worker info", {
   on.exit(obj$worker_stop(wid, "kill_local"))
 
   info <- obj$worker_info(wid)
+  expect_s3_class(info, "rrq_worker_info")
   expect_length(info, 1)
   expect_equal(names(info), wid)
   expect_setequal(names(info[[wid]]),

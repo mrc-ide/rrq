@@ -17,7 +17,6 @@ test_that("eval safely - error", {
   e <- new.env()
   res <- expression_eval_safely(f1(FALSE), e)
   expect_false(res$success)
-  expect_s3_class(res$value, "rrq_task_error")
   expect_s3_class(res$value, "error")
   expect_equal(res$value$message, "some deep error")
   expect_s3_class(res$value$trace, "rlang_trace")

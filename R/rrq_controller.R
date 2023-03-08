@@ -1243,8 +1243,7 @@ task_delete <- function(con, keys, store, task_ids, check = TRUE) {
     status_dependent <- con$HMGET(keys$task_status, dependents)
     cancel <- dependents[status_dependent == TASK_DEFERRED]
     if (length(cancel) > 0) {
-      run_task_cleanup(con, keys, store, cancel, TASK_IMPOSSIBLE,
-                       worker_task_failed(TASK_IMPOSSIBLE))
+      run_task_cleanup(con, keys, store, cancel, TASK_IMPOSSIBLE, NULL)
       cancel_dependencies(con, keys, store, cancel)
     }
   }
@@ -1379,8 +1378,7 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
   ## In the time between 2 and 3 A could have finished and failed meaning that
   ## the dependency of B will never be satisfied and it will never be run.
   if (any(response$status %in% TASK$terminal_fail)) {
-    run_task_cleanup(con, keys, store, task_ids, TASK_IMPOSSIBLE,
-                     worker_task_failed(TASK_IMPOSSIBLE))
+    run_task_cleanup(con, keys, store, task_ids, TASK_IMPOSSIBLE, NULL)
     cancel_dependencies(con, keys, store, task_ids)
     incomplete <- response$status[response$status %in% TASK$terminal_fail]
     names(incomplete) <- depends_on[response$status %in% TASK$terminal_fail]
@@ -1423,41 +1421,10 @@ worker_status <- function(con, keys, worker_ids = NULL) {
 }
 
 worker_info <- function(con, keys, worker_ids = NULL) {
-  as_worker_info(
-    from_redis_hash(con, keys$worker_info, worker_ids,
-                    f = Vectorize(bin_to_object_safe, SIMPLIFY = FALSE)))
-}
-
-as_worker_info <- function(x) {
-  structure(x, class = "rrq_worker_info")
-}
-
-#' Print worker info
-#'
-#' @param info
-#'
-#' @return
-#' @export
-print.rrq_worker_info <- function(info) {
-  print_one <- function(worker_name) {
-    worker <- info[[worker_name]]
-    paste0(
-      c(sprintf("%s", worker_name),
-      sprintf("  - rrq_version: %s", worker$rrq_version),
-      sprintf("  - platform: %s", worker$platform),
-      sprintf("  - running: %s", worker$running),
-      sprintf("  - hostname: %s", worker$hostname),
-      sprintf("  - username: %s", worker$username),
-      sprintf("  - queue: %s", worker$queue),
-      sprintf("  - wd: %s", worker$wd),
-      sprintf("  - pid: %d", worker$pid),
-      sprintf("  - redis_host: %s", worker$redis_host),
-      sprintf("  - redis_port: %s", worker$redis_port),
-      sprintf("  - heartbeat_key: %s", worker$heartbeat_key)),
-      collapse = "\n")
-  }
-  text <- lapply(names(info), print_one)
-  cat(paste0(text, collapse = "\n"))
+  ret <- from_redis_hash(con, keys$worker_info, worker_ids,
+                         f = Vectorize(bin_to_object_safe, SIMPLIFY = FALSE))
+  class(ret) <- "rrq_worker_info"
+  ret
 }
 
 worker_log_tail <- function(con, keys, worker_ids = NULL, n = 1) {

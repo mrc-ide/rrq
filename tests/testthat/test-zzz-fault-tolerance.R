@@ -181,7 +181,8 @@ test_that("Cope with dying subprocess task", {
   tools::pskill(pid_sub)
   wait_status(t, obj, status = TASK_RUNNING)
   expect_equal(obj$task_status(t), set_names(TASK_DIED, t))
-  expect_equal(obj$task_result(t), worker_task_failed(TASK_DIED))
+  expect_equal(obj$task_result(t),
+               worker_task_failed(TASK_DIED, obj$queue_id, t))
 
   log <- obj$worker_log_tail(wid, Inf)
   expect_equal(log$command,
