@@ -1423,8 +1423,41 @@ worker_status <- function(con, keys, worker_ids = NULL) {
 }
 
 worker_info <- function(con, keys, worker_ids = NULL) {
-  from_redis_hash(con, keys$worker_info, worker_ids,
-                  f = Vectorize(bin_to_object_safe, SIMPLIFY = FALSE))
+  as_worker_info(
+    from_redis_hash(con, keys$worker_info, worker_ids,
+                    f = Vectorize(bin_to_object_safe, SIMPLIFY = FALSE)))
+}
+
+as_worker_info <- function(x) {
+  structure(x, class = "rrq_worker_info")
+}
+
+#' Print worker info
+#'
+#' @param info
+#'
+#' @return
+#' @export
+print.rrq_worker_info <- function(info) {
+  print_one <- function(worker_name) {
+    worker <- info[[worker_name]]
+    paste0(
+      c(sprintf("%s", worker_name),
+      sprintf("  - rrq_version: %s", worker$rrq_version),
+      sprintf("  - platform: %s", worker$platform),
+      sprintf("  - running: %s", worker$running),
+      sprintf("  - hostname: %s", worker$hostname),
+      sprintf("  - username: %s", worker$username),
+      sprintf("  - queue: %s", worker$queue),
+      sprintf("  - wd: %s", worker$wd),
+      sprintf("  - pid: %d", worker$pid),
+      sprintf("  - redis_host: %s", worker$redis_host),
+      sprintf("  - redis_port: %s", worker$redis_port),
+      sprintf("  - heartbeat_key: %s", worker$heartbeat_key)),
+      collapse = "\n")
+  }
+  text <- lapply(names(info), print_one)
+  cat(paste0(text, collapse = "\n"))
 }
 
 worker_log_tail <- function(con, keys, worker_ids = NULL, n = 1) {
