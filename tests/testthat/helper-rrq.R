@@ -1,5 +1,5 @@
 test_queue_clean <- function(queue_id, delete = TRUE) {
-  invisible(rrq_clean(redux::hiredis(), queue_id, delete, "message"))
+  invisible(rrq_clean(test_hiredis(), queue_id, delete, "message"))
 }
 
 has_internet <- function() {
