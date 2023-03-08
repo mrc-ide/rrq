@@ -1,6 +1,3 @@
-## TODO: The prefix will need some work to avoid collisions with other
-## people.  Avoid the system RNG too - might need to go with openssl
-## for real RNGs, or with uuids.
 rrq_keys <- function(queue_id, worker_name = NULL) {
   if (is.null(worker_name)) {
     rrq_keys_common(queue_id)

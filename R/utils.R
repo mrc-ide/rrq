@@ -186,14 +186,7 @@ wait_success <- function(explanation, timeout, keep_going,
 
 
 hash_data <- function(data) {
-  if (length(data) >= 2^31) {
-    con <- rawConnection(data)
-    on.exit(close(con))
-    hash <- openssl::sha256(con)
-  } else {
-    hash <- openssl::sha256(data)
-  }
-  paste0(unclass(hash), collapse = "")
+  rlang::hash(data)
 }
 
 
