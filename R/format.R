@@ -48,14 +48,3 @@ print.rrq_worker_info <- function(x, ...) {
   cat(paste0(format(x, ...), collapse = "\n"))
   invisible(x)
 }
-
-#' @export
-format.rrq_worker_info_list <- function(x, ...) {
-  unlist(lapply(x, function(item) format(item, ...)))
-}
-
-#' @export
-print.rrq_worker_info_list <- function(x, ...) {
-  cat(paste0(format(x, ...), collapse = "\n"))
-  invisible(x)
-}

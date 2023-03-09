@@ -81,9 +81,11 @@ test_that("can print worker info", {
   expect_match(
     text$output,
     paste0(c(
+      sprintf("\\$%s", wid),
       "<rrq_worker_info>",
       sprintf("  name:\\s*%s", wid),
       keys_regex,
+      sprintf("\\$%s", wid2),
       "<rrq_worker_info>",
       sprintf("  name:\\s*%s", wid2),
       keys_regex),
