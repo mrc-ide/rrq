@@ -27,7 +27,7 @@ When you run tasks within a single process and things go wrong, you know immedia
 * If your task crashes the process it can take out the worker (depending on how you have configured rrq; see below). In this case nothing updates the task status, and your task appears to stay running forever. This situation also arises if your process is killed by the operating system (e.g., out of memory) or via some other condition (e.g., an administrator terminating the process).
 * If your task is running on another machine and that machine becomes unreachable (switched off, disconnects from the network, etc) your task will never appear to finish.
 
-This vignette discusses how you can mitigate against and recover from these sorts of issues.
+This vignette discusses how you can mitigate against and recover from these sorts of issues. We start with the expected errors and build up to considerations for creating a fault tolerant queue.
 
 ## Error handling
 
@@ -38,7 +38,6 @@ Consider this simple function which would fit a linear model between two variabl
 ```{r results = "asis", echo = FALSE}
 lang_output("r", "fault.R")
 ```
-
 
 ```{r}
 obj <- rrq::rrq_controller$new(paste0("rrq:", ids::random_id(bytes = 4)))
@@ -67,35 +66,43 @@ obj$task_wait(t, 10)
 The first thing to note here is that the task does not throw an error when you fetch the result, either via `task_wait` as above, or via `task_result`:
 
 ```{r}
-obj$task_result(t)
+r <- obj$task_result(t)
+r
 ```
 
 However, the result will be an object of `rrq_task_error` which you can test for using `inherits`:
 
 ```{r}
-r <- obj$task_result(r)
 inherits(r, "task_error")
 ```
 
-(this object also inherits from `error` and `condition` so behaves as expected, if you are used to handling errors directly). If you want this error to propagate upwards you can simply throw it yourself:
-
-```{r, error = TRUE}
-stop(r)
-```
-
-However, `rrq` does not throw it for you because otherwise interacting with task results would require you to use `tryCatch` or similar everywhere there is a chance of an error, and because the errors are usually interesting.
-
-Included in the error is the full stack trace from the worker process (here wrapped in `writeLines` so that prints nicely)
+The default behaviour of `rrq` is not to error when fetching a task as that would require that you use `tryCatch` everywhere where you retrieve tasks that might have failed, and because errors are often interesting themselves. For example, `rrq_task_error` objects include stack traces alongside the error:
 
 ```{r}
 r$trace
 ```
 
+These are `rlang` stack traces, which are somewhat richer than those produced by `traceback()`, containing the same set of stacks but arranged in a tree. See the documentation there for details. The errors also include any warnings captured while the task ran.
+
+Objects of class `rrq_task_error` inherit from `error` and `condition` so, once thrown, will behave as expected in programs using errors for flow control (e.g., with `tryCatch`); you can throw them yourself with  `stop()`:
+
+```{r, error = TRUE}
+stop(r)
+```
+
+You can also change the default behaviour to error on failure by passing  `error = TRUE` to any of `$task_result()`, `$task_wait()`, `$tasks_result()` or `$tasks_wait()`:
+
+```{r, error = TRUE}
+obj$task_result(t, error = TRUE)
+```
+
 This process is unchanged if the task is run in a separate process (with `separate_process = TRUE` passed to `enqueue`), with the same status and return type, and with the trace information available after failure.
 
-## Recovery via separate processes
+(TODO - check this)
 
-Running tasks in separate processes (e.g., `obj$enqueue(mytask(), separate_process = TRUE)`) is the simplest way of making things more fault tolerant because this creates a layer of isolation between the worker and the task. If your task crashes R (e.g., a segmentation fault due to a bug in your C/C++ code) or is killed by the operating system then the worker process survives and can update the keys in Redis directly.
+## Increasing resiliance via separate processes
+
+Running tasks in separate processes (e.g., `obj$enqueue(mytask(), separate_process = TRUE)`) is the simplest way of making things more resiliant because this creates a layer of isolation between the worker and the task. If your task crashes R (e.g., a segmentation fault due to a bug in your C/C++ code) or is killed by the operating system then the worker process survives and can update the keys in Redis directly to advertise this fact. This is geerally much nicer than when the worker dies and the task status cannot be updated.
 
 The downside of using separate processes is that it is much slower; compare the time taken to queue, run an retrieve a trivial task run in the same worker process (look at the `elapsed` entry)
 
@@ -149,7 +156,7 @@ Because the task was run in a separate process, our worker could detect that the
 obj$task_status(t)
 ```
 
-This is different to the error status above (that was `r rrq:::TASK_ERROR`).
+This is different to the error status above (that was `r rrq:::TASK_ERROR`). Note that if we had not run the task in a separate process the task status would be unchanged as `r rrq:::TASK_RUNNING`) because nothing could ever update the task status!
 
 Retrieving the result has similar behaviour to the error case; we don't throw but instead return an object of class `rrq_task_error` (which also inherits from `error` and `condition`). However, this time there's really not much extra information in the error:
 
