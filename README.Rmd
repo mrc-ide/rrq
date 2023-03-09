@@ -69,7 +69,7 @@ obj$worker_log_tail(n = Inf)
 For more information, see `vignette("rrq")`
 
 ```{r, include = FALSE}
-obj$destroy()
+obj$destroy(worker_stop_timeout = worker_stop_timeout)
 ```
 
 ## Installation
