@@ -650,9 +650,16 @@ rrq_controller <- R6::R6Class(
     ##'   error otherwise.
     ##'
     ##' @param task_id The single id for which the result is wanted.
-    task_result = function(task_id) {
+    ##'
+    ##' @param error Logical, indicating if we should throw an error
+    ##'   if a task was not successful. By default (`error = FALSE`),
+    ##'   in the case of the task result returning an error we return
+    ##'   an object of class `rrq_task_error`, which contains information
+    ##'   about the error. Passing `error = TRUE` simply calls `stop()`
+    ##'   on this error if it is returned.
+    task_result = function(task_id, error = FALSE) {
       assert_scalar_character(task_id)
-      self$tasks_result(task_id)[[1L]]
+      self$tasks_result(task_id, error)[[1L]]
     },
 
     ##' @description Get the results of a group of tasks, returning them as a
@@ -660,8 +667,11 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param task_ids A vector of task ids for which the task result
     ##' is wanted.
-    tasks_result = function(task_ids) {
-      task_results(self$con, private$keys, private$store, task_ids)
+    ##'
+    ##' @param error Logical, indicating if we should throw an error if
+    ##'   the task was not successful. See `$task_result()` for details.
+    tasks_result = function(task_ids, error = FALSE) {
+      task_results(self$con, private$keys, private$store, task_ids, error)
     },
 
     ##' @description Poll for a task to complete, returning the result
@@ -687,10 +697,15 @@ rrq_controller <- R6::R6Class(
     ##'   should be displayed. If `NULL` we fall back on the value of the
     ##'   global option `rrq.progress`, and if that is unset display a
     ##'   progress bar if in an interactive session.
+    ##'
+    ##' @param error Logical, indicating if we should throw an error if
+    ##'   the task was not successful. See `$task_result()` for details.
+    ##'   Note that an error is always thrown if not all tasks are fetched
+    ##'   in time.
     task_wait = function(task_id, timeout = Inf, time_poll = 1,
-                         progress = NULL) {
+                         progress = NULL, error = FALSE) {
       assert_scalar_character(task_id)
-      self$tasks_wait(task_id, timeout, time_poll, progress)[[1L]]
+      self$tasks_wait(task_id, timeout, time_poll, progress, error)[[1L]]
     },
 
     ##' @description Poll for a group of tasks to complete, returning the
@@ -709,10 +724,15 @@ rrq_controller <- R6::R6Class(
     ##'   should be displayed. If `NULL` we fall back on the value of the
     ##'   global option `rrq.progress`, and if that is unset display a
     ##'   progress bar if in an interactive session.
+    ##'
+    ##' @param error Logical, indicating if we should throw an error if
+    ##'   the task was not successful. See `$task_result()` for details.
+    ##'   Note that an error is always thrown if not all tasks are fetched
+    ##'   in time.
     tasks_wait = function(task_ids, timeout = Inf, time_poll = 1,
-                          progress = NULL) {
+                          progress = NULL, error = FALSE) {
       tasks_wait(self$con, private$keys, private$store, task_ids,
-                 timeout, time_poll, progress)
+                 timeout, time_poll, progress, error = error)
     },
 
     ##' @description Delete one or more tasks
@@ -1400,13 +1420,24 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
 }
 
 
-task_results <- function(con, keys, store, task_ids) {
-  res <- from_redis_hash(con, keys$task_result, task_ids)
-  err <- is.na(res)
+task_results <- function(con, keys, store, task_ids, error) {
+  hash <- from_redis_hash(con, keys$task_result, task_ids)
+  err <- is.na(hash)
   if (any(err)) {
+    ## TODO: this is *TERRIBLE*
+    ##
+    ## Summarise the missing cases (task_ids[err]) to display the first few
+    ## Put this into some sort of class error too (e.g., rrq_task_missing)
     stop("Missing some results")
   }
-  set_names(store$mget(res), task_ids)
+  res <- store$mget(hash)
+  if (error) {
+    is_error <- vlapply(res, inherits, "rrq_task_error")
+    if (any(is_error)) {
+      stop(res[is_error][[1]])
+    }
+  }
+  set_names(res, task_ids)
 }
 
 worker_len <- function(con, keys) {
@@ -1624,7 +1655,7 @@ mean.worker_load <- function(x, time = c(1, 5, 15, Inf), ...) {
 
 
 tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
-                       progress = NULL, key_complete = NULL) {
+                       progress = NULL, key_complete = NULL, error = FALSE) {
   ## This can be relaxed in recent Redis >= 6.0.0 as we then interpret
   ## time_poll as a double. To do this efficiently we'll want to get
   ## the version information stored into the redux client, which is
@@ -1659,7 +1690,7 @@ tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
   }
 
   general_poll(fetch, 0, timeout, "tasks", TRUE, progress)
-  task_results(con, keys, store, task_ids)
+  task_results(con, keys, store, task_ids, error)
 }
 
 

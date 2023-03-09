@@ -979,3 +979,24 @@ test_that("collect times", {
   expect_equal(obj$task_times(t2), times1[t2, , drop = FALSE])
   expect_false(any(is.na(times2[t1, ])))
 })
+
+
+test_that("task errors can be immediately thrown", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t <- obj$enqueue(only_positive(-1))
+  w$step(TRUE)
+  err <- expect_error(obj$task_result(t, error = TRUE),
+                      class = "rrq_task_error")
+  expect_equal(err$queue_id, obj$queue_id)
+  expect_equal(err$task_id, t)
+
+  err2 <- expect_error(obj$task_wait(t, error = TRUE),
+                       class = "rrq_task_error")
+  expect_equal(err2, err)
+
+  err3 <- expect_error(obj$tasks_result(c(t, t), error = TRUE),
+                       class = "rrq_task_error")
+  expect_equal(err3, err)
+})
