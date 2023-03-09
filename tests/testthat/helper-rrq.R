@@ -119,9 +119,6 @@ test_rrq_cleanup <- function(obj, worker_stop_timeout) {
   if (is.null(worker_stop_timeout)) {
     worker_pid <- vnapply(obj$worker_info(), "[[", "pid")
     worker_is_separate <- worker_pid != Sys.getpid()
-    if (any(worker_is_separate) && !all(worker_is_separate)) {
-      warning("This test is likely to leak worker keys", immediate. = TRUE)
-    }
     worker_stop_timeout <- if (all(worker_is_separate)) 10 else 0
   }
   obj$destroy(worker_stop_timeout = worker_stop_timeout)
