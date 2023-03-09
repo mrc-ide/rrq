@@ -70,8 +70,14 @@ test_store <- function(..., prefix = NULL) {
 }
 
 
+test_name <- function(name) {
+  sprintf("%s:%s", name %||% "rrq", ids::random_id())
+}
+
+
 test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
-                     name = NULL) {
+                     name = NULL, worker_stop_timeout = NULL,
+                     store_max_size = Inf, offload_path = NULL) {
   skip_if_no_redis()
   skip_if_not_installed("withr")
   Sys.setenv(R_TESTS = "")
@@ -82,11 +88,7 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
     sources <- file.path(root, sources)
   }
 
-  if (is.null(name)) {
-    name <- sprintf("rrq:%s", ids::random_id())
-  } else {
-    name <- sprintf("rrq:%s:%s", name, ids::random_id())
-  }
+  name <- test_name(name)
 
   create_env <- new.env(parent = globalenv())
   create_env$sources <- sources
@@ -97,22 +99,32 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
   }
   environment(create) <- create_env
 
+  if (store_max_size < Inf) {
+    rrq_configure(name, store_max_size = store_max_size,
+                  offload_path = offload_path)
+  }
+
   obj <- rrq_controller$new(name)
+
   obj$worker_config_save("localhost", time_poll = 1, verbose = verbose)
   obj$envir(create)
 
-  withr::defer_parent(test_rrq_cleanup(obj))
+  withr::defer_parent(test_rrq_cleanup(obj, worker_stop_timeout))
 
   obj
 }
 
 
-test_rrq_cleanup <- function(obj) {
-  worker_is_separate <- vnapply(obj$worker_info(), "[[", "pid") != Sys.getpid()
-  if (any(worker_is_separate) && !all(worker_is_separate)) {
-    warning("This test is likely to leak worker keys", immediate. = TRUE)
+test_rrq_cleanup <- function(obj, worker_stop_timeout) {
+  if (is.null(worker_stop_timeout)) {
+    worker_pid <- vnapply(obj$worker_info(), "[[", "pid")
+    worker_is_separate <- worker_pid != Sys.getpid()
+    if (any(worker_is_separate) && !all(worker_is_separate)) {
+      warning("This test is likely to leak worker keys", immediate. = TRUE)
+    }
+    worker_stop_timeout <- if (all(worker_is_separate)) 10 else 0
   }
-  obj$destroy(worker_stop_timeout = if (all(worker_is_separate)) 10 else 0)
+  obj$destroy(worker_stop_timeout = worker_stop_timeout)
 }
 
 
