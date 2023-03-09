@@ -27,27 +27,35 @@ print.rrq_task_error <- function(x, ...) {
 
 #' @export
 format.rrq_worker_info <- function(x, ...) {
-  print_one <- function(worker_name) {
-    worker <- x[[worker_name]]
-    c(sprintf("  %s", worker_name),
-      sprintf("    rrq_version:   %s", worker$rrq_version),
-      sprintf("    platform:      %s", worker$platform),
-      sprintf("    running:       %s", worker$running),
-      sprintf("    hostname:      %s", worker$hostname),
-      sprintf("    username:      %s", worker$username),
-      sprintf("    queue:         %s", worker$queue),
-      sprintf("    wd:            %s", worker$wd),
-      sprintf("    pid:           %d", worker$pid),
-      sprintf("    redis_host:    %s", worker$redis_host),
-      sprintf("    redis_port:    %s", worker$redis_port),
-      sprintf("    heartbeat_key: %s", worker$heartbeat_key))
-  }
-  text <- lapply(names(x), print_one)
-  paste0(c("<rrq_worker_info>", unlist(text)), collapse = "\n")
+  c(
+    "<rrq_worker_info>",
+    sprintf("  name:          %s", x$worker),
+    sprintf("  rrq_version:   %s", x$rrq_version),
+    sprintf("  platform:      %s", x$platform),
+    sprintf("  running:       %s", x$running),
+    sprintf("  hostname:      %s", x$hostname),
+    sprintf("  username:      %s", x$username),
+    sprintf("  queue:         %s", x$queue),
+    sprintf("  wd:            %s", x$wd),
+    sprintf("  pid:           %d", x$pid),
+    sprintf("  redis_host:    %s", x$redis_host),
+    sprintf("  redis_port:    %s", x$redis_port),
+    sprintf("  heartbeat_key: %s", x$heartbeat_key))
 }
 
 #' @export
 print.rrq_worker_info <- function(x, ...) {
+  cat(paste0(format(x, ...), collapse = "\n"))
+  invisible(x)
+}
+
+#' @export
+format.rrq_worker_info_list <- function(x, ...) {
+  unlist(lapply(x, function(item) format(item, ...)))
+}
+
+#' @export
+print.rrq_worker_info_list <- function(x, ...) {
   cat(paste0(format(x, ...), collapse = "\n"))
   invisible(x)
 }

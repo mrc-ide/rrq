@@ -273,8 +273,9 @@ test_that("can get worker info", {
   on.exit(obj$worker_stop(wid, "kill_local"))
 
   info <- obj$worker_info(wid)
-  expect_s3_class(info, "rrq_worker_info")
+  expect_s3_class(info, "rrq_worker_info_list")
   expect_length(info, 1)
+  expect_s3_class(info[[1]], "rrq_worker_info")
   expect_equal(names(info), wid)
   expect_setequal(names(info[[wid]]),
                   c("worker", "rrq_version", "platform", "running", "hostname",

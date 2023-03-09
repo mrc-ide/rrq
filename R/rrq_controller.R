@@ -1423,7 +1423,11 @@ worker_status <- function(con, keys, worker_ids = NULL) {
 worker_info <- function(con, keys, worker_ids = NULL) {
   ret <- from_redis_hash(con, keys$worker_info, worker_ids,
                          f = Vectorize(bin_to_object_safe, SIMPLIFY = FALSE))
-  class(ret) <- "rrq_worker_info"
+  ret <- lapply(ret, function(x) {
+    class(x) <- "rrq_worker_info"
+    x
+  })
+  class(ret) <- "rrq_worker_info_list"
   ret
 }
 

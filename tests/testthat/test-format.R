@@ -64,27 +64,28 @@ test_that("can print worker info", {
   on.exit(obj$worker_stop(wid2, "kill_local"), add = TRUE)
 
   info <- obj$worker_info()
-  text <- format(info)
+  text <- testthat::evaluate_promise(withVisible(print(info)))
   keys_regex <- c(
-    "    rrq_version:\\s*[\\d\\.]+",
-    "    platform: .+",
-    "    running: .+",
-    "    hostname: .+",
-    "    username: .+",
-    "    queue: .+",
-    "    wd: .+",
-    "    pid:\\s*\\d+",
-    "    redis_host:\\s*[\\d\\.]+",
-    "    redis_port:\\s*6379",
-    "    heartbeat_key:\\s*rrq:.+"
+    "  rrq_version:\\s*[\\d\\.]+",
+    "  platform: .+",
+    "  running: .+",
+    "  hostname: .+",
+    "  username: .+",
+    "  queue: .+",
+    "  wd: .+",
+    "  pid:\\s*\\d+",
+    "  redis_host:\\s*[\\d\\.]+",
+    "  redis_port:\\s*6379",
+    "  heartbeat_key:\\s*rrq:.+"
   )
   expect_match(
-    text,
+    text$output,
     paste0(c(
       "<rrq_worker_info>",
-      sprintf("  %s", wid2),
+      sprintf("  name:\\s*%s", wid),
       keys_regex,
-      sprintf("  %s", wid),
+      "<rrq_worker_info>",
+      sprintf("  name:\\s*%s", wid2),
       keys_regex),
     collapse = "\\n"), perl = TRUE)
 })
