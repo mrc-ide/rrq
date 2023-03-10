@@ -856,14 +856,15 @@ test_that("can use task_wait with impossible tasks", {
 test_that("submit a task with a timeout requires separate process", {
   obj <- test_rrq("myfuns.R")
   expect_error(
-    obj$enqueue(slowdouble(10), timeout = 1),
+    obj$enqueue(slowdouble(10), timeout_task_run = 1),
     "Can't set timeout as 'separate_process' is FALSE")
 })
 
 
 test_that("submit a task with a timeout", {
   obj <- test_rrq("myfuns.R")
-  t <- obj$enqueue(slowdouble(10), timeout = 1, separate_process = TRUE)
+  t <- obj$enqueue(slowdouble(10), timeout_task_run = 1,
+                   separate_process = TRUE)
   expect_equal(obj$con$HGET(queue_keys(obj)$task_timeout, t), "1")
 
   w <- test_worker_blocking(obj)

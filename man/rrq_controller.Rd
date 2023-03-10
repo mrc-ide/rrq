@@ -280,7 +280,7 @@ Queue an expression
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
-  timeout = NULL,
+  timeout_task_run = NULL,
   depends_on = NULL,
   export = NULL
 )}\if{html}{\out{</div>}}
@@ -310,7 +310,7 @@ clean, subsequent runs are not affected by preceding ones.
 The downside of this approach is a considerable overhead in
 starting the external process and transferring data back.}
 
-\item{\code{timeout}}{Optionally, a maximum allowed running time, in
+\item{\code{timeout_task_run}}{Optionally, a maximum allowed running time, in
 seconds. This parameter only has an effect if \code{separate_process}
 is \code{TRUE}. If given, then if the task takes longer than this
 time it will be stopped and the task status set to \code{TIMEOUT}.}
@@ -346,7 +346,7 @@ Queue an expression
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
-  timeout = NULL,
+  timeout_task_run = NULL,
   depends_on = NULL,
   export = NULL
 )}\if{html}{\out{</div>}}
@@ -374,7 +374,7 @@ push jobs onto a queue with no worker, it will queue forever.}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
-\item{\code{timeout}}{Optionally, a maximum allowed running time, in
+\item{\code{timeout_task_run}}{Optionally, a maximum allowed running time, in
 seconds (see \verb{$enqueue} for details).}
 
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
@@ -404,7 +404,7 @@ equivalent to using \verb{$enqueue()} over each element in the list.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
-  timeout_task = NULL,
+  timeout_task_run = NULL,
   depends_on = NULL,
   timeout_task_wait = NULL,
   time_poll = 1,
@@ -436,7 +436,7 @@ details).}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
-\item{\code{timeout_task}}{Optionally, a maximum allowed running time, in
+\item{\code{timeout_task_run}}{Optionally, a maximum allowed running time, in
 seconds (see the \code{timeout} argument of \verb{$enqueue} for details).}
 
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
@@ -490,7 +490,7 @@ be copied over rather than using their names if possible.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
-  timeout_task = NULL,
+  timeout_task_run = NULL,
   depends_on = NULL,
   timeout_task_wait = NULL,
   time_poll = 1,
@@ -522,7 +522,7 @@ details).}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
-\item{\code{timeout_task}}{Optionally, a maximum allowed running time, in
+\item{\code{timeout_task_run}}{Optionally, a maximum allowed running time, in
 seconds (see the \code{timeout} argument of \verb{$enqueue} for details).}
 
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
@@ -577,7 +577,7 @@ should feel intuitive.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
-  timeout_task = NULL,
+  timeout_task_run = NULL,
   depends_on = NULL,
   timeout_task_wait = NULL,
   time_poll = 1,
@@ -611,7 +611,7 @@ details).}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
-\item{\code{timeout_task}}{Optionally, a maximum allowed running time, in
+\item{\code{timeout_task_run}}{Optionally, a maximum allowed running time, in
 seconds (see the \code{timeout} argument of \verb{$enqueue} for details).}
 
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
@@ -665,7 +665,7 @@ be copied over rather than using their names if possible.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
-  timeout_task = NULL,
+  timeout_task_run = NULL,
   depends_on = NULL,
   timeout_task_wait = NULL,
   time_poll = 1,
@@ -699,7 +699,7 @@ details).}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
-\item{\code{timeout_task}}{Optionally, a maximum allowed running time, in
+\item{\code{timeout_task_run}}{Optionally, a maximum allowed running time, in
 seconds (see the \code{timeout} argument of \verb{$enqueue} for details).}
 
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have

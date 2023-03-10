@@ -242,7 +242,7 @@ rrq_controller <- R6::R6Class(
     ##'   The downside of this approach is a considerable overhead in
     ##'   starting the external process and transferring data back.
     ##'
-    ##' @param timeout Optionally, a maximum allowed running time, in
+    ##' @param timeout_task_run Optionally, a maximum allowed running time, in
     ##'   seconds. This parameter only has an effect if `separate_process`
     ##'   is `TRUE`. If given, then if the task takes longer than this
     ##'   time it will be stopped and the task status set to `TIMEOUT`.
@@ -264,10 +264,10 @@ rrq_controller <- R6::R6Class(
     ##'   that will be available on the remote workers due to how you
     ##'   have configured your worker environment.
     enqueue = function(expr, envir = parent.frame(), queue = NULL,
-                       separate_process = FALSE, timeout = NULL,
+                       separate_process = FALSE, timeout_task_run = NULL,
                        depends_on = NULL, export = NULL) {
       self$enqueue_(substitute(expr), envir, queue,
-                    separate_process, timeout, depends_on, export)
+                    separate_process, timeout_task_run, depends_on, export)
     },
 
     ##' @description Queue an expression
@@ -291,7 +291,7 @@ rrq_controller <- R6::R6Class(
     ##'   run in a separate process on the worker (see `$enqueue` for
     ##'   details).
     ##'
-    ##' @param timeout Optionally, a maximum allowed running time, in
+    ##' @param timeout_task_run Optionally, a maximum allowed running time, in
     ##'   seconds (see `$enqueue` for details).
     ##'
     ##' @param depends_on Vector or list of IDs of tasks which must have
@@ -303,14 +303,15 @@ rrq_controller <- R6::R6Class(
     ##' @param export Optionally a list of variables to export for the
     ##'   calculation. See `$enqueue` for details.
     enqueue_ = function(expr, envir = parent.frame(),
-                        queue = NULL, separate_process = FALSE, timeout = NULL,
+                        queue = NULL, separate_process = FALSE,
+                        timeout_task_run = NULL,
                         depends_on = NULL, export = NULL) {
       task_id <- ids::random_id()
       verify_dependencies_exist(self, depends_on)
       dat <- expression_prepare(expr, envir, private$store, task_id,
                                 export = export)
       task_submit(self$con, private$keys, private$store, task_id, dat, queue,
-                  separate_process, timeout, depends_on)
+                  separate_process, timeout_task_run, depends_on)
     },
 
     ##' @description Apply a function over a list of data. This is
