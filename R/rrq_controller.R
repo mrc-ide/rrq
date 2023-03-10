@@ -705,8 +705,10 @@ rrq_controller <- R6::R6Class(
     ##'   on this error if it is returned.
     task_result = function(task_id, error = FALSE) {
       assert_scalar_character(task_id)
-      tasks_result(self$con, private$keys, private$store, task_id,
-                   error, TRUE)
+      tasks_result(
+        self$con, private$keys, private$store, task_id,
+        error, TRUE
+      )
     },
 
     ##' @description Get the results of a group of tasks, returning them as a
@@ -753,8 +755,10 @@ rrq_controller <- R6::R6Class(
     task_wait = function(task_id, timeout = Inf, time_poll = 1,
                          progress = NULL, error = FALSE) {
       assert_scalar_character(task_id)
-      tasks_wait(self$con, private$keys, private$store, task_id,
-                 timeout, time_poll, progress, NULL, error, TRUE)
+      tasks_wait(
+        self$con, private$keys, private$store, task_id,
+        timeout, time_poll, progress, NULL, error, TRUE
+      )
     },
 
     ##' @description Poll for a group of tasks to complete, returning the
@@ -1032,10 +1036,11 @@ rrq_controller <- R6::R6Class(
     ##'   killed with an interrupt.  The default should be good for most
     ##'   uses, but shorter values are used for debugging.
     ##'
-    ##' @param timeout_idle Optional timeout to set for the worker.  This is
-    ##'   (roughly) equivalent to issuing a \code{TIMEOUT_SET} message
-    ##'   after initialising the worker, except that it's guaranteed to be
-    ##'   run by all workers.
+    ##' @param timeout_idle Optional timeout that sets the length of time
+    ##'   after which the worker will exit if it has not processed a task.
+    ##'   This is (roughly) equivalent to issuing a \code{TIMEOUT_SET}
+    ##'   message after initialising the worker, except that it's guaranteed
+    ##'   to be run by all workers.
     ##'
     ##' @param queue Optional character vector of queues to listen on
     ##'   for jobs. There is a default queue which is always listened
@@ -1797,7 +1802,6 @@ verify_dependencies_exist <- function(controller, depends_on) {
   }
   invisible(TRUE)
 }
-
 
 throw_task_errors <- function(res, single) {
   if (single) {
