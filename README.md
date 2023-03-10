@@ -28,7 +28,7 @@ Submit work to the queue:
 ```r
 t <- obj$enqueue(runif(10))
 t
-#> [1] "6a368aa506da1aabcd264ca859fa3322"
+#> [1] "1604b9d2665fc935c5f432b0d7da4889"
 ```
 
 Query task process:
@@ -36,7 +36,7 @@ Query task process:
 
 ```r
 obj$task_status(t)
-#> 6a368aa506da1aabcd264ca859fa3322
+#> 1604b9d2665fc935c5f432b0d7da4889
 #>                        "PENDING"
 ```
 
@@ -45,8 +45,8 @@ Run tasks on workers in the background
 
 ```r
 rrq::rrq_worker_spawn(obj)
-#> Spawning 1 worker with prefix endocrinous_anemonecrab
-#> [1] "endocrinous_anemonecrab_1"
+#> Spawning 1 worker with prefix hexagonal_xenurine
+#> [1] "hexagonal_xenurine_1"
 ```
 
 Collect task results when complete
@@ -54,8 +54,8 @@ Collect task results when complete
 
 ```r
 obj$task_wait(t)
-#>  [1] 0.6429454 0.3498470 0.2804653 0.2975355 0.1308821 0.1520124 0.3212029
-#>  [8] 0.1526649 0.1589430 0.3306704
+#>  [1] 0.21934439 0.47012520 0.57837978 0.17550807 0.07085051 0.04189457
+#>  [7] 0.43439891 0.79186554 0.82606661 0.86208847
 ```
 
 Or try and retrieve them regardless of if they are complete
@@ -63,8 +63,8 @@ Or try and retrieve them regardless of if they are complete
 
 ```r
 obj$task_result(t)
-#>  [1] 0.6429454 0.3498470 0.2804653 0.2975355 0.1308821 0.1520124 0.3212029
-#>  [8] 0.1526649 0.1589430 0.3306704
+#>  [1] 0.21934439 0.47012520 0.57837978 0.17550807 0.07085051 0.04189457
+#>  [7] 0.43439891 0.79186554 0.82606661 0.86208847
 ```
 
 Query what workers have done
@@ -72,14 +72,14 @@ Query what workers have done
 
 ```r
 obj$worker_log_tail(n = Inf)
-#>                   worker_id       time       command
-#> 1 endocrinous_anemonecrab_1 1629120683         ALIVE
-#> 2 endocrinous_anemonecrab_1 1629120683    TASK_START
-#> 3 endocrinous_anemonecrab_1 1629120683 TASK_COMPLETE
+#>              worker_id       time       command
+#> 1 hexagonal_xenurine_1 1678370725         ALIVE
+#> 2 hexagonal_xenurine_1 1678370725    TASK_START
+#> 3 hexagonal_xenurine_1 1678370726 TASK_COMPLETE
 #>                            message
 #> 1
-#> 2 6a368aa506da1aabcd264ca859fa3322
-#> 3 6a368aa506da1aabcd264ca859fa3322
+#> 2 1604b9d2665fc935c5f432b0d7da4889
+#> 3 1604b9d2665fc935c5f432b0d7da4889
 ```
 
 For more information, see `vignette("rrq")`

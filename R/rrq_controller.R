@@ -166,8 +166,9 @@ rrq_controller <- R6::R6Class(
     ##'   these may be faster to stop workers than "message", which will
     ##'   wait until any task is finished.
     ##'
-    ##' @param worker_stop_timeout A timeout to pass to the worker if
-    ##'   using `type = "message"`
+    ##' @param worker_stop_timeout A timeout to pass to the worker to
+    ##'   respond the request to stop. See `worker_stop`'s `timeout`
+    ##'   argument for details.
     destroy = function(delete = TRUE, worker_stop_type = "message",
                        worker_stop_timeout = 0) {
       if (!is.null(self$con)) {
@@ -895,7 +896,10 @@ rrq_controller <- R6::R6Class(
     ##' @param timeout Optional timeout; if greater than zero then we poll
     ##'   for a response from the worker for this many seconds until they
     ##'   acknowledge the message and stop (only has an effect if `type`
-    ##'   is `message`).
+    ##'   is `message`). If a timeout of greater than zero is given, then
+    ##'   for a `message`-based stop we wait up to this many seconds for the
+    ##'   worker to exit. That means that we might wait up to `2 * timeout`
+    ##'   seconds for this function to return.
     ##'
     ##' @param time_poll If `type` is `message` and `timeout` is greater
     ##'   than zero, this is the polling interval used between redis calls.
@@ -1421,8 +1425,12 @@ worker_status <- function(con, keys, worker_ids = NULL) {
 }
 
 worker_info <- function(con, keys, worker_ids = NULL) {
-  from_redis_hash(con, keys$worker_info, worker_ids,
-                  f = Vectorize(bin_to_object_safe, SIMPLIFY = FALSE))
+  ret <- from_redis_hash(con, keys$worker_info, worker_ids,
+                         f = Vectorize(bin_to_object_safe, SIMPLIFY = FALSE))
+  lapply(ret, function(x) {
+    class(x) <- "rrq_worker_info"
+    x
+  })
 }
 
 worker_log_tail <- function(con, keys, worker_ids = NULL, n = 1) {
@@ -1515,6 +1523,11 @@ worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
                            delete = FALSE, timeout = timeout,
                            time_poll = time_poll,
                            progress = progress)
+      key_status <- keys$worker_status
+      when <- function() {
+        any(list_to_character(con$HMGET(key_status, worker_ids)) != "EXITED")
+      }
+      wait_timeout("Worker did not exit in time", timeout, when, time_poll)
     }
   } else if (type == "kill") {
     info <- worker_info(con, keys, worker_ids)
@@ -1535,8 +1548,12 @@ worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
       stop("Not all workers are local: ",
            paste(worker_ids[!is_local], collapse = ", "))
     }
+    ## It might be possible to check to see if the process is alive -
+    ## that's easiest done with the ps package perhaps, but I think
+    ## there's a (somewhat portable) way of doing it with base R.
     tools::pskill(vnapply(info, "[[", "pid"), tools::SIGTERM)
   }
+
   invisible(worker_ids)
 }
 

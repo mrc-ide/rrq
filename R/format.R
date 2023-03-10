@@ -24,3 +24,17 @@ print.rrq_task_error <- function(x, ...) {
   cat(paste0(format(x, ...), "\n", collapse = ""))
   invisible(x)
 }
+
+#' @export
+format.rrq_worker_info <- function(x, ...) {
+  c("  <rrq_worker_info>",
+    sprintf("    %s %s",
+            format(paste0(names(x), ":")),
+            vcapply(x, as.character)))
+}
+
+#' @export
+print.rrq_worker_info <- function(x, ...) {
+  cat(paste0(format(x, ...), collapse = "\n"))
+  invisible(x)
+}

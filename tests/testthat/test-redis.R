@@ -80,6 +80,7 @@ test_that("push max length", {
   con <- test_hiredis()
 
   key <- sprintf("rrq:%s", ids::random_id())
+  on.exit(con$DEL(key))
   con$RPUSH(key, c(1, 2, 3, 4))
   rpush_max_length(con, key, 5, 5)
   expect_equal(con$LRANGE(key, 0, -1), as.list(as.character(1:5)))

@@ -244,12 +244,10 @@ test_that("bulk tasks can be queued with dependency", {
 
 test_that("Can offload storage for bulk tasks", {
   skip_if_no_redis()
-  name <- sprintf("rrq:%s", ids::random_id())
 
   path <- tempfile()
-  rrq_configure(name, store_max_size = 100, offload_path = path)
 
-  obj <- rrq_controller$new(name)
+  obj <- test_rrq(store_max_size = 100, offload_path = path)
   obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
                          time_poll = 1, overwrite = TRUE)
 

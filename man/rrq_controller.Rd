@@ -252,8 +252,9 @@ the workers are on the same machine as the controller. However,
 these may be faster to stop workers than "message", which will
 wait until any task is finished.}
 
-\item{\code{worker_stop_timeout}}{A timeout to pass to the worker if
-using \code{type = "message"}}
+\item{\code{worker_stop_timeout}}{A timeout to pass to the worker to
+respond the request to stop. See \code{worker_stop}'s \code{timeout}
+argument for details.}
 }
 \if{html}{\out{</div>}}
 }
@@ -1313,7 +1314,10 @@ all active workers will be stopped.}
 \item{\code{timeout}}{Optional timeout; if greater than zero then we poll
 for a response from the worker for this many seconds until they
 acknowledge the message and stop (only has an effect if \code{type}
-is \code{message}).}
+is \code{message}). If a timeout of greater than zero is given, then
+for a \code{message}-based stop we wait up to this many seconds for the
+worker to exit. That means that we might wait up to \code{2 * timeout}
+seconds for this function to return.}
 
 \item{\code{time_poll}}{If \code{type} is \code{message} and \code{timeout} is greater
 than zero, this is the polling interval used between redis calls.
