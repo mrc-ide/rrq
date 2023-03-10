@@ -1005,4 +1005,14 @@ test_that("task errors can be immediately thrown", {
   err3 <- expect_error(obj$tasks_result(c(t, t), error = TRUE),
                        class = "rrq_task_error_group")
   expect_equal(err3$errors, list(err, err))
+
+  expect_equal(
+    format(err3),
+    c("<rrq_task_error_group>",
+      paste("  2/2 tasks failed:",
+            "    - x must be positive",
+            "    - x must be positive",
+            sep = "\n"),
+      "  * To throw this error, use stop() with it",
+      "  * To inspect individual errors, see $errors"))
 })
