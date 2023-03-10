@@ -1808,7 +1808,7 @@ throw_task_errors <- function(res, single) {
   } else {
     is_error <- vlapply(res, inherits, "rrq_task_error")
     if (any(is_error)) {
-      stop(rrq_task_error_group(res[is_error], length(res)))
+      stop(rrq_task_error_group(unname(res[is_error]), length(res)))
     }
   }
 }

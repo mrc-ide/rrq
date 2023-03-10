@@ -301,6 +301,14 @@ test_that("can throw on fetching bulk tasks", {
   expect_length(err$errors, 1)
   expect_s3_class(err$errors[[1]], "rrq_task_error")
   expect_equal(err$errors[[1]], obj$task_result(grp$task_ids[[1]]))
+
+  ## testthat adds this trace; remove it before the comparison below.
+  err$trace <- NULL
+
+  err2 <- tryCatch(obj$bulk_wait(grp, error = TRUE), error = identity)
+  expect_s3_class(err2, "rrq_task_error_group")
+  expect_null(err2$trace)
+  expect_equal(err2, err)
 })
 
 
