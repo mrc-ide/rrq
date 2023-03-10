@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.11</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.12</span>
       </span>
     </div>
 
@@ -60,6 +60,10 @@
       <small>Source: <a href="https://github.com/mrc-ide/rrq/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="0.6.12" id="rrq-0612">rrq 0.6.12<a class="anchor" aria-label="anchor" href="#rrq-0612"></a></h2>
+<ul><li>New argument <code>timeout_task_wait</code> and option <code>rrq.timeout_task_wait</code> to control the default time to wait for tasks to be returned from <code>task_wait</code> and bulk task retrieval methods. The default behaviour is unchanged (blocking indefinitely) but this can now easily be changed at a global or queue-scoped level.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.6.11" id="rrq-0611">rrq 0.6.11<a class="anchor" aria-label="anchor" href="#rrq-0611"></a></h2>
 <ul><li>Changed argument of <code>worker_config_save</code> from <code>timeout</code> to <code>timeout_idle</code> (mrc-4075)</li>
