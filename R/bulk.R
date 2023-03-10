@@ -1,25 +1,28 @@
 rrq_lapply <- function(con, keys, store, x, fun, dots, envir, queue,
                        separate_process, task_timeout, depends_on,
-                       collect_timeout, time_poll, progress) {
+                       collect_timeout, time_poll, progress, delete, error) {
   dat <- rrq_bulk_submit(con, keys, store, x, fun, dots, FALSE, envir, queue,
                          separate_process, task_timeout, depends_on)
   if (collect_timeout == 0) {
     return(dat)
   }
-  rrq_bulk_wait(con, keys, store, dat, collect_timeout, time_poll, progress)
+  rrq_bulk_wait(con, keys, store, dat, collect_timeout, time_poll, progress,
+                delete, error)
 }
 
 
 rrq_enqueue_bulk <- function(con, keys, store, x, fun, dots,
                              envir, queue, separate_process, task_timeout,
-                             depends_on, collect_timeout, time_poll, progress) {
+                             depends_on, collect_timeout, time_poll, progress,
+                             delete, error) {
   dat <- rrq_bulk_submit(con, keys, store, x, fun, dots, TRUE,
                          envir, queue, separate_process, task_timeout,
                          depends_on)
   if (collect_timeout == 0) {
     return(dat)
   }
-  rrq_bulk_wait(con, keys, store, dat, collect_timeout, time_poll, progress)
+  rrq_bulk_wait(con, keys, store, dat, collect_timeout, time_poll, progress,
+                delete, error)
 }
 
 
@@ -125,12 +128,16 @@ rrq_bulk_prepare_call_x <- function(x) {
 
 
 rrq_bulk_wait <- function(con, keys, store, dat, timeout, time_poll, progress,
-                          delete = TRUE) {
+                          delete, error) {
   assert_is(dat, "rrq_bulk")
   ret <- tasks_wait(con, keys, store, dat$task_ids, timeout,
-                    time_poll, progress, dat$key_complete)
+                    time_poll, progress, dat$key_complete,
+                    error = FALSE, single = FALSE)
   if (delete) {
     task_delete(con, keys, store, dat$task_ids, FALSE)
+  }
+  if (error) {
+    throw_task_errors(ret, single = FALSE)
   }
   set_names(ret, dat$names)
 }

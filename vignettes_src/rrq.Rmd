@@ -557,7 +557,7 @@ Any tasks that were dependent on this task will now be marked as `IMPOSSIBLE`.
 In a future version we will support automatic re-queuing of jobs assigned to disappeared workers.
 
 
-```{r}
+```{r, include = FALSE}
 obj$destroy()
 ```
 

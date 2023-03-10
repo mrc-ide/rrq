@@ -424,7 +424,9 @@ equivalent to using \verb{$enqueue()} over each element in the list.
   depends_on = NULL,
   collect_timeout = Inf,
   time_poll = 1,
-  progress = NULL
+  progress = NULL,
+  delete = FALSE,
+  error = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -472,6 +474,15 @@ completion (default is 1s, see \verb{$task_wait()} for details)}
 should be displayed. If \code{NULL} we fall back on the value of the
 global option \code{rrq.progress}, and if that is unset display a
 progress bar if in an interactive session.}
+
+\item{\code{delete}}{Optional logical, indicating if the tasks
+should be be immediately deleted after collection, preventing
+buildup of lots of content in your Redis database.}
+
+\item{\code{error}}{Optional logical, indicating if an error in the task
+should throw. Like \verb{$task_result()} the default is not to throw,
+giving you back an \code{rrq_task_error} object for each failing task.
+If \code{error = TRUE} we throw on error instead.}
 }
 \if{html}{\out{</div>}}
 }
@@ -498,7 +509,9 @@ be copied over rather than using their names if possible.
   depends_on = NULL,
   collect_timeout = Inf,
   time_poll = 1,
-  progress = NULL
+  progress = NULL,
+  delete = FALSE,
+  error = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -546,6 +559,15 @@ completion (default is 1s, see \verb{$task_wait()} for details)}
 should be displayed. If \code{NULL} we fall back on the value of the
 global option \code{rrq.progress}, and if that is unset display a
 progress bar if in an interactive session.}
+
+\item{\code{delete}}{Optional logical, indicating if the tasks
+should be be immediately deleted after collection, preventing
+buildup of lots of content in your Redis database.}
+
+\item{\code{error}}{Optional logical, indicating if an error in the task
+should throw. Like \verb{$task_result()} the default is not to throw,
+giving you back an \code{rrq_task_error} object for each failing task.
+If \code{error = TRUE} we throw on error instead.}
 }
 \if{html}{\out{</div>}}
 }
@@ -573,7 +595,9 @@ should feel intuitive.
   depends_on = NULL,
   collect_timeout = Inf,
   time_poll = 1,
-  progress = NULL
+  progress = NULL,
+  delete = FALSE,
+  error = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -623,6 +647,15 @@ completion (default is 1s, see \verb{$task_wait()} for details)}
 should be displayed. If \code{NULL} we fall back on the value of the
 global option \code{rrq.progress}, and if that is unset display a
 progress bar if in an interactive session.}
+
+\item{\code{delete}}{Optional logical, indicating if the tasks
+should be be immediately deleted after collection, preventing
+buildup of lots of content in your Redis database.}
+
+\item{\code{error}}{Optional logical, indicating if an error in the task
+should throw. Like \verb{$task_result()} the default is not to throw,
+giving you back an \code{rrq_task_error} object for each failing task.
+If \code{error = TRUE} we throw on error instead.}
 }
 \if{html}{\out{</div>}}
 }
@@ -649,7 +682,9 @@ be copied over rather than using their names if possible.
   depends_on = NULL,
   collect_timeout = Inf,
   time_poll = 1,
-  progress = NULL
+  progress = NULL,
+  delete = delete,
+  error = error
 )}\if{html}{\out{</div>}}
 }
 
@@ -699,6 +734,15 @@ completion (default is 1s, see \verb{$task_wait()} for details)}
 should be displayed. If \code{NULL} we fall back on the value of the
 global option \code{rrq.progress}, and if that is unset display a
 progress bar if in an interactive session.}
+
+\item{\code{delete}}{Optional logical, indicating if the tasks
+should be be immediately deleted after collection, preventing
+buildup of lots of content in your Redis database.}
+
+\item{\code{error}}{Optional logical, indicating if an error in the task
+should throw. Like \verb{$task_result()} the default is not to throw,
+giving you back an \code{rrq_task_error} object for each failing task.
+If \code{error = TRUE} we throw on error instead.}
 }
 \if{html}{\out{</div>}}
 }
@@ -714,7 +758,8 @@ Wait for a group of tasks
   timeout = Inf,
   time_poll = 1,
   progress = NULL,
-  delete = TRUE
+  delete = FALSE,
+  error = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -735,8 +780,13 @@ global option \code{rrq.progress}, and if that is unset display a
 progress bar if in an interactive session.}
 
 \item{\code{delete}}{Optional logical, indicating if the tasks
-should be deleted after collection. Typically this is \code{TRUE}
-to prevent build-up of lots of task information in Redis.}
+should be be immediately deleted after collection, preventing
+buildup of lots of content in your Redis database.}
+
+\item{\code{error}}{Optional logical, indicating if an error in the task
+should throw. Like \verb{$task_result()} the default is not to throw,
+giving you back an \code{rrq_task_error} object for each failing task.
+If \code{error = TRUE} we throw on error instead.}
 }
 \if{html}{\out{</div>}}
 }
@@ -887,13 +937,20 @@ for a method for efficiently getting multiple results at once).
 Returns the value of running the task if it is complete, and an
 error otherwise.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_result(task_id)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_result(task_id, error = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{task_id}}{The single id for which the result is wanted.}
+
+\item{\code{error}}{Logical, indicating if we should throw an error
+if a task was not successful. By default (\code{error = FALSE}),
+in the case of the task result returning an error we return
+an object of class \code{rrq_task_error}, which contains information
+about the error. Passing \code{error = TRUE} simply calls \code{stop()}
+on this error if it is returned.}
 }
 \if{html}{\out{</div>}}
 }
@@ -905,7 +962,7 @@ error otherwise.
 Get the results of a group of tasks, returning them as a
 list.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$tasks_result(task_ids)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$tasks_result(task_ids, error = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -913,6 +970,9 @@ list.
 \describe{
 \item{\code{task_ids}}{A vector of task ids for which the task result
 is wanted.}
+
+\item{\code{error}}{Logical, indicating if we should throw an error if
+the task was not successful. See \verb{$task_result()} for details.}
 }
 \if{html}{\out{</div>}}
 }
@@ -930,7 +990,8 @@ efficient way of doing this for a group of tasks.
   task_id,
   timeout = Inf,
   time_poll = 1,
-  progress = NULL
+  progress = NULL,
+  error = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -955,6 +1016,11 @@ a very recent Redis server.}
 should be displayed. If \code{NULL} we fall back on the value of the
 global option \code{rrq.progress}, and if that is unset display a
 progress bar if in an interactive session.}
+
+\item{\code{error}}{Logical, indicating if we should throw an error if
+the task was not successful. See \verb{$task_result()} for details.
+Note that an error is always thrown if not all tasks are fetched
+in time.}
 }
 \if{html}{\out{</div>}}
 }
@@ -971,7 +1037,8 @@ this is roughly equivalent to \code{tasks_result}.
   task_ids,
   timeout = Inf,
   time_poll = 1,
-  progress = NULL
+  progress = NULL,
+  error = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -990,6 +1057,11 @@ completion (default is 1s, see \verb{$task_wait()} for details)}
 should be displayed. If \code{NULL} we fall back on the value of the
 global option \code{rrq.progress}, and if that is unset display a
 progress bar if in an interactive session.}
+
+\item{\code{error}}{Logical, indicating if we should throw an error if
+the task was not successful. See \verb{$task_result()} for details.
+Note that an error is always thrown if not all tasks are fetched
+in time.}
 }
 \if{html}{\out{</div>}}
 }
