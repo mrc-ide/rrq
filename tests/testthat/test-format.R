@@ -51,3 +51,25 @@ test_that("Can print complex errors", {
   expect_equal(res$result, list(value = e, visible = FALSE))
   expect_equal(res$output, paste(s, collapse = "\n"))
 })
+
+test_that("can print worker info", {
+  skip_if_not_installed("callr")
+  skip_on_os("windows")
+
+  obj <- test_rrq()
+  res <- obj$worker_config_save("localhost", heartbeat_period = 3)
+  wid <- test_worker_spawn(obj)
+  wid2 <- test_worker_spawn(obj)
+
+  info <- obj$worker_info()
+  text <- testthat::evaluate_promise(withVisible(print(info)))
+  text <- strsplit(text$output, "\n")[[1]]
+  expect_equal(sum(text == "  <rrq_worker_info>"), 2)
+  expect_true(any(text == paste0("$", wid)))
+  expect_true(any(text == paste0("$", wid2)))
+  expect_true(any(grepl(paste0("    worker: \\s*", wid), text)))
+  expect_true(any(grepl(paste0("    worker: \\s*", wid2), text)))
+  for (name in names(info[[1]])) {
+    expect_true(any(grepl(name, text)))
+  }
+})

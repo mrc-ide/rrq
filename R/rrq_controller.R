@@ -1425,8 +1425,12 @@ worker_status <- function(con, keys, worker_ids = NULL) {
 }
 
 worker_info <- function(con, keys, worker_ids = NULL) {
-  from_redis_hash(con, keys$worker_info, worker_ids,
-                  f = Vectorize(bin_to_object_safe, SIMPLIFY = FALSE))
+  ret <- from_redis_hash(con, keys$worker_info, worker_ids,
+                         f = Vectorize(bin_to_object_safe, SIMPLIFY = FALSE))
+  lapply(ret, function(x) {
+    class(x) <- "rrq_worker_info"
+    x
+  })
 }
 
 worker_log_tail <- function(con, keys, worker_ids = NULL, n = 1) {
