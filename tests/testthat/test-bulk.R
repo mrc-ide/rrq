@@ -11,7 +11,7 @@ test_that("lapply simple case", {
 
   w$loop(immediate = TRUE)
 
-  res <- obj$bulk_wait(grp)
+  res <- obj$bulk_wait(grp, delete = TRUE)
   expect_equal(res, as.list(log2(1:10)))
 
   ## tasks are deleted on collection
@@ -259,4 +259,80 @@ test_that("Can offload storage for bulk tasks", {
 
   res <- obj$bulk_wait(t)
   expect_equal(res, as.list(sum(b) / (1:10)))
+})
+
+
+test_that("by default, bulk fetch does not throw", {
+  e <- new.env()
+  sys.source("myfuns.R", e)
+  obj <- test_rrq("myfuns.R")
+  obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
+                         time_poll = 1, overwrite = TRUE)
+
+  w <- test_worker_blocking(obj)
+  grp <- obj$lapply(seq(-1, 1), only_positive, envir = e, collect_timeout = 0)
+
+  w$loop(TRUE)
+  res <- obj$bulk_wait(grp)
+
+  expect_s3_class(res[[1]], "rrq_task_error")
+  expect_equal(res[[1]]$message, "x must be positive")
+  expect_equal(res[[2]], 0)
+  expect_equal(res[[3]], 1)
+})
+
+
+test_that("can throw on fetching bulk tasks", {
+  e <- new.env()
+  sys.source("myfuns.R", e)
+  obj <- test_rrq("myfuns.R")
+  obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
+                         time_poll = 1, overwrite = TRUE)
+
+  w <- test_worker_blocking(obj)
+  grp <- obj$lapply(seq(-1, 1), only_positive, envir = e, collect_timeout = 0)
+
+  w$loop(TRUE)
+
+  err <- expect_error(obj$tasks_result(grp$task_ids, error = TRUE),
+                      "1/3 tasks failed",
+                      class = "rrq_task_error_group")
+  expect_type(err$errors, "list")
+  expect_length(err$errors, 1)
+  expect_s3_class(err$errors[[1]], "rrq_task_error")
+  expect_equal(err$errors[[1]], obj$task_result(grp$task_ids[[1]]))
+
+  ## testthat adds this trace; remove it before the comparison below.
+  err$trace <- NULL
+
+  err2 <- tryCatch(obj$bulk_wait(grp, error = TRUE), error = identity)
+  expect_s3_class(err2, "rrq_task_error_group")
+  expect_null(err2$trace)
+  expect_equal(err2, err)
+})
+
+
+test_that("can summarise fetching many failed bulk tasks", {
+  e <- new.env()
+  sys.source("myfuns.R", e)
+  obj <- test_rrq("myfuns.R")
+  obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
+                         time_poll = 1, overwrite = TRUE)
+
+  w <- test_worker_blocking(obj)
+  grp <- obj$lapply(seq(-10, 0), only_positive, envir = e, collect_timeout = 0)
+
+  w$loop(TRUE)
+
+  err <- expect_error(obj$tasks_result(grp$task_ids, error = TRUE),
+                      "10/11 tasks failed",
+                      class = "rrq_task_error_group")
+  expect_equal(err$message,
+               paste(c("10/11 tasks failed:",
+                       rep("    - x must be positive", 4),
+                       "    - ..."), collapse = "\n"))
+  expect_type(err$errors, "list")
+  expect_length(err$errors, 10)
+  expect_s3_class(err$errors[[4]], "rrq_task_error")
+  expect_equal(err$errors[[4]], obj$task_result(grp$task_ids[[4]]))
 })

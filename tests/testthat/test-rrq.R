@@ -222,8 +222,14 @@ test_that("Can't delete running tasks", {
 
 test_that("Error if results are not ready", {
   obj <- test_rrq()
-  id <- obj$enqueue(sin(1))
-  expect_error(obj$task_result(id), "Missing some results")
+  id1 <- obj$enqueue(sin(1))
+  id2 <- obj$enqueue(sin(1))
+  expect_error(obj$task_result(id1),
+               sprintf("Missing result for task: '%s'", id1))
+  expect_error(obj$tasks_result(id1),
+               sprintf("Missing result for task:\n  - %s", id1))
+  expect_error(obj$tasks_result(c(id1, id2)),
+               sprintf("Missing result for task:\n  - %s\n  - %s", id1, id2))
 })
 
 
@@ -978,4 +984,35 @@ test_that("collect times", {
   expect_equal(times2[t2, , drop = FALSE], times1[t2, , drop = FALSE])
   expect_equal(obj$task_times(t2), times1[t2, , drop = FALSE])
   expect_false(any(is.na(times2[t1, ])))
+})
+
+
+test_that("task errors can be immediately thrown", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t <- obj$enqueue(only_positive(-1))
+  w$step(TRUE)
+  err <- expect_error(obj$task_result(t, error = TRUE),
+                      class = "rrq_task_error")
+  expect_equal(err$queue_id, obj$queue_id)
+  expect_equal(err$task_id, t)
+
+  err2 <- expect_error(obj$task_wait(t, error = TRUE),
+                       class = "rrq_task_error")
+  expect_equal(err2, err)
+
+  err3 <- expect_error(obj$tasks_result(c(t, t), error = TRUE),
+                       class = "rrq_task_error_group")
+  expect_equal(err3$errors, list(err, err))
+
+  expect_equal(
+    format(err3),
+    c("<rrq_task_error_group>",
+      paste("  2/2 tasks failed:",
+            "    - x must be positive",
+            "    - x must be positive",
+            sep = "\n"),
+      "  * To throw this error, use stop() with it",
+      "  * To inspect individual errors, see $errors"))
 })
