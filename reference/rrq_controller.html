@@ -300,8 +300,9 @@ wait until any task is finished.</p></dd>
 
 
 <dt><code>worker_stop_timeout</code></dt>
-<dd><p>A timeout to pass to the worker if
-using <code>type = "message"</code></p></dd>
+<dd><p>A timeout to pass to the worker to
+respond the request to stop. See <code>worker_stop</code>'s <code>timeout</code>
+argument for details.</p></dd>
 
 
 </dl><p></p></div>
@@ -1475,7 +1476,10 @@ all active workers will be stopped.</p></dd>
 <dd><p>Optional timeout; if greater than zero then we poll
 for a response from the worker for this many seconds until they
 acknowledge the message and stop (only has an effect if <code>type</code>
-is <code>message</code>).</p></dd>
+is <code>message</code>). If a timeout of greater than zero is given, then
+for a <code>message</code>-based stop we wait up to this many seconds for the
+worker to exit. That means that we might wait up to <code>2 * timeout</code>
+seconds for this function to return.</p></dd>
 
 
 <dt><code>time_poll</code></dt>
