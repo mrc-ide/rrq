@@ -18,7 +18,7 @@ rrq queue controller"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.11</span>
       </span>
     </div>
 
@@ -1634,7 +1634,7 @@ correspond to arguments to <a href="rrq_worker.html">rrq_worker</a>.</p><div cla
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">worker_config_save</span><span class="op">(</span></span>
 <span>  <span class="va">name</span>,</span>
 <span>  time_poll <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  timeout_idle <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  queue <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  heartbeat_period <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -1657,11 +1657,12 @@ killed with an interrupt.  The default should be good for most
 uses, but shorter values are used for debugging.</p></dd>
 
 
-<dt><code>timeout</code></dt>
-<dd><p>Optional timeout to set for the worker.  This is
-(roughly) equivalent to issuing a <code>TIMEOUT_SET</code> message
-after initialising the worker, except that it's guaranteed to be
-run by all workers.</p></dd>
+<dt><code>timeout_idle</code></dt>
+<dd><p>Optional timeout that sets the length of time
+after which the worker will exit if it has not processed a task.
+This is (roughly) equivalent to issuing a <code>TIMEOUT_SET</code>
+message after initialising the worker, except that it's guaranteed
+to be run by all workers.</p></dd>
 
 
 <dt><code>queue</code></dt>

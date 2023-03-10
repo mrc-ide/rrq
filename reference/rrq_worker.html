@@ -18,7 +18,7 @@ rrq queue worker"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.11</span>
       </span>
     </div>
 
@@ -110,7 +110,7 @@ but will sit and poll a queue for jobs.</p>
 <span>  worker_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  queue <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  time_poll <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  timeout_idle <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  heartbeat_period <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  register <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -153,7 +153,7 @@ should be good for most uses, but shorter values are used for
 debugging.</p></dd>
 
 
-<dt><code>timeout</code></dt>
+<dt><code>timeout_idle</code></dt>
 <dd><p>Optional timeout to set for the worker.  This is
 (roughly) equivalent to issuing a <code>TIMEOUT_SET</code> message
 after initialising the worker, except that it's guaranteed to be
