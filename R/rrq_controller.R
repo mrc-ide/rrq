@@ -705,10 +705,8 @@ rrq_controller <- R6::R6Class(
     ##'   on this error if it is returned.
     task_result = function(task_id, error = FALSE) {
       assert_scalar_character(task_id)
-      tasks_result(
-        self$con, private$keys, private$store, task_id,
-        error, TRUE
-      )
+      tasks_result(self$con, private$keys, private$store, task_id,
+                   error, TRUE)
     },
 
     ##' @description Get the results of a group of tasks, returning them as a
@@ -755,10 +753,8 @@ rrq_controller <- R6::R6Class(
     task_wait = function(task_id, timeout = Inf, time_poll = 1,
                          progress = NULL, error = FALSE) {
       assert_scalar_character(task_id)
-      tasks_wait(
-        self$con, private$keys, private$store, task_id,
-        timeout, time_poll, progress, NULL, error, TRUE
-      )
+      tasks_wait(self$con, private$keys, private$store, task_id,
+                 timeout, time_poll, progress, NULL, error, TRUE)
     },
 
     ##' @description Poll for a group of tasks to complete, returning the
