@@ -318,7 +318,7 @@ test_that("can't cancel nonexistant task", {
 
 
 test_that("can't cancel running in-process task", {
-  obj <- test_rrq()
+  obj <- test_rrq(worker_stop_timeout = 0)
   w <- test_worker_spawn(obj)
   t <- obj$enqueue(Sys.sleep(20))
   wait_status(t, obj)
@@ -905,10 +905,8 @@ test_that("can offload storage", {
   name <- sprintf("rrq:%s", ids::random_id())
 
   path <- tempfile()
-  rrq_configure(name, store_max_size = 100, offload_path = path)
 
-  obj <- rrq_controller$new(name)
-  obj$worker_config_save("localhost", time_poll = 1, verbose = FALSE)
+  obj <- test_rrq(store_max_size = 100, offload_path = path)
   a <- 10
   b <- runif(20)
   t <- obj$enqueue(sum(b) / a)
@@ -935,14 +933,8 @@ test_that("can offload storage", {
 
 
 test_that("offload storage in result", {
-  skip_if_no_redis()
-  name <- sprintf("rrq:%s", ids::random_id())
-
   path <- tempfile()
-  rrq_configure(name, store_max_size = 100, offload_path = path)
-
-  obj <- rrq_controller$new(name)
-  obj$worker_config_save("localhost", time_poll = 1, verbose = FALSE)
+  obj <- test_rrq(store_max_size = 100, offload_path = path)
   t <- obj$enqueue(rep(1, 100))
 
   w <- test_worker_blocking(obj)

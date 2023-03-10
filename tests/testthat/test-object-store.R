@@ -129,12 +129,11 @@ test_that("destroying a store removes everything, including offload", {
 
 
 test_that("prevent use of offload if disabled", {
-  con <- test_hiredis()
   prefix <- ids::random_id(1, 4)
   path <- tempfile()
   offload <- object_store_offload_disk$new(path)
-  s1 <- object_store$new(con, prefix, 100, NULL)
-  s2 <- object_store$new(con, prefix, 100, offload)
+  s1 <- test_store(100, offload = NULL, prefix = prefix)
+  s2 <- test_store(100, offload = offload, prefix = prefix)
 
   t <- ids::random_id()
   x <- runif(20)
