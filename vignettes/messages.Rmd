@@ -37,7 +37,7 @@ On startup the worker log contains:
  ______      /_/  /_/   \__, (_)   ______
 /_____/                   /_/     /_____/
     worker:        tertiary_jaguarundi_1
-    rrq_version:   0.6.9
+    rrq_version:   0.6.11
     platform:      x86_64-pc-linux-gnu (64-bit)
     running:       Ubuntu 20.04.5 LTS
     hostname:      wpia-dide300
@@ -260,7 +260,7 @@ obj$worker_info()[[worker_id]]
 #> [1] "tertiary_jaguarundi_1"
 #>
 #> $rrq_version
-#> [1] "0.6.9"
+#> [1] "0.6.11"
 #>
 #> $platform
 #> [1] "x86_64-pc-linux-gnu (64-bit)"
@@ -308,7 +308,7 @@ obj$message_get_response(message_id, worker_id, timeout = 10)
 #> [1] "tertiary_jaguarundi_1"
 #>
 #> $tertiary_jaguarundi_1$rrq_version
-#> [1] "0.6.9"
+#> [1] "0.6.11"
 #>
 #> $tertiary_jaguarundi_1$platform
 #> [1] "x86_64-pc-linux-gnu (64-bit)"

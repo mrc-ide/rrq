@@ -267,7 +267,7 @@ test_that("by default, bulk fetch does not throw", {
   e <- new.env()
   sys.source("myfuns.R", e)
   obj <- test_rrq("myfuns.R")
-  obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
+  obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
                          time_poll = 1, overwrite = TRUE)
 
   w <- test_worker_blocking(obj)
@@ -287,7 +287,7 @@ test_that("can throw on fetching bulk tasks", {
   e <- new.env()
   sys.source("myfuns.R", e)
   obj <- test_rrq("myfuns.R")
-  obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
+  obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
                          time_poll = 1, overwrite = TRUE)
 
   w <- test_worker_blocking(obj)
@@ -317,7 +317,7 @@ test_that("can summarise fetching many failed bulk tasks", {
   e <- new.env()
   sys.source("myfuns.R", e)
   obj <- test_rrq("myfuns.R")
-  obj$worker_config_save("localhost", verbose = FALSE, timeout = -1,
+  obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
                          time_poll = 1, overwrite = TRUE)
 
   w <- test_worker_blocking(obj)
