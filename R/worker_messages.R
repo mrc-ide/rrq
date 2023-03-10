@@ -91,7 +91,7 @@ run_message_resume <- function(worker, private) {
 
 run_message_timeout_set <- function(worker, private, args) {
   if (is.numeric(args) || is.null(args)) {
-    private$timeout <- args
+    private$timeout_idle <- args
     worker$timer_start()
     "OK"
   } else {
@@ -100,8 +100,8 @@ run_message_timeout_set <- function(worker, private, args) {
 }
 
 run_message_timeout_get <- function(worker, private) {
-  if (is.null(private$timeout)) {
-    c(timeout = Inf, remaining = Inf)
+  if (is.null(private$timeout_idle)) {
+    c(timeout_idle = Inf, remaining = Inf)
   } else {
     ## NOTE: This is a slightly odd construction; it arises because
     ## the timer is not just suspended between tasks; it is removed
@@ -111,11 +111,11 @@ run_message_timeout_get <- function(worker, private) {
     ## issued _immediately_ after running a task then there will be
     ## no timer here.
     if (is.null(private$timer)) {
-      remaining <- private$timeout
+      remaining <- private$timeout_idle
     } else {
       remaining <- private$timer()
     }
-    c(timeout = private$timeout, remaining = remaining)
+    c(timeout_idle = private$timeout_idle, remaining = remaining)
   }
 }
 

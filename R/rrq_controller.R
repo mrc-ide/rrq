@@ -1032,10 +1032,11 @@ rrq_controller <- R6::R6Class(
     ##'   killed with an interrupt.  The default should be good for most
     ##'   uses, but shorter values are used for debugging.
     ##'
-    ##' @param timeout Optional timeout to set for the worker.  This is
-    ##'   (roughly) equivalent to issuing a \code{TIMEOUT_SET} message
-    ##'   after initialising the worker, except that it's guaranteed to be
-    ##'   run by all workers.
+    ##' @param timeout_idle Optional timeout that sets the length of time
+    ##'   after which the worker will exit if it has not processed a task.
+    ##'   This is (roughly) equivalent to issuing a \code{TIMEOUT_SET}
+    ##'   message after initialising the worker, except that it's guaranteed
+    ##'   to be run by all workers.
     ##'
     ##' @param queue Optional character vector of queues to listen on
     ##'   for jobs. There is a default queue which is always listened
@@ -1068,11 +1069,11 @@ rrq_controller <- R6::R6Class(
     ##'   wait for the background process to respond to SIGTERM before
     ##'   we stop the worker. Only used for tasks queued with
     ##'   `separate_process` `TRUE`.
-    worker_config_save = function(name, time_poll = NULL, timeout = NULL,
+    worker_config_save = function(name, time_poll = NULL, timeout_idle = NULL,
                                   queue = NULL, heartbeat_period = NULL,
                                   verbose = NULL, overwrite = TRUE,
                                   timeout_poll = 1, timeout_die = 2) {
-      worker_config_save(self$con, private$keys, name, time_poll, timeout,
+      worker_config_save(self$con, private$keys, name, time_poll, timeout_idle,
                          queue, heartbeat_period, verbose, overwrite,
                          timeout_poll, timeout_die)
     },
@@ -1797,7 +1798,6 @@ verify_dependencies_exist <- function(controller, depends_on) {
   }
   invisible(TRUE)
 }
-
 
 throw_task_errors <- function(res, single) {
   if (single) {

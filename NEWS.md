@@ -1,3 +1,7 @@
+# rrq 0.6.11
+
+* Changed argument of `worker_config_save` from `timeout` to `timeout_idle` (mrc-4075)
+
 # rrq 0.6.10
 
 * It is now possible to (optionally) throw task errors on retrieval via `task_wait`, `task_results` and the bulk interfaces. The default remains not to error.

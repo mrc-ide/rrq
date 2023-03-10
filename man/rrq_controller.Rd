@@ -1446,7 +1446,7 @@ correspond to arguments to \link{rrq_worker}.
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_config_save(
   name,
   time_poll = NULL,
-  timeout = NULL,
+  timeout_idle = NULL,
   queue = NULL,
   heartbeat_period = NULL,
   verbose = NULL,
@@ -1466,10 +1466,11 @@ impact on the database but make workers less responsive to being
 killed with an interrupt.  The default should be good for most
 uses, but shorter values are used for debugging.}
 
-\item{\code{timeout}}{Optional timeout to set for the worker.  This is
-(roughly) equivalent to issuing a \code{TIMEOUT_SET} message
-after initialising the worker, except that it's guaranteed to be
-run by all workers.}
+\item{\code{timeout_idle}}{Optional timeout that sets the length of time
+after which the worker will exit if it has not processed a task.
+This is (roughly) equivalent to issuing a \code{TIMEOUT_SET}
+message after initialising the worker, except that it's guaranteed
+to be run by all workers.}
 
 \item{\code{queue}}{Optional character vector of queues to listen on
 for jobs. There is a default queue which is always listened
