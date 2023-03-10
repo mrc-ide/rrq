@@ -1,3 +1,11 @@
+# rrq 0.6.13
+
+* Argument standardisation for timeouts, with changes:
+  * `collect_timeout` in bulk functions becomes `timeout_task_wait`
+  * `worker_stop_timeout` in the `rrq_controller`'s `destroy` method becomes `timeout_worker_stop`
+  * `task_timeout` in queuing a task on a separate process, in bulk submission functions becomes `timeout_task_run`
+  * `timeout` in `enqueue` becomes `timeout_task_run`
+
 # rrq 0.6.12
 
 * New argument `timeout_task_wait` and option `rrq.timeout_task_wait` to control the default time to wait for tasks to be returned from `task_wait` and bulk task retrieval methods. The default behaviour is unchanged (blocking indefinitely) but this can now easily be changed at a global or queue-scoped level.
