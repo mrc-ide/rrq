@@ -754,7 +754,7 @@ rrq_controller <- R6::R6Class(
                          progress = NULL, error = FALSE) {
       assert_scalar_character(task_id)
       tasks_wait(self$con, private$keys, private$store, task_id,
-                 timeout, time_poll, NULL, progress, error, TRUE)
+                 timeout, time_poll, progress, NULL, error, TRUE)
     },
 
     ##' @description Poll for a group of tasks to complete, returning the
@@ -781,7 +781,7 @@ rrq_controller <- R6::R6Class(
     tasks_wait = function(task_ids, timeout = Inf, time_poll = 1,
                           progress = NULL, error = FALSE) {
       tasks_wait(self$con, private$keys, private$store, task_ids,
-                 timeout, time_poll, progress, NULL, error, FALSE)
+                 timeout, time_poll, NULL, progress, error, FALSE)
     },
 
     ##' @description Delete one or more tasks
