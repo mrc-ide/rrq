@@ -65,29 +65,13 @@ test_that("can print worker info", {
 
   info <- obj$worker_info()
   text <- testthat::evaluate_promise(withVisible(print(info)))
-  keys_regex <- c(
-    "  rrq_version:\\s*[\\d\\.]+",
-    "  platform: .+",
-    "  running: .+",
-    "  hostname: .+",
-    "  username: .+",
-    "  queue: .+",
-    "  wd: .+",
-    "  pid:\\s*\\d+",
-    "  redis_host:\\s*[\\d\\.]+",
-    "  redis_port:\\s*6379",
-    "  heartbeat_key:\\s*rrq:.+"
-  )
-  expect_match(
-    text$output,
-    paste0(c(
-      sprintf("\\$%s", wid),
-      "<rrq_worker_info>",
-      sprintf("  name:\\s*%s", wid),
-      keys_regex,
-      sprintf("\\$%s", wid2),
-      "<rrq_worker_info>",
-      sprintf("  name:\\s*%s", wid2),
-      keys_regex),
-    collapse = "\\n"), perl = TRUE)
+  text <- strsplit(text$output, "\n")[[1]]
+  expect_equal(sum(text == "  <rrq_worker_info>"), 2)
+  expect_true(any(text == paste0("$", wid)))
+  expect_true(any(text == paste0("$", wid2)))
+  expect_true(any(grepl(paste0("    worker: \\s*", wid), text)))
+  expect_true(any(grepl(paste0("    worker: \\s*", wid2), text)))
+  for (name in names(info[[1]])) {
+    expect_true(any(grepl(name, text)))
+  }
 })

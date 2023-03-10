@@ -27,20 +27,10 @@ print.rrq_task_error <- function(x, ...) {
 
 #' @export
 format.rrq_worker_info <- function(x, ...) {
-  c(
-    "<rrq_worker_info>",
-    sprintf("  name:          %s", x$worker),
-    sprintf("  rrq_version:   %s", x$rrq_version),
-    sprintf("  platform:      %s", x$platform),
-    sprintf("  running:       %s", x$running),
-    sprintf("  hostname:      %s", x$hostname),
-    sprintf("  username:      %s", x$username),
-    sprintf("  queue:         %s", x$queue),
-    sprintf("  wd:            %s", x$wd),
-    sprintf("  pid:           %d", x$pid),
-    sprintf("  redis_host:    %s", x$redis_host),
-    sprintf("  redis_port:    %s", x$redis_port),
-    sprintf("  heartbeat_key: %s", x$heartbeat_key))
+  c("  <rrq_worker_info>",
+    sprintf("    %s %s",
+            format(paste0(names(x), ":")),
+            vcapply(x, as.character)))
 }
 
 #' @export
