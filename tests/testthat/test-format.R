@@ -60,8 +60,6 @@ test_that("can print worker info", {
   res <- obj$worker_config_save("localhost", heartbeat_period = 3)
   wid <- test_worker_spawn(obj)
   wid2 <- test_worker_spawn(obj)
-  on.exit(obj$worker_stop(wid, "kill_local"))
-  on.exit(obj$worker_stop(wid2, "kill_local"), add = TRUE)
 
   info <- obj$worker_info()
   text <- testthat::evaluate_promise(withVisible(print(info)))
