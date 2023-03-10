@@ -18,7 +18,7 @@ rrq queue controller"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.10</span>
       </span>
     </div>
 
@@ -494,7 +494,9 @@ equivalent to using <code>$enqueue()</code> over each element in the list.</p><d
 <span>  depends_on <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  collect_timeout <span class="op">=</span> <span class="cn">Inf</span>,</span>
 <span>  time_poll <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  progress <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  progress <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  delete <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  error <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -566,6 +568,19 @@ global option <code>rrq.progress</code>, and if that is unset display a
 progress bar if in an interactive session.</p></dd>
 
 
+<dt><code>delete</code></dt>
+<dd><p>Optional logical, indicating if the tasks
+should be be immediately deleted after collection, preventing
+buildup of lots of content in your Redis database.</p></dd>
+
+
+<dt><code>error</code></dt>
+<dd><p>Optional logical, indicating if an error in the task
+should throw. Like <code>$task_result()</code> the default is not to throw,
+giving you back an <code>rrq_task_error</code> object for each failing task.
+If <code>error = TRUE</code> we throw on error instead.</p></dd>
+
+
 </dl><p></p></div>
 </div>
 
@@ -589,7 +604,9 @@ be copied over rather than using their names if possible.</p><div class="section
 <span>  depends_on <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  collect_timeout <span class="op">=</span> <span class="cn">Inf</span>,</span>
 <span>  time_poll <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  progress <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  progress <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  delete <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  error <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -661,6 +678,19 @@ global option <code>rrq.progress</code>, and if that is unset display a
 progress bar if in an interactive session.</p></dd>
 
 
+<dt><code>delete</code></dt>
+<dd><p>Optional logical, indicating if the tasks
+should be be immediately deleted after collection, preventing
+buildup of lots of content in your Redis database.</p></dd>
+
+
+<dt><code>error</code></dt>
+<dd><p>Optional logical, indicating if an error in the task
+should throw. Like <code>$task_result()</code> the default is not to throw,
+giving you back an <code>rrq_task_error</code> object for each failing task.
+If <code>error = TRUE</code> we throw on error instead.</p></dd>
+
+
 </dl><p></p></div>
 </div>
 
@@ -685,7 +715,9 @@ should feel intuitive.</p><div class="section">
 <span>  depends_on <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  collect_timeout <span class="op">=</span> <span class="cn">Inf</span>,</span>
 <span>  time_poll <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  progress <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  progress <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  delete <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  error <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -759,6 +791,19 @@ global option <code>rrq.progress</code>, and if that is unset display a
 progress bar if in an interactive session.</p></dd>
 
 
+<dt><code>delete</code></dt>
+<dd><p>Optional logical, indicating if the tasks
+should be be immediately deleted after collection, preventing
+buildup of lots of content in your Redis database.</p></dd>
+
+
+<dt><code>error</code></dt>
+<dd><p>Optional logical, indicating if an error in the task
+should throw. Like <code>$task_result()</code> the default is not to throw,
+giving you back an <code>rrq_task_error</code> object for each failing task.
+If <code>error = TRUE</code> we throw on error instead.</p></dd>
+
+
 </dl><p></p></div>
 </div>
 
@@ -782,7 +827,9 @@ be copied over rather than using their names if possible.</p><div class="section
 <span>  depends_on <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  collect_timeout <span class="op">=</span> <span class="cn">Inf</span>,</span>
 <span>  time_poll <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  progress <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  progress <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  delete <span class="op">=</span> <span class="va">delete</span>,</span>
+<span>  error <span class="op">=</span> <span class="va">error</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -856,6 +903,19 @@ global option <code>rrq.progress</code>, and if that is unset display a
 progress bar if in an interactive session.</p></dd>
 
 
+<dt><code>delete</code></dt>
+<dd><p>Optional logical, indicating if the tasks
+should be be immediately deleted after collection, preventing
+buildup of lots of content in your Redis database.</p></dd>
+
+
+<dt><code>error</code></dt>
+<dd><p>Optional logical, indicating if an error in the task
+should throw. Like <code>$task_result()</code> the default is not to throw,
+giving you back an <code>rrq_task_error</code> object for each failing task.
+If <code>error = TRUE</code> we throw on error instead.</p></dd>
+
+
 </dl><p></p></div>
 </div>
 
@@ -868,7 +928,8 @@ progress bar if in an interactive session.</p></dd>
 <span>  timeout <span class="op">=</span> <span class="cn">Inf</span>,</span>
 <span>  time_poll <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  progress <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  delete <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  delete <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  error <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -897,8 +958,15 @@ progress bar if in an interactive session.</p></dd>
 
 <dt><code>delete</code></dt>
 <dd><p>Optional logical, indicating if the tasks
-should be deleted after collection. Typically this is <code>TRUE</code>
-to prevent build-up of lots of task information in Redis.</p></dd>
+should be be immediately deleted after collection, preventing
+buildup of lots of content in your Redis database.</p></dd>
+
+
+<dt><code>error</code></dt>
+<dd><p>Optional logical, indicating if an error in the task
+should throw. Like <code>$task_result()</code> the default is not to throw,
+giving you back an <code>rrq_task_error</code> object for each failing task.
+If <code>error = TRUE</code> we throw on error instead.</p></dd>
 
 
 </dl><p></p></div>
@@ -1046,13 +1114,22 @@ for a method for efficiently getting multiple results at once).
 Returns the value of running the task if it is complete, and an
 error otherwise.</p><div class="section">
 <h4 id="usage-17">Usage<a class="anchor" aria-label="anchor" href="#usage-17"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">task_result</span><span class="op">(</span><span class="va">task_id</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">task_result</span><span class="op">(</span><span class="va">task_id</span>, error <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
 <h4 id="arguments-16">Arguments<a class="anchor" aria-label="anchor" href="#arguments-16"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>task_id</code></dt>
 <dd><p>The single id for which the result is wanted.</p></dd>
+
+
+<dt><code>error</code></dt>
+<dd><p>Logical, indicating if we should throw an error
+if a task was not successful. By default (<code>error = FALSE</code>),
+in the case of the task result returning an error we return
+an object of class <code>rrq_task_error</code>, which contains information
+about the error. Passing <code>error = TRUE</code> simply calls <code><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop()</a></code>
+on this error if it is returned.</p></dd>
 
 
 </dl><p></p></div>
@@ -1063,7 +1140,7 @@ error otherwise.</p><div class="section">
 <p>Get the results of a group of tasks, returning them as a
 list.</p><div class="section">
 <h4 id="usage-18">Usage<a class="anchor" aria-label="anchor" href="#usage-18"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">tasks_result</span><span class="op">(</span><span class="va">task_ids</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">tasks_result</span><span class="op">(</span><span class="va">task_ids</span>, error <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -1071,6 +1148,11 @@ list.</p><div class="section">
 <p></p><div class="arguments"><dl><dt><code>task_ids</code></dt>
 <dd><p>A vector of task ids for which the task result
 is wanted.</p></dd>
+
+
+<dt><code>error</code></dt>
+<dd><p>Logical, indicating if we should throw an error if
+the task was not successful. See <code>$task_result()</code> for details.</p></dd>
 
 
 </dl><p></p></div>
@@ -1087,7 +1169,8 @@ efficient way of doing this for a group of tasks.</p><div class="section">
 <span>  <span class="va">task_id</span>,</span>
 <span>  timeout <span class="op">=</span> <span class="cn">Inf</span>,</span>
 <span>  time_poll <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  progress <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  progress <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  error <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -1120,6 +1203,13 @@ global option <code>rrq.progress</code>, and if that is unset display a
 progress bar if in an interactive session.</p></dd>
 
 
+<dt><code>error</code></dt>
+<dd><p>Logical, indicating if we should throw an error if
+the task was not successful. See <code>$task_result()</code> for details.
+Note that an error is always thrown if not all tasks are fetched
+in time.</p></dd>
+
+
 </dl><p></p></div>
 </div>
 
@@ -1133,7 +1223,8 @@ this is roughly equivalent to <code>tasks_result</code>.</p><div class="section"
 <span>  <span class="va">task_ids</span>,</span>
 <span>  timeout <span class="op">=</span> <span class="cn">Inf</span>,</span>
 <span>  time_poll <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  progress <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  progress <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  error <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -1158,6 +1249,13 @@ completion (default is 1s, see <code>$task_wait()</code> for details)</p></dd>
 should be displayed. If <code>NULL</code> we fall back on the value of the
 global option <code>rrq.progress</code>, and if that is unset display a
 progress bar if in an interactive session.</p></dd>
+
+
+<dt><code>error</code></dt>
+<dd><p>Logical, indicating if we should throw an error if
+the task was not successful. See <code>$task_result()</code> for details.
+Note that an error is always thrown if not all tasks are fetched
+in time.</p></dd>
 
 
 </dl><p></p></div>
