@@ -207,6 +207,10 @@ create <- function(env) {
 
 This approach would also allow you do do something like read an rds or Rdata file containing a large object that you want every worker to have a copy of.
 
+```{r, include = FALSE}
+obj$destroy(worker_stop_timeout = 10)
+```
+
 ## Scheduling options
 
 The `rrq` package does not aspire to be a fully fledged scheduler, but sometimes a little more control than first-in-first-out is required. There are a few options available that allow the user to control how tasks are run when needed. These involve:
@@ -291,6 +295,10 @@ Points to note here:
 * The deferred tasks will be added to the *front* of the queue after they become undeferred
 * The deferred tasks can't be queued until the blocking tasks have returned an id
 
+```{r, include = FALSE}
+obj$destroy()
+```
+
 ### Multiple queues
 
 Sometimes it is useful to have different workers listen on different queues. For example, you may have workers on different machines with different capabilities (e.g., a machine with a GPU or high memory). You may have tasks that are expected to take quite a long time but want some workers to monitor a fast queue with short lived tasks.
@@ -338,6 +346,12 @@ obj$task_wait(id, timeout = 10)
 ```
 
 Note that there is no validation to check that any worker is listening on any queue when you submit a task. Indeed there can't be as new workers can be added at any time (so at the point of submission perhaps there were no workers).
+
+```{r, include = FALSE}
+obj$worker_stop(type = "kill_local")
+Sys.sleep(1)
+obj$destroy()
+```
 
 ## Running tasks in separate processes
 
@@ -392,6 +406,10 @@ Once the task has finished, data will be stored on disk below the path given abo
 
 ```{r}
 dir(path)
+```
+
+```{r, include = FALSE}
+obj$destroy(worker_stop_timeout = 10)
 ```
 
 This keeps the larger objects out of the database.
@@ -537,6 +555,11 @@ obj$task_status(t)
 Any tasks that were dependent on this task will now be marked as `IMPOSSIBLE`.
 
 In a future version we will support automatic re-queuing of jobs assigned to disappeared workers.
+
+
+```{r}
+obj$destroy()
+```
 
 ## Getting a Redis server
 

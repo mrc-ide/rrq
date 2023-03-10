@@ -46,7 +46,7 @@ test_that("read worker process log", {
 
 
 test_that("wait for worker exit", {
-  obj <- test_rrq("myfuns.R")
+  obj <- test_rrq("myfuns.R", worker_stop_timeout = 0)
   wid <- test_worker_spawn(obj)
 
   con <- obj$con # save a copy

@@ -85,7 +85,7 @@ test_that("detecting output with clean exit is quiet", {
 test_that("detect killed worker (via heartbeat)", {
   skip_if_not_installed("callr")
   skip_on_covr() # possibly causing corrupt covr output
-  obj <- test_rrq("myfuns.R")
+  obj <- test_rrq("myfuns.R", worker_stop_timeout = 0)
 
   ## We need to set time_poll to be fairly fast because BLPOP is not
   ## interruptable; the interrupt will only be handled _after_ R gets
@@ -135,7 +135,7 @@ test_that("detect killed worker (via heartbeat)", {
 ## See https://github.com/mrc-ide/rrq/issues/22
 test_that("detect multiple killed workers", {
   skip_if_not_installed("callr")
-  obj <- test_rrq("myfuns.R")
+  obj <- test_rrq("myfuns.R", worker_stop_timeout = 0)
 
   res <- obj$worker_config_save("localhost", time_poll = 1,
                                 heartbeat_period = 1, verbose = FALSE)
