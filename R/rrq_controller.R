@@ -1,6 +1,7 @@
-##' A queue controller.  Use this to interact with a queue/cluster.
-##'
 ##' @title rrq queue controller
+##'
+##' @description
+##' A queue controller.  Use this to interact with a queue/cluster.
 ##'
 ##' @section Task lifecycle:
 ##'
@@ -108,7 +109,6 @@
 ##' b <- 2
 ##' ans <- obj$lapply_(1:10, quote(log), base = quote(b))
 ##' ```
-##'
 ##' @export
 rrq_controller <- R6::R6Class(
   "rrq_controller",
@@ -128,16 +128,31 @@ rrq_controller <- R6::R6Class(
     ##' @param queue_id An identifier for the queue.  This will prefix all
     ##'   keys in redis, so a prefix might be useful here depending on
     ##'   your use case (e.g. \code{rrq:<user>:<id>})
+    ##'
     ##' @param con A redis connection. The default tries to create a redis
     ##'   connection using default ports, or environment variables set as in
     ##'   [redux::hiredis()]
-    initialize = function(queue_id, con = redux::hiredis()) {
+    ##'
+    ##' @param timeout_task_wait An optional default timeout to use when
+    ##'   waiting for tasks (e.g., with `$task_wait()`, `$tasks_wait()`,
+    ##'   `$lapply()`, etc). If not given, then we fall back on the
+    ##'   global option `rrq.timeout_task_wait`, and if that is not set,
+    ##    we wait forever (i.e., `timeout_task_wait = Inf`).
+    initialize = function(queue_id, con = redux::hiredis(),
+                          timeout_task_wait = NULL) {
       assert_scalar_character(queue_id)
       assert_is(con, "redis_api")
 
       self$con <- con
       self$queue_id <- queue_id
       private$keys <- rrq_keys(self$queue_id)
+
+      if (is.null(timeout_task_wait)) {
+        private$timeout_task_wait <- getOption("rrq.timeout_task_wait", Inf)
+      } else {
+        assert_scalar_positive_integer(timeout_task_wait)
+        private$timeout_task_wait <- timeout_task_wait
+      }
       rrq_version_check(self$con, private$keys)
       self$worker_config_save("localhost", overwrite = FALSE)
 
@@ -316,7 +331,8 @@ rrq_controller <- R6::R6Class(
     ##' @param collect_timeout Optional timeout, in seconds, after which an
     ##'   error will be thrown if all tasks have not completed. If given  as
     ##'   `0`, then we return a handle that can be used to check for tasks
-    ##'   using `bulk_wait`
+    ##'   using `bulk_wait`. If not given, falls back on the controller's
+    ##'   `timeout_task_wait` (see `$new()`)
     ##'
     ##' @param time_poll Optional time with which to "poll" for
     ##'   completion (default is 1s, see `$task_wait()` for details)
@@ -355,7 +371,7 @@ rrq_controller <- R6::R6Class(
                       envir = parent.frame(), queue = NULL,
                       separate_process = FALSE, task_timeout = NULL,
                       depends_on = NULL,
-                      collect_timeout = Inf, time_poll = 1,
+                      collect_timeout = NULL, time_poll = 1,
                       progress = NULL, delete = FALSE, error = FALSE) {
       if (is.null(dots)) {
         dots <- as.list(substitute(list(...)))[-1L]
@@ -389,7 +405,8 @@ rrq_controller <- R6::R6Class(
     ##' @param collect_timeout Optional timeout, in seconds, after which an
     ##'   error will be thrown if all tasks have not completed. If given  as
     ##'   `0`, then we return a handle that can be used to check for tasks
-    ##'   using `bulk_wait`
+    ##'   using `bulk_wait`. If not given, falls back on the controller's
+    ##'   `timeout_task_wait` (see `$new()`)
     ##'
     ##' @param time_poll Optional time with which to "poll" for
     ##'   completion (default is 1s, see `$task_wait()` for details)
@@ -427,12 +444,13 @@ rrq_controller <- R6::R6Class(
     lapply_ = function(X, FUN, ..., dots = NULL, # nolint
                        envir = parent.frame(), queue = NULL,
                        separate_process = FALSE, task_timeout = NULL,
-                       depends_on = NULL, collect_timeout = Inf,
+                       depends_on = NULL, collect_timeout = NULL,
                        time_poll = 1, progress = NULL, delete = FALSE,
                        error = FALSE) {
       if (is.null(dots)) {
         dots <- list(...)
       }
+      collect_timeout <- collect_timeout %||% private$timeout_task_wait
       rrq_lapply(self$con, private$keys, private$store, X, FUN, dots, envir,
                  queue, separate_process, task_timeout, depends_on,
                  collect_timeout, time_poll, progress, delete, error)
@@ -464,7 +482,8 @@ rrq_controller <- R6::R6Class(
     ##' @param collect_timeout Optional timeout, in seconds, after which an
     ##'   error will be thrown if all tasks have not completed. If given  as
     ##'   `0`, then we return a handle that can be used to check for tasks
-    ##'   using `bulk_wait`
+    ##'   using `bulk_wait`. If not given, falls back on the controller's
+    ##'   `timeout_task_wait` (see `$new()`)
     ##'
     ##' @param time_poll Optional time with which to "poll" for
     ##'   completion (default is 1s, see `$task_wait()` for details)
@@ -502,7 +521,7 @@ rrq_controller <- R6::R6Class(
     enqueue_bulk = function(X, FUN, ..., dots = NULL, # nolint
                             envir = parent.frame(), queue = NULL,
                             separate_process = FALSE, task_timeout = NULL,
-                            depends_on = NULL, collect_timeout = Inf,
+                            depends_on = NULL, collect_timeout = NULL,
                             time_poll = 1, progress = NULL, delete = FALSE,
                             error = FALSE) {
       if (is.null(dots)) {
@@ -539,7 +558,8 @@ rrq_controller <- R6::R6Class(
     ##' @param collect_timeout Optional timeout, in seconds, after which an
     ##'   error will be thrown if all tasks have not completed. If given  as
     ##'   `0`, then we return a handle that can be used to check for tasks
-    ##'   using `bulk_wait`
+    ##'   using `bulk_wait`. If not given, falls back on the controller's
+    ##'   `timeout_task_wait` (see `$new()`)
     ##'
     ##' @param time_poll Optional time with which to "poll" for
     ##'   completion (default is 1s, see `$task_wait()` for details)
@@ -577,12 +597,13 @@ rrq_controller <- R6::R6Class(
     enqueue_bulk_ = function(X, FUN, ..., dots = NULL, # nolint
                              envir = parent.frame(), queue = NULL,
                              separate_process = FALSE, task_timeout = NULL,
-                             depends_on = NULL, collect_timeout = Inf,
+                             depends_on = NULL, collect_timeout = NULL,
                              time_poll = 1, progress = NULL, delete = delete,
                              error = error) {
       if (is.null(dots)) {
         dots <- list(...)
       }
+      collect_timeout <- collect_timeout %||% private$timeout_task_wait
       rrq_enqueue_bulk(self$con, private$keys, private$store, X, FUN, dots,
                        envir, queue, separate_process, task_timeout, depends_on,
                        collect_timeout, time_poll, progress, delete, error)
@@ -611,8 +632,9 @@ rrq_controller <- R6::R6Class(
     ##'   should throw. Like `$task_result()` the default is not to throw,
     ##'   giving you back an `rrq_task_error` object for each failing task.
     ##'   If `error = TRUE` we throw on error instead.
-    bulk_wait = function(x, timeout = Inf, time_poll = 1,
+    bulk_wait = function(x, timeout = NULL, time_poll = 1,
                          progress = NULL, delete = FALSE, error = FALSE) {
+      timeout <- timeout %||% private$timeout_task_wait
       rrq_bulk_wait(self$con, private$keys, private$store, x, timeout,
                     time_poll, progress, delete, error)
     },
@@ -730,7 +752,8 @@ rrq_controller <- R6::R6Class(
     ##' @param task_id The single id that we will wait for
     ##'
     ##' @param timeout Optional timeout, in seconds, after which an
-    ##'   error will be thrown if the task has not completed.
+    ##'   error will be thrown if the task has not completed. If not given,
+    ##'   falls back on the controller's `timeout_task_wait` (see `$new()`)
     ##'
     ##' @param time_poll Optional time with which to "poll" for completion.
     ##'   By default this will be 1 second; this is the time that each
@@ -750,9 +773,10 @@ rrq_controller <- R6::R6Class(
     ##'   the task was not successful. See `$task_result()` for details.
     ##'   Note that an error is always thrown if not all tasks are fetched
     ##'   in time.
-    task_wait = function(task_id, timeout = Inf, time_poll = 1,
+    task_wait = function(task_id, timeout = NULL, time_poll = 1,
                          progress = NULL, error = FALSE) {
       assert_scalar_character(task_id)
+      timeout <- timeout %||% private$timeout_task_wait
       tasks_wait(self$con, private$keys, private$store, task_id,
                  timeout, time_poll, progress, NULL, error, TRUE)
     },
@@ -764,7 +788,8 @@ rrq_controller <- R6::R6Class(
     ##' @param task_ids A vector of task ids to poll for
     ##'
     ##' @param timeout Optional timeout, in seconds, after which an
-    ##'   error will be thrown if the task has not completed.
+    ##'   error will be thrown if the task has not completed. If not given,
+    ##'   falls back on the controller's `timeout_task_wait` (see `$new()`)
     ##'
     ##' @param time_poll Optional time with which to "poll" for
     ##'   completion (default is 1s, see `$task_wait()` for details)
@@ -778,8 +803,9 @@ rrq_controller <- R6::R6Class(
     ##'   the task was not successful. See `$task_result()` for details.
     ##'   Note that an error is always thrown if not all tasks are fetched
     ##'   in time.
-    tasks_wait = function(task_ids, timeout = Inf, time_poll = 1,
+    tasks_wait = function(task_ids, timeout = NULL, time_poll = 1,
                           progress = NULL, error = FALSE) {
+      timeout <- timeout %||% private$timeout_task_wait
       tasks_wait(self$con, private$keys, private$store, task_ids,
                  timeout, time_poll, NULL, progress, error, FALSE)
     },
@@ -1216,6 +1242,7 @@ rrq_controller <- R6::R6Class(
 
   private = list(
     keys = NULL,
+    timeout_task_wait = NULL,
     scripts = NULL,
     store = NULL
   ))

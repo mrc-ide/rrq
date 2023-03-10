@@ -176,4 +176,9 @@ expect_is_function <- function(x) {
 }
 
 
-options(rrq.progress = FALSE)
+options(
+  ## Need to keep progress off or we get a mess in the tests
+  rrq.progress = FALSE,
+  ## Cap the task wait timeout so that don't lock up CI with
+  ## hard-to-track-down bugs
+  rrq.timeout_task_wait = 20)

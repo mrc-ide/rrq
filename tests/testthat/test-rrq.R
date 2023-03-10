@@ -1016,3 +1016,23 @@ test_that("task errors can be immediately thrown", {
       "  * To throw this error, use stop() with it",
       "  * To inspect individual errors, see $errors"))
 })
+
+
+test_that("Can set the task wait timeout on controller creation", {
+  obj <- test_rrq()
+
+  f <- function(timeout) {
+    r <- rrq_controller$new(obj$queue_id, timeout_task_wait = timeout)
+    r6_private(r)$timeout_task_wait
+  }
+
+  withr::with_options(list(rrq.timeout_task_wait = 30), {
+    expect_equal(f(10), 10)
+    expect_equal(f(NULL), 30)
+  })
+
+  withr::with_options(list(rrq.timeout_task_wait = NULL), {
+    expect_equal(f(10), 10)
+    expect_equal(f(NULL), Inf)
+  })
+})
