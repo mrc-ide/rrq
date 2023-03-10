@@ -349,7 +349,7 @@ rrq_controller <- R6::R6Class(
     ##'   run in a separate process on the worker (see `$enqueue` for
     ##'   details).
     ##'
-    ##' @param task_timeout Optionally, a maximum allowed running time, in
+    ##' @param timeout_task_run Optionally, a maximum allowed running time, in
     ##'   seconds (see the `timeout` argument of `$enqueue` for details).
     ##'
     ##' @param depends_on Vector or list of IDs of tasks which must have
@@ -369,7 +369,7 @@ rrq_controller <- R6::R6Class(
     ##'   If `error = TRUE` we throw on error instead.
     lapply = function(X, FUN, ..., dots = NULL, # nolint
                       envir = parent.frame(), queue = NULL,
-                      separate_process = FALSE, task_timeout = NULL,
+                      separate_process = FALSE, timeout_task_run = NULL,
                       depends_on = NULL,
                       timeout_task_wait = NULL, time_poll = 1,
                       progress = NULL, delete = FALSE, error = FALSE) {
@@ -378,7 +378,7 @@ rrq_controller <- R6::R6Class(
       }
       self$lapply_(X, substitute(FUN), dots = dots, envir = envir,
                    queue = queue, separate_process = separate_process,
-                   task_timeout = task_timeout,
+                   timeout_task_run = timeout_task_run,
                    depends_on = depends_on,
                    timeout_task_wait = timeout_task_wait,
                    time_poll = time_poll, progress = progress, delete = delete,
@@ -424,7 +424,7 @@ rrq_controller <- R6::R6Class(
     ##'   run in a separate process on the worker (see `$enqueue` for
     ##'   details).
     ##'
-    ##' @param task_timeout Optionally, a maximum allowed running time, in
+    ##' @param timeout_task_run Optionally, a maximum allowed running time, in
     ##'   seconds (see the `timeout` argument of `$enqueue` for details).
     ##'
     ##' @param depends_on Vector or list of IDs of tasks which must have
@@ -444,7 +444,7 @@ rrq_controller <- R6::R6Class(
     ##'   If `error = TRUE` we throw on error instead.
     lapply_ = function(X, FUN, ..., dots = NULL, # nolint
                        envir = parent.frame(), queue = NULL,
-                       separate_process = FALSE, task_timeout = NULL,
+                       separate_process = FALSE, timeout_task_run = NULL,
                        depends_on = NULL, timeout_task_wait = NULL,
                        time_poll = 1, progress = NULL, delete = FALSE,
                        error = FALSE) {
@@ -453,7 +453,7 @@ rrq_controller <- R6::R6Class(
       }
       timeout_task_wait <- timeout_task_wait %||% private$timeout_task_wait
       rrq_lapply(self$con, private$keys, private$store, X, FUN, dots, envir,
-                 queue, separate_process, task_timeout, depends_on,
+                 queue, separate_process, timeout_task_run, depends_on,
                  timeout_task_wait, time_poll, progress, delete, error)
     },
 
@@ -501,7 +501,7 @@ rrq_controller <- R6::R6Class(
     ##'   run in a separate process on the worker (see `$enqueue` for
     ##'   details).
     ##'
-    ##' @param task_timeout Optionally, a maximum allowed running time, in
+    ##' @param timeout_task_run Optionally, a maximum allowed running time, in
     ##'   seconds (see the `timeout` argument of `$enqueue` for details).
     ##'
     ##' @param depends_on Vector or list of IDs of tasks which must have
@@ -521,7 +521,7 @@ rrq_controller <- R6::R6Class(
     ##'   If `error = TRUE` we throw on error instead.
     enqueue_bulk = function(X, FUN, ..., dots = NULL, # nolint
                             envir = parent.frame(), queue = NULL,
-                            separate_process = FALSE, task_timeout = NULL,
+                            separate_process = FALSE, timeout_task_run = NULL,
                             depends_on = NULL, timeout_task_wait = NULL,
                             time_poll = 1, progress = NULL, delete = FALSE,
                             error = FALSE) {
@@ -530,7 +530,8 @@ rrq_controller <- R6::R6Class(
       }
       self$enqueue_bulk_(X, substitute(FUN), dots = dots, envir = envir,
                          queue = queue, separate_process = separate_process,
-                         task_timeout = task_timeout, depends_on = depends_on,
+                         timeout_task_run = timeout_task_run,
+                         depends_on = depends_on,
                          timeout_task_wait = timeout_task_wait,
                          time_poll = time_poll, progress = progress,
                          delete = delete, error = error)
@@ -577,7 +578,7 @@ rrq_controller <- R6::R6Class(
     ##'   run in a separate process on the worker (see `$enqueue` for
     ##'   details).
     ##'
-    ##' @param task_timeout Optionally, a maximum allowed running time, in
+    ##' @param timeout_task_run Optionally, a maximum allowed running time, in
     ##'   seconds (see the `timeout` argument of `$enqueue` for details).
     ##'
     ##' @param depends_on Vector or list of IDs of tasks which must have
@@ -597,7 +598,7 @@ rrq_controller <- R6::R6Class(
     ##'   If `error = TRUE` we throw on error instead.
     enqueue_bulk_ = function(X, FUN, ..., dots = NULL, # nolint
                              envir = parent.frame(), queue = NULL,
-                             separate_process = FALSE, task_timeout = NULL,
+                             separate_process = FALSE, timeout_task_run = NULL,
                              depends_on = NULL, timeout_task_wait = NULL,
                              time_poll = 1, progress = NULL, delete = delete,
                              error = error) {
@@ -606,8 +607,9 @@ rrq_controller <- R6::R6Class(
       }
       timeout_task_wait <- timeout_task_wait %||% private$timeout_task_wait
       rrq_enqueue_bulk(self$con, private$keys, private$store, X, FUN, dots,
-                       envir, queue, separate_process, task_timeout, depends_on,
-                       timeout_task_wait, time_poll, progress, delete, error)
+                       envir, queue, separate_process, timeout_task_run,
+                       depends_on, timeout_task_wait, time_poll,
+                       progress, delete, error)
     },
 
     ##' @description Wait for a group of tasks

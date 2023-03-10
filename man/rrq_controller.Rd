@@ -404,7 +404,7 @@ equivalent to using \verb{$enqueue()} over each element in the list.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
-  task_timeout = NULL,
+  timeout_task = NULL,
   depends_on = NULL,
   timeout_task_wait = NULL,
   time_poll = 1,
@@ -436,7 +436,7 @@ details).}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
-\item{\code{task_timeout}}{Optionally, a maximum allowed running time, in
+\item{\code{timeout_task}}{Optionally, a maximum allowed running time, in
 seconds (see the \code{timeout} argument of \verb{$enqueue} for details).}
 
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
@@ -490,7 +490,7 @@ be copied over rather than using their names if possible.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
-  task_timeout = NULL,
+  timeout_task = NULL,
   depends_on = NULL,
   timeout_task_wait = NULL,
   time_poll = 1,
@@ -522,7 +522,7 @@ details).}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
-\item{\code{task_timeout}}{Optionally, a maximum allowed running time, in
+\item{\code{timeout_task}}{Optionally, a maximum allowed running time, in
 seconds (see the \code{timeout} argument of \verb{$enqueue} for details).}
 
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
@@ -577,7 +577,7 @@ should feel intuitive.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
-  task_timeout = NULL,
+  timeout_task = NULL,
   depends_on = NULL,
   timeout_task_wait = NULL,
   time_poll = 1,
@@ -611,7 +611,7 @@ details).}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
-\item{\code{task_timeout}}{Optionally, a maximum allowed running time, in
+\item{\code{timeout_task}}{Optionally, a maximum allowed running time, in
 seconds (see the \code{timeout} argument of \verb{$enqueue} for details).}
 
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
@@ -665,7 +665,7 @@ be copied over rather than using their names if possible.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
-  task_timeout = NULL,
+  timeout_task = NULL,
   depends_on = NULL,
   timeout_task_wait = NULL,
   time_poll = 1,
@@ -699,7 +699,7 @@ details).}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
-\item{\code{task_timeout}}{Optionally, a maximum allowed running time, in
+\item{\code{timeout_task}}{Optionally, a maximum allowed running time, in
 seconds (see the \code{timeout} argument of \verb{$enqueue} for details).}
 
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
