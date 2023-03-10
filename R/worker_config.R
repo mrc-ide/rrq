@@ -1,5 +1,5 @@
 worker_config_save <- function(con, keys, name,
-                               time_poll = NULL, timeout = NULL,
+                               time_poll = NULL, timeout_worker = NULL,
                                queue = NULL,
                                heartbeat_period = NULL,
                                verbose = NULL,
@@ -9,7 +9,8 @@ worker_config_save <- function(con, keys, name,
   key <- keys$worker_config
   write <- overwrite || con$HEXISTS(key, name) == 0
   if (write) {
-    config <- worker_config_make(time_poll, timeout, queue, heartbeat_period,
+    config <- worker_config_make(time_poll, timeout_worker,
+                                 queue, heartbeat_period,
                                  verbose, timeout_poll, timeout_die)
     con$HSET(key, name, object_to_bin(config))
     invisible(config)
@@ -28,14 +29,15 @@ worker_config_read <- function(con, keys, name) {
 }
 
 
-worker_config_make <- function(time_poll = NULL, timeout = NULL, queue = NULL,
-                               heartbeat_period = NULL, verbose = NULL,
-                               timeout_poll = NULL, timeout_die = NULL) {
+worker_config_make <- function(time_poll = NULL, timeout_worker = NULL,
+                               queue = NULL, heartbeat_period = NULL,
+                               verbose = NULL, timeout_poll = NULL,
+                               timeout_die = NULL) {
   if (!is.null(time_poll)) {
     assert_scalar_integer_like(time_poll)
   }
-  if (!(is.null(timeout) || identical(timeout, Inf))) {
-    assert_scalar_integer_like(timeout)
+  if (!(is.null(timeout_worker) || identical(timeout_worker, Inf))) {
+    assert_scalar_integer_like(timeout_worker)
   }
   if (!is.null(queue)) {
     assert_character(queue)
@@ -56,7 +58,7 @@ worker_config_make <- function(time_poll = NULL, timeout = NULL, queue = NULL,
   }
 
   config <- list(time_poll = time_poll,
-                 timeout = timeout,
+                 timeout_worker = timeout_worker,
                  queue = queue,
                  heartbeat_period = heartbeat_period,
                  verbose = verbose,

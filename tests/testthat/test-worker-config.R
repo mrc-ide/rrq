@@ -13,8 +13,10 @@ test_that("create short-lived worker", {
   obj <- test_rrq()
 
   key <- "stop_immediately"
-  cfg <- obj$worker_config_save(key, timeout = 0, time_poll = 1,
-                                verbose = TRUE)
+  obj$worker_config_save(key,
+    timeout_worker = 0, time_poll = 1,
+    verbose = TRUE
+  )
 
   ## Local:
   msg1 <- capture_messages(
@@ -83,33 +85,36 @@ test_that("worker timeout", {
   obj <- test_rrq("myfuns.R")
 
   t <- as.integer(runif(1, min = 100, max = 10000))
-  res <- obj$worker_config_save("localhost", timeout = t, verbose = FALSE)
-  expect_equal(res$timeout, t)
+  res <- obj$worker_config_save("localhost",
+    timeout_worker = t,
+    verbose = FALSE
+  )
+  expect_equal(res$timeout_worker, t)
 
   w <- test_worker_blocking(obj)
-  expect_equal(r6_private(w)$timeout, t)
+  expect_equal(r6_private(w)$timeout_worker, t)
   expect_lte(r6_private(w)$timer(), t)
 
   id <- obj$message_send("TIMEOUT_GET")
   w$step(TRUE)
   res <- obj$message_get_response(id, w$name)[[1]]
-  expect_equal(res[["timeout"]], t)
+  expect_equal(res[["timeout_worker"]], t)
   expect_lte(res[["remaining"]], t)
 })
 
 
 test_that("infinite timeout", {
   obj <- test_rrq("myfuns.R")
-  obj$worker_config_save("infinite", timeout = Inf, verbose = FALSE)
+  obj$worker_config_save("infinite", timeout_worker = Inf, verbose = FALSE)
 
   w <- test_worker_blocking(obj, worker_config = "infinite")
-  expect_equal(r6_private(w)$timeout, Inf)
+  expect_equal(r6_private(w)$timeout_worker, Inf)
   expect_equal(r6_private(w)$timer(), Inf)
 
   id <- obj$message_send("TIMEOUT_GET")
   w$step(TRUE)
   res <- obj$message_get_response(id, w$name)[[1]]
-  expect_equal(res, c(timeout = Inf, remaining = Inf))
+  expect_equal(res, c(timeout_worker = Inf, remaining = Inf))
 })
 
 
@@ -118,10 +123,10 @@ test_that("rrq_default configuration", {
   ## (this is actually the *test* default configuration, which is
   ## possibly not what is wanted)
   obj <- test_rrq()
-  res1 <- obj$worker_config_save("new", timeout = 1, overwrite = FALSE)
-  expect_equal(res1, list(timeout = 1, verbose = TRUE,
+  res1 <- obj$worker_config_save("new", timeout_worker = 1, overwrite = FALSE)
+  expect_equal(res1, list(timeout_worker = 1, verbose = TRUE,
                           timeout_poll = 1, timeout_die = 2))
-  res2 <- obj$worker_config_save("new", timeout = 2, overwrite = FALSE)
+  res2 <- obj$worker_config_save("new", timeout_worker = 2, overwrite = FALSE)
   expect_null(res2)
   expect_equal(obj$worker_config_read("new"), res1)
 })
