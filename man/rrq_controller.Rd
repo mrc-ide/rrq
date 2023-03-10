@@ -216,7 +216,7 @@ destructive action and cannot be undone.
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller$destroy(
   delete = TRUE,
   worker_stop_type = "message",
-  worker_stop_timeout = 0
+  timeout_worker_stop = 0
 )}\if{html}{\out{</div>}}
 }
 
@@ -236,7 +236,7 @@ the workers are on the same machine as the controller. However,
 these may be faster to stop workers than "message", which will
 wait until any task is finished.}
 
-\item{\code{worker_stop_timeout}}{A timeout to pass to the worker to
+\item{\code{timeout_worker_stop}}{A timeout to pass to the worker to
 respond the request to stop. See \code{worker_stop}'s \code{timeout}
 argument for details.}
 }

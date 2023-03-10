@@ -324,7 +324,7 @@ test_that("can't cancel nonexistant task", {
 
 
 test_that("can't cancel running in-process task", {
-  obj <- test_rrq(worker_stop_timeout = 0)
+  obj <- test_rrq(timeout_worker_stop = 0)
   w <- test_worker_spawn(obj)
   t <- obj$enqueue(Sys.sleep(20))
   wait_status(t, obj)

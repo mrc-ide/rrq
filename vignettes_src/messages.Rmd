@@ -308,7 +308,7 @@ obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
 ```
 
 ```{r, include = FALSE}
-obj$destroy(worker_stop_timeout = 10)
+obj$destroy(timeout_worker_stop = 10)
 ```
 
 ## Messages that are supported but use via wrappers:

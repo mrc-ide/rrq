@@ -181,14 +181,14 @@ rrq_controller <- R6::R6Class(
     ##'   these may be faster to stop workers than "message", which will
     ##'   wait until any task is finished.
     ##'
-    ##' @param worker_stop_timeout A timeout to pass to the worker to
+    ##' @param timeout_worker_stop A timeout to pass to the worker to
     ##'   respond the request to stop. See `worker_stop`'s `timeout`
     ##'   argument for details.
     destroy = function(delete = TRUE, worker_stop_type = "message",
-                       worker_stop_timeout = 0) {
+                       timeout_worker_stop = 0) {
       if (!is.null(self$con)) {
         rrq_clean(self$con, self$queue_id, delete, worker_stop_type,
-                  worker_stop_timeout)
+                  timeout_worker_stop)
         ## render the controller useless:
         self$con <- NULL
         private$keys <- NULL

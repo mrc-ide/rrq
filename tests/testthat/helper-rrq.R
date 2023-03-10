@@ -76,7 +76,7 @@ test_name <- function(name) {
 
 
 test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
-                     name = NULL, worker_stop_timeout = NULL,
+                     name = NULL, timeout_worker_stop = NULL,
                      store_max_size = Inf, offload_path = NULL) {
   skip_if_no_redis()
   skip_if_not_installed("withr")
@@ -109,19 +109,19 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
   obj$worker_config_save("localhost", time_poll = 1, verbose = verbose)
   obj$envir(create)
 
-  withr::defer_parent(test_rrq_cleanup(obj, worker_stop_timeout))
+  withr::defer_parent(test_rrq_cleanup(obj, timeout_worker_stop))
 
   obj
 }
 
 
-test_rrq_cleanup <- function(obj, worker_stop_timeout) {
-  if (is.null(worker_stop_timeout)) {
+test_rrq_cleanup <- function(obj, timeout_worker_stop) {
+  if (is.null(timeout_worker_stop)) {
     worker_pid <- vnapply(obj$worker_info(), "[[", "pid")
     worker_is_separate <- worker_pid != Sys.getpid()
-    worker_stop_timeout <- if (all(worker_is_separate)) 10 else 0
+    timeout_worker_stop <- if (all(worker_is_separate)) 10 else 0
   }
-  obj$destroy(worker_stop_timeout = worker_stop_timeout)
+  obj$destroy(timeout_worker_stop = timeout_worker_stop)
 }
 
 
