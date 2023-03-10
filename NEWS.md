@@ -1,3 +1,7 @@
+# rrq 0.6.12
+
+* New argument `timeout_task_wait` and option `rrq.timeout_task_wait` to control the default time to wait for tasks to be returned from `task_wait` and bulk task retrieval methods. The default behaviour is unchanged (blocking indefinitely) but this can now easily be changed at a global or queue-scoped level.
+
 # rrq 0.6.11
 
 * Changed argument of `worker_config_save` from `timeout` to `timeout_idle` (mrc-4075)

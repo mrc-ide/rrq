@@ -4,28 +4,7 @@
 \alias{rrq_controller}
 \title{rrq queue controller}
 \description{
-rrq queue controller
-
-rrq queue controller
-}
-\details{
 A queue controller.  Use this to interact with a queue/cluster.
-
-The \code{type} parameter indicates the strategy used to stop
-workers, and interacts with other parameters. The strategies used by
-the different values are:
-\itemize{
-\item \code{message}, in which case a \code{STOP} message will be sent to the
-worker, which they will receive after finishing any currently
-running task (if \code{RUNNING}; \code{IDLE} workers will stop immediately).
-\item \code{kill}, in which case a kill signal will be sent via the heartbeat
-(if the worker is using one). This will kill the worker even if
-is currently working on a task, eventually leaving that task with
-a status of \code{DIED}.
-\item \code{kill_local}, in which case a kill signal is sent using operating
-system signals, which requires that the worker is on the same
-machine as the controller.
-}
 }
 \section{Task lifecycle}{
 
@@ -204,7 +183,7 @@ after creation.}
 \subsection{Method \code{new()}}{
 Constructor
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$new(queue_id, con = redux::hiredis())}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$new(queue_id, con = redux::hiredis(), timeout_task_wait = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -217,6 +196,11 @@ your use case (e.g. \code{rrq:<user>:<id>})}
 \item{\code{con}}{A redis connection. The default tries to create a redis
 connection using default ports, or environment variables set as in
 \code{\link[redux:hiredis]{redux::hiredis()}}}
+
+\item{\code{timeout_task_wait}}{An optional default timeout to use when
+waiting for tasks (e.g., with \verb{$task_wait()}, \verb{$tasks_wait()},
+\verb{$lapply()}, etc). If not given, then we fall back on the
+global option \code{rrq.timeout_task_wait}, and if that is not set,}
 }
 \if{html}{\out{</div>}}
 }
@@ -422,7 +406,7 @@ equivalent to using \verb{$enqueue()} over each element in the list.
   separate_process = FALSE,
   task_timeout = NULL,
   depends_on = NULL,
-  collect_timeout = Inf,
+  collect_timeout = NULL,
   time_poll = 1,
   progress = NULL,
   delete = FALSE,
@@ -465,7 +449,8 @@ tasks added to the queue.}
 \item{\code{collect_timeout}}{Optional timeout, in seconds, after which an
 error will be thrown if all tasks have not completed. If given  as
 \code{0}, then we return a handle that can be used to check for tasks
-using \code{bulk_wait}}
+using \code{bulk_wait}. If not given, falls back on the controller's
+\code{timeout_task_wait} (see \verb{$new()})}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for
 completion (default is 1s, see \verb{$task_wait()} for details)}
@@ -507,7 +492,7 @@ be copied over rather than using their names if possible.
   separate_process = FALSE,
   task_timeout = NULL,
   depends_on = NULL,
-  collect_timeout = Inf,
+  collect_timeout = NULL,
   time_poll = 1,
   progress = NULL,
   delete = FALSE,
@@ -550,7 +535,8 @@ tasks added to the queue.}
 \item{\code{collect_timeout}}{Optional timeout, in seconds, after which an
 error will be thrown if all tasks have not completed. If given  as
 \code{0}, then we return a handle that can be used to check for tasks
-using \code{bulk_wait}}
+using \code{bulk_wait}. If not given, falls back on the controller's
+\code{timeout_task_wait} (see \verb{$new()})}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for
 completion (default is 1s, see \verb{$task_wait()} for details)}
@@ -593,7 +579,7 @@ should feel intuitive.
   separate_process = FALSE,
   task_timeout = NULL,
   depends_on = NULL,
-  collect_timeout = Inf,
+  collect_timeout = NULL,
   time_poll = 1,
   progress = NULL,
   delete = FALSE,
@@ -638,7 +624,8 @@ tasks added to the queue.}
 \item{\code{collect_timeout}}{Optional timeout, in seconds, after which an
 error will be thrown if all tasks have not completed. If given  as
 \code{0}, then we return a handle that can be used to check for tasks
-using \code{bulk_wait}}
+using \code{bulk_wait}. If not given, falls back on the controller's
+\code{timeout_task_wait} (see \verb{$new()})}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for
 completion (default is 1s, see \verb{$task_wait()} for details)}
@@ -680,7 +667,7 @@ be copied over rather than using their names if possible.
   separate_process = FALSE,
   task_timeout = NULL,
   depends_on = NULL,
-  collect_timeout = Inf,
+  collect_timeout = NULL,
   time_poll = 1,
   progress = NULL,
   delete = delete,
@@ -725,7 +712,8 @@ tasks added to the queue.}
 \item{\code{collect_timeout}}{Optional timeout, in seconds, after which an
 error will be thrown if all tasks have not completed. If given  as
 \code{0}, then we return a handle that can be used to check for tasks
-using \code{bulk_wait}}
+using \code{bulk_wait}. If not given, falls back on the controller's
+\code{timeout_task_wait} (see \verb{$new()})}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for
 completion (default is 1s, see \verb{$task_wait()} for details)}
@@ -755,7 +743,7 @@ Wait for a group of tasks
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller$bulk_wait(
   x,
-  timeout = Inf,
+  timeout = NULL,
   time_poll = 1,
   progress = NULL,
   delete = FALSE,
@@ -988,7 +976,7 @@ efficient way of doing this for a group of tasks.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_wait(
   task_id,
-  timeout = Inf,
+  timeout = NULL,
   time_poll = 1,
   progress = NULL,
   error = FALSE
@@ -1001,7 +989,8 @@ efficient way of doing this for a group of tasks.
 \item{\code{task_id}}{The single id that we will wait for}
 
 \item{\code{timeout}}{Optional timeout, in seconds, after which an
-error will be thrown if the task has not completed.}
+error will be thrown if the task has not completed. If not given,
+falls back on the controller's \code{timeout_task_wait} (see \verb{$new()})}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for completion.
 By default this will be 1 second; this is the time that each
@@ -1035,7 +1024,7 @@ this is roughly equivalent to \code{tasks_result}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller$tasks_wait(
   task_ids,
-  timeout = Inf,
+  timeout = NULL,
   time_poll = 1,
   progress = NULL,
   error = FALSE
@@ -1048,7 +1037,8 @@ this is roughly equivalent to \code{tasks_result}.
 \item{\code{task_ids}}{A vector of task ids to poll for}
 
 \item{\code{timeout}}{Optional timeout, in seconds, after which an
-error will be thrown if the task has not completed.}
+error will be thrown if the task has not completed. If not given,
+falls back on the controller's \code{timeout_task_wait} (see \verb{$new()})}
 
 \item{\code{time_poll}}{Optional time with which to "poll" for
 completion (default is 1s, see \verb{$task_wait()} for details)}
@@ -1403,6 +1393,24 @@ progress bar if in an interactive session.}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+The \code{type} parameter indicates the strategy used to stop
+workers, and interacts with other parameters. The strategies used by
+the different values are:
+\itemize{
+\item \code{message}, in which case a \code{STOP} message will be sent to the
+worker, which they will receive after finishing any currently
+running task (if \code{RUNNING}; \code{IDLE} workers will stop immediately).
+\item \code{kill}, in which case a kill signal will be sent via the heartbeat
+(if the worker is using one). This will kill the worker even if
+is currently working on a task, eventually leaving that task with
+a status of \code{DIED}.
+\item \code{kill_local}, in which case a kill signal is sent using operating
+system signals, which requires that the worker is on the same
+machine as the controller.
+}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-rrq_controller-worker_detect_exited"></a>}}
