@@ -223,7 +223,8 @@ test_that("Can't delete running tasks", {
 test_that("Error if results are not ready", {
   obj <- test_rrq()
   id <- obj$enqueue(sin(1))
-  expect_error(obj$task_result(id), "Missing some results")
+  expect_error(obj$task_result(id),
+               sprintf("Missing result for task: '%s'", id))
 })
 
 
@@ -997,6 +998,6 @@ test_that("task errors can be immediately thrown", {
   expect_equal(err2, err)
 
   err3 <- expect_error(obj$tasks_result(c(t, t), error = TRUE),
-                       class = "rrq_task_error")
-  expect_equal(err3, err)
+                       class = "rrq_task_error_group")
+  expect_equal(err3$errors, list(err, err))
 })

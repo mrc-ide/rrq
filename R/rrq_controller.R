@@ -705,8 +705,8 @@ rrq_controller <- R6::R6Class(
     ##'   on this error if it is returned.
     task_result = function(task_id, error = FALSE) {
       assert_scalar_character(task_id)
-      task_results(self$con, private$keys, private$store, task_id,
-                   error, TRUE)[[1]]
+      tasks_result(self$con, private$keys, private$store, task_id,
+                   error, TRUE)
     },
 
     ##' @description Get the results of a group of tasks, returning them as a
@@ -718,7 +718,7 @@ rrq_controller <- R6::R6Class(
     ##' @param error Logical, indicating if we should throw an error if
     ##'   the task was not successful. See `$task_result()` for details.
     tasks_result = function(task_ids, error = FALSE) {
-      task_results(self$con, private$keys, private$store, task_ids,
+      tasks_result(self$con, private$keys, private$store, task_ids,
                    error, FALSE)
     },
 
@@ -754,7 +754,7 @@ rrq_controller <- R6::R6Class(
                          progress = NULL, error = FALSE) {
       assert_scalar_character(task_id)
       tasks_wait(self$con, private$keys, private$store, task_id,
-                 timeout, time_poll, progress, error, TRUE)
+                 timeout, time_poll, NULL, progress, error, TRUE)
     },
 
     ##' @description Poll for a group of tasks to complete, returning the
@@ -781,7 +781,7 @@ rrq_controller <- R6::R6Class(
     tasks_wait = function(task_ids, timeout = Inf, time_poll = 1,
                           progress = NULL, error = FALSE) {
       tasks_wait(self$con, private$keys, private$store, task_ids,
-                 timeout, time_poll, progress, error, FALSE)
+                 timeout, time_poll, progress, NULL, error, FALSE)
     },
 
     ##' @description Delete one or more tasks
@@ -1469,7 +1469,7 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
 }
 
 
-task_results <- function(con, keys, store, task_ids, error, single) {
+tasks_result <- function(con, keys, store, task_ids, error, single) {
   hash <- from_redis_hash(con, keys$task_result, task_ids)
   is_missing <- is.na(hash)
   ## TODO - for discussion/implementation elsewhere: should these be
@@ -1491,7 +1491,7 @@ task_results <- function(con, keys, store, task_ids, error, single) {
   if (error) {
     throw_task_errors(res, single)
   }
-  set_names(res, task_ids)
+  if (single) res[[1]] else set_names(res, task_ids)
 }
 
 worker_len <- function(con, keys) {
@@ -1744,7 +1744,7 @@ tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
   }
 
   general_poll(fetch, 0, timeout, "tasks", TRUE, progress)
-  task_results(con, keys, store, task_ids, error, single)
+  tasks_result(con, keys, store, task_ids, error, single)
 }
 
 

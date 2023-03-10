@@ -11,7 +11,7 @@ test_that("lapply simple case", {
 
   w$loop(immediate = TRUE)
 
-  res <- obj$bulk_wait(grp)
+  res <- obj$bulk_wait(grp, delete = TRUE)
   expect_equal(res, as.list(log2(1:10)))
 
   ## tasks are deleted on collection
