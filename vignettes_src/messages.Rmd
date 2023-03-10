@@ -295,7 +295,7 @@ One useful pattern is to send work to workers, then set the timeout to zero. Thi
 grp <- obj$lapply(1:5, function(x) {
   Sys.sleep(0.5)
   runif(x)
-}, collect_timeout = 0)
+}, timeout_task_wait = 0)
 obj$message_send("TIMEOUT_SET", 0, worker_id)
 obj$tasks_wait(grp$task_ids)
 ```

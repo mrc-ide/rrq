@@ -258,7 +258,7 @@ id <- obj$enqueue(create(5))
 Then use this `id`
 
 ```{r}
-id_use <- obj$lapply(1:5, use, depends_on = id, collect_timeout = 0)
+id_use <- obj$lapply(1:5, use, depends_on = id, timeout_task_wait = 0)
 ```
 
 The status of the first task will be `PENDING`, per usual:

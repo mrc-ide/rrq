@@ -406,7 +406,7 @@ equivalent to using \verb{$enqueue()} over each element in the list.
   separate_process = FALSE,
   task_timeout = NULL,
   depends_on = NULL,
-  collect_timeout = NULL,
+  timeout_task_wait = NULL,
   time_poll = 1,
   progress = NULL,
   delete = FALSE,
@@ -446,7 +446,7 @@ queue. If the dependent task fails then this task will be
 removed from the queue. Dependencies are applied to all
 tasks added to the queue.}
 
-\item{\code{collect_timeout}}{Optional timeout, in seconds, after which an
+\item{\code{timeout_task_wait}}{Optional timeout, in seconds, after which an
 error will be thrown if all tasks have not completed. If given  as
 \code{0}, then we return a handle that can be used to check for tasks
 using \code{bulk_wait}. If not given, falls back on the controller's
@@ -492,7 +492,7 @@ be copied over rather than using their names if possible.
   separate_process = FALSE,
   task_timeout = NULL,
   depends_on = NULL,
-  collect_timeout = NULL,
+  timeout_task_wait = NULL,
   time_poll = 1,
   progress = NULL,
   delete = FALSE,
@@ -532,7 +532,7 @@ queue. If the dependent task fails then this task will be
 removed from the queue. Dependencies are applied to all
 tasks added to the queue.}
 
-\item{\code{collect_timeout}}{Optional timeout, in seconds, after which an
+\item{\code{timeout_task_wait}}{Optional timeout, in seconds, after which an
 error will be thrown if all tasks have not completed. If given  as
 \code{0}, then we return a handle that can be used to check for tasks
 using \code{bulk_wait}. If not given, falls back on the controller's
@@ -579,7 +579,7 @@ should feel intuitive.
   separate_process = FALSE,
   task_timeout = NULL,
   depends_on = NULL,
-  collect_timeout = NULL,
+  timeout_task_wait = NULL,
   time_poll = 1,
   progress = NULL,
   delete = FALSE,
@@ -621,7 +621,7 @@ queue. If the dependent task fails then this task will be
 removed from the queue. Dependencies are applied to all
 tasks added to the queue.}
 
-\item{\code{collect_timeout}}{Optional timeout, in seconds, after which an
+\item{\code{timeout_task_wait}}{Optional timeout, in seconds, after which an
 error will be thrown if all tasks have not completed. If given  as
 \code{0}, then we return a handle that can be used to check for tasks
 using \code{bulk_wait}. If not given, falls back on the controller's
@@ -667,7 +667,7 @@ be copied over rather than using their names if possible.
   separate_process = FALSE,
   task_timeout = NULL,
   depends_on = NULL,
-  collect_timeout = NULL,
+  timeout_task_wait = NULL,
   time_poll = 1,
   progress = NULL,
   delete = delete,
@@ -709,7 +709,7 @@ queue. If the dependent task fails then this task will be
 removed from the queue. Dependencies are applied to all
 tasks added to the queue.}
 
-\item{\code{collect_timeout}}{Optional timeout, in seconds, after which an
+\item{\code{timeout_task_wait}}{Optional timeout, in seconds, after which an
 error will be thrown if all tasks have not completed. If given  as
 \code{0}, then we return a handle that can be used to check for tasks
 using \code{bulk_wait}. If not given, falls back on the controller's

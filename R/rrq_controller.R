@@ -328,7 +328,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param envir The environment to use to try and find the function
     ##'
-    ##' @param collect_timeout Optional timeout, in seconds, after which an
+    ##' @param timeout_task_wait Optional timeout, in seconds, after which an
     ##'   error will be thrown if all tasks have not completed. If given  as
     ##'   `0`, then we return a handle that can be used to check for tasks
     ##'   using `bulk_wait`. If not given, falls back on the controller's
@@ -371,7 +371,7 @@ rrq_controller <- R6::R6Class(
                       envir = parent.frame(), queue = NULL,
                       separate_process = FALSE, task_timeout = NULL,
                       depends_on = NULL,
-                      collect_timeout = NULL, time_poll = 1,
+                      timeout_task_wait = NULL, time_poll = 1,
                       progress = NULL, delete = FALSE, error = FALSE) {
       if (is.null(dots)) {
         dots <- as.list(substitute(list(...)))[-1L]
@@ -379,7 +379,8 @@ rrq_controller <- R6::R6Class(
       self$lapply_(X, substitute(FUN), dots = dots, envir = envir,
                    queue = queue, separate_process = separate_process,
                    task_timeout = task_timeout,
-                   depends_on = depends_on, collect_timeout = collect_timeout,
+                   depends_on = depends_on,
+                   timeout_task_wait = timeout_task_wait,
                    time_poll = time_poll, progress = progress, delete = delete,
                    error = error)
     },
@@ -402,7 +403,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param envir The environment to use to try and find the function
     ##'
-    ##' @param collect_timeout Optional timeout, in seconds, after which an
+    ##' @param timeout_task_wait Optional timeout, in seconds, after which an
     ##'   error will be thrown if all tasks have not completed. If given  as
     ##'   `0`, then we return a handle that can be used to check for tasks
     ##'   using `bulk_wait`. If not given, falls back on the controller's
@@ -444,16 +445,16 @@ rrq_controller <- R6::R6Class(
     lapply_ = function(X, FUN, ..., dots = NULL, # nolint
                        envir = parent.frame(), queue = NULL,
                        separate_process = FALSE, task_timeout = NULL,
-                       depends_on = NULL, collect_timeout = NULL,
+                       depends_on = NULL, timeout_task_wait = NULL,
                        time_poll = 1, progress = NULL, delete = FALSE,
                        error = FALSE) {
       if (is.null(dots)) {
         dots <- list(...)
       }
-      collect_timeout <- collect_timeout %||% private$timeout_task_wait
+      timeout_task_wait <- timeout_task_wait %||% private$timeout_task_wait
       rrq_lapply(self$con, private$keys, private$store, X, FUN, dots, envir,
                  queue, separate_process, task_timeout, depends_on,
-                 collect_timeout, time_poll, progress, delete, error)
+                 timeout_task_wait, time_poll, progress, delete, error)
     },
 
     ##' @description Send a bulk set of tasks to your workers.
@@ -479,7 +480,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param envir The environment to use to try and find the function
     ##'
-    ##' @param collect_timeout Optional timeout, in seconds, after which an
+    ##' @param timeout_task_wait Optional timeout, in seconds, after which an
     ##'   error will be thrown if all tasks have not completed. If given  as
     ##'   `0`, then we return a handle that can be used to check for tasks
     ##'   using `bulk_wait`. If not given, falls back on the controller's
@@ -521,7 +522,7 @@ rrq_controller <- R6::R6Class(
     enqueue_bulk = function(X, FUN, ..., dots = NULL, # nolint
                             envir = parent.frame(), queue = NULL,
                             separate_process = FALSE, task_timeout = NULL,
-                            depends_on = NULL, collect_timeout = NULL,
+                            depends_on = NULL, timeout_task_wait = NULL,
                             time_poll = 1, progress = NULL, delete = FALSE,
                             error = FALSE) {
       if (is.null(dots)) {
@@ -530,7 +531,7 @@ rrq_controller <- R6::R6Class(
       self$enqueue_bulk_(X, substitute(FUN), dots = dots, envir = envir,
                          queue = queue, separate_process = separate_process,
                          task_timeout = task_timeout, depends_on = depends_on,
-                         collect_timeout = collect_timeout,
+                         timeout_task_wait = timeout_task_wait,
                          time_poll = time_poll, progress = progress,
                          delete = delete, error = error)
     },
@@ -555,7 +556,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param envir The environment to use to try and find the function
     ##'
-    ##' @param collect_timeout Optional timeout, in seconds, after which an
+    ##' @param timeout_task_wait Optional timeout, in seconds, after which an
     ##'   error will be thrown if all tasks have not completed. If given  as
     ##'   `0`, then we return a handle that can be used to check for tasks
     ##'   using `bulk_wait`. If not given, falls back on the controller's
@@ -597,16 +598,16 @@ rrq_controller <- R6::R6Class(
     enqueue_bulk_ = function(X, FUN, ..., dots = NULL, # nolint
                              envir = parent.frame(), queue = NULL,
                              separate_process = FALSE, task_timeout = NULL,
-                             depends_on = NULL, collect_timeout = NULL,
+                             depends_on = NULL, timeout_task_wait = NULL,
                              time_poll = 1, progress = NULL, delete = delete,
                              error = error) {
       if (is.null(dots)) {
         dots <- list(...)
       }
-      collect_timeout <- collect_timeout %||% private$timeout_task_wait
+      timeout_task_wait <- timeout_task_wait %||% private$timeout_task_wait
       rrq_enqueue_bulk(self$con, private$keys, private$store, X, FUN, dots,
                        envir, queue, separate_process, task_timeout, depends_on,
-                       collect_timeout, time_poll, progress, delete, error)
+                       timeout_task_wait, time_poll, progress, delete, error)
     },
 
     ##' @description Wait for a group of tasks

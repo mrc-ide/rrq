@@ -1,27 +1,27 @@
 rrq_lapply <- function(con, keys, store, x, fun, dots, envir, queue,
                        separate_process, task_timeout, depends_on,
-                       collect_timeout, time_poll, progress, delete, error) {
+                       timeout_task_wait, time_poll, progress, delete, error) {
   dat <- rrq_bulk_submit(con, keys, store, x, fun, dots, FALSE, envir, queue,
                          separate_process, task_timeout, depends_on)
-  if (collect_timeout == 0) {
+  if (timeout_task_wait == 0) {
     return(dat)
   }
-  rrq_bulk_wait(con, keys, store, dat, collect_timeout, time_poll, progress,
+  rrq_bulk_wait(con, keys, store, dat, timeout_task_wait, time_poll, progress,
                 delete, error)
 }
 
 
 rrq_enqueue_bulk <- function(con, keys, store, x, fun, dots,
                              envir, queue, separate_process, task_timeout,
-                             depends_on, collect_timeout, time_poll, progress,
+                             depends_on, timeout_task_wait, time_poll, progress,
                              delete, error) {
   dat <- rrq_bulk_submit(con, keys, store, x, fun, dots, TRUE,
                          envir, queue, separate_process, task_timeout,
                          depends_on)
-  if (collect_timeout == 0) {
+  if (timeout_task_wait == 0) {
     return(dat)
   }
-  rrq_bulk_wait(con, keys, store, dat, collect_timeout, time_poll, progress,
+  rrq_bulk_wait(con, keys, store, dat, timeout_task_wait, time_poll, progress,
                 delete, error)
 }
 
