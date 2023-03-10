@@ -1,3 +1,8 @@
+# rrq 0.6.9
+
+* It is now possible to (optionally) throw task errors on retrieval via `task_wait`, `task_results` and the bulk interfaces. The default remains not to error.
+* Bulk submitted tasks no longer auto-delete.
+
 # rrq 0.6.7
 
 * Nicer errors that tell you what the contain, particularly when they have stack traces or warnings (mrc-1260)
