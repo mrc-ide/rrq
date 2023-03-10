@@ -49,7 +49,7 @@ Constructor
   worker_name = NULL,
   queue = NULL,
   time_poll = NULL,
-  timeout_worker = NULL,
+  timeout_idle = NULL,
   heartbeat_period = NULL,
   verbose = TRUE,
   register = TRUE,
@@ -81,7 +81,7 @@ killed with an interrupt (control-C or Escape).  The default
 should be good for most uses, but shorter values are used for
 debugging.}
 
-\item{\code{timeout_worker}}{Optional timeout to set for the worker.  This is
+\item{\code{timeout_idle}}{Optional timeout to set for the worker.  This is
 (roughly) equivalent to issuing a \code{TIMEOUT_SET} message
 after initialising the worker, except that it's guaranteed to be
 run by all workers.}

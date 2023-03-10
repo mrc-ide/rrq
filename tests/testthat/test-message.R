@@ -3,7 +3,7 @@ test_that("TIMEOUT_SET causes worker exit on idle worker", {
   w <- test_worker_blocking(obj)
   obj$message_send("TIMEOUT_SET", 0)
   w$step(TRUE)
-  expect_equal(r6_private(w)$timeout_worker, 0)
+  expect_equal(r6_private(w)$timeout_idle, 0)
   expect_is_function(r6_private(w)$timer)
   expect_lt(r6_private(w)$timer(), 0)
   expect_error(w$step(TRUE), "TIMEOUT", class = "rrq_worker_stop")
@@ -15,7 +15,7 @@ test_that("TIMEOUT_SET needs numeric input", {
   w <- test_worker_blocking(obj)
   id <- obj$message_send("TIMEOUT_SET", "soon")
   w$step(TRUE)
-  expect_null(r6_private(w)$timeout_worker)
+  expect_null(r6_private(w)$timeout_idle)
   expect_null(r6_private(w)$timer)
   expect_equal(
     obj$message_get_response(id, w$name),
@@ -28,11 +28,11 @@ test_that("TIMEOUT_SET with null clears a timer", {
   w <- test_worker_blocking(obj)
   obj$message_send("TIMEOUT_SET", 1)
   w$step(TRUE)
-  expect_equal(r6_private(w)$timeout_worker, 1)
+  expect_equal(r6_private(w)$timeout_idle, 1)
   expect_is_function(r6_private(w)$timer)
   obj$message_send("TIMEOUT_SET", NULL)
   w$step(TRUE)
-  expect_null(r6_private(w)$timeout_worker)
+  expect_null(r6_private(w)$timeout_idle)
   expect_null(r6_private(w)$timer)
 })
 
@@ -45,7 +45,7 @@ test_that("TIMEOUT_GET returns infinite time if no timeout set", {
   w$step(TRUE)
   expect_equal(
     obj$message_get_response(id, w$name),
-    set_names(list(c(timeout_worker = Inf, remaining = Inf)), w$name))
+    set_names(list(c(timeout_idle = Inf, remaining = Inf)), w$name))
 })
 
 
@@ -65,7 +65,7 @@ test_that("TIMEOUT_GET returns time remaining", {
   response <- obj$message_get_response(id, w$name)
   expect_type(response, "list")
   expect_equal(names(response), w$name)
-  expect_equal(response[[1]][["timeout_worker"]], 100)
+  expect_equal(response[[1]][["timeout_idle"]], 100)
   expect_lt(response[[1]][["remaining"]], 100)
   Sys.sleep(0.1)
   expect_gt(response[[1]][["remaining"]], r6_private(w)$timer())
@@ -80,13 +80,13 @@ test_that("TIMEOUT_GET restores a timer", {
   w$step(TRUE)
   obj$enqueue(sin(1))
   w$step(TRUE)
-  expect_equal(r6_private(w)$timeout_worker, 100)
+  expect_equal(r6_private(w)$timeout_idle, 100)
   expect_null(r6_private(w)$timer)
 
   id <- obj$message_send("TIMEOUT_GET")
   w$step(TRUE)
   res <- obj$message_get_response(id, w$name)[[1]]
-  expect_equal(res[["timeout_worker"]], 100)
+  expect_equal(res[["timeout_idle"]], 100)
   expect_equal(res[["remaining"]], 100)
   expect_null(r6_private(w)$timer)
 

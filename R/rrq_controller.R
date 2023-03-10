@@ -959,7 +959,7 @@ rrq_controller <- R6::R6Class(
     ##'   killed with an interrupt.  The default should be good for most
     ##'   uses, but shorter values are used for debugging.
     ##'
-    ##' @param timeout_worker Optional timeout to set for the worker.  This is
+    ##' @param timeout_idle Optional timeout to set for the worker.  This is
     ##'   (roughly) equivalent to issuing a \code{TIMEOUT_SET} message
     ##'   after initialising the worker, except that it's guaranteed to be
     ##'   run by all workers.
@@ -995,11 +995,11 @@ rrq_controller <- R6::R6Class(
     ##'   wait for the background process to respond to SIGTERM before
     ##'   we stop the worker. Only used for tasks queued with
     ##'   `separate_process` `TRUE`.
-    worker_config_save = function(name, time_poll = NULL, timeout_worker = NULL,
+    worker_config_save = function(name, time_poll = NULL, timeout_idle = NULL,
                                   queue = NULL, heartbeat_period = NULL,
                                   verbose = NULL, overwrite = TRUE,
                                   timeout_poll = 1, timeout_die = 2) {
-    worker_config_save(self$con, private$keys, name, time_poll, timeout_worker,
+    worker_config_save(self$con, private$keys, name, time_poll, timeout_idle,
                          queue, heartbeat_period, verbose, overwrite,
                          timeout_poll, timeout_die)
     },

@@ -43,7 +43,7 @@ rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
                  worker_name = worker_name,
                  queue = config$queue,
                  time_poll = config$time_poll,
-                 timeout_worker = config$timeout_worker,
+                 timeout_idle = config$timeout_idle,
                  heartbeat_period = config$heartbeat_period,
                  verbose = config$verbose,
                  timeout_poll = config$timeout_poll,
@@ -83,7 +83,7 @@ rrq_worker <- R6::R6Class(
     ##'   should be good for most uses, but shorter values are used for
     ##'   debugging.
     ##'
-    ##' @param timeout_worker Optional timeout to set for the worker.  This is
+    ##' @param timeout_idle Optional timeout to set for the worker.  This is
     ##'   (roughly) equivalent to issuing a \code{TIMEOUT_SET} message
     ##'   after initialising the worker, except that it's guaranteed to be
     ##'   run by all workers.
@@ -118,7 +118,7 @@ rrq_worker <- R6::R6Class(
     ##'   `separate_process` `TRUE`.
     initialize = function(queue_id, con = redux::hiredis(),
                           key_alive = NULL, worker_name = NULL,
-                          queue = NULL, time_poll = NULL, timeout_worker = NULL,
+                          queue = NULL, time_poll = NULL, timeout_idle = NULL,
                           heartbeat_period = NULL, verbose = TRUE,
                           register = TRUE, timeout_poll = 1, timeout_die = 2) {
       assert_is(con, "redis_api")
@@ -148,7 +148,7 @@ rrq_worker <- R6::R6Class(
       if (register) {
         withCallingHandlers(
           worker_initialise(self, private,
-                            key_alive, timeout_worker, heartbeat_period),
+                            key_alive, timeout_idle, heartbeat_period),
           error = worker_catch_error(self, private))
       }
     },
@@ -229,10 +229,10 @@ rrq_worker <- R6::R6Class(
 
     ##' @description Start the timer
     timer_start = function() {
-      if (is.null(private$timeout_worker)) {
+      if (is.null(private$timeout_idle)) {
         private$timer <- NULL
       } else {
-        private$timer <- time_checker(private$timeout_worker)
+        private$timer <- time_checker(private$timeout_idle)
       }
     },
 
@@ -303,7 +303,7 @@ rrq_worker <- R6::R6Class(
     loop_continue = FALSE,
     paused = FALSE,
     timer = NULL,
-    timeout_worker = NULL,
+    timeout_idle = NULL,
     ## Constants
     con = NULL,
     heartbeat = NULL,
@@ -338,7 +338,7 @@ worker_info_collect <- function(worker, private) {
 }
 
 
-worker_initialise <- function(worker, private, key_alive, timeout_worker,
+worker_initialise <- function(worker, private, key_alive, timeout_idle,
                               heartbeat_period) {
   con <- private$con
   keys <- private$keys
@@ -353,8 +353,8 @@ worker_initialise <- function(worker, private, key_alive, timeout_worker,
     redis$DEL(keys$worker_log),
     redis$HSET(keys$worker_info,   worker$name, object_to_bin(worker$info())))
 
-  if (!is.null(timeout_worker)) {
-    run_message_timeout_set(worker, private, timeout_worker)
+  if (!is.null(timeout_idle)) {
+    run_message_timeout_set(worker, private, timeout_idle)
   }
 
   worker$log("ALIVE")
@@ -389,7 +389,7 @@ worker_step <- function(worker, private, immediate) {
     }
   }
 
-  if (is.null(task) && !is.null(private$timeout_worker)) {
+  if (is.null(task) && !is.null(private$timeout_idle)) {
     if (is.null(private$timer)) {
       worker$timer_start()
     }
