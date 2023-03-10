@@ -1003,7 +1003,7 @@ rrq_controller <- R6::R6Class(
                                   queue = NULL, heartbeat_period = NULL,
                                   verbose = NULL, overwrite = TRUE,
                                   timeout_poll = 1, timeout_die = 2) {
-    worker_config_save(self$con, private$keys, name, time_poll, timeout_idle,
+      worker_config_save(self$con, private$keys, name, time_poll, timeout_idle,
                          queue, heartbeat_period, verbose, overwrite,
                          timeout_poll, timeout_die)
     },

@@ -1,3 +1,7 @@
+# rrq 0.6.10
+
+* Changed argument of `worker_config_save` from `timeout` to `timeout_idle` (mrc-4075)
+
 # rrq 0.6.7
 
 * Nicer errors that tell you what the contain, particularly when they have stack traces or warnings (mrc-1260)
