@@ -342,12 +342,21 @@ rrq_controller <- R6::R6Class(
     ##'   queue. If the dependent task fails then this task will be
     ##'   removed from the queue. Dependencies are applied to all
     ##'   tasks added to the queue.
+    ##'
+    ##' @param delete Optional logical, indicating if the tasks
+    ##'   should be be immediately deleted after collection, preventing
+    ##'   buildup of lots of content in your Redis database.
+    ##'
+    ##' @param error Optional logical, indicating if an error in the task
+    ##'   should throw. Like `$task_result()` the default is not to throw,
+    ##'   giving you back an `rrq_task_error` object for each failing task.
+    ##'   If `error = TRUE` we throw on error instead.
     lapply = function(X, FUN, ..., dots = NULL, # nolint
                       envir = parent.frame(), queue = NULL,
                       separate_process = FALSE, task_timeout = NULL,
                       depends_on = NULL,
                       collect_timeout = Inf, time_poll = 1,
-                      progress = NULL) {
+                      progress = NULL, delete = FALSE, error = FALSE) {
       if (is.null(dots)) {
         dots <- as.list(substitute(list(...)))[-1L]
       }
@@ -355,7 +364,8 @@ rrq_controller <- R6::R6Class(
                    queue = queue, separate_process = separate_process,
                    task_timeout = task_timeout,
                    depends_on = depends_on, collect_timeout = collect_timeout,
-                   time_poll = time_poll, progress = progress)
+                   time_poll = time_poll, progress = progress, delete = delete,
+                   error = error)
     },
 
     ##' @description The "standard evaluation" version of `$lapply()`.
@@ -405,17 +415,27 @@ rrq_controller <- R6::R6Class(
     ##'   queue. If the dependent task fails then this task will be
     ##'   removed from the queue. Dependencies are applied to all
     ##'   tasks added to the queue.
+    ##'
+    ##' @param delete Optional logical, indicating if the tasks
+    ##'   should be be immediately deleted after collection, preventing
+    ##'   buildup of lots of content in your Redis database.
+    ##'
+    ##' @param error Optional logical, indicating if an error in the task
+    ##'   should throw. Like `$task_result()` the default is not to throw,
+    ##'   giving you back an `rrq_task_error` object for each failing task.
+    ##'   If `error = TRUE` we throw on error instead.
     lapply_ = function(X, FUN, ..., dots = NULL, # nolint
                        envir = parent.frame(), queue = NULL,
                        separate_process = FALSE, task_timeout = NULL,
                        depends_on = NULL, collect_timeout = Inf,
-                       time_poll = 1, progress = NULL) {
+                       time_poll = 1, progress = NULL, delete = FALSE,
+                       error = FALSE) {
       if (is.null(dots)) {
         dots <- list(...)
       }
       rrq_lapply(self$con, private$keys, private$store, X, FUN, dots, envir,
                  queue, separate_process, task_timeout, depends_on,
-                 collect_timeout, time_poll, progress)
+                 collect_timeout, time_poll, progress, delete, error)
     },
 
     ##' @description Send a bulk set of tasks to your workers.
@@ -470,11 +490,21 @@ rrq_controller <- R6::R6Class(
     ##'   queue. If the dependent task fails then this task will be
     ##'   removed from the queue. Dependencies are applied to all
     ##'   tasks added to the queue.
+    ##'
+    ##' @param delete Optional logical, indicating if the tasks
+    ##'   should be be immediately deleted after collection, preventing
+    ##'   buildup of lots of content in your Redis database.
+    ##'
+    ##' @param error Optional logical, indicating if an error in the task
+    ##'   should throw. Like `$task_result()` the default is not to throw,
+    ##'   giving you back an `rrq_task_error` object for each failing task.
+    ##'   If `error = TRUE` we throw on error instead.
     enqueue_bulk = function(X, FUN, ..., dots = NULL, # nolint
                             envir = parent.frame(), queue = NULL,
                             separate_process = FALSE, task_timeout = NULL,
                             depends_on = NULL, collect_timeout = Inf,
-                            time_poll = 1, progress = NULL) {
+                            time_poll = 1, progress = NULL, delete = FALSE,
+                            error = FALSE) {
       if (is.null(dots)) {
         dots <- as.list(substitute(list(...)))[-1L]
       }
@@ -482,7 +512,8 @@ rrq_controller <- R6::R6Class(
                          queue = queue, separate_process = separate_process,
                          task_timeout = task_timeout, depends_on = depends_on,
                          collect_timeout = collect_timeout,
-                         time_poll = time_poll, progress = progress)
+                         time_poll = time_poll, progress = progress,
+                         delete = delete, error = error)
     },
 
     ##' @description The "standard evaluation" version of `$enqueue_bulk()`.
@@ -534,17 +565,27 @@ rrq_controller <- R6::R6Class(
     ##'   queue. If the dependent task fails then this task will be
     ##'   removed from the queue. Dependencies are applied to all
     ##'   tasks added to the queue.
+    ##'
+    ##' @param delete Optional logical, indicating if the tasks
+    ##'   should be be immediately deleted after collection, preventing
+    ##'   buildup of lots of content in your Redis database.
+    ##'
+    ##' @param error Optional logical, indicating if an error in the task
+    ##'   should throw. Like `$task_result()` the default is not to throw,
+    ##'   giving you back an `rrq_task_error` object for each failing task.
+    ##'   If `error = TRUE` we throw on error instead.
     enqueue_bulk_ = function(X, FUN, ..., dots = NULL, # nolint
                              envir = parent.frame(), queue = NULL,
                              separate_process = FALSE, task_timeout = NULL,
                              depends_on = NULL, collect_timeout = Inf,
-                             time_poll = 1, progress = NULL) {
+                             time_poll = 1, progress = NULL, delete = delete,
+                             error = error) {
       if (is.null(dots)) {
         dots <- list(...)
       }
       rrq_enqueue_bulk(self$con, private$keys, private$store, X, FUN, dots,
                        envir, queue, separate_process, task_timeout, depends_on,
-                       collect_timeout, time_poll, progress)
+                       collect_timeout, time_poll, progress, delete, error)
     },
 
     ##' @description Wait for a group of tasks
@@ -563,12 +604,17 @@ rrq_controller <- R6::R6Class(
     ##'   progress bar if in an interactive session.
     ##'
     ##' @param delete Optional logical, indicating if the tasks
-    ##'   should be deleted after collection. Typically this is `TRUE`
-    ##'   to prevent build-up of lots of task information in Redis.
+    ##'   should be be immediately deleted after collection, preventing
+    ##'   buildup of lots of content in your Redis database.
+    ##'
+    ##' @param error Optional logical, indicating if an error in the task
+    ##'   should throw. Like `$task_result()` the default is not to throw,
+    ##'   giving you back an `rrq_task_error` object for each failing task.
+    ##'   If `error = TRUE` we throw on error instead.
     bulk_wait = function(x, timeout = Inf, time_poll = 1,
-                         progress = NULL, delete = TRUE) {
+                         progress = NULL, delete = FALSE, error = FALSE) {
       rrq_bulk_wait(self$con, private$keys, private$store, x, timeout,
-                    time_poll, progress, delete = TRUE)
+                    time_poll, progress, delete, error)
     },
 
     ##' @description List ids of all tasks known to this rrq controller
@@ -659,7 +705,8 @@ rrq_controller <- R6::R6Class(
     ##'   on this error if it is returned.
     task_result = function(task_id, error = FALSE) {
       assert_scalar_character(task_id)
-      self$tasks_result(task_id, error)[[1L]]
+      task_results(self$con, private$keys, private$store, task_id,
+                   error, TRUE)[[1]]
     },
 
     ##' @description Get the results of a group of tasks, returning them as a
@@ -671,7 +718,8 @@ rrq_controller <- R6::R6Class(
     ##' @param error Logical, indicating if we should throw an error if
     ##'   the task was not successful. See `$task_result()` for details.
     tasks_result = function(task_ids, error = FALSE) {
-      task_results(self$con, private$keys, private$store, task_ids, error)
+      task_results(self$con, private$keys, private$store, task_ids,
+                   error, FALSE)
     },
 
     ##' @description Poll for a task to complete, returning the result
@@ -705,7 +753,8 @@ rrq_controller <- R6::R6Class(
     task_wait = function(task_id, timeout = Inf, time_poll = 1,
                          progress = NULL, error = FALSE) {
       assert_scalar_character(task_id)
-      self$tasks_wait(task_id, timeout, time_poll, progress, error)[[1L]]
+      tasks_wait(self$con, private$keys, private$store, task_id,
+                 timeout, time_poll, progress, error, TRUE)
     },
 
     ##' @description Poll for a group of tasks to complete, returning the
@@ -732,7 +781,7 @@ rrq_controller <- R6::R6Class(
     tasks_wait = function(task_ids, timeout = Inf, time_poll = 1,
                           progress = NULL, error = FALSE) {
       tasks_wait(self$con, private$keys, private$store, task_ids,
-                 timeout, time_poll, progress, error = error)
+                 timeout, time_poll, progress, error, FALSE)
     },
 
     ##' @description Delete one or more tasks
@@ -1420,22 +1469,27 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
 }
 
 
-task_results <- function(con, keys, store, task_ids, error) {
+task_results <- function(con, keys, store, task_ids, error, single) {
   hash <- from_redis_hash(con, keys$task_result, task_ids)
-  err <- is.na(hash)
-  if (any(err)) {
-    ## TODO: this is *TERRIBLE*
-    ##
-    ## Summarise the missing cases (task_ids[err]) to display the first few
-    ## Put this into some sort of class error too (e.g., rrq_task_missing)
-    stop("Missing some results")
+  is_missing <- is.na(hash)
+  ## TODO - for discussion/implementation elsewhere: should these be
+  ## another error type? What other errors like this are floating
+  ## around? Should it be a rrq_task_error subtype?  It sort of is
+  ## with status TASK_MISSING? Also, note that we error here on fetch
+  ## while for everything else we are fine with it, unless error i
+  ## TRUE - does that need changing?
+  if (any(is_missing)) {
+    if (single) {
+      stop(sprintf("Missing result for task: '%s'", task_ids))
+    } else {
+      stop(sprintf("Missing result for task:\n%s",
+                   paste(sprintf("  - %s", task_ids[is_missing]),
+                         collapse = "\n")))
+    }
   }
   res <- store$mget(hash)
   if (error) {
-    is_error <- vlapply(res, inherits, "rrq_task_error")
-    if (any(is_error)) {
-      stop(res[is_error][[1]])
-    }
+    throw_task_errors(res, single)
   }
   set_names(res, task_ids)
 }
@@ -1655,7 +1709,7 @@ mean.worker_load <- function(x, time = c(1, 5, 15, Inf), ...) {
 
 
 tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
-                       progress = NULL, key_complete = NULL, error = FALSE) {
+                       progress, key_complete, error, single) {
   ## This can be relaxed in recent Redis >= 6.0.0 as we then interpret
   ## time_poll as a double. To do this efficiently we'll want to get
   ## the version information stored into the redux client, which is
@@ -1690,7 +1744,7 @@ tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
   }
 
   general_poll(fetch, 0, timeout, "tasks", TRUE, progress)
-  task_results(con, keys, store, task_ids, error)
+  task_results(con, keys, store, task_ids, error, single)
 }
 
 
@@ -1740,4 +1794,19 @@ verify_dependencies_exist <- function(controller, depends_on) {
     }
   }
   invisible(TRUE)
+}
+
+
+throw_task_errors <- function(res, single) {
+  if (single) {
+    stopifnot(length(res) == 1)
+    if (inherits(res[[1]], "rrq_task_error")) {
+      stop(res[[1]])
+    }
+  } else {
+    is_error <- vlapply(res, inherits, "rrq_task_error")
+    if (any(is_error)) {
+      stop(rrq_task_error_group(res[is_error], length(res)))
+    }
+  }
 }

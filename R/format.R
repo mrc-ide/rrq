@@ -3,6 +3,8 @@ format.rrq_task_error <- function(x, width = 180, ...) {
   call <- conditionCall(x)
   c("<rrq_task_error>",
     if (!is.null(call)) {
+      ## TODO: we have an issue where passing functions through lapply
+      ## butchers the calls.
       sprintf("  from:   %s", deparse1(call, width.cutoff = width))
     },
     sprintf("  error:  %s", conditionMessage(x)),
@@ -18,6 +20,13 @@ format.rrq_task_error <- function(x, width = 180, ...) {
     })
 }
 
+##' @export
+format.rrq_task_error_group <- function(x, ...) {
+  c("<rrq_task_error_group>",
+    paste0("  ", conditionMessage(x)),
+    "  * To throw this error, use stop() with it",
+    "  * To inspect individual errors, see $errors")
+}
 
 ##' @export
 print.rrq_task_error <- function(x, ...) {
