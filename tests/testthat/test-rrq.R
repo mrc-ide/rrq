@@ -222,9 +222,14 @@ test_that("Can't delete running tasks", {
 
 test_that("Error if results are not ready", {
   obj <- test_rrq()
-  id <- obj$enqueue(sin(1))
-  expect_error(obj$task_result(id),
-               sprintf("Missing result for task: '%s'", id))
+  id1 <- obj$enqueue(sin(1))
+  id2 <- obj$enqueue(sin(1))
+  expect_error(obj$task_result(id1),
+               sprintf("Missing result for task: '%s'", id1))
+  expect_error(obj$tasks_result(id1),
+               sprintf("Missing result for task:\n  - %s", id1))
+  expect_error(obj$tasks_result(c(id1, id2)),
+               sprintf("Missing result for task:\n  - %s\n  - %s", id1, id2))
 })
 
 

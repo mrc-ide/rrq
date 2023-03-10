@@ -1480,11 +1480,13 @@ tasks_result <- function(con, keys, store, task_ids, error, single) {
   ## TRUE - does that need changing?
   if (any(is_missing)) {
     if (single) {
-      stop(sprintf("Missing result for task: '%s'", task_ids))
+      stop(sprintf("Missing result for task: '%s'", task_ids),
+           call. = FALSE)
     } else {
       stop(sprintf("Missing result for task:\n%s",
                    paste(sprintf("  - %s", task_ids[is_missing]),
-                         collapse = "\n")))
+                         collapse = "\n")),
+           call. = FALSE)
     }
   }
   res <- store$mget(hash)
