@@ -128,6 +128,7 @@ test_rrq_cleanup <- function(obj, worker_stop_timeout) {
 test_worker_spawn <- function(obj, ..., timeout = 10) {
   skip_on_cran()
   skip_on_windows()
+  skip_if_installed_version_differs()
   suppressMessages(rrq_worker_spawn(obj, ..., timeout = timeout))
 }
 
@@ -175,6 +176,28 @@ expect_is_function <- function(x) {
   testthat::expect_true(is.function(x))
 }
 
+rrq_installed_version <- function() {
+  if (!exists("rrq_installed_version", envir = cache, inherits = FALSE)) {
+    testthat::skip_if_not_installed("callr")
+    cache$rrq_installed_version <-
+      tryCatch(callr::r(function() utils::packageVersion("rrq")),
+               error = function(e) NULL)
+  }
+  cache$rrq_installed_version
+}
+
+skip_if_installed_version_differs <- function() {
+  installed <- rrq_installed_version()
+  if (is.null(installed)) {
+    testthat::skip("rrq not installed locally")
+  }
+  testing <- utils::packageVersion("rrq")
+  if (utils::packageVersion("rrq") != installed) {
+    testthat::skip(sprintf(
+      "Installed version of rrq (%s) differs to that under test (%s)",
+      installed, testing))
+  }
+}
 
 options(
   ## Need to keep progress off or we get a mess in the tests
@@ -182,3 +205,4 @@ options(
   ## Cap the task wait timeout so that don't lock up CI with
   ## hard-to-track-down bugs
   rrq.timeout_task_wait = 20)
+
