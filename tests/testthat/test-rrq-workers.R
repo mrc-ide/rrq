@@ -116,7 +116,7 @@ test_that("kill worker with a signal", {
   skip_if_not_installed("callr")
   skip_on_os("windows")
 
-  obj <- test_rrq(worker_stop_timeout = 0)
+  obj <- test_rrq(timeout_worker_stop = 0)
   res <- obj$worker_config_save("localhost", heartbeat_period = 3)
   wid <- test_worker_spawn(obj)
 
@@ -133,7 +133,7 @@ test_that("kill worker with a signal", {
 test_that("kill worker locally", {
   skip_on_os("windows")
 
-  obj <- test_rrq(worker_stop_timeout = 0)
+  obj <- test_rrq(timeout_worker_stop = 0)
   wid <- test_worker_spawn(obj)
 
   pid <- obj$worker_info(wid)[[1]]$pid
@@ -267,7 +267,7 @@ test_that("can get worker info", {
   skip_if_not_installed("callr")
   skip_on_os("windows")
 
-  obj <- test_rrq(worker_stop_timeout = 10)
+  obj <- test_rrq(timeout_worker_stop = 10)
   res <- obj$worker_config_save("localhost", heartbeat_period = 3)
   wid <- test_worker_spawn(obj)
 

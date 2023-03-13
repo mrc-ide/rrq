@@ -5,7 +5,7 @@ test_that("lapply simple case", {
   w <- test_worker_blocking(obj)
 
   grp <- obj$lapply_(1:10, quote(log), dots = list(base = 2),
-                     collect_timeout = 0)
+                     timeout_task_wait = 0)
   expect_s3_class(grp, "rrq_bulk")
   expect_setequal(names(grp), c("task_ids", "key_complete", "names"))
 
@@ -31,7 +31,7 @@ test_that("lapply with anonymous function", {
   obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
                          time_poll = 1, overwrite = TRUE)
   w <- test_worker_blocking(obj)
-  grp <- obj$lapply_(1:10, function(x) x + 1, collect_timeout = 0)
+  grp <- obj$lapply_(1:10, function(x) x + 1, timeout_task_wait = 0)
   w$loop(immediate = TRUE)
   res <- obj$bulk_wait(grp)
   expect_equal(res, as.list(2:11))
@@ -45,7 +45,7 @@ test_that("bulk add with ordinary function", {
   obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
                          time_poll = 1, overwrite = TRUE)
   w <- test_worker_blocking(obj)
-  grp <- obj$enqueue_bulk(p, sum, na.rm = TRUE, collect_timeout = 0)
+  grp <- obj$enqueue_bulk(p, sum, na.rm = TRUE, timeout_task_wait = 0)
   w$loop(immediate = TRUE)
   res <- obj$bulk_wait(grp)
   expect_equal(res, as.list(rowSums(p, na.rm = TRUE)))
@@ -59,7 +59,7 @@ test_that("bulk add with anonymous functions", {
   obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
                          time_poll = 1, overwrite = TRUE)
   w <- test_worker_blocking(obj)
-  grp <- obj$enqueue_bulk_(p, function(a, b) a + b, collect_timeout = 0)
+  grp <- obj$enqueue_bulk_(p, function(a, b) a + b, timeout_task_wait = 0)
   w$loop(immediate = TRUE)
   res <- obj$bulk_wait(grp)
   expect_equal(res, as.list(p$a + p$b))
@@ -71,7 +71,7 @@ test_that("NSE - use namespaced function", {
   obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
                          time_poll = 1, overwrite = TRUE)
   w <- test_worker_blocking(obj)
-  grp <- obj$lapply(1:10, ids::adjective_animal, collect_timeout = 0)
+  grp <- obj$lapply(1:10, ids::adjective_animal, timeout_task_wait = 0)
 
   dat <- bin_to_object(
     obj$con$HGET(queue_keys(obj)$task_expr, grp$task_ids[[1]]))
@@ -91,7 +91,7 @@ test_that("NSE - use namespaced function with lazy dots", {
   w <- test_worker_blocking(obj)
   mystyle <- "camel"
   grp <- obj$lapply(1:10, ids::adjective_animal, style = mystyle,
-                    collect_timeout = 0)
+                    timeout_task_wait = 0)
 
   dat <- bin_to_object(
     obj$con$HGET(queue_keys(obj)$task_expr, grp$task_ids[[1]]))
@@ -109,7 +109,7 @@ test_that("NSE - use namespaced function with lazy dots", {
 test_that("lapply blocking", {
   obj <- test_rrq()
   w <- test_worker_spawn(obj)
-  res <- obj$lapply(1:10, sqrt, collect_timeout = 1)
+  res <- obj$lapply(1:10, sqrt, timeout_task_wait = 1)
   expect_equal(res, as.list(sqrt(1:10)))
 })
 
@@ -119,7 +119,7 @@ test_that("enqueue bulk blocking", {
   p <- data.frame(a = runif(5), b = runif(5))
   f <- function(a, b) a + b
   w <- test_worker_spawn(obj)
-  res <- obj$enqueue_bulk(p, f, collect_timeout = 1)
+  res <- obj$enqueue_bulk(p, f, timeout_task_wait = 1)
   expect_equal(res, as.list(rowSums(p)))
 })
 
@@ -131,7 +131,7 @@ test_that("lapply to alt queue", {
   w <- test_worker_blocking(obj)
 
   grp <- obj$lapply_(1:10, quote(log), dots = list(base = 2),
-                     collect_timeout = 0, queue = "a")
+                     timeout_task_wait = 0, queue = "a")
   expect_equal(obj$queue_length("a"), 10)
   expect_equal(obj$queue_length(), 0)
 
@@ -147,7 +147,7 @@ test_that("bulk tasks can be queued with dependency", {
 
   t <- obj$enqueue(sin(0))
   t2 <- obj$enqueue(sin(pi / 2))
-  grp <- obj$lapply(c(0, pi / 2), sin, collect_timeout = 0,
+  grp <- obj$lapply(c(0, pi / 2), sin, timeout_task_wait = 0,
                     depends_on = c(t, t2))
   expect_equal(obj$queue_list(), c(t, t2))
   t3 <- obj$enqueue(sin(pi / 2), depends_on = grp$task_ids)
@@ -253,7 +253,7 @@ test_that("Can offload storage for bulk tasks", {
 
   a <- 10
   b <- runif(20)
-  t <- obj$lapply(1:10, function(a, b) sum(b) / a, b, collect_timeout = 0)
+  t <- obj$lapply(1:10, function(a, b) sum(b) / a, b, timeout_task_wait = 0)
 
   w <- test_worker_blocking(obj)
   w$loop(TRUE)
@@ -271,7 +271,7 @@ test_that("by default, bulk fetch does not throw", {
                          time_poll = 1, overwrite = TRUE)
 
   w <- test_worker_blocking(obj)
-  grp <- obj$lapply(seq(-1, 1), only_positive, envir = e, collect_timeout = 0)
+  grp <- obj$lapply(seq(-1, 1), only_positive, envir = e, timeout_task_wait = 0)
 
   w$loop(TRUE)
   res <- obj$bulk_wait(grp)
@@ -291,7 +291,7 @@ test_that("can throw on fetching bulk tasks", {
                          time_poll = 1, overwrite = TRUE)
 
   w <- test_worker_blocking(obj)
-  grp <- obj$lapply(seq(-1, 1), only_positive, envir = e, collect_timeout = 0)
+  grp <- obj$lapply(seq(-1, 1), only_positive, envir = e, timeout_task_wait = 0)
 
   w$loop(TRUE)
 
@@ -321,7 +321,8 @@ test_that("can summarise fetching many failed bulk tasks", {
                          time_poll = 1, overwrite = TRUE)
 
   w <- test_worker_blocking(obj)
-  grp <- obj$lapply(seq(-10, 0), only_positive, envir = e, collect_timeout = 0)
+  grp <- obj$lapply(seq(-10, 0), only_positive, envir = e,
+                    timeout_task_wait = 0)
 
   w$loop(TRUE)
 

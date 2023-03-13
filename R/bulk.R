@@ -1,33 +1,33 @@
 rrq_lapply <- function(con, keys, store, x, fun, dots, envir, queue,
-                       separate_process, task_timeout, depends_on,
-                       collect_timeout, time_poll, progress, delete, error) {
+                       separate_process, timeout_task_run, depends_on,
+                       timeout_task_wait, time_poll, progress, delete, error) {
   dat <- rrq_bulk_submit(con, keys, store, x, fun, dots, FALSE, envir, queue,
-                         separate_process, task_timeout, depends_on)
-  if (collect_timeout == 0) {
+                         separate_process, timeout_task_run, depends_on)
+  if (timeout_task_wait == 0) {
     return(dat)
   }
-  rrq_bulk_wait(con, keys, store, dat, collect_timeout, time_poll, progress,
+  rrq_bulk_wait(con, keys, store, dat, timeout_task_wait, time_poll, progress,
                 delete, error)
 }
 
 
 rrq_enqueue_bulk <- function(con, keys, store, x, fun, dots,
-                             envir, queue, separate_process, task_timeout,
-                             depends_on, collect_timeout, time_poll, progress,
+                             envir, queue, separate_process, timeout_task_run,
+                             depends_on, timeout_task_wait, time_poll, progress,
                              delete, error) {
   dat <- rrq_bulk_submit(con, keys, store, x, fun, dots, TRUE,
-                         envir, queue, separate_process, task_timeout,
+                         envir, queue, separate_process, timeout_task_run,
                          depends_on)
-  if (collect_timeout == 0) {
+  if (timeout_task_wait == 0) {
     return(dat)
   }
-  rrq_bulk_wait(con, keys, store, dat, collect_timeout, time_poll, progress,
+  rrq_bulk_wait(con, keys, store, dat, timeout_task_wait, time_poll, progress,
                 delete, error)
 }
 
 
 rrq_bulk_submit <- function(con, keys, store, x, fun, dots, do_call,
-                            envir, queue, separate_process, task_timeout,
+                            envir, queue, separate_process, timeout_task_run,
                             depends_on) {
   fun <- match_fun_envir(fun, envir)
   n <- if (do_call && is.data.frame(x)) nrow(x) else length(x)
@@ -42,7 +42,7 @@ rrq_bulk_submit <- function(con, keys, store, x, fun, dots, do_call,
 
   key_complete <- rrq_key_task_complete(keys$queue_id)
   task_submit_n(con, keys, store, task_ids, dat, key_complete, queue,
-                separate_process, task_timeout,
+                separate_process, timeout_task_run,
                 depends_on = depends_on)
   ret <- list(task_ids = task_ids,
               key_complete = key_complete,

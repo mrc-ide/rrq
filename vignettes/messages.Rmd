@@ -21,30 +21,30 @@ In order to do this, we're going to need a queue and a worker:
 obj <- rrq::rrq_controller$new("rrq:messages")
 logdir <- tempfile()
 worker_id <- rrq::rrq_worker_spawn(obj, logdir = logdir)
-#> Spawning 1 worker with prefix tertiary_jaguarundi
+#> Spawning 1 worker with prefix blizzardly_skimmer
 ```
 
 On startup the worker log contains:
 
 ```plain
-[2023-03-10 12:18:30] QUEUE default
-[2023-03-10 12:18:30] ENVIR new
-[2023-03-10 12:18:30] ALIVE
+[2023-03-10 17:25:08] QUEUE default
+[2023-03-10 17:25:08] ENVIR new
+[2023-03-10 17:25:08] ALIVE
                                  __
                 ______________ _/ /
       ______   / ___/ ___/ __ `/ /_____
      /_____/  / /  / /  / /_/ /_/_____/
  ______      /_/  /_/   \__, (_)   ______
 /_____/                   /_/     /_____/
-    worker:        tertiary_jaguarundi_1
-    rrq_version:   0.6.11
+    worker:        blizzardly_skimmer_1
+    rrq_version:   0.6.12
     platform:      x86_64-pc-linux-gnu (64-bit)
     running:       Ubuntu 20.04.5 LTS
     hostname:      wpia-dide300
     username:      rfitzjoh
     queue:         rrq:messages:queue:default
     wd:            /home/rfitzjoh/Documents/src/rrq/vignettes_src
-    pid:           857180
+    pid:           908709
     redis_host:    127.0.0.1
     redis_port:    6379
     heartbeat_key: <not set>
@@ -93,16 +93,16 @@ The message id is going to be useful for getting responses:
 
 ```r
 message_id
-#> [1] "1678450710.921325"
+#> [1] "1678469108.107967"
 ```
 
 (this is derived from the current time, according to Redis which is
 the central reference point of time for the whole system).
 
 ```plain
-[2023-03-10 12:18:30] MESSAGE PING
+[2023-03-10 17:25:08] MESSAGE PING
 PONG
-[2023-03-10 12:18:30] RESPONSE PING
+[2023-03-10 17:25:08] RESPONSE PING
 ```
 
 The logfile prints:
@@ -116,10 +116,10 @@ We can access the same bits of information in the worker log:
 
 ```r
 obj$worker_log_tail(n = Inf)
-#>               worker_id       time  command message
-#> 1 tertiary_jaguarundi_1 1678450711    ALIVE
-#> 2 tertiary_jaguarundi_1 1678450711  MESSAGE    PING
-#> 3 tertiary_jaguarundi_1 1678450711 RESPONSE    PING
+#>              worker_id       time  command message
+#> 1 blizzardly_skimmer_1 1678469108    ALIVE
+#> 2 blizzardly_skimmer_1 1678469108  MESSAGE    PING
+#> 3 blizzardly_skimmer_1 1678469108 RESPONSE    PING
 ```
 
 This includes the `ALIVE` message as the worker comes up.
@@ -132,8 +132,8 @@ We already know that our worker has a response, but we can ask anyway:
 
 ```r
 obj$message_has_response(message_id)
-#> tertiary_jaguarundi_1
-#>                  TRUE
+#> blizzardly_skimmer_1
+#>                 TRUE
 ```
 
 Or inversely we can as what messages a given worker has responses for:
@@ -141,7 +141,7 @@ Or inversely we can as what messages a given worker has responses for:
 
 ```r
 obj$message_response_ids(worker_id)
-#> [1] "1678450710.921325"
+#> [1] "1678469108.107967"
 ```
 
 To fetch the responses from all workers it was sent to (always
@@ -150,7 +150,7 @@ returning a named list):
 
 ```r
 obj$message_get_response(message_id)
-#> $tertiary_jaguarundi_1
+#> $blizzardly_skimmer_1
 #> [1] "PONG"
 ```
 
@@ -159,7 +159,7 @@ or to fetch the response from a given worker:
 
 ```r
 obj$message_get_response(message_id, worker_id)
-#> $tertiary_jaguarundi_1
+#> $blizzardly_skimmer_1
 #> [1] "PONG"
 ```
 
@@ -168,7 +168,7 @@ The response can be deleted by passing `delete = TRUE` to this method:
 
 ```r
 obj$message_get_response(message_id, worker_id, delete = TRUE)
-#> $tertiary_jaguarundi_1
+#> $blizzardly_skimmer_1
 #> [1] "PONG"
 ```
 
@@ -177,7 +177,7 @@ after which recalling the message will throw an error:
 
 ```r
 obj$message_get_response(message_id, worker_id)
-#> Error in message_get_response(self$con, private$keys, message_id, worker_ids, : Response missing for workers: tertiary_jaguarundi_1
+#> Error in message_get_response(self$con, private$keys, message_id, worker_ids, : Response missing for workers: blizzardly_skimmer_1
 ```
 
 There is also a `timeout` argument that lets you wait until a response is
@@ -186,10 +186,10 @@ ready (as in `$task_wait()`).
 
 ```r
 obj$enqueue(Sys.sleep(2))
-#> [1] "817e2782056d53fd3d990ded4c59d6bb"
+#> [1] "725acbbd37be3a79c883930a1fa8b1f9"
 message_id <- obj$message_send("PING")
 obj$message_get_response(message_id, worker_id, delete = TRUE, timeout = 10)
-#> $tertiary_jaguarundi_1
+#> $blizzardly_skimmer_1
 #> [1] "PONG"
 ```
 
@@ -198,14 +198,14 @@ Looking at the log will show what went on here:
 
 ```r
 obj$worker_log_tail(n = 4)
-#>               worker_id       time       command
-#> 1 tertiary_jaguarundi_1 1678450711    TASK_START
-#> 2 tertiary_jaguarundi_1 1678450713 TASK_COMPLETE
-#> 3 tertiary_jaguarundi_1 1678450713       MESSAGE
-#> 4 tertiary_jaguarundi_1 1678450713      RESPONSE
+#>              worker_id       time       command
+#> 1 blizzardly_skimmer_1 1678469108    TASK_START
+#> 2 blizzardly_skimmer_1 1678469110 TASK_COMPLETE
+#> 3 blizzardly_skimmer_1 1678469110       MESSAGE
+#> 4 blizzardly_skimmer_1 1678469110      RESPONSE
 #>                            message
-#> 1 817e2782056d53fd3d990ded4c59d6bb
-#> 2 817e2782056d53fd3d990ded4c59d6bb
+#> 1 725acbbd37be3a79c883930a1fa8b1f9
+#> 2 725acbbd37be3a79c883930a1fa8b1f9
 #> 3                             PING
 #> 4                             PING
 ```
@@ -220,11 +220,11 @@ completed, the response takes a while to come back.  Equivalently,
 from the worker log:
 
 ```plain
-[2023-03-10 12:18:30] TASK_START 817e2782056d53fd3d990ded4c59d6bb
-[2023-03-10 12:18:33] TASK_COMPLETE 817e2782056d53fd3d990ded4c59d6bb
-[2023-03-10 12:18:33] MESSAGE PING
+[2023-03-10 17:25:08] TASK_START 725acbbd37be3a79c883930a1fa8b1f9
+[2023-03-10 17:25:10] TASK_COMPLETE 725acbbd37be3a79c883930a1fa8b1f9
+[2023-03-10 17:25:10] MESSAGE PING
 PONG
-[2023-03-10 12:18:33] RESPONSE PING
+[2023-03-10 17:25:10] RESPONSE PING
 ```
 
 ## `ECHO`
@@ -237,14 +237,14 @@ response.
 ```r
 message_id <- obj$message_send("ECHO", "hello world!")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $tertiary_jaguarundi_1
+#> $blizzardly_skimmer_1
 #> [1] "OK"
 ```
 
 ```plain
-[2023-03-10 12:18:33] MESSAGE ECHO
+[2023-03-10 17:25:10] MESSAGE ECHO
 hello world!
-[2023-03-10 12:18:33] RESPONSE ECHO
+[2023-03-10 17:25:10] RESPONSE ECHO
 ```
 
 ## `INFO`
@@ -256,38 +256,18 @@ worker started up:
 
 ```r
 obj$worker_info()[[worker_id]]
-#> $worker
-#> [1] "tertiary_jaguarundi_1"
-#>
-#> $rrq_version
-#> [1] "0.6.11"
-#>
-#> $platform
-#> [1] "x86_64-pc-linux-gnu (64-bit)"
-#>
-#> $running
-#> [1] "Ubuntu 20.04.5 LTS"
-#>
-#> $hostname
-#> [1] "wpia-dide300"
-#>
-#> $username
-#> [1] "rfitzjoh"
-#>
-#> $queue
-#> [1] "rrq:messages:queue:default"
-#>
-#> $wd
-#> [1] "/home/rfitzjoh/Documents/src/rrq/vignettes_src"
-#>
-#> $pid
-#> [1] 857180
-#>
-#> $redis_host
-#> [1] "127.0.0.1"
-#>
-#> $redis_port
-#> [1] 6379
+#>   <rrq_worker_info>
+#>     worker:      blizzardly_skimmer_1
+#>     rrq_version: 0.6.12
+#>     platform:    x86_64-pc-linux-gnu (64-bit)
+#>     running:     Ubuntu 20.04.5 LTS
+#>     hostname:    wpia-dide300
+#>     username:    rfitzjoh
+#>     queue:       rrq:messages:queue:default
+#>     wd:          /home/rfitzjoh/Documents/src/rrq/vignettes_src
+#>     pid:         908709
+#>     redis_host:  127.0.0.1
+#>     redis_port:  6379
 ```
 
 We can force the worker to refresh:
@@ -303,38 +283,38 @@ field:
 
 ```r
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $tertiary_jaguarundi_1
-#> $tertiary_jaguarundi_1$worker
-#> [1] "tertiary_jaguarundi_1"
+#> $blizzardly_skimmer_1
+#> $blizzardly_skimmer_1$worker
+#> [1] "blizzardly_skimmer_1"
 #>
-#> $tertiary_jaguarundi_1$rrq_version
-#> [1] "0.6.11"
+#> $blizzardly_skimmer_1$rrq_version
+#> [1] "0.6.12"
 #>
-#> $tertiary_jaguarundi_1$platform
+#> $blizzardly_skimmer_1$platform
 #> [1] "x86_64-pc-linux-gnu (64-bit)"
 #>
-#> $tertiary_jaguarundi_1$running
+#> $blizzardly_skimmer_1$running
 #> [1] "Ubuntu 20.04.5 LTS"
 #>
-#> $tertiary_jaguarundi_1$hostname
+#> $blizzardly_skimmer_1$hostname
 #> [1] "wpia-dide300"
 #>
-#> $tertiary_jaguarundi_1$username
+#> $blizzardly_skimmer_1$username
 #> [1] "rfitzjoh"
 #>
-#> $tertiary_jaguarundi_1$queue
+#> $blizzardly_skimmer_1$queue
 #> [1] "rrq:messages:queue:default"
 #>
-#> $tertiary_jaguarundi_1$wd
+#> $blizzardly_skimmer_1$wd
 #> [1] "/home/rfitzjoh/Documents/src/rrq/vignettes_src"
 #>
-#> $tertiary_jaguarundi_1$pid
-#> [1] 857180
+#> $blizzardly_skimmer_1$pid
+#> [1] 908709
 #>
-#> $tertiary_jaguarundi_1$redis_host
+#> $blizzardly_skimmer_1$redis_host
 #> [1] "127.0.0.1"
 #>
-#> $tertiary_jaguarundi_1$redis_port
+#> $blizzardly_skimmer_1$redis_port
 #> [1] 6379
 ```
 
@@ -349,7 +329,7 @@ in which queued code is evaluated in.
 ```r
 message_id <- obj$message_send("EVAL", "1 + 1")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $tertiary_jaguarundi_1
+#> $blizzardly_skimmer_1
 #> [1] 2
 ```
 
@@ -365,15 +345,15 @@ The `PAUSE` / `RESUME` messages can be used to prevent workers from picking up n
 
 ```r
 obj$worker_status()
-#> tertiary_jaguarundi_1
-#>                "IDLE"
+#> blizzardly_skimmer_1
+#>               "IDLE"
 message_id <- obj$message_send("PAUSE")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $tertiary_jaguarundi_1
+#> $blizzardly_skimmer_1
 #> [1] "OK"
 obj$worker_status()
-#> tertiary_jaguarundi_1
-#>              "PAUSED"
+#> blizzardly_skimmer_1
+#>             "PAUSED"
 ```
 
 Once paused workers ignore tasks, which stay on the queue:
@@ -382,7 +362,7 @@ Once paused workers ignore tasks, which stay on the queue:
 ```r
 t <- obj$enqueue(runif(5))
 obj$task_status(t)
-#> c4147f772a0e9aa66fafc46fb4558be2
+#> 825a40aface5ed9b029c9fecafa07824
 #>                        "PENDING"
 ```
 
@@ -392,10 +372,10 @@ Sending a `RESUME` message unpauses the worker:
 ```r
 message_id <- obj$message_send("RESUME")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $tertiary_jaguarundi_1
+#> $blizzardly_skimmer_1
 #> [1] "OK"
 obj$task_wait(t, 5)
-#> [1] 0.73069340 0.02521957 0.53070637 0.95067579 0.64230743
+#> [1] 0.3732276 0.6218080 0.5049096 0.6884408 0.4773353
 ```
 
 ## `SET_TIMEOUT` / `GET_TIMEOUT`
@@ -405,9 +385,9 @@ Workers will quit after being left idle for more than a certain time; this is th
 
 ```r
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $tertiary_jaguarundi_1
-#>   timeout remaining
-#>       Inf       Inf
+#> $blizzardly_skimmer_1
+#> timeout_idle    remaining
+#>          Inf          Inf
 ```
 
 We can set this to a finite value, in seconds:
@@ -415,7 +395,7 @@ We can set this to a finite value, in seconds:
 
 ```r
 obj$message_send_and_wait("TIMEOUT_SET", 600, worker_ids = worker_id)
-#> $tertiary_jaguarundi_1
+#> $blizzardly_skimmer_1
 #> [1] "OK"
 ```
 
@@ -426,14 +406,14 @@ Once set, the `TIMEOUT_GET` returns the length of time remaining before the work
 
 ```r
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $tertiary_jaguarundi_1
-#>   timeout remaining
-#>  600.0000  599.9409
+#> $blizzardly_skimmer_1
+#> timeout_idle    remaining
+#>     600.0000     599.9321
 Sys.sleep(5)
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $tertiary_jaguarundi_1
-#>   timeout remaining
-#>  600.0000  594.8782
+#> $blizzardly_skimmer_1
+#> timeout_idle    remaining
+#>     600.0000     594.8721
 ```
 
 One useful pattern is to send work to workers, then set the timeout to zero. This means that when work is complete they will exit (almost) immediately:
@@ -443,23 +423,23 @@ One useful pattern is to send work to workers, then set the timeout to zero. Thi
 grp <- obj$lapply(1:5, function(x) {
   Sys.sleep(0.5)
   runif(x)
-}, collect_timeout = 0)
+}, timeout_task_wait = 0)
 obj$message_send("TIMEOUT_SET", 0, worker_id)
 obj$tasks_wait(grp$task_ids)
-#> $`2ff26330a85bfbeb424b4ead18231563`
-#> [1] 0.3830877
+#> $abb63482ccf45c3aa17bbdb732a0b872
+#> [1] 0.2097559
 #>
-#> $`823ec30147421a92636d4820731c30f5`
-#> [1] 0.7053466 0.8908792
+#> $`4e0781eb7798e25639970d7e92473812`
+#> [1] 0.6271861 0.4704064
 #>
-#> $d764fa6213056f97c8f31cd5af0b62ce
-#> [1] 0.6375605 0.9672618 0.5446566
+#> $`4f67b4a2446488ad7c968f5e6abe71a8`
+#> [1] 0.3316987 0.8935164 0.1404364
 #>
-#> $dba1a7a7e9da73dc43f00523f130df31
-#> [1] 0.04061767 0.20228940 0.74016955 0.52854195
+#> $`9338bb35fd5d534ba4178161992ea9c0`
+#> [1] 0.9642587 0.8677830 0.9776115 0.4930958
 #>
-#> $`183fd77248bacf1d6762703e78b7a14e`
-#> [1] 0.30911530 0.45276212 0.52813989 0.56501698 0.05721367
+#> $c6de0537faa7a232723b603bf36742c0
+#> [1] 0.26706721 0.13355161 0.61729961 0.07278505 0.55600838
 ```
 
 The worker will remain idle for 60s (by default) which is the length of time that one poll for work lasts, then it will exit.
@@ -467,12 +447,12 @@ The worker will remain idle for 60s (by default) which is the length of time tha
 
 ```r
 obj$worker_status(worker_id)
-#> tertiary_jaguarundi_1
-#>                "IDLE"
+#> blizzardly_skimmer_1
+#>               "IDLE"
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $tertiary_jaguarundi_1
-#>   timeout remaining
-#>         0         0
+#> $blizzardly_skimmer_1
+#> timeout_idle    remaining
+#>            0            0
 ```
 
 

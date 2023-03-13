@@ -216,7 +216,7 @@ destructive action and cannot be undone.
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller$destroy(
   delete = TRUE,
   worker_stop_type = "message",
-  worker_stop_timeout = 0
+  timeout_worker_stop = 0
 )}\if{html}{\out{</div>}}
 }
 
@@ -236,7 +236,7 @@ the workers are on the same machine as the controller. However,
 these may be faster to stop workers than "message", which will
 wait until any task is finished.}
 
-\item{\code{worker_stop_timeout}}{A timeout to pass to the worker to
+\item{\code{timeout_worker_stop}}{A timeout to pass to the worker to
 respond the request to stop. See \code{worker_stop}'s \code{timeout}
 argument for details.}
 }
@@ -280,7 +280,7 @@ Queue an expression
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
-  timeout = NULL,
+  timeout_task_run = NULL,
   depends_on = NULL,
   export = NULL
 )}\if{html}{\out{</div>}}
@@ -310,7 +310,7 @@ clean, subsequent runs are not affected by preceding ones.
 The downside of this approach is a considerable overhead in
 starting the external process and transferring data back.}
 
-\item{\code{timeout}}{Optionally, a maximum allowed running time, in
+\item{\code{timeout_task_run}}{Optionally, a maximum allowed running time, in
 seconds. This parameter only has an effect if \code{separate_process}
 is \code{TRUE}. If given, then if the task takes longer than this
 time it will be stopped and the task status set to \code{TIMEOUT}.}
@@ -346,7 +346,7 @@ Queue an expression
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
-  timeout = NULL,
+  timeout_task_run = NULL,
   depends_on = NULL,
   export = NULL
 )}\if{html}{\out{</div>}}
@@ -374,7 +374,7 @@ push jobs onto a queue with no worker, it will queue forever.}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
-\item{\code{timeout}}{Optionally, a maximum allowed running time, in
+\item{\code{timeout_task_run}}{Optionally, a maximum allowed running time, in
 seconds (see \verb{$enqueue} for details).}
 
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
@@ -404,9 +404,9 @@ equivalent to using \verb{$enqueue()} over each element in the list.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
-  task_timeout = NULL,
+  timeout_task_run = NULL,
   depends_on = NULL,
-  collect_timeout = NULL,
+  timeout_task_wait = NULL,
   time_poll = 1,
   progress = NULL,
   delete = FALSE,
@@ -436,7 +436,7 @@ details).}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
-\item{\code{task_timeout}}{Optionally, a maximum allowed running time, in
+\item{\code{timeout_task_run}}{Optionally, a maximum allowed running time, in
 seconds (see the \code{timeout} argument of \verb{$enqueue} for details).}
 
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
@@ -446,7 +446,7 @@ queue. If the dependent task fails then this task will be
 removed from the queue. Dependencies are applied to all
 tasks added to the queue.}
 
-\item{\code{collect_timeout}}{Optional timeout, in seconds, after which an
+\item{\code{timeout_task_wait}}{Optional timeout, in seconds, after which an
 error will be thrown if all tasks have not completed. If given  as
 \code{0}, then we return a handle that can be used to check for tasks
 using \code{bulk_wait}. If not given, falls back on the controller's
@@ -490,9 +490,9 @@ be copied over rather than using their names if possible.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
-  task_timeout = NULL,
+  timeout_task_run = NULL,
   depends_on = NULL,
-  collect_timeout = NULL,
+  timeout_task_wait = NULL,
   time_poll = 1,
   progress = NULL,
   delete = FALSE,
@@ -522,7 +522,7 @@ details).}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
-\item{\code{task_timeout}}{Optionally, a maximum allowed running time, in
+\item{\code{timeout_task_run}}{Optionally, a maximum allowed running time, in
 seconds (see the \code{timeout} argument of \verb{$enqueue} for details).}
 
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
@@ -532,7 +532,7 @@ queue. If the dependent task fails then this task will be
 removed from the queue. Dependencies are applied to all
 tasks added to the queue.}
 
-\item{\code{collect_timeout}}{Optional timeout, in seconds, after which an
+\item{\code{timeout_task_wait}}{Optional timeout, in seconds, after which an
 error will be thrown if all tasks have not completed. If given  as
 \code{0}, then we return a handle that can be used to check for tasks
 using \code{bulk_wait}. If not given, falls back on the controller's
@@ -577,9 +577,9 @@ should feel intuitive.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
-  task_timeout = NULL,
+  timeout_task_run = NULL,
   depends_on = NULL,
-  collect_timeout = NULL,
+  timeout_task_wait = NULL,
   time_poll = 1,
   progress = NULL,
   delete = FALSE,
@@ -611,7 +611,7 @@ details).}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
-\item{\code{task_timeout}}{Optionally, a maximum allowed running time, in
+\item{\code{timeout_task_run}}{Optionally, a maximum allowed running time, in
 seconds (see the \code{timeout} argument of \verb{$enqueue} for details).}
 
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
@@ -621,7 +621,7 @@ queue. If the dependent task fails then this task will be
 removed from the queue. Dependencies are applied to all
 tasks added to the queue.}
 
-\item{\code{collect_timeout}}{Optional timeout, in seconds, after which an
+\item{\code{timeout_task_wait}}{Optional timeout, in seconds, after which an
 error will be thrown if all tasks have not completed. If given  as
 \code{0}, then we return a handle that can be used to check for tasks
 using \code{bulk_wait}. If not given, falls back on the controller's
@@ -665,9 +665,9 @@ be copied over rather than using their names if possible.
   envir = parent.frame(),
   queue = NULL,
   separate_process = FALSE,
-  task_timeout = NULL,
+  timeout_task_run = NULL,
   depends_on = NULL,
-  collect_timeout = NULL,
+  timeout_task_wait = NULL,
   time_poll = 1,
   progress = NULL,
   delete = delete,
@@ -699,7 +699,7 @@ details).}
 run in a separate process on the worker (see \verb{$enqueue} for
 details).}
 
-\item{\code{task_timeout}}{Optionally, a maximum allowed running time, in
+\item{\code{timeout_task_run}}{Optionally, a maximum allowed running time, in
 seconds (see the \code{timeout} argument of \verb{$enqueue} for details).}
 
 \item{\code{depends_on}}{Vector or list of IDs of tasks which must have
@@ -709,7 +709,7 @@ queue. If the dependent task fails then this task will be
 removed from the queue. Dependencies are applied to all
 tasks added to the queue.}
 
-\item{\code{collect_timeout}}{Optional timeout, in seconds, after which an
+\item{\code{timeout_task_wait}}{Optional timeout, in seconds, after which an
 error will be thrown if all tasks have not completed. If given  as
 \code{0}, then we return a handle that can be used to check for tasks
 using \code{bulk_wait}. If not given, falls back on the controller's

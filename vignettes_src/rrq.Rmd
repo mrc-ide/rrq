@@ -208,7 +208,7 @@ create <- function(env) {
 This approach would also allow you do do something like read an rds or Rdata file containing a large object that you want every worker to have a copy of.
 
 ```{r, include = FALSE}
-obj$destroy(worker_stop_timeout = 10)
+obj$destroy(timeout_worker_stop = 10)
 ```
 
 ## Scheduling options
@@ -258,7 +258,7 @@ id <- obj$enqueue(create(5))
 Then use this `id`
 
 ```{r}
-id_use <- obj$lapply(1:5, use, depends_on = id, collect_timeout = 0)
+id_use <- obj$lapply(1:5, use, depends_on = id, timeout_task_wait = 0)
 ```
 
 The status of the first task will be `PENDING`, per usual:
@@ -409,7 +409,7 @@ dir(path)
 ```
 
 ```{r, include = FALSE}
-obj$destroy(worker_stop_timeout = 10)
+obj$destroy(timeout_worker_stop = 10)
 ```
 
 This keeps the larger objects out of the database.
