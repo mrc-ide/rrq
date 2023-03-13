@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.12</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.13</span>
       </span>
     </div>
 
@@ -265,7 +265,7 @@ destructive action and cannot be undone.</p><div class="section">
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">destroy</span><span class="op">(</span></span>
 <span>  delete <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  worker_stop_type <span class="op">=</span> <span class="st">"message"</span>,</span>
-<span>  worker_stop_timeout <span class="op">=</span> <span class="fl">0</span></span>
+<span>  timeout_worker_stop <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -288,7 +288,7 @@ these may be faster to stop workers than "message", which will
 wait until any task is finished.</p></dd>
 
 
-<dt><code>worker_stop_timeout</code></dt>
+<dt><code>timeout_worker_stop</code></dt>
 <dd><p>A timeout to pass to the worker to
 respond the request to stop. See <code>worker_stop</code>'s <code>timeout</code>
 argument for details.</p></dd>
@@ -333,7 +333,7 @@ message to all workers to update their environment.</p></dd>
 <span>  envir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sys.parent.html" class="external-link">parent.frame</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  queue <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  separate_process <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  timeout_task_run <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  depends_on <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  export <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
@@ -370,7 +370,7 @@ The downside of this approach is a considerable overhead in
 starting the external process and transferring data back.</p></dd>
 
 
-<dt><code>timeout</code></dt>
+<dt><code>timeout_task_run</code></dt>
 <dd><p>Optionally, a maximum allowed running time, in
 seconds. This parameter only has an effect if <code>separate_process</code>
 is <code>TRUE</code>. If given, then if the task takes longer than this
@@ -410,7 +410,7 @@ have configured your worker environment.</p></dd>
 <span>  envir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sys.parent.html" class="external-link">parent.frame</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  queue <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  separate_process <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  timeout_task_run <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  depends_on <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  export <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
@@ -445,7 +445,7 @@ run in a separate process on the worker (see <code>$enqueue</code> for
 details).</p></dd>
 
 
-<dt><code>timeout</code></dt>
+<dt><code>timeout_task_run</code></dt>
 <dd><p>Optionally, a maximum allowed running time, in
 seconds (see <code>$enqueue</code> for details).</p></dd>
 
@@ -479,9 +479,9 @@ equivalent to using <code>$enqueue()</code> over each element in the list.</p><d
 <span>  envir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sys.parent.html" class="external-link">parent.frame</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  queue <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  separate_process <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  task_timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  timeout_task_run <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  depends_on <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  collect_timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  timeout_task_wait <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  time_poll <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  progress <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  delete <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -524,7 +524,7 @@ run in a separate process on the worker (see <code>$enqueue</code> for
 details).</p></dd>
 
 
-<dt><code>task_timeout</code></dt>
+<dt><code>timeout_task_run</code></dt>
 <dd><p>Optionally, a maximum allowed running time, in
 seconds (see the <code>timeout</code> argument of <code>$enqueue</code> for details).</p></dd>
 
@@ -538,7 +538,7 @@ removed from the queue. Dependencies are applied to all
 tasks added to the queue.</p></dd>
 
 
-<dt><code>collect_timeout</code></dt>
+<dt><code>timeout_task_wait</code></dt>
 <dd><p>Optional timeout, in seconds, after which an
 error will be thrown if all tasks have not completed. If given  as
 <code>0</code>, then we return a handle that can be used to check for tasks
@@ -590,9 +590,9 @@ be copied over rather than using their names if possible.</p><div class="section
 <span>  envir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sys.parent.html" class="external-link">parent.frame</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  queue <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  separate_process <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  task_timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  timeout_task_run <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  depends_on <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  collect_timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  timeout_task_wait <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  time_poll <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  progress <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  delete <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -635,7 +635,7 @@ run in a separate process on the worker (see <code>$enqueue</code> for
 details).</p></dd>
 
 
-<dt><code>task_timeout</code></dt>
+<dt><code>timeout_task_run</code></dt>
 <dd><p>Optionally, a maximum allowed running time, in
 seconds (see the <code>timeout</code> argument of <code>$enqueue</code> for details).</p></dd>
 
@@ -649,7 +649,7 @@ removed from the queue. Dependencies are applied to all
 tasks added to the queue.</p></dd>
 
 
-<dt><code>collect_timeout</code></dt>
+<dt><code>timeout_task_wait</code></dt>
 <dd><p>Optional timeout, in seconds, after which an
 error will be thrown if all tasks have not completed. If given  as
 <code>0</code>, then we return a handle that can be used to check for tasks
@@ -702,9 +702,9 @@ should feel intuitive.</p><div class="section">
 <span>  envir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sys.parent.html" class="external-link">parent.frame</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  queue <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  separate_process <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  task_timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  timeout_task_run <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  depends_on <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  collect_timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  timeout_task_wait <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  time_poll <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  progress <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  delete <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -749,7 +749,7 @@ run in a separate process on the worker (see <code>$enqueue</code> for
 details).</p></dd>
 
 
-<dt><code>task_timeout</code></dt>
+<dt><code>timeout_task_run</code></dt>
 <dd><p>Optionally, a maximum allowed running time, in
 seconds (see the <code>timeout</code> argument of <code>$enqueue</code> for details).</p></dd>
 
@@ -763,7 +763,7 @@ removed from the queue. Dependencies are applied to all
 tasks added to the queue.</p></dd>
 
 
-<dt><code>collect_timeout</code></dt>
+<dt><code>timeout_task_wait</code></dt>
 <dd><p>Optional timeout, in seconds, after which an
 error will be thrown if all tasks have not completed. If given  as
 <code>0</code>, then we return a handle that can be used to check for tasks
@@ -815,9 +815,9 @@ be copied over rather than using their names if possible.</p><div class="section
 <span>  envir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sys.parent.html" class="external-link">parent.frame</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  queue <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  separate_process <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  task_timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  timeout_task_run <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  depends_on <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  collect_timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  timeout_task_wait <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  time_poll <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  progress <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  delete <span class="op">=</span> <span class="va">delete</span>,</span>
@@ -862,7 +862,7 @@ run in a separate process on the worker (see <code>$enqueue</code> for
 details).</p></dd>
 
 
-<dt><code>task_timeout</code></dt>
+<dt><code>timeout_task_run</code></dt>
 <dd><p>Optionally, a maximum allowed running time, in
 seconds (see the <code>timeout</code> argument of <code>$enqueue</code> for details).</p></dd>
 
@@ -876,7 +876,7 @@ removed from the queue. Dependencies are applied to all
 tasks added to the queue.</p></dd>
 
 
-<dt><code>collect_timeout</code></dt>
+<dt><code>timeout_task_wait</code></dt>
 <dd><p>Optional timeout, in seconds, after which an
 error will be thrown if all tasks have not completed. If given  as
 <code>0</code>, then we return a handle that can be used to check for tasks
