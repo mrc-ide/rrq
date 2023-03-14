@@ -664,8 +664,8 @@ rrq_controller <- R6::R6Class(
     ##' @param task_ids Optional character vector of task ids for which you
     ##' would like statuses. If not given (or `NULL`) then the status of
     ##' all task ids known to this rrq controller is returned.
-    task_status = function(task_ids = NULL) {
-      task_status(self$con, private$keys, task_ids)
+    task_status = function(task_ids = NULL, follow = TRUE) {
+      task_status(self$con, private$keys, task_ids, follow)
     },
 
     ##' @description Retrieve task progress, if set. This will be `NULL`
@@ -729,10 +729,10 @@ rrq_controller <- R6::R6Class(
     ##'   an object of class `rrq_task_error`, which contains information
     ##'   about the error. Passing `error = TRUE` simply calls `stop()`
     ##'   on this error if it is returned.
-    task_result = function(task_id, error = FALSE) {
+    task_result = function(task_id, error = FALSE, follow = TRUE) {
       assert_scalar_character(task_id)
       tasks_result(self$con, private$keys, private$store, task_id,
-                   error, TRUE)
+                   error, follow, TRUE)
     },
 
     ##' @description Get the results of a group of tasks, returning them as a
@@ -743,9 +743,9 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param error Logical, indicating if we should throw an error if
     ##'   the task was not successful. See `$task_result()` for details.
-    tasks_result = function(task_ids, error = FALSE) {
+    tasks_result = function(task_ids, error = FALSE, follow = TRUE) {
       tasks_result(self$con, private$keys, private$store, task_ids,
-                   error, FALSE)
+                   error, follow, FALSE)
     },
 
     ##' @description Poll for a task to complete, returning the result
@@ -888,6 +888,19 @@ rrq_controller <- R6::R6Class(
         complete = read_time_with_default(private$keys$task_time_complete))
       rownames(ret) <- task_ids
       ret
+    },
+
+    ##' @description Retry a task (or set of tasks). Typically this
+    ##' is after failure (e.g., `ERROR`, `DIED` or similar) but you can
+    ##' retry even successfully completed tasks. Once retried, methods
+    ##' that retrieve information about a task (e.g., `$task_status()`,
+    ##' `$task_result()`) will behave differently depending on the value
+    ##' of their `follow` argument. See `vignette("fault-tolerance")`
+    ##' for more details.
+    ##'
+    ##' @param task_ids Task ids to retry.
+    task_retry = function(task_ids) {
+      task_retry(self$con, private$keys, task_ids)
     },
 
     ##' @description Returns the number of tasks in the queue (waiting for
@@ -1263,8 +1276,15 @@ rrq_controller <- R6::R6Class(
     store = NULL
   ))
 
-task_status <- function(con, keys, task_ids) {
-  from_redis_hash(con, keys$task_status, task_ids, missing = TASK_MISSING)
+task_status <- function(con, keys, task_ids, follow) {
+  status <- from_redis_hash(con, keys$task_status, task_ids,
+                            missing = TASK_MISSING)
+  if (follow && any(is_moved <- status == TASK_MOVED)) {
+    task_ids_moved <- list_to_character(
+      con$HMGET(keys$task_moved_to, task_ids[is_moved]))
+    status[is_moved] <- task_status(con, keys, task_ids_moved, TRUE)
+  }
+  status
 }
 
 
@@ -1513,8 +1533,13 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
 }
 
 
-tasks_result <- function(con, keys, store, task_ids, error, single) {
-  hash <- from_redis_hash(con, keys$task_result, task_ids)
+tasks_result <- function(con, keys, store, task_ids, error, follow, single) {
+  if (follow) {
+    hash <- from_redis_hash(con, keys$task_result,
+                            task_follow(con, keys$task_moved_to, task_ids))
+  } else {
+    hash <- from_redis_hash(con, keys$task_result, task_ids)
+  }
   is_missing <- is.na(hash)
   ## TODO - for discussion/implementation elsewhere: should these be
   ## another error type? What other errors like this are floating
@@ -1874,4 +1899,95 @@ throw_task_errors <- function(res, single) {
       stop(rrq_task_error_group(unname(res[is_error]), length(res)))
     }
   }
+}
+
+## There's always a chance of a race condition here as we fetch a
+## status and change behaviour based on it. So doing this properly
+## really requires that we block the queue somehow here. However, the
+## chance of two people redirecting the task separately is not very
+## bad, and the final effect is not terrible either (an extra task is
+## run). We could do a set to MOVING immediately (pipelined with the
+## read) and then check for that below? This feels pretty unlikely
+## though.
+##
+## It's possible that this really makes a much better lua script
+## though, as that guarantees isolation and atomicity. Get the logic
+## working here first, then consider moving over.
+task_retry <- function(con, keys, task_ids) {
+  n <- length(task_ids)
+  time <- timestamp()
+  task_ids_new <- ids::random_id(n)
+
+  status <- task_status(con, keys, task_ids, follow = TRUE)
+
+  is_error <- !(status %in% TASK$terminal)
+  if (any(is_error)) {
+    statusop("Deal with error here")
+  }
+  if (any(status == TASK_IMPOSSIBLE)) {
+    ## TODO: need to be careful with TASK_IMPOSSIBLE here, these can't
+    ## really be requeued.
+    stop("Deal with impossible tasks")
+  }
+
+  task_ids_root <- task_ids
+  if (any(status == TASK_MOVED)) {
+    browser()
+    task_ids_root[is_moved] <- list_to_character(
+      con$HMGET(keys$task_moved_root, task_ids[is_moved]))
+  }
+  
+  ## TODO: Consider allowing changing queue on retry?
+  key_queue <- rrq_key_queue(
+    keys$queue_id,
+    list_to_character(con$HMGET(keys$task_queue, task_ids_root)))
+  if (all(key_queue == key_queue[[1]])) {
+    queue_push <- list(redis$RPUSH(key_queue[[1]], task_ids_new))
+  } else {
+    stop("cope with pushing to multiple queues here...")
+  }
+
+  con$pipeline(
+    .commands = c(list(
+      redis$HMSET(keys$task_status,      task_ids,     rep(TASK_MOVED, n)),
+      redis$HMSET(keys$task_status,      task_ids_new, rep(TASK_PENDING, n)),
+      redis$HMSET(keys$task_time_moved,  task_ids,     rep_len(time, n)),
+      redis$HMSET(keys$task_time_submit, task_ids_new, rep_len(time, n)),
+      redis$HMSET(keys$task_moved_from,  task_ids_new, task_ids),
+      redis$HMSET(keys$task_moved_to,    task_ids,     task_ids_new),
+      redis$HMSET(keys$task_moved_root,  task_ids_new, task_ids_root),
+      redis$HMSET(keys$task_expr,        task_ids_new, task_ids_root)),
+      queue_push))
+
+  ## What is the correct behaviour here for key_complete? Use the same?
+  ##
+  ## If we don't duplicate task_expr then we need to ensure we can't
+  ## dangle tasks in task deletion. Deletion might therefore be best
+  ## to consider trees carefully; this is worth a test really.
+
+  ## At this point we need to also cope with dependencies, most of
+  ## which will be impossible now; it's not really clear we'll want to
+  ## do that by default?
+
+  task_ids_new
+}
+
+
+## This is probably worth doing in lua, because we're going to hit
+## this really very often. Probably the default behaviour of follow
+## should be tuneable like timeout_task_wait is, so people can opt out
+## of the cost here.
+##
+## TODO: Another way of doing this would be to pipeline fetching the
+## hash and the "to" key; that would faster for sure; fetch task
+## result and moved to and accept the result if the moved to is empty.
+task_follow <- function(con, key, task_ids) {
+  i <- rep_len(TRUE, length(task_ids))
+  while (any(i)) {
+    moved_to <- unname(from_redis_hash(con, key, task_ids[i]))
+    is_terminal <- is.na(moved_to)
+    i[is_terminal] <- FALSE
+    task_ids[i] <- moved_to[!is_terminal]
+  }
+  task_ids
 }

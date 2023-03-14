@@ -18,6 +18,9 @@ TASK_TIMEOUT <- "TIMEOUT"
 ## An unknown task
 TASK_MISSING  <- "MISSING"
 
+## If a task was retried
+TASK_MOVED <- "MOVED"
+
 ## Dependency tasks lifecycle:
 ## waiting for a dependency before being added to queue
 TASK_DEFERRED <- "DEFERRED"
@@ -28,7 +31,7 @@ TASK_IMPOSSIBLE <- "IMPOSSIBLE"
 TASK <- list(
   ## Possible status for all known tasks (i.e. all non-missing statuses)
   all = c(TASK_PENDING, TASK_RUNNING, TASK_COMPLETE, TASK_ERROR, TASK_CANCELLED,
-          TASK_DIED, TASK_TIMEOUT, TASK_IMPOSSIBLE, TASK_DEFERRED),
+          TASK_DIED, TASK_TIMEOUT, TASK_IMPOSSIBLE, TASK_DEFERRED, TASK_MOVED),
   ## Possible status for all finished but incomplete/failed tasks
   terminal_fail = c(TASK_ERROR, TASK_CANCELLED, TASK_DIED, TASK_TIMEOUT,
                     TASK_IMPOSSIBLE),

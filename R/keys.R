@@ -35,6 +35,12 @@ rrq_keys_common <- function(queue_id) {
        task_result    = sprintf("%s:task:result",    queue_id),
        task_pid       = sprintf("%s:task:pid",       queue_id),
 
+       ## Fault tolerance support
+       task_status_original = sprintf("%s:task:status_original", queue_id),
+       task_moved_to        = sprintf("%s:task:moved_to",        queue_id),
+       task_moved_from      = sprintf("%s:task:moved_from",      queue_id),
+       task_moved_root      = sprintf("%s:task:moved_root",      queue_id),
+
        ## This is the key where we store the extra complete key we
        ## might push to at.
        task_complete  = sprintf("%s:task:complete",  queue_id),
@@ -44,6 +50,7 @@ rrq_keys_common <- function(queue_id) {
        task_time_submit   = sprintf("%s:task:time_submit",   queue_id),
        task_time_start    = sprintf("%s:task:time_start",    queue_id),
        task_time_complete = sprintf("%s:task:time_complete", queue_id),
+       task_time_moved    = sprintf("%s:task:time_moved",    queue_id),
 
        deferred_set   = sprintf("%s:deferred", queue_id))
 }

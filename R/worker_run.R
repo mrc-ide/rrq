@@ -118,10 +118,25 @@ worker_run_task_start <- function(worker, private, task_id) {
     redis$HSET(keys$task_worker,     task_id, name),
     redis$HSET(keys$task_status,     task_id, TASK_RUNNING),
     redis$HSET(keys$task_time_start, task_id, timestamp()),
-    redis$HGET(keys$task_complete,   task_id),
-    redis$HGET(keys$task_local,      task_id),
-    redis$HGET(keys$task_expr,       task_id),
-    redis$HGET(keys$task_cancel,     task_id))
+    redis$HGET(keys$task_complete,   task_id), # dat[[7]]
+    redis$HGET(keys$task_local,      task_id), # dat[[8]]
+    redis$HGET(keys$task_expr,       task_id), # dat[[9]]
+    redis$HGET(keys$task_cancel,     task_id)) # unused? (TODO)
+
+  ## TODO: we should save the root task in the db, then subsequent
+  ## re-queues are easy. We can also set the leaf task at the same
+  ## time and make follows very quick?
+  ##
+  ## Pull the data out of this bulk response, including following the
+  ## redirect if needed.
+  if (is.character(dat[[9]])) {
+    task_id_root <- dat[[9]]
+    dat[7:9] <-
+      private$con$pipeline(
+        redis$HGET(keys$task_complete, task_id_root), # dat[[7]]
+        redis$HGET(keys$task_local,    task_id_root), # dat[[8]]
+        redis$HGET(keys$task_expr,     task_id_root)) # dat[[9]]
+  }
 
   ## This holds the bits of worker state we might need to refer to
   ## later for a running task:
