@@ -1295,6 +1295,7 @@ rrq_controller <- R6::R6Class(
   private = list(
     keys = NULL,
     timeout_task_wait = NULL,
+    follow = NULL,
     scripts = NULL,
     store = NULL
   ))
@@ -1969,7 +1970,12 @@ task_retry <- function(con, keys, task_ids) {
 
   is_error <- !(status %in% TASK$terminal)
   if (any(is_error)) {
-    statusop("Deal with error here")
+    ## TODO: use some nice formatting here to truncate the task ids?
+    stop(sprintf(
+      "Can't retry tasks that are in state: %s:\n%s",
+      paste(squote(unique(status[is_error])), collapse = ", "),
+      paste(sprintf("  - %s", task_ids[is_error]), collapse = "\n")),
+      call. = FALSE)
   }
   if (any(status == TASK_IMPOSSIBLE)) {
     ## TODO: need to be careful with TASK_IMPOSSIBLE here, these can't
