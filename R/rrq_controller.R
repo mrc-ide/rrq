@@ -138,8 +138,18 @@ rrq_controller <- R6::R6Class(
     ##'   `$lapply()`, etc). If not given, then we fall back on the
     ##'   global option `rrq.timeout_task_wait`, and if that is not set,
     ##    we wait forever (i.e., `timeout_task_wait = Inf`).
+    ##'
+    ##' @param follow An optional default logical to use for tasks
+    ##'   that may (or may not) be retried. If not given we fall back
+    ##'   on the global option `rrq.follow`, and if that is not set then
+    ##'   `TRUE` (i.e., we do follow). The value `follow = TRUE` is
+    ##'   potentially slower than `follow = FALSE` for some operations
+    ##'   because we need to dereference every task id. If you never use
+    ##'   `$task_retry` then this dereference never has an effect and we
+    ##'   can skip it. See `vignette("fault-tolerance")` for more
+    ##'   information.
     initialize = function(queue_id, con = redux::hiredis(),
-                          timeout_task_wait = NULL) {
+                          timeout_task_wait = NULL, follow = NULL) {
       assert_scalar_character(queue_id)
       assert_is(con, "redis_api")
 
@@ -153,6 +163,14 @@ rrq_controller <- R6::R6Class(
         assert_scalar_positive_integer(timeout_task_wait)
         private$timeout_task_wait <- timeout_task_wait
       }
+
+      if (is.null(follow)) {
+        private$follow <- getOption("rrq.follow", TRUE)
+      } else {
+        assert_scalar_logical(follow)
+        private$follow <- follow
+      }
+
       rrq_version_check(self$con, private$keys)
       self$worker_config_save("localhost", overwrite = FALSE)
 
@@ -664,8 +682,8 @@ rrq_controller <- R6::R6Class(
     ##' @param task_ids Optional character vector of task ids for which you
     ##' would like statuses. If not given (or `NULL`) then the status of
     ##' all task ids known to this rrq controller is returned.
-    task_status = function(task_ids = NULL, follow = TRUE) {
-      task_status(self$con, private$keys, task_ids, follow)
+    task_status = function(task_ids = NULL, follow = NULL) {
+      task_status(self$con, private$keys, task_ids, follow %||% private$follow)
     },
 
     ##' @description Retrieve task progress, if set. This will be `NULL`
@@ -699,8 +717,10 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param queue The name of the queue to query (defaults to the
     ##'   "default" queue).
-    task_position = function(task_ids, missing = 0L, queue = NULL) {
-      task_position(self$con, private$keys, task_ids, missing, queue)
+    task_position = function(task_ids, missing = 0L, queue = NULL,
+                             follow = NULL) {
+      task_position(self$con, private$keys, task_ids, missing, queue,
+                    follow %||% private$follow)
     },
 
     ##' @description List the tasks in front of `task_id` in the queue.
@@ -712,8 +732,9 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param queue The name of the queue to query (defaults to the
     ##'   "default" queue).
-    task_preceeding = function(task_id, queue = NULL) {
-      task_preceeding(self$con, private$keys, task_id, queue)
+    task_preceeding = function(task_id, queue = NULL, follow = NULL) {
+      task_preceeding(self$con, private$keys, task_id, queue,
+                      follow = private$follow)
     },
 
     ##' @description Get the result for a single task (see `$tasks_result`
@@ -729,10 +750,10 @@ rrq_controller <- R6::R6Class(
     ##'   an object of class `rrq_task_error`, which contains information
     ##'   about the error. Passing `error = TRUE` simply calls `stop()`
     ##'   on this error if it is returned.
-    task_result = function(task_id, error = FALSE, follow = TRUE) {
+    task_result = function(task_id, error = FALSE, follow = NULL) {
       assert_scalar_character(task_id)
       tasks_result(self$con, private$keys, private$store, task_id,
-                   error, follow, TRUE)
+                   error, follow %||% private$follow, TRUE)
     },
 
     ##' @description Get the results of a group of tasks, returning them as a
@@ -743,9 +764,9 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param error Logical, indicating if we should throw an error if
     ##'   the task was not successful. See `$task_result()` for details.
-    tasks_result = function(task_ids, error = FALSE, follow = TRUE) {
+    tasks_result = function(task_ids, error = FALSE, follow = NULL) {
       tasks_result(self$con, private$keys, private$store, task_ids,
-                   error, follow, FALSE)
+                   error, follow %||% private$follow, FALSE)
     },
 
     ##' @description Poll for a task to complete, returning the result
@@ -778,11 +799,12 @@ rrq_controller <- R6::R6Class(
     ##'   Note that an error is always thrown if not all tasks are fetched
     ##'   in time.
     task_wait = function(task_id, timeout = NULL, time_poll = 1,
-                         progress = NULL, error = FALSE) {
+                         progress = NULL, error = FALSE, follow = NULL) {
       assert_scalar_character(task_id)
       timeout <- timeout %||% private$timeout_task_wait
+      follow <- follow %||% private$follow
       tasks_wait(self$con, private$keys, private$store, task_id,
-                 timeout, time_poll, progress, NULL, error, TRUE)
+                 timeout, time_poll, progress, NULL, error, follow, TRUE)
     },
 
     ##' @description Poll for a group of tasks to complete, returning the
@@ -808,10 +830,11 @@ rrq_controller <- R6::R6Class(
     ##'   Note that an error is always thrown if not all tasks are fetched
     ##'   in time.
     tasks_wait = function(task_ids, timeout = NULL, time_poll = 1,
-                          progress = NULL, error = FALSE) {
+                          progress = NULL, error = FALSE, follow = NULL) {
       timeout <- timeout %||% private$timeout_task_wait
+      follow <- follow %||% private$follow
       tasks_wait(self$con, private$keys, private$store, task_ids,
-                 timeout, time_poll, NULL, progress, error, FALSE)
+                 timeout, time_poll, NULL, progress, error, follow, FALSE)
     },
 
     ##' @description Delete one or more tasks
@@ -1299,7 +1322,7 @@ task_progress <- function(con, keys, task_id) {
 
 
 task_overview <- function(con, keys, task_ids) {
-  status <- task_status(con, keys, task_ids)
+  status <- task_status(con, keys, task_ids, follow)
   lvls <- c(TASK$all, setdiff(unique(status), TASK$all))
   as.list(table(factor(status, lvls)))
 }
@@ -1309,11 +1332,19 @@ task_overview <- function(con, keys, task_ids) {
 ## But one should be careful to adjust the polling interval of
 ## something usnig this not to flood the server with excessive load.
 ##
+## NOTE: With the possibility of task retrying, this is even worse as
+## we need to check to see what the current moved id is. This does
+## make the case that we should be able to disable lookup at the queue
+## level really.
+##
 ## A better way would possibly be to use a LUA script; especially for
 ## the case where there is a single job that'd be fairly easy to do.
-task_position <- function(con, keys, task_ids, missing, queue) {
+task_position <- function(con, keys, task_ids, missing, queue, follow) {
   key_queue <- rrq_key_queue(keys$queue_id, queue)
   queue_contents <- vcapply(con$LRANGE(key_queue, 0, -1L), identity)
+  if (follow && length(queue_contents) > 0L) {
+    task_ids <- task_follow(con, keys$task_moved_to, task_ids)
+  }
   match(task_ids, queue_contents, missing)
 }
 
@@ -1789,12 +1820,24 @@ tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
   if (time_poll < 1L) {
     stop("time_poll cannot be less than 1")
   }
+  if (follow) {
+    task_ids_from <- task_follow(con, key$task_moved_to, task_ids)
+  } else {
+    task_ids_from <- task_ids
+  }
+  ## I think that in this case we probably can make things work, but
+  ## some care will be required as the complete key could hold a copy
+  ## of the old results, so we need more checking in the else clause
+  if (!is.null(key_complete) && !all(task_ids_from == task_ids)) {
+    stop("some work required here!")
+  }
+
   done <- set_names(
-    hash_exists(con, keys$task_result, task_ids, TRUE),
+    hash_exists(con, keys$task_result, task_ids_from, TRUE),
     task_ids)
 
   if (is.null(key_complete)) {
-    key_complete <- rrq_key_task_complete(keys$queue_id, task_ids)
+    key_complete <- rrq_key_task_complete(keys$queue_id, task_ids_from)
     fetch <- function() {
       if (!all(done)) {
         tmp <- con$BLPOP(key_complete[!done], time_poll)
@@ -1815,7 +1858,11 @@ tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
   }
 
   general_poll(fetch, 0, timeout, "tasks", TRUE, progress)
-  tasks_result(con, keys, store, task_ids, error, single)
+  ret <- tasks_result(con, keys, store, task_ids_from, error, FALSE, single)
+  if (follow && !single) {
+    names(ret) <- task_ids
+  }
+  ret
 }
 
 
