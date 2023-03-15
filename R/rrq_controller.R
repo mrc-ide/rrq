@@ -1975,7 +1975,7 @@ task_retry <- function(con, keys, task_ids) {
 
   status <- task_status(con, keys, task_ids, follow = TRUE)
 
-  is_error <- !(status %in% TASK$terminal)
+  is_error <- !(status %in% TASK$retriable)
   if (any(is_error)) {
     ## TODO: use some nice formatting here to truncate the task ids?
     stop(sprintf(

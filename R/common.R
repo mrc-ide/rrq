@@ -41,7 +41,8 @@ TASK <- list(
   unfinished = c(TASK_PENDING, TASK_DEFERRED, TASK_RUNNING))
 
 ## Possible status for all finished tasks
-TASK$terminal <- c(TASK$terminal_fail, TASK_COMPLETE)
+TASK$terminal <- c(TASK$terminal_fail, TASK_COMPLETE, TASK_MOVED)
+TASK$retriable <- setdiff(TASK$terminal, TASK_MOVED)
 
 WORKER_IDLE <- "IDLE"
 WORKER_BUSY <- "BUSY"
