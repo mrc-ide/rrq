@@ -150,6 +150,7 @@ after creation.}
 \item \href{#method-rrq_controller-task_delete}{\code{rrq_controller$task_delete()}}
 \item \href{#method-rrq_controller-task_cancel}{\code{rrq_controller$task_cancel()}}
 \item \href{#method-rrq_controller-task_data}{\code{rrq_controller$task_data()}}
+\item \href{#method-rrq_controller-task_info}{\code{rrq_controller$task_info()}}
 \item \href{#method-rrq_controller-task_times}{\code{rrq_controller$task_times()}}
 \item \href{#method-rrq_controller-queue_length}{\code{rrq_controller$queue_length()}}
 \item \href{#method-rrq_controller-queue_list}{\code{rrq_controller$queue_list()}}
@@ -1122,6 +1123,28 @@ Fetch internal data about a task from Redis
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{task_id}}{The id of the task}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-rrq_controller-task_info"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-task_info}{}}}
+\subsection{Method \code{task_info()}}{
+Return information about a task. This currently
+includes information about where a task is (or was) running,
+but will expand in future. The format of the output here is
+subject to change (and will probably get a nice print method)
+but the values present in the output will be included in any
+future update.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_info(task_id)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{task_id}}{The id of the task to fetch information about}
 }
 \if{html}{\out{</div>}}
 }

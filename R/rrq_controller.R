@@ -854,6 +854,18 @@ rrq_controller <- R6::R6Class(
       task_data(self$con, private$keys, private$store, task_id)
     },
 
+    ##' @description Return information about a task. This currently
+    ##' includes information about where a task is (or was) running,
+    ##' but will expand in future. The format of the output here is
+    ##' subject to change (and will probably get a nice print method)
+    ##' but the values present in the output will be included in any
+    ##' future update.
+    ##'
+    ##' @param task_id The id of the task to fetch information about
+    task_info = function(task_id) {
+      task_info(self$con, private$keys, task_id)
+    },
+
     ##' @description Fetch times for tasks at points in their life cycle.
     ##' For each task returns the time of submission, starting
     ##' and completion (not necessarily successfully; this includes
@@ -1779,6 +1791,26 @@ tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
 
   general_poll(fetch, 0, timeout, "tasks", TRUE, progress)
   tasks_result(con, keys, store, task_ids, error, single)
+}
+
+
+task_info <- function(con, keys, task_id) {
+  assert_scalar_character(task_id)
+  dat <- con$pipeline(
+    status = redis$HGET(keys$task_status, task_id),
+    queue = redis$HGET(keys$task_queue, task_id),
+    local = redis$HGET(keys$task_local, task_id),
+    timeout = redis$HGET(keys$task_timeout, task_id),
+    worker = redis$HGET(keys$task_worker, task_id),
+    pid = redis$HGET(keys$task_pid, task_id))
+  list(
+    id = task_id,
+    status = dat$status,
+    queue = dat$queue,
+    separate_process = dat$local == "FALSE",
+    timeout = dat$timeout %&&% as.numeric(dat$timeout),
+    worker = dat$worker,
+    pid = dat$pid %&&% as.integer(dat$pid))
 }
 
 

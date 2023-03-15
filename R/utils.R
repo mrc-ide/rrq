@@ -41,6 +41,10 @@ blank <- function(n) {
   if (is.null(a)) b else a
 }
 
+`%&&%` <- function(a, b) { # nolint
+  if (is.null(a)) a else b
+}
+
 
 sys_getenv <- function(x) {
   ret <- Sys.getenv(x)

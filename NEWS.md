@@ -1,3 +1,7 @@
+# rrq 0.6.14
+
+* New `$task_info` method to retrieve more detailed information about where a task was run (mrc-4058)
+
 # rrq 0.6.13
 
 * Argument standardisation for timeouts, with changes:
