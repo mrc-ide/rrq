@@ -49,3 +49,38 @@ test_that("Can't retry a task that has not been run", {
     obj$task_retry(c(t1, t2)),
     "Can't retry tasks that are in state: 'RUNNING', 'PENDING'")
 })
+
+
+test_that("Can get deferred times", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  set.seed(1)
+  t1 <- obj$enqueue(runif(5))
+  r1 <- obj$task_times(t1)
+  Sys.sleep(0.02)
+  w$step(TRUE)
+  r1 <- obj$task_times(t1)
+  Sys.sleep(0.02)
+  t2 <- obj$task_retry(t1)
+  Sys.sleep(0.02)
+  w$step(TRUE)
+
+  ## NOTE: if you print these they don't really look great because
+  ## they truncate off the non-integer part which is the only
+  ## difference!
+  r2 <- obj$task_times(t2)
+  expect_true(all(r2 > r1 | is.na(r2)))
+
+  r3 <- obj$task_times(t1)
+  r4 <- obj$task_times(t1, follow = TRUE)
+  r5 <- obj$task_times(t1, follow = FALSE)
+
+  expect_equal(r5[1:3], r1[1:3])
+  expect_true(is.na(r1[, "moved"]))
+  expect_false(is.na(r5[, "moved"]))
+
+  expect_equal(r3, r4)
+  expect_equal(unname(r2), unname(r3))
+  expect_equal(rownames(r2), t2)
+  expect_equal(rownames(r3), t1)
+})
