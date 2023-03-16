@@ -23,7 +23,7 @@ In a perfect world, nothing would fail, and this vignette would not be needed. B
 
 When you run tasks within a single process and things go wrong, you know immediately you see it happen. With a queuing system like rrq it's less obvious when something bad has happened because the task is running on another process, possibly on a different machine!
 
-* Plain errors (handled briefly below) is the simplest sort of fault to recover from. Your task throws an error, `rrq` picks this up and marks the task as errored, and moves on to the next thing. You can then see that this error has happened as its status.
+* Plain errors are the simplest sort of fault to recover from. Your task throws an error, `rrq` picks this up and marks the task as errored, and moves on to the next thing. You can then see that this error has happened as its status.
 * If your task crashes the process it can take out the worker (depending on how you have configured rrq; see below). In this case nothing updates the task status, and your task appears to stay running forever. This situation also arises if your process is killed by the operating system (e.g., out of memory) or via some other condition (e.g., an administrator terminating the process).
 * If your task is running on another machine and that machine becomes unreachable (switched off, disconnects from the network, etc) your task will never appear to finish.
 
@@ -36,13 +36,12 @@ We start with the simplest sort of fault, and can just as easily happen locally 
 Consider this simple function which would fit a linear model between two variables:
 
 ```{r results = "asis", echo = FALSE}
-lang_output("r", "fault.R")
+lang_output(readLines("fault.R"), "r")
 ```
 
 ```{r}
 obj <- rrq::rrq_controller$new(paste0("rrq:", ids::random_id(bytes = 4)))
 obj$envir(rrq::rrq_envir(sources = "fault.R"))
-source("fault.R")
 rrq::rrq_worker_spawn(obj)
 ```
 
@@ -73,7 +72,7 @@ r
 However, the result will be an object of `rrq_task_error` which you can test for using `inherits`:
 
 ```{r}
-inherits(r, "task_error")
+inherits(r, "rrq_task_error")
 ```
 
 The default behaviour of `rrq` is not to error when fetching a task as that would require that you use `tryCatch` everywhere where you retrieve tasks that might have failed, and because errors are often interesting themselves. For example, `rrq_task_error` objects include stack traces alongside the error:
@@ -82,7 +81,7 @@ The default behaviour of `rrq` is not to error when fetching a task as that woul
 r$trace
 ```
 
-These are `rlang` stack traces, which are somewhat richer than those produced by `traceback()`, containing the same set of stacks but arranged in a tree. See the documentation there for details. The errors also include any warnings captured while the task ran.
+These are `rlang` stack traces, which are somewhat richer than those produced by `traceback()`, containing the same set of stacks but arranged in a tree. See the [documentation there](https://rlang.r-lib.org/reference/trace_back.html) for details. This error object will also include any warnings captured while the task ran.
 
 Objects of class `rrq_task_error` inherit from `error` and `condition` so, once thrown, will behave as expected in programs using errors for flow control (e.g., with `tryCatch`); you can throw them yourself with  `stop()`:
 
@@ -90,15 +89,13 @@ Objects of class `rrq_task_error` inherit from `error` and `condition` so, once 
 stop(r)
 ```
 
-You can also change the default behaviour to error on failure by passing  `error = TRUE` to any of `$task_result()`, `$task_wait()`, `$tasks_result()` or `$tasks_wait()`:
+You can also change the default behaviour to error on failure by passing  `error = TRUE` to any of `$task_result()`, `$task_wait()`, `$tasks_result()` or `$tasks_wait()`, which will immediately rethrow the error in your R session (your program could then stop or you could again catch it with `tryCatch`):
 
 ```{r, error = TRUE}
 obj$task_result(t, error = TRUE)
 ```
 
 This process is unchanged if the task is run in a separate process (with `separate_process = TRUE` passed to `enqueue`), with the same status and return type, and with the trace information available after failure.
-
-(TODO - check this)
 
 ## Increasing resiliance via separate processes
 
@@ -127,40 +124,32 @@ t <- obj$enqueue(Sys.sleep(3600), separate_process = TRUE)
 ```
 
 ```{r, include = FALSE}
-pid <- function() {
-  for (i in 1:10) {
-    log <- obj$worker_log_tail(n = 1)
-    if (log$command == "REMOTE_PID") {
-      return(as.integer(log$message))
-    }
-    Sys.sleep(0.2)
-  }
-  stop("Failure to get pid from worker")
-}()
+rrq:::wait_status_change(obj$con, rrq:::rrq_keys(obj$queue_id), t, rrq:::TASK_PENDING)
 ```
 
-To simulate the process crashing, we've killed it:
+To simulate the process crashing, we've killed it. Because we have queued this on a separate process we can use `$task_info()` to fetch the process id (PID) of the process that the task is running in (this is different to that of the worker).
 
 ```{r}
-tools::pskill(pid)
+info <- obj$task_info(t)
+tools::pskill(info$pid)
 ```
 
-```{r, include = TRUE}
-## We need to wait here for a minute because the kill won't be instant
+```{r, include = FALSE, error = TRUE}
+## We need to wait here for a few seconds because the kill won't be instant
 obj$task_wait(t, 10)
 ```
 
 Because the task was run in a separate process, our worker could detect that the task has died unexpectedly:
 
-```
+```{r}
 obj$task_status(t)
 ```
 
-This is different to the error status above (that was `r rrq:::TASK_ERROR`). Note that if we had not run the task in a separate process the task status would be unchanged as `r rrq:::TASK_RUNNING`) because nothing could ever update the task status!
+This is different to the error status in the previous section (that was `r rrq:::TASK_ERROR`). Note that if we had not run the task in a separate process the task status would be unchanged as `r rrq:::TASK_RUNNING`) because nothing could ever update the task status!
 
 Retrieving the result has similar behaviour to the error case; we don't throw but instead return an object of class `rrq_task_error` (which also inherits from `error` and `condition`). However, this time there's really not much extra information in the error:
 
-```
+```{r}
 r <- obj$task_result(t)
 r
 ```
@@ -178,13 +167,14 @@ In this section we outline what you can do about unexplained and unreported fail
 In order to enable fault tolerance for this sort of issue, you first need to enable a "heatbeat" on the worker processes. This is a second process on each worker that periodically writes to the Redis database on a key that will expire in a time slightly longer than that period, in effect making a [dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch) - see `rrq::rrq_heartbeat` for details. So if the worker process dies for any reason, then after a while we'll detect that as its key has expired. We can then take some action.
 
 ```{r, include = FALSE}
-obj$worker_stop()
+obj$worker_stop(timeout = 10)
+obj$worker_delete_exited()
 ```
 
 To enable the heartbeat, save a worker configuration before starting a worker:
 
 ```{r}
-obj$worker_config_save("localhost", heartbeat_period = 3)
+obj$worker_config_save("localhost", heartbeat_period = 3, overwrite = TRUE)
 ```
 
 When you spawn a worker it will pick up this configuration, and we'll be able to detect if it has died.
@@ -207,7 +197,7 @@ t <- obj$enqueue(Sys.sleep(3600))
 ```
 
 ```{r, include = FALSE}
-Sys.sleep(1)
+rrq:::wait_status_change(obj$con, rrq:::rrq_keys(obj$queue_id), t, rrq:::TASK_PENDING)
 ```
 
 The worker wil pick the task up fairly quickly, and the status will change to `RUNNING`:
@@ -217,7 +207,7 @@ obj$task_status(t)
 obj$worker_status(w)
 ```
 
-We kill the worker:
+We kill the worker (simulating the job crashing, or the machine turning off, etc):
 
 ```{r}
 tools::pskill(w_pid)
