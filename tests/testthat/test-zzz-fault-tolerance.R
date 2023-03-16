@@ -129,6 +129,10 @@ test_that("detect killed worker (via heartbeat)", {
 
   expect_silent(res <- obj$worker_detect_exited())
   expect_null(res)
+
+  expect_equal(obj$task_status(t), set_names(TASK_DIED, t))
+  expect_equal(obj$task_result(t),
+               worker_task_failed(TASK_DIED, obj$queue_id, t))
 })
 
 
@@ -164,6 +168,14 @@ test_that("detect multiple killed workers", {
 
   expect_silent(res <- obj$worker_detect_exited())
   expect_null(res)
+
+  expect_equal(obj$task_status(t1), set_names(TASK_DIED, t1))
+  expect_equal(obj$task_result(t1),
+               worker_task_failed(TASK_DIED, obj$queue_id, t1))
+
+  expect_equal(obj$task_status(t2), set_names(TASK_DIED, t2))
+  expect_equal(obj$task_result(t2),
+               worker_task_failed(TASK_DIED, obj$queue_id, t2))
 })
 
 
