@@ -55,6 +55,8 @@ worker_run_task_separate_process <- function(task, worker, private) {
     package = "rrq",
     supervise = TRUE)
 
+  con$HSET(keys$task_pid, task_id, px$get_pid())
+
   timeout_task <- con$HGET(keys$task_timeout, task_id)
   if (!is.null(timeout_task)) {
     timeout_task <- Sys.time() + as.numeric(timeout_task)

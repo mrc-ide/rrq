@@ -1037,3 +1037,63 @@ test_that("Can set the task wait timeout on controller creation", {
     expect_equal(f(NULL), Inf)
   })
 })
+
+
+test_that("Can get information about a task in the same process", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  t <- obj$enqueue(sqrt(4))
+
+  d1 <- obj$task_info(t)
+  expect_setequal(
+    names(d1),
+    c("id", "status", "queue", "separate_process", "timeout", "worker", "pid"))
+  expect_equal(d1$id, t)
+  expect_equal(d1$status, TASK_PENDING)
+  expect_equal(d1$queue, "default")
+  expect_false(d1$separate_process)
+  expect_null(d1$timeout)
+  expect_null(d1$worker)
+  expect_null(d1$pid)
+
+  w$step(TRUE)
+  d2 <- obj$task_info(t)
+  expect_setequal(names(d2), names(d1))
+  expect_equal(d2$id, t)
+  expect_equal(d2$status, TASK_COMPLETE)
+  expect_equal(d2$queue, "default")
+  expect_false(d2$separate_process)
+  expect_null(d2$timeout, 5)
+  expect_equal(d2$worker, w$name)
+  expect_null(d2$pid, "integer")
+})
+
+
+test_that("Can get information about a task in a different process", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  t <- obj$enqueue(sqrt(4), separate_process = TRUE, timeout_task_run = 5)
+
+  d1 <- obj$task_info(t)
+  expect_setequal(
+    names(d1),
+    c("id", "status", "queue", "separate_process", "timeout", "worker", "pid"))
+  expect_equal(d1$id, t)
+  expect_equal(d1$status, TASK_PENDING)
+  expect_equal(d1$queue, "default")
+  expect_true(d1$separate_process)
+  expect_equal(d1$timeout, 5)
+  expect_null(d1$worker)
+  expect_null(d1$pid)
+
+  w$step(TRUE)
+  d2 <- obj$task_info(t)
+  expect_setequal(names(d2), names(d1))
+  expect_equal(d2$id, t)
+  expect_equal(d2$status, TASK_COMPLETE)
+  expect_equal(d2$queue, "default")
+  expect_true(d2$separate_process)
+  expect_equal(d2$timeout, 5)
+  expect_equal(d2$worker, w$name)
+  expect_type(d2$pid, "integer")
+})
