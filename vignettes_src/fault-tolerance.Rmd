@@ -124,7 +124,11 @@ t <- obj$enqueue(Sys.sleep(3600), separate_process = TRUE)
 ```
 
 ```{r, include = FALSE}
+# small sleep here needed so that the pid is actually available;
+# two small conditions to pass.
 rrq:::wait_status_change(obj$con, rrq:::rrq_keys(obj$queue_id), t, rrq:::TASK_PENDING)
+rrq:::wait_timeout("pid not available in time", 10,
+                   function() is.null(obj$task_info(t)$pid))
 ```
 
 To simulate the process crashing, we've killed it. Because we have queued this on a separate process we can use `$task_info()` to fetch the process id (PID) of the process that the task is running in (this is different to that of the worker).
@@ -134,9 +138,8 @@ info <- obj$task_info(t)
 tools::pskill(info$pid)
 ```
 
-```{r, include = FALSE, error = TRUE}
-## We need to wait here for a few seconds because the kill won't be instant
-obj$task_wait(t, 10)
+```{r, include = FALSE}
+rrq:::wait_status_change(obj$con, rrq:::rrq_keys(obj$queue_id), t, rrq:::TASK_RUNNING)
 ```
 
 Because the task was run in a separate process, our worker could detect that the task has died unexpectedly:
@@ -166,7 +169,7 @@ In this section we outline what you can do about unexplained and unreported fail
 
 In order to enable fault tolerance for this sort of issue, you first need to enable a "heatbeat" on the worker processes. This is a second process on each worker that periodically writes to the Redis database on a key that will expire in a time slightly longer than that period, in effect making a [dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch) - see `rrq::rrq_heartbeat` for details. So if the worker process dies for any reason, then after a while we'll detect that as its key has expired. We can then take some action.
 
-```{r, include = FALSE}
+```{r stop-workers, include = FALSE}
 obj$worker_stop(timeout = 10)
 obj$worker_delete_exited()
 ```
@@ -207,6 +210,10 @@ obj$task_status(t)
 obj$worker_status(w)
 ```
 
+<!-- ```{r} -->
+<!-- Sys.sleep(1) -->
+<!-- ``` -->
+
 We kill the worker (simulating the job crashing, or the machine turning off, etc):
 
 ```{r}
@@ -222,7 +229,7 @@ obj$worker_status(w)
 
 However, if we wait until after the heartbeat key will have expired (9s = 3 * 3s, the time we saved above)
 
-```{r}
+```{r wait_for_expiry}
 Sys.sleep(10)
 ```
 
@@ -239,8 +246,10 @@ obj$task_status(t)
 obj$worker_status(w)
 ```
 
-This is still not terribly useful, as we have not provided any mechanism to automatically requeue a lost task or restart a dead worker.
+Fetching the task result provides the same `r rrq:::TASK_DIED` error as above:
 
 ```{r}
 obj$task_result(t)
 ```
+
+This is still not terribly useful, as we have not provided any mechanism to automatically requeue a lost task or restart a dead worker.
