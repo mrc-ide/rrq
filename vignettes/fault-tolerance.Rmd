@@ -1,0 +1,343 @@
+---
+title: "Fault tolerance"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fault tolerance}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+
+In a perfect world, nothing would fail, and this vignette would not be needed. But here we are.
+
+When you run tasks within a single process and things go wrong, you know immediately you see it happen. With a queuing system like rrq it's less obvious when something bad has happened because the task is running on another process, possibly on a different machine!
+
+* Plain errors are the simplest sort of fault to recover from. Your task throws an error, `rrq` picks this up and marks the task as errored, and moves on to the next thing. You can then see that this error has happened as its status.
+* If your task crashes the process it can take out the worker (depending on how you have configured rrq; see below). In this case nothing updates the task status, and your task appears to stay running forever. This situation also arises if your process is killed by the operating system (e.g., out of memory) or via some other condition (e.g., an administrator terminating the process).
+* If your task is running on another machine and that machine becomes unreachable (switched off, disconnects from the network, etc) your task will never appear to finish.
+
+This vignette discusses how you can mitigate against and recover from these sorts of issues. We start with the expected errors and build up to considerations for creating a fault tolerant queue.
+
+## Error handling
+
+We start with the simplest sort of fault, and can just as easily happen locally as remotely with `rrq`. In this case the handling is fairly well defined and there's not much you need to do. This section is not really "fault tolerance" at all, but simply how rrq handles errors and what you can do about it.
+
+Consider this simple function which would fit a linear model between two variables:
+
+```r
+fit_model <- function(x, y) {
+  lm(y ~ x)
+}
+```
+
+
+```r
+obj <- rrq::rrq_controller$new(paste0("rrq:", ids::random_id(bytes = 4)))
+obj$envir(rrq::rrq_envir(sources = "fault.R"))
+rrq::rrq_worker_spawn(obj)
+#> Spawning 1 worker with prefix veryveryveryflying_irukandjijellyfish
+#> [1] "veryveryveryflying_irukandjijellyfish_1"
+```
+
+In the happy case, everything works as expected:
+
+
+```r
+x <- runif(5)
+y <- 2 * x + rnorm(length(x), 0, 0.2)
+t <- obj$enqueue(fit_model(x, y))
+obj$task_wait(t, 10)
+#>
+#> Call:
+#> lm(formula = y ~ x)
+#>
+#> Coefficients:
+#> (Intercept)            x
+#>      0.3131       1.2989
+obj$task_status(t)
+#> 6804dc79e94909b3143af5a856afdd9b
+#>                       "COMPLETE"
+```
+
+But if we provide invalid input, the task will error:
+
+
+```r
+t <- obj$enqueue(fit_model(x, NULL))
+obj$task_wait(t, 10)
+#> <rrq_task_error>
+#>   from:   model.frame.default(formula = y ~ x, drop.unused.levels = TRUE)
+#>   error:  invalid type (NULL) for variable 'y'
+#>   queue:  rrq:81b322b2
+#>   task:   9cb24b2a17ee248d5c129d3128a7af39
+#>   status: ERROR
+#>   * To throw this error, use stop() with it
+#>   * This error has a stack trace, use '$trace' to see it
+```
+
+The first thing to note here is that the task does not throw an error when you fetch the result, either via `task_wait` as above, or via `task_result`:
+
+
+```r
+r <- obj$task_result(t)
+r
+#> <rrq_task_error>
+#>   from:   model.frame.default(formula = y ~ x, drop.unused.levels = TRUE)
+#>   error:  invalid type (NULL) for variable 'y'
+#>   queue:  rrq:81b322b2
+#>   task:   9cb24b2a17ee248d5c129d3128a7af39
+#>   status: ERROR
+#>   * To throw this error, use stop() with it
+#>   * This error has a stack trace, use '$trace' to see it
+```
+
+However, the result will be an object of `rrq_task_error` which you can test for using `inherits`:
+
+
+```r
+inherits(r, "rrq_task_error")
+#> [1] TRUE
+```
+
+The default behaviour of `rrq` is not to error when fetching a task as that would require that you use `tryCatch` everywhere where you retrieve tasks that might have failed, and because errors are often interesting themselves. For example, `rrq_task_error` objects include stack traces alongside the error:
+
+
+```r
+r$trace
+#>      ▆
+#>   1. ├─base::tryCatch(...)
+#>   2. │ └─base (local) tryCatchList(expr, classes, parentenv, handlers)
+#>   3. │   └─base (local) tryCatchOne(expr, names, parentenv, handlers[[1L]])
+#>   4. │     └─base (local) doTryCatch(return(expr), name, parentenv, handler)
+#>   5. ├─base::withCallingHandlers(...)
+#>   6. ├─base::eval(expr, envir)
+#>   7. │ └─base::eval(expr, envir)
+#>   8. │   └─fit_model(x, NULL)
+#>   9. │     ├─stats::lm(y ~ x)
+#>  10. │     │ └─base::eval(mf, parent.frame())
+#>  11. │     │   └─base::eval(mf, parent.frame())
+#>  12. │     ├─stats::model.frame(formula = y ~ x, drop.unused.levels = TRUE)
+#>  13. │     └─stats::model.frame.default(formula = y ~ x, drop.unused.levels = TRUE)
+#>  14. └─base::.handleSimpleError(...)
+#>  15.   └─rrq (local) h(simpleError(msg, call))
+```
+
+These are `rlang` stack traces, which are somewhat richer than those produced by `traceback()`, containing the same set of stacks but arranged in a tree. See the [documentation there](https://rlang.r-lib.org/reference/trace_back.html) for details. This error object will also include any warnings captured while the task ran.
+
+Objects of class `rrq_task_error` inherit from `error` and `condition` so, once thrown, will behave as expected in programs using errors for flow control (e.g., with `tryCatch`); you can throw them yourself with  `stop()`:
+
+
+```r
+stop(r)
+#> Error in model.frame.default(formula = y ~ x, drop.unused.levels = TRUE): invalid type (NULL) for variable 'y'
+```
+
+You can also change the default behaviour to error on failure by passing  `error = TRUE` to any of `$task_result()`, `$task_wait()`, `$tasks_result()` or `$tasks_wait()`, which will immediately rethrow the error in your R session (your program could then stop or you could again catch it with `tryCatch`):
+
+
+```r
+obj$task_result(t, error = TRUE)
+#> Error in model.frame.default(formula = y ~ x, drop.unused.levels = TRUE): invalid type (NULL) for variable 'y'
+```
+
+This process is unchanged if the task is run in a separate process (with `separate_process = TRUE` passed to `enqueue`), with the same status and return type, and with the trace information available after failure.
+
+## Increasing resiliance via separate processes
+
+Running tasks in separate processes (e.g., `obj$enqueue(mytask(), separate_process = TRUE)`) is the simplest way of making things more resiliant because this creates a layer of isolation between the worker and the task. If your task crashes R (e.g., a segmentation fault due to a bug in your C/C++ code) or is killed by the operating system then the worker process survives and can update the keys in Redis directly to advertise this fact. This is geerally much nicer than when the worker dies and the task status cannot be updated.
+
+The downside of using separate processes is that it is much slower; compare the time taken to queue, run an retrieve a trivial task run in the same worker process (look at the `elapsed` entry)
+
+
+```r
+system.time(
+  obj$task_wait(obj$enqueue(identity(1)), 10))
+#>    user  system elapsed
+#>   0.001   0.000   0.003
+```
+
+with the same task run in a separate process on the worker
+
+
+```r
+system.time(
+  obj$task_wait(obj$enqueue(identity(1), separate_process = TRUE), 10))
+#>    user  system elapsed
+#>   0.001   0.000   0.234
+```
+
+We expect this difference to be ~100 fold in local workers. Almost all the cost is due to the overhead of starting and terminating a fresh R session. If your queue uses a lot of packages there will be additional overhead here too as these are loaded. However, this cost is fixed and will decrease as a fraction of the total running time as the running time of your task increases. So for long-running tasks the additional safety of separate processes is probably worthwhile. For smaller tasks you may want to make sure you run a heartbeat process so that you can handle failures via that route.
+
+Consider running some long running job; this one simply sleeps for an hour
+
+
+```r
+t <- obj$enqueue(Sys.sleep(3600), separate_process = TRUE)
+```
+
+
+
+To simulate the process crashing, we've killed it. Because we have queued this on a separate process we can use `$task_info()` to fetch the process id (PID) of the process that the task is running in (this is different to that of the worker).
+
+
+```r
+info <- obj$task_info(t)
+tools::pskill(info$pid)
+```
+
+
+
+Because the task was run in a separate process, our worker could detect that the task has died unexpectedly:
+
+
+```r
+obj$task_status(t)
+#> 66b2d847d2828e71f95bd1e5d42460e4
+#>                           "DIED"
+```
+
+This is different to the error status in the previous section (that was ERROR). Note that if we had not run the task in a separate process the task status would be unchanged as RUNNING) because nothing could ever update the task status!
+
+Retrieving the result has similar behaviour to the error case; we don't throw but instead return an object of class `rrq_task_error` (which also inherits from `error` and `condition`). However, this time there's really not much extra information in the error:
+
+
+```r
+r <- obj$task_result(t)
+r
+#> <rrq_task_error>
+#>   error:  Task not successful: DIED
+#>   queue:  rrq:81b322b2
+#>   task:   66b2d847d2828e71f95bd1e5d42460e4
+#>   status: DIED
+#>   * To throw this error, use stop() with it
+```
+
+There's also no trace available
+
+
+```r
+r$trace
+#> NULL
+```
+
+## Loss of workers
+
+In this section we outline what you can do about unexplained and unreported failures in your task, or loss of workers. This will typically be that your worker has crashed (due to your task crashing it perhaps), killed (e.g., by the operating system or an administrator) or the loss of the machine that it is working on.
+
+In order to enable fault tolerance for this sort of issue, you first need to enable a "heatbeat" on the worker processes. This is a second process on each worker that periodically writes to the Redis database on a key that will expire in a time slightly longer than that period, in effect making a [dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch) - see `rrq::rrq_heartbeat` for details. So if the worker process dies for any reason, then after a while we'll detect that as its key has expired. We can then take some action.
+
+
+
+To enable the heartbeat, save a worker configuration before starting a worker:
+
+
+```r
+obj$worker_config_save("localhost", heartbeat_period = 3, overwrite = TRUE)
+```
+
+When you spawn a worker it will pick up this configuration, and we'll be able to detect if it has died.
+
+
+```r
+w <- rrq::rrq_worker_spawn(obj)
+#> Spawning 1 worker with prefix capillary_irishterrier
+```
+
+In order to simulate the loss of the worker, we need its [process id (PID)](https://en.wikipedia.org/wiki/Process_identifier), which we can get from the controller object:
+
+
+```r
+w_pid <- obj$worker_info()[[w]]$pid
+w_pid
+#> [1] 1446751
+```
+
+Now, we can queue some long running process, which this worker will start:
+
+
+```r
+t <- obj$enqueue(Sys.sleep(3600))
+```
+
+
+
+The worker wil pick the task up fairly quickly, and the status will change to `RUNNING`:
+
+
+```r
+obj$task_status(t)
+#> 70db5d215affb4ba0c155c05d66803ce
+#>                        "RUNNING"
+obj$worker_status(w)
+#> capillary_irishterrier_1
+#>                   "BUSY"
+```
+
+<!-- ```{r} -->
+<!-- Sys.sleep(1) -->
+<!-- ``` -->
+
+We kill the worker (simulating the job crashing, or the machine turning off, etc):
+
+
+```r
+tools::pskill(w_pid)
+```
+
+Because the worker has been killed, it can't write to redis to tell us that the task can't be completed, so this status will never change:
+
+
+```r
+obj$task_status(t)
+#> 70db5d215affb4ba0c155c05d66803ce
+#>                        "RUNNING"
+obj$worker_status(w)
+#> capillary_irishterrier_1
+#>                   "BUSY"
+```
+
+The heartbeat will persist for 3 times the period given above (this multiplier is not configurable and while any number greater than 1 should be OK, we picked this as it allows for occasional network connectivity issues or slowness on the node - we may reduce it in a future version). This means that after 9s (3 * 3s) the key will have expired:
+
+
+```r
+Sys.sleep(10)
+```
+
+We can then use the `worker_detect_exited()` method to clean up
+
+
+```r
+obj$worker_detect_exited()
+#> Lost 1 worker:
+#>   - capillary_irishterrier_1
+#> Orphaning 1 task:
+#>   - 70db5d215affb4ba0c155c05d66803ce
+```
+
+At this point, the statuses of our task and worker are correct:
+
+
+```r
+obj$task_status(t)
+#> 70db5d215affb4ba0c155c05d66803ce
+#>                           "DIED"
+obj$worker_status(w)
+#> capillary_irishterrier_1
+#>                   "LOST"
+```
+
+Fetching the task result provides the same DIED error as above:
+
+
+```r
+obj$task_result(t)
+#> <rrq_task_error>
+#>   error:  Task not successful: DIED
+#>   queue:  rrq:81b322b2
+#>   task:   70db5d215affb4ba0c155c05d66803ce
+#>   status: DIED
+#>   * To throw this error, use stop() with it
+```
+
+This is still not terribly useful, as we have not provided any mechanism to automatically requeue a lost task or restart a dead worker.
