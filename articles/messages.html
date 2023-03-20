@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.14</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.15</span>
       </span>
     </div>
 
@@ -53,6 +53,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
+      <a href="../articles/fault-tolerance.html">Fault tolerance</a>
+    </li>
+    <li>
       <a href="../articles/messages.html">messages</a>
     </li>
   </ul>
@@ -99,26 +102,26 @@ vignette shows what the possible messages do.</p>
 <code class="sourceCode R"><span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="va"><a href="../reference/rrq_controller.html">rrq_controller</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"rrq:messages"</span><span class="op">)</span></span>
 <span><span class="va">logdir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">worker_id</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/rrq_worker_spawn.html">rrq_worker_spawn</a></span><span class="op">(</span><span class="va">obj</span>, logdir <span class="op">=</span> <span class="va">logdir</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Spawning 1 worker with prefix crystalloid_bubblefish</span></span></code></pre></div>
+<span><span class="co">#&gt; Spawning 1 worker with prefix narrow_amurminnow</span></span></code></pre></div>
 <p>On startup the worker log contains:</p>
-<pre class="plain"><code>[2023-03-16 09:35:03] QUEUE default
-[2023-03-16 09:35:03] ENVIR new
-[2023-03-16 09:35:03] ALIVE
+<pre class="plain"><code>[2023-03-20 14:53:15] QUEUE default
+[2023-03-20 14:53:15] ENVIR new
+[2023-03-20 14:53:15] ALIVE
                                  __
                 ______________ _/ /
       ______   / ___/ ___/ __ `/ /_____
      /_____/  / /  / /  / /_/ /_/_____/
  ______      /_/  /_/   \__, (_)   ______
 /_____/                   /_/     /_____/
-    worker:        crystalloid_bubblefish_1
-    rrq_version:   0.6.14
+    worker:        narrow_amurminnow_1
+    rrq_version:   0.6.15
     platform:      x86_64-pc-linux-gnu (64-bit)
     running:       Ubuntu 22.04.2 LTS
-    hostname:      fv-az570-924
+    hostname:      fv-az362-804
     username:      runner
     queue:         rrq:messages:queue:default
     wd:            /home/runner/work/rrq/rrq/vignettes
-    pid:           7315
+    pid:           6440
     redis_host:    127.0.0.1
     redis_port:    6379
     heartbeat_key: &lt;not set&gt;</code></pre>
@@ -169,12 +172,12 @@ because it does so little</p>
 <p>The message id is going to be useful for getting responses:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">message_id</span></span>
-<span><span class="co">#&gt; [1] "1678959303.792997"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "1679323995.268608"</span></span></code></pre></div>
 <p>(this is derived from the current time, according to Redis which is
 the central reference point of time for the whole system).</p>
-<pre class="plain"><code>[2023-03-16 09:35:03] MESSAGE PING
+<pre class="plain"><code>[2023-03-20 14:53:15] MESSAGE PING
 PONG
-[2023-03-16 09:35:03] RESPONSE PING</code></pre>
+[2023-03-20 14:53:15] RESPONSE PING</code></pre>
 <p>The logfile prints:</p>
 <ol style="list-style-type: decimal">
 <li>the request for the <code>PING</code>
@@ -186,10 +189,10 @@ something is written to the response stream.</li>
 <p>We can access the same bits of information in the worker log:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_log_tail</span><span class="op">(</span>n <span class="op">=</span> <span class="cn">Inf</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                  worker_id       time  command message</span></span>
-<span><span class="co">#&gt; 1 crystalloid_bubblefish_1 1678959304    ALIVE        </span></span>
-<span><span class="co">#&gt; 2 crystalloid_bubblefish_1 1678959304  MESSAGE    PING</span></span>
-<span><span class="co">#&gt; 3 crystalloid_bubblefish_1 1678959304 RESPONSE    PING</span></span></code></pre></div>
+<span><span class="co">#&gt;             worker_id       time  command message</span></span>
+<span><span class="co">#&gt; 1 narrow_amurminnow_1 1679323995    ALIVE        </span></span>
+<span><span class="co">#&gt; 2 narrow_amurminnow_1 1679323995  MESSAGE    PING</span></span>
+<span><span class="co">#&gt; 3 narrow_amurminnow_1 1679323995 RESPONSE    PING</span></span></code></pre></div>
 <p>This includes the <code>ALIVE</code> message as the worker comes
 up.</p>
 <p>Inspecting the logs is fine for interactive use, but it’s going to be
@@ -198,56 +201,51 @@ more useful often to poll for a response.</p>
 anyway:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_has_response</span><span class="op">(</span><span class="va">message_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; crystalloid_bubblefish_1 </span></span>
-<span><span class="co">#&gt;                     TRUE</span></span></code></pre></div>
+<span><span class="co">#&gt; narrow_amurminnow_1 </span></span>
+<span><span class="co">#&gt;                TRUE</span></span></code></pre></div>
 <p>Or inversely we can as what messages a given worker has responses
 for:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_response_ids</span><span class="op">(</span><span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "1678959303.792997"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "1679323995.268608"</span></span></code></pre></div>
 <p>To fetch the responses from all workers it was sent to (always
 returning a named list):</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1</span></span>
 <span><span class="co">#&gt; [1] "PONG"</span></span></code></pre></div>
 <p>or to fetch the response from a given worker:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1</span></span>
 <span><span class="co">#&gt; [1] "PONG"</span></span></code></pre></div>
 <p>The response can be deleted by passing <code>delete = TRUE</code> to
 this method:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, delete <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1</span></span>
 <span><span class="co">#&gt; [1] "PONG"</span></span></code></pre></div>
 <p>after which recalling the message will throw an error:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Error in message_get_response(self$con, private$keys, message_id, worker_ids, : Response missing for workers: crystalloid_bubblefish_1</span></span></code></pre></div>
+<span><span class="co">#&gt; Error in message_get_response(self$con, private$keys, message_id, worker_ids, : Response missing for workers: narrow_amurminnow_1</span></span></code></pre></div>
 <p>There is also a <code>timeout</code> argument that lets you wait
 until a response is ready (as in <code>$task_wait()</code>).</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "b4814390b2c1c062c3e1e37ac10b0835"</span></span>
+<span><span class="co">#&gt; [1] "0af4372acd5bdff9400a11089179e1bd"</span></span>
 <span><span class="va">message_id</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"PING"</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, delete <span class="op">=</span> <span class="cn">TRUE</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1</span></span>
 <span><span class="co">#&gt; [1] "PONG"</span></span></code></pre></div>
 <p>Looking at the log will show what went on here:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_log_tail</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                  worker_id       time       command</span></span>
-<span><span class="co">#&gt; 1 crystalloid_bubblefish_1 1678959305    TASK_START</span></span>
-<span><span class="co">#&gt; 2 crystalloid_bubblefish_1 1678959307 TASK_COMPLETE</span></span>
-<span><span class="co">#&gt; 3 crystalloid_bubblefish_1 1678959307       MESSAGE</span></span>
-<span><span class="co">#&gt; 4 crystalloid_bubblefish_1 1678959307      RESPONSE</span></span>
-<span><span class="co">#&gt;                            message</span></span>
-<span><span class="co">#&gt; 1 b4814390b2c1c062c3e1e37ac10b0835</span></span>
-<span><span class="co">#&gt; 2 b4814390b2c1c062c3e1e37ac10b0835</span></span>
-<span><span class="co">#&gt; 3                             PING</span></span>
-<span><span class="co">#&gt; 4                             PING</span></span></code></pre></div>
+<span><span class="co">#&gt;             worker_id       time       command                          message</span></span>
+<span><span class="co">#&gt; 1 narrow_amurminnow_1 1679323996    TASK_START 0af4372acd5bdff9400a11089179e1bd</span></span>
+<span><span class="co">#&gt; 2 narrow_amurminnow_1 1679323998 TASK_COMPLETE 0af4372acd5bdff9400a11089179e1bd</span></span>
+<span><span class="co">#&gt; 3 narrow_amurminnow_1 1679323998       MESSAGE                             PING</span></span>
+<span><span class="co">#&gt; 4 narrow_amurminnow_1 1679323998      RESPONSE                             PING</span></span></code></pre></div>
 <ol style="list-style-type: decimal">
 <li>A task is received</li>
 <li>2s later the task is completed</li>
@@ -257,11 +255,11 @@ until a response is ready (as in <code>$task_wait()</code>).</p>
 <p>However, because the message is only processed after the task is
 completed, the response takes a while to come back. Equivalently, from
 the worker log:</p>
-<pre class="plain"><code>[2023-03-16 09:35:04] TASK_START b4814390b2c1c062c3e1e37ac10b0835
-[2023-03-16 09:35:06] TASK_COMPLETE b4814390b2c1c062c3e1e37ac10b0835
-[2023-03-16 09:35:06] MESSAGE PING
+<pre class="plain"><code>[2023-03-20 14:53:16] TASK_START 0af4372acd5bdff9400a11089179e1bd
+[2023-03-20 14:53:18] TASK_COMPLETE 0af4372acd5bdff9400a11089179e1bd
+[2023-03-20 14:53:18] MESSAGE PING
 PONG
-[2023-03-16 09:35:06] RESPONSE PING</code></pre>
+[2023-03-20 14:53:18] RESPONSE PING</code></pre>
 </div>
 <div class="section level2">
 <h2 id="echo">
@@ -273,11 +271,11 @@ prints an arbitrary string to the log. It always returns
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">message_id</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"ECHO"</span>, <span class="st">"hello world!"</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1</span></span>
 <span><span class="co">#&gt; [1] "OK"</span></span></code></pre></div>
-<pre class="plain"><code>[2023-03-16 09:35:06] MESSAGE ECHO
+<pre class="plain"><code>[2023-03-20 14:53:18] MESSAGE ECHO
 hello world!
-[2023-03-16 09:35:06] RESPONSE ECHO</code></pre>
+[2023-03-20 14:53:18] RESPONSE ECHO</code></pre>
 </div>
 <div class="section level2">
 <h2 id="info">
@@ -290,15 +288,15 @@ worker started up:</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_info</span><span class="op">(</span><span class="op">)</span><span class="op">[[</span><span class="va">worker_id</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="co">#&gt;   &lt;rrq_worker_info&gt;</span></span>
-<span><span class="co">#&gt;     worker:      crystalloid_bubblefish_1</span></span>
-<span><span class="co">#&gt;     rrq_version: 0.6.14</span></span>
+<span><span class="co">#&gt;     worker:      narrow_amurminnow_1</span></span>
+<span><span class="co">#&gt;     rrq_version: 0.6.15</span></span>
 <span><span class="co">#&gt;     platform:    x86_64-pc-linux-gnu (64-bit)</span></span>
 <span><span class="co">#&gt;     running:     Ubuntu 22.04.2 LTS</span></span>
-<span><span class="co">#&gt;     hostname:    fv-az570-924</span></span>
+<span><span class="co">#&gt;     hostname:    fv-az362-804</span></span>
 <span><span class="co">#&gt;     username:    runner</span></span>
 <span><span class="co">#&gt;     queue:       rrq:messages:queue:default</span></span>
 <span><span class="co">#&gt;     wd:          /home/runner/work/rrq/rrq/vignettes</span></span>
-<span><span class="co">#&gt;     pid:         7315</span></span>
+<span><span class="co">#&gt;     pid:         6440</span></span>
 <span><span class="co">#&gt;     redis_host:  127.0.0.1</span></span>
 <span><span class="co">#&gt;     redis_port:  6379</span></span></code></pre></div>
 <p>We can force the worker to refresh:</p>
@@ -308,38 +306,38 @@ worker started up:</p>
 <code>envir</code> field:</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1</span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1$worker</span></span>
-<span><span class="co">#&gt; [1] "crystalloid_bubblefish_1"</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1$worker</span></span>
+<span><span class="co">#&gt; [1] "narrow_amurminnow_1"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1$rrq_version</span></span>
-<span><span class="co">#&gt; [1] "0.6.14"</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1$rrq_version</span></span>
+<span><span class="co">#&gt; [1] "0.6.15"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1$platform</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1$platform</span></span>
 <span><span class="co">#&gt; [1] "x86_64-pc-linux-gnu (64-bit)"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1$running</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1$running</span></span>
 <span><span class="co">#&gt; [1] "Ubuntu 22.04.2 LTS"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1$hostname</span></span>
-<span><span class="co">#&gt; [1] "fv-az570-924"</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1$hostname</span></span>
+<span><span class="co">#&gt; [1] "fv-az362-804"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1$username</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1$username</span></span>
 <span><span class="co">#&gt; [1] "runner"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1$queue</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1$queue</span></span>
 <span><span class="co">#&gt; [1] "rrq:messages:queue:default"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1$wd</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1$wd</span></span>
 <span><span class="co">#&gt; [1] "/home/runner/work/rrq/rrq/vignettes"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1$pid</span></span>
-<span><span class="co">#&gt; [1] 7315</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1$pid</span></span>
+<span><span class="co">#&gt; [1] 6440</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1$redis_host</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1$redis_host</span></span>
 <span><span class="co">#&gt; [1] "127.0.0.1"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1$redis_port</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1$redis_port</span></span>
 <span><span class="co">#&gt; [1] 6379</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -353,7 +351,7 @@ environment in which queued code is evaluated in.</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">message_id</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"EVAL"</span>, <span class="st">"1 + 1"</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1</span></span>
 <span><span class="co">#&gt; [1] 2</span></span></code></pre></div>
 <p>This could be used to evaluate code that has side effects, such as
 installing packages. However, due to limitations with how R loads
@@ -369,29 +367,29 @@ prevent workers from picking up new work (and then allowing them to
 start again).</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_status</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; crystalloid_bubblefish_1 </span></span>
-<span><span class="co">#&gt;                   "IDLE"</span></span>
+<span><span class="co">#&gt; narrow_amurminnow_1 </span></span>
+<span><span class="co">#&gt;              "IDLE"</span></span>
 <span><span class="va">message_id</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"PAUSE"</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1</span></span>
 <span><span class="co">#&gt; [1] "OK"</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_status</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; crystalloid_bubblefish_1 </span></span>
-<span><span class="co">#&gt;                 "PAUSED"</span></span></code></pre></div>
+<span><span class="co">#&gt; narrow_amurminnow_1 </span></span>
+<span><span class="co">#&gt;            "PAUSED"</span></span></code></pre></div>
 <p>Once paused workers ignore tasks, which stay on the queue:</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 54891188303e1b7d1deb6dd79b1117c0 </span></span>
+<span><span class="co">#&gt; 13522978e62a4b783d5d047f2b7f8c4e </span></span>
 <span><span class="co">#&gt;                        "PENDING"</span></span></code></pre></div>
 <p>Sending a <code>RESUME</code> message unpauses the worker:</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">message_id</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"RESUME"</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1</span></span>
 <span><span class="co">#&gt; [1] "OK"</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">task_wait</span><span class="op">(</span><span class="va">t</span>, <span class="fl">5</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.4890242 0.7269717 0.5605065 0.9795851 0.7044368</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.3521339 0.4724068 0.2916863 0.6614741 0.3324904</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="set_timeout-get_timeout">
@@ -404,27 +402,27 @@ set it with <code>SET_TIMEOUT</code>. For our worker above the timeout
 is infinite; it will never quit:</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_send_and_wait</span><span class="op">(</span><span class="st">"TIMEOUT_GET"</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1</span></span>
 <span><span class="co">#&gt; timeout_idle    remaining </span></span>
 <span><span class="co">#&gt;          Inf          Inf</span></span></code></pre></div>
 <p>We can set this to a finite value, in seconds:</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_send_and_wait</span><span class="op">(</span><span class="st">"TIMEOUT_SET"</span>, <span class="fl">600</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1</span></span>
 <span><span class="co">#&gt; [1] "OK"</span></span></code></pre></div>
 <p>Here the timeout is set to 10 minutes (600s).</p>
 <p>Once set, the <code>TIMEOUT_GET</code> returns the length of time
 remaining before the worker exits</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_send_and_wait</span><span class="op">(</span><span class="st">"TIMEOUT_GET"</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1</span></span>
 <span><span class="co">#&gt; timeout_idle    remaining </span></span>
-<span><span class="co">#&gt;      600.000      599.878</span></span>
+<span><span class="co">#&gt;     600.0000     599.8501</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">message_send_and_wait</span><span class="op">(</span><span class="st">"TIMEOUT_GET"</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1</span></span>
 <span><span class="co">#&gt; timeout_idle    remaining </span></span>
-<span><span class="co">#&gt;     600.0000     594.8232</span></span></code></pre></div>
+<span><span class="co">#&gt;     600.0000     594.7837</span></span></code></pre></div>
 <p>One useful pattern is to send work to workers, then set the timeout
 to zero. This means that when work is complete they will exit (almost)
 immediately:</p>
@@ -435,28 +433,28 @@ immediately:</p>
 <span><span class="op">}</span>, timeout_task_wait <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"TIMEOUT_SET"</span>, <span class="fl">0</span>, <span class="va">worker_id</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">tasks_wait</span><span class="op">(</span><span class="va">grp</span><span class="op">$</span><span class="va">task_ids</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $`88552d3b07c10afebc85bfae5c82964d`</span></span>
-<span><span class="co">#&gt; [1] 0.4596281</span></span>
+<span><span class="co">#&gt; $`8d51540d30315804757388c097293858`</span></span>
+<span><span class="co">#&gt; [1] 0.2820147</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $`00c179bd4a8831e3e18cd19174d81ff4`</span></span>
-<span><span class="co">#&gt; [1] 0.06186357 0.75624133</span></span>
+<span><span class="co">#&gt; $`1fb6583fbbebde81cf4606c23274330e`</span></span>
+<span><span class="co">#&gt; [1] 0.09214305 0.33233499</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $`20196a1bec15057a8adbc09f7d89bf2d`</span></span>
-<span><span class="co">#&gt; [1] 0.07155932 0.96304504 0.63015801</span></span>
+<span><span class="co">#&gt; $`3756fb5c0dbc4bd9f14febd93f7ac9b7`</span></span>
+<span><span class="co">#&gt; [1] 0.6316344 0.9433254 0.7529226</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $e479f436717534f8f6bda88d5af7efba</span></span>
-<span><span class="co">#&gt; [1] 0.7311677 0.4718532 0.3071032 0.9330728</span></span>
+<span><span class="co">#&gt; $c56703d81661e5a3b0b899d5e3ed6413</span></span>
+<span><span class="co">#&gt; [1] 0.491745150 0.007712682 0.237950743 0.703234033</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $aae5570a50130b83423b57e64bfd54d9</span></span>
-<span><span class="co">#&gt; [1] 0.1997522 0.3908595 0.5077011 0.7438694 0.5160671</span></span></code></pre></div>
+<span><span class="co">#&gt; $`0720d8f78d361623ee3f0463c79e56b4`</span></span>
+<span><span class="co">#&gt; [1] 0.8354687 0.5461363 0.4795227 0.1390480 0.9056001</span></span></code></pre></div>
 <p>The worker will remain idle for 60s (by default) which is the length
 of time that one poll for work lasts, then it will exit.</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_status</span><span class="op">(</span><span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; crystalloid_bubblefish_1 </span></span>
-<span><span class="co">#&gt;                   "IDLE"</span></span>
+<span><span class="co">#&gt; narrow_amurminnow_1 </span></span>
+<span><span class="co">#&gt;              "IDLE"</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">message_send_and_wait</span><span class="op">(</span><span class="st">"TIMEOUT_GET"</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $crystalloid_bubblefish_1</span></span>
+<span><span class="co">#&gt; $narrow_amurminnow_1</span></span>
 <span><span class="co">#&gt; timeout_idle    remaining </span></span>
 <span><span class="co">#&gt;            0            0</span></span></code></pre></div>
 </div>
