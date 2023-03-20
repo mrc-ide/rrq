@@ -46,7 +46,14 @@ vignettes/messages.Rmd: vignettes_src/messages.Rmd
 	sed -i.bak 's/[[:space:]]*$$//' $@
 	rm -f $@.bak
 
-vignettes: vignettes/rrq.Rmd vignettes/messages.Rmd
+vignettes/fault-tolerance.Rmd: vignettes_src/fault-tolerance.Rmd
+	mkdir -p vignettes
+	cd vignettes_src && ${RSCRIPT} -e 'knitr::knit("fault-tolerance.Rmd")'
+	mv vignettes_src/fault-tolerance.md $@
+	sed -i.bak 's/[[:space:]]*$$//' $@
+	rm -f $@.bak
+
+vignettes: vignettes/rrq.Rmd vignettes/messages.Rmd vignettes/fault-tolerance.Rmd
 	Rscript -e 'library(methods); devtools::build_vignettes()'
 
 .PHONY: all test document install vignettes
