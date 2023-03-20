@@ -10,24 +10,24 @@ worker_heartbeat <- function(con, keys, period, verbose) {
 }
 
 
-worker_detect_exited <- function(obj) {
-  time <- heartbeat_time_remaining(obj)
-  cleanup_orphans(obj, time)
+worker_detect_exited <- function(con, keys, store) {
+  time <- heartbeat_time_remaining(con, keys)
+  cleanup_orphans(con, keys, store, time)
 }
 
 
-heartbeat_time_remaining <- function(obj) {
-  info <- obj$worker_info(obj$worker_list())
+heartbeat_time_remaining <- function(con, keys) {
+  worker_ids <- worker_list(con, keys)
+  info <- worker_info(con, keys, worker_ids)
   ttl <- function(key) {
-    if (is.null(key)) Inf else obj$con$PTTL(key)
+    if (is.null(key)) Inf else con$PTTL(key)
   }
   vnapply(info, function(x) ttl(x$heartbeat_key))
 }
 
 
-cleanup_orphans <- function(obj, time) {
+cleanup_orphans <- function(con, keys, store, time) {
   worker_id <- names(time)[time < 0]
-  keys <- rrq_keys(obj$queue_id)
 
   if (length(worker_id) == 0L) {
     return(invisible(NULL))
@@ -38,21 +38,21 @@ cleanup_orphans <- function(obj, time) {
     length(worker_id), ngettext(length(worker_id), "worker", "workers"),
     paste0("  - ", worker_id, collapse = "\n")))
 
-  task_id <- obj$worker_task_id(worker_id)
-  i <- !is.na(task_id)
+  task_ids <- worker_task_id(con, keys, worker_id)
+  i <- !is.na(task_ids)
 
   if (sum(i) > 0) {
     message(sprintf(
       "Orphaning %s %s:\n%s",
-      length(task_id), ngettext(sum(i), "task", "tasks"),
-      paste0("  - ", task_id, collapse = "\n")))
-    obj$con$HMSET(keys$task_status, task_id[i],
-                  rep(TASK_DIED, sum(i)))
+      length(task_ids), ngettext(sum(i), "task", "tasks"),
+      paste0("  - ", task_ids, collapse = "\n")))
+    for (id in task_ids) {
+      run_task_cleanup(con, keys, store, id, TASK_DIED, NULL)
+    }
   }
 
-  obj$con$HMSET(keys$worker_status, worker_id,
-                rep(WORKER_LOST, length(worker_id)))
-  obj$con$SREM(keys$worker_name, worker_id)
+  con$HMSET(keys$worker_status, worker_id, rep(WORKER_LOST, length(worker_id)))
+  con$SREM(keys$worker_name, worker_id)
 
-  invisible(task_id)
+  invisible(task_ids)
 }

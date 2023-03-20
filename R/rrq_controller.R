@@ -1044,7 +1044,7 @@ rrq_controller <- R6::R6Class(
 
     ##' @description Detects exited workers through a lapsed heartbeat
     worker_detect_exited = function() {
-      worker_detect_exited(self)
+      worker_detect_exited(self$con, private$keys, private$store)
     },
 
     ##' @description Return the contents of a worker's process log, if
