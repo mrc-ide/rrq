@@ -227,7 +227,7 @@ obj$task_status(t)
 obj$worker_status(w)
 ```
 
-However, if we wait until after the heartbeat key will have expired (9s = 3 * 3s, the time we saved above)
+The heartbeat will persist for 3 times the period given above (this multiplier is not configurable and while any number greater than 1 should be OK, we picked this as it allows for occasional network connectivity issues or slowness on the node - we may reduce it in a future version). This means that after 9s (3 * 3s) the key will have expired:
 
 ```{r wait_for_expiry}
 Sys.sleep(10)
