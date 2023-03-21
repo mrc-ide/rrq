@@ -736,7 +736,7 @@ rrq_controller <- R6::R6Class(
     ##'   "default" queue).
     task_preceeding = function(task_id, queue = NULL, follow = NULL) {
       task_preceeding(self$con, private$keys, task_id, queue,
-                      follow = private$follow)
+                      follow = follow %||% private$follow)
     },
 
     ##' @description Get the result for a single task (see `$tasks_result`
@@ -1598,11 +1598,11 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
 
 tasks_result <- function(con, keys, store, task_ids, error, follow, single) {
   if (follow) {
-    hash <- from_redis_hash(con, keys$task_result,
-                            task_follow(con, keys$task_moved_to, task_ids))
+    task_ids_from <- task_follow(con, keys$task_moved_to, task_ids)
   } else {
-    hash <- from_redis_hash(con, keys$task_result, task_ids)
+    task_ids_from <- task_ids
   }
+  hash <- from_redis_hash(con, keys$task_result, task_ids)
   is_missing <- is.na(hash)
   ## TODO - for discussion/implementation elsewhere: should these be
   ## another error type? What other errors like this are floating
@@ -2016,7 +2016,7 @@ task_retry <- function(con, keys, task_ids) {
   if (anyDuplicated(task_ids) > 0) {
     stop("task_ids must not contain duplicates")
   }
-  
+
   ## Given we want both directions here (both root and leaf) we might
   ## be better pulling the while chain? Let's do a survey about this
   ## because it's important to get right.
@@ -2052,13 +2052,17 @@ task_retry <- function(con, keys, task_ids) {
   
   ## TODO: Consider allowing changing queue on retry? This might be
   ## useful if we have a different queue with diferent memory
-  ## available? or if retries should have higher or lower priority.
+  ## available? or if retries should have higher or lower priority. If
+  ## we do that then unconditionally write out the queue and read that
+  ## later in the task run. Seems like something that could be done
+  ## happily in another ticket?
   key_queue <- rrq_key_queue(
     keys$queue_id,
     list_to_character(con$HMGET(keys$task_queue, task_ids_root)))
   if (all(key_queue == key_queue[[1]])) {
     queue_push <- list(redis$RPUSH(key_queue[[1]], task_ids_new))
   } else {
+    ## Just needs a test case and a loop over queues
     stop("cope with pushing to multiple queues here...")
   }
 
@@ -2073,16 +2077,6 @@ task_retry <- function(con, keys, task_ids) {
       redis$HMSET(keys$task_moved_root,  task_ids_new,  task_ids_root),
       redis$HMSET(keys$task_expr,        task_ids_new,  task_ids_root)),
       queue_push))
-
-  ## What is the correct behaviour here for key_complete? Use the same?
-  ##
-  ## If we don't duplicate task_expr then we need to ensure we can't
-  ## dangle tasks in task deletion. Deletion might therefore be best
-  ## to consider trees carefully; this is worth a test really.
-
-  ## At this point we need to also cope with dependencies, most of
-  ## which will be impossible now; it's not really clear we'll want to
-  ## do that by default?
 
   task_ids_new
 }
