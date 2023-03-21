@@ -84,3 +84,61 @@ test_that("Can get deferred times", {
   expect_equal(rownames(r2), t2)
   expect_equal(rownames(r3), t1)
 })
+
+
+test_that("Can delete tasks consistently from root", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  set.seed(1)
+  t1 <- obj$enqueue(runif(5))
+  w$step(TRUE)
+  t2 <- obj$task_retry(t1)
+  w$step(TRUE)
+  t3 <- obj$task_retry(t2) # TODO: broken if given t1, failing to follow
+  w$step(TRUE)
+
+  info <- obj$task_info(t1)
+  obj$task_delete(t1)
+  expect_equal(obj$task_list(), character(0))
+})
+
+
+test_that("Can delete tasks consistently from leaf", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  set.seed(1)
+  t1 <- obj$enqueue(runif(5))
+  w$step(TRUE)
+  t2 <- obj$task_retry(t1)
+  w$step(TRUE)
+  t3 <- obj$task_retry(t2)
+  w$step(TRUE)
+
+  obj$task_delete(t3)
+  expect_equal(obj$task_list(), character(0))
+})
+
+
+test_that("can retry task from non-leaf tasks", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  set.seed(1)
+  t1 <- obj$enqueue(runif(5))
+  w$step(TRUE)
+  t2 <- obj$task_retry(t1)
+  w$step(TRUE)
+  t3 <- obj$task_retry(t1)
+  w$step(TRUE)
+
+  expect_equal(obj$task_info(t1)$moved, list(up = NULL, down = c(t2, t3)))
+  expect_equal(obj$task_info(t2)$moved, list(up = t1, down = t3))
+  expect_equal(obj$task_info(t3)$moved, list(up = c(t1, t2), down = NULL))
+
+  t4 <- obj$task_retry(t2)
+  w$step(TRUE)
+
+  expect_equal(obj$task_info(t1)$moved, list(up = NULL, down = c(t2, t3, t4)))
+  expect_equal(obj$task_info(t2)$moved, list(up = t1, down = c(t3, t4)))
+  expect_equal(obj$task_info(t3)$moved, list(up = c(t1, t2), down = t4))
+  expect_equal(obj$task_info(t4)$moved, list(up = c(t1, t2, t3), down = NULL))
+})

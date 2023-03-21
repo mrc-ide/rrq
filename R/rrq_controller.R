@@ -846,9 +846,8 @@ rrq_controller <- R6::R6Class(
     ##' @param check Logical indicating if we should check that the tasks
     ##'   are not running. Deleting running tasks is unlikely to result in
     ##'   desirable behaviour.
-    task_delete = function(task_ids, check = TRUE, follow = NULL) {
-      task_delete(self$con, private$keys, private$store, task_ids, check,
-                  follow %||% private$follow)
+    task_delete = function(task_ids, check = TRUE) {
+      task_delete(self$con, private$keys, private$store, task_ids, check)
     },
 
     ##' @description Cancel a single task. If the task is `PENDING` it
@@ -934,6 +933,13 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param task_ids Task ids to retry.
     task_retry = function(task_ids) {
+      ## TODO: also allow retrying of dependencies (i.e., if a task is
+      ## retried, should we reassess its dependencies that were
+      ## IMPOSSIBLE? but what about FAILED? We could either just add
+      ## them back into the queue (so that their status changes and
+      ## IMPOSSIBLE is no longer a terminal state) or we could just
+      ## retry them so that the trail is more obvious. For now, we do
+      ## nothing.
       task_retry(self$con, private$keys, task_ids)
     },
 
@@ -1376,48 +1382,57 @@ task_submit <- function(con, keys, store, task_id, dat, queue,
                 queue, separate_process, timeout, depends_on)
 }
 
-task_delete <- function(con, keys, store, task_ids, check, follow) {
+task_delete <- function(con, keys, store, task_ids, check) {
+  task_ids_root <- unname(from_redis_hash(con, keys$task_moved_root, task_ids))
+  task_ids_root[is.na(task_ids_root)] <- task_ids[is.na(task_ids_root)]
+  task_chain <- task_follow_chain(con, keys$task_moved_to, task_ids_root)
+  task_ids_all <- unlist(task_chain)
+
   if (check) {
-    st <- from_redis_hash(con, keys$task_status, task_ids,
+    st <- from_redis_hash(con, keys$task_status, task_ids_all,
                           missing = TASK_MISSING)
     if (any(st == TASK_RUNNING)) {
+      ## This already is not a great error, but will be even harder to
+      ## understand if the user is deleting a task that has been
+      ## retried.
       stop("Can't delete running tasks")
     }
   }
 
   original_deps_keys <- rrq_key_task_dependencies_original(
-    keys$queue_id, task_ids)
-  dependency_keys <- rrq_key_task_dependencies(keys$queue_id, task_ids)
-  dependent_keys <- rrq_key_task_dependents(keys$queue_id, task_ids)
+    keys$queue_id, task_ids_all)
+  dependency_keys <- rrq_key_task_dependencies(keys$queue_id, task_ids_all)
+  dependent_keys <- rrq_key_task_dependents(keys$queue_id, task_ids_all)
   res <- con$pipeline(.commands = c(
     lapply(task_ids, function(x) redis$HGET(keys$task_status, x)),
-    set_names(lapply(dependent_keys, redis$SMEMBERS), task_ids),
+    set_names(lapply(dependent_keys, redis$SMEMBERS), task_ids_all),
     list(
-      redis$HDEL(keys$task_expr,     task_ids),
-      redis$HDEL(keys$task_status,   task_ids),
-      redis$HDEL(keys$task_result,   task_ids),
-      redis$HDEL(keys$task_complete, task_ids),
-      redis$HDEL(keys$task_progress, task_ids),
-      redis$HDEL(keys$task_worker,   task_ids),
-      redis$HDEL(keys$task_local,    task_ids),
-      redis$SREM(keys$deferred_set,  task_ids)
+      redis$HDEL(keys$task_expr,     task_ids_all),
+      redis$HDEL(keys$task_status,   task_ids_all),
+      redis$HDEL(keys$task_result,   task_ids_all),
+      redis$HDEL(keys$task_complete, task_ids_all),
+      redis$HDEL(keys$task_progress, task_ids_all),
+      redis$HDEL(keys$task_worker,   task_ids_all),
+      redis$HDEL(keys$task_local,    task_ids_all),
+      redis$SREM(keys$deferred_set,  task_ids_all)
     ),
+    ## can be redis$DEL(original_deps_keys) etc
     lapply(original_deps_keys, redis$DEL),
     lapply(dependency_keys, redis$DEL),
     lapply(dependent_keys, redis$DEL)
     ))
 
-  queue <- list_to_character(con$HMGET(keys$task_queue, task_ids))
-  queue_remove(con, keys, task_ids, queue)
+  queue <- list_to_character(con$HMGET(keys$task_queue, task_ids_root))
+  queue_remove(con, keys, task_ids_all, queue)
 
-  store$drop(task_ids)
+  store$drop(task_ids_all)
 
   ## We only want to cancel dependencies i.e. set status to IMPOSSIBLE when
   ## A. They are dependents of a task which is PENDING or DEFERRED AND
   ## B. Their dependencies have not already been deleted or set to ERRORED, etc.
   ## i.e. their dependencies are also DEFERRED
-  status <- res[seq_along(task_ids)]
-  ids_to_cancel <- task_ids[unlist(status) %in% TASK$unstarted]
+  status <- res[seq_along(task_ids_all)]
+  ids_to_cancel <- task_ids_all[unlist(status) %in% TASK$unstarted]
   dependents <- unique(unlist(res[ids_to_cancel]))
   if (length(dependents) > 0) {
     status_dependent <- con$HMGET(keys$task_status, dependents)
@@ -1998,31 +2013,46 @@ throw_task_errors <- function(res, single) {
 ## though, as that guarantees isolation and atomicity. Get the logic
 ## working here first, then consider moving over.
 task_retry <- function(con, keys, task_ids) {
-  n <- length(task_ids)
-  time <- timestamp()
-  task_ids_new <- ids::random_id(n)
+  if (anyDuplicated(task_ids) > 0) {
+    stop("task_ids must not contain duplicates")
+  }
+  
+  ## Given we want both directions here (both root and leaf) we might
+  ## be better pulling the while chain? Let's do a survey about this
+  ## because it's important to get right.
+  task_ids_leaf <- task_follow(con, keys$task_moved_to, task_ids)
 
-  status <- task_status(con, keys, task_ids, follow = TRUE)
+  if (anyDuplicated(task_ids_leaf)) {
+    ## This one really needs a good error message, will be useful to
+    ## combine with the below to truncate the list?
+    stop("task_ids must point to distinct tasks")
+  }
+
+  status <- task_status(con, keys, task_ids_leaf, follow = FALSE)
 
   is_error <- !(status %in% TASK$retriable)
   if (any(is_error)) {
     ## TODO: use some nice formatting here to truncate the task ids?
+    ##
+    ## TODO: we might indicate which ids are redirected as otherwise
+    ## it's not super obvious
     stop(sprintf(
       "Can't retry tasks that are in state: %s:\n%s",
       paste(squote(unique(status[is_error])), collapse = ", "),
       paste(sprintf("  - %s", task_ids[is_error]), collapse = "\n")),
       call. = FALSE)
   }
-  if (any(status == TASK_IMPOSSIBLE)) {
-    ## TODO: need to be careful with TASK_IMPOSSIBLE here, these can't
-    ## really be requeued.
-    stop("Deal with impossible tasks")
-  }
+
+  n <- length(task_ids)
+  time <- timestamp()
+  task_ids_new <- ids::random_id(n)
 
   task_ids_root <- unname(from_redis_hash(con, keys$task_moved_root, task_ids))
   task_ids_root[is.na(task_ids_root)] <- task_ids[is.na(task_ids_root)]
   
-  ## TODO: Consider allowing changing queue on retry?
+  ## TODO: Consider allowing changing queue on retry? This might be
+  ## useful if we have a different queue with diferent memory
+  ## available? or if retries should have higher or lower priority.
   key_queue <- rrq_key_queue(
     keys$queue_id,
     list_to_character(con$HMGET(keys$task_queue, task_ids_root)))
@@ -2034,14 +2064,14 @@ task_retry <- function(con, keys, task_ids) {
 
   con$pipeline(
     .commands = c(list(
-      redis$HMSET(keys$task_status,      task_ids,     rep(TASK_MOVED, n)),
-      redis$HMSET(keys$task_status,      task_ids_new, rep(TASK_PENDING, n)),
-      redis$HMSET(keys$task_time_moved,  task_ids,     rep_len(time, n)),
-      redis$HMSET(keys$task_time_submit, task_ids_new, rep_len(time, n)),
-      redis$HMSET(keys$task_moved_from,  task_ids_new, task_ids),
-      redis$HMSET(keys$task_moved_to,    task_ids,     task_ids_new),
-      redis$HMSET(keys$task_moved_root,  task_ids_new, task_ids_root),
-      redis$HMSET(keys$task_expr,        task_ids_new, task_ids_root)),
+      redis$HMSET(keys$task_status,      task_ids_leaf, rep(TASK_MOVED, n)),
+      redis$HMSET(keys$task_status,      task_ids_new,  rep(TASK_PENDING, n)),
+      redis$HMSET(keys$task_time_moved,  task_ids_leaf, rep_len(time, n)),
+      redis$HMSET(keys$task_time_submit, task_ids_new,  rep_len(time, n)),
+      redis$HMSET(keys$task_moved_from,  task_ids_new,  task_ids_leaf),
+      redis$HMSET(keys$task_moved_to,    task_ids_leaf, task_ids_new),
+      redis$HMSET(keys$task_moved_root,  task_ids_new,  task_ids_root),
+      redis$HMSET(keys$task_expr,        task_ids_new,  task_ids_root)),
       queue_push))
 
   ## What is the correct behaviour here for key_complete? Use the same?
@@ -2058,6 +2088,10 @@ task_retry <- function(con, keys, task_ids) {
 }
 
 
+## TODO: we should set this to take all keys and a forward/backward or
+## up/down argument. That does not affect doing this in lua
+## particularly.
+##
 ## This is probably worth doing in lua, because we're going to hit
 ## this really very often. Probably the default behaviour of follow
 ## should be tuneable like timeout_task_wait is, so people can opt out

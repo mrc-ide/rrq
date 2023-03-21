@@ -42,7 +42,7 @@ TASK <- list(
 
 ## Possible status for all finished tasks
 TASK$terminal <- c(TASK$terminal_fail, TASK_COMPLETE, TASK_MOVED)
-TASK$retriable <- setdiff(TASK$terminal, TASK_MOVED)
+TASK$retriable <- setdiff(TASK$terminal, c(TASK_MOVED, TASK_IMPOSSIBLE))
 
 WORKER_IDLE <- "IDLE"
 WORKER_BUSY <- "BUSY"
