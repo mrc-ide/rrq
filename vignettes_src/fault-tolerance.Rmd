@@ -42,7 +42,7 @@ lang_output(readLines("fault.R"), "r")
 ```{r}
 obj <- rrq::rrq_controller$new(paste0("rrq:", ids::random_id(bytes = 4)))
 obj$envir(rrq::rrq_envir(sources = "fault.R"))
-rrq::rrq_worker_spawn(obj)
+w <- rrq::rrq_worker_spawn(obj)
 ```
 
 In the happy case, everything works as expected:
@@ -252,4 +252,78 @@ Fetching the task result provides the same `r rrq:::TASK_DIED` error as above:
 obj$task_result(t)
 ```
 
-This is still not terribly useful, as we have not provided any mechanism to automatically requeue a lost task or restart a dead worker.
+This is still not terribly useful, as we have not provided any mechanism to automatically requeue a lost task or restart a dead worker, which we cover in the next section.
+
+## Retrying tasks
+
+Regardless of how your tasks got to be in a broken situation, the mechanism for getting them out of this situation remains the same; you want to retry the task:
+
+* Your task might have errored because of some resource being unavailable or full and now it is back on line
+* The worker might have died because someone turned off the machine
+* Your memory errors only happen sometimes and you feel lucky (in this case you should also fix your program!)
+
+Alternatively, perhaps your task ran to successful completion but you simply want to rerun it (e.g., some stochastic algorithm that is displaying a non-fatal pathology).
+
+You can use the `$task_retry` method to retry and number of tasks that have *completed* (in one of the terminal states - including `COMPLETE` but also `ERROR`, `CANCELLED` `DIED` or `TIMEOUT`). This is nondestructive to any of the task data, in particular its result, so you will still have access to the failed run and its stack trace (but see below).
+
+### An example where retrying fixes an error
+
+In this example, we'll run some "model" that may or may not converge, and we want to retry until it does. This represents some badly behaved task with a stochastic component that will eventually work if tried enough times:
+
+```{r results = "asis", echo = FALSE}
+lang_output(readLines("fault.R"), "r")
+```
+
+We can create a new environment for our worker, to pick up this function:
+
+```{r}
+obj$envir(rrq::rrq_envir(sources = "fault2.R"))
+```
+
+```{r, include = FALSE}
+# this ensures that the worker produces the random numbers
+#   0.2655087, 0.3721239, 0.5728534
+# in order, which we rely on below
+obj$message_send_and_wait("EVAL", quote(set.seed(1)), w, progress = FALSE)
+```
+
+Now, we enqueue a task as usual, then wait on it
+
+```{r}
+t1 <- obj$enqueue(stochastic_failure(0.5))
+obj$task_wait(t1, timeout = 10)
+```
+
+Oh no, this task has failed!
+
+We can use the `task_retry` method to requeue this job, meaning that it will run exactly as before. However, the random number stream has moved on and this task will return a different answer - perhaps it will work this time?
+
+```{r}
+t2 <- obj$task_retry(t1)
+obj$task_wait(t2, timeout = 10)
+```
+
+The task has failed again. Note here that `task_retry` has taken a task id and returned a new task id, which we have waited on. However, we could also have used the original id (more on this below).
+
+Let's give it one more go:
+
+```{r}
+t3 <- obj$task_retry(t2)
+obj$task_wait(t3, timeout = 10)
+```
+
+Success -- the task has worked.
+
+When you retry a task, rrq sets up redirects that point from the old task id to the new one, and in most cases you can use whichever you find more convenient. For example, we can now read the successful task result from any of the task ids:
+
+```{r}
+obj$tasks_result(c(t1, t2, t3), follow = TRUE)
+```
+
+To prevent this, pass `follow = FALSE` to return the original result
+
+```{r}
+obj$tasks_result(c(t1, t2, t3), follow = FALSE)
+```
+
+Here, we can see that the first two times we ran the task they failed, along with the error and any backtraces
