@@ -903,25 +903,21 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param task_ids Task ids to fetch times for.
     task_times = function(task_ids, follow = NULL) {
-      con <- self$con
-      keys <- private$keys
       if (follow %||% private$follow) {
         task_ids_from <- task_follow(con, keys$task_moved_to, task_ids)
       } else {
         task_ids_from <- task_ids
       }
-      times <- con$pipeline(
-        submit = redis$HMGET(keys$task_time_submit, task_ids_from),
-        start = redis$HMGET(keys$task_time_start, task_ids_from),
-        complete = redis$HMGET(keys$task_time_complete, task_ids_from),
-        moved = redis$HMGET(keys$task_time_moved, task_ids_from))
-      process_time <- function(x) {
-        as.numeric(vcapply(x, function(x) x %||% NA_character_))
+      read_time_with_default <- function(key) {
+        time <- self$con$HMGET(key, task_ids_from)
+        time[vlapply(time, is.null)] <- NA_character_
+        as.numeric(list_to_character(time))
       }
-      ret <- vapply(times, process_time, numeric(length(task_ids)))
-      if (length(task_ids) == 1L) {
-        task_ids <- matrix(task_ids, 1)
-      }
+      ret <- cbind(
+        submit = read_time_with_default(private$keys$task_time_submit),
+        start = read_time_with_default(private$keys$task_time_start),
+        complete = read_time_with_default(private$keys$task_time_complete),
+        moved = read_time_with_default(private$keys$task_time_moved))
       rownames(ret) <- task_ids
       ret
     },
