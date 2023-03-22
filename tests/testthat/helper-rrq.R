@@ -138,6 +138,14 @@ test_worker_blocking <- function(obj, worker_config = "localhost", ...) {
 }
 
 
+test_worker_watch <- function(queue_id, worker_config = "localhost", ...) {
+  w <- rrq_worker_from_config(queue_id, worker_config, ...)
+  w_private <- r6_private(w)
+  w_private$verbose <- TRUE
+  w$loop()
+}
+
+
 make_counter <- function(start = 0L) {
   e <- environment()
   e$n <- start

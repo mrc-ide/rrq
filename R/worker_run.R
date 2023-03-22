@@ -123,13 +123,7 @@ worker_run_task_start <- function(worker, private, task_id) {
     redis$HGET(keys$task_expr,       task_id), # dat[[9]]
     redis$HGET(keys$task_cancel,     task_id)) # unused? (TODO)
 
-  ## TODO: we should save the root task in the db, then subsequent
-  ## re-queues are easy. We can also set the leaf task at the same
-  ## time and make follows very quick?
-  ##
-  ## Pull the data out of this bulk response, including following the
-  ## redirect if needed.
-  if (is.character(dat[[9]])) {
+  if (is.character(dat[[9]])) { # this task is a redirect
     task_id_root <- dat[[9]]
     dat[7:9] <-
       private$con$pipeline(

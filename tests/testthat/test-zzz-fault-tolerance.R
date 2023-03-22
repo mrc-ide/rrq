@@ -200,3 +200,41 @@ test_that("Cope with dying subprocess task", {
   expect_equal(log$command,
                c("ALIVE", "TASK_START", "REMOTE", "TASK_DIED"))
 })
+
+
+test_that("Can wait on a retried task", {
+  obj <- test_rrq("myfuns.R")
+  wid <- test_worker_spawn(obj)
+
+  t1 <- obj$enqueue(runif(1))
+  r1 <- obj$task_wait(t1)
+
+  t2 <- obj$task_retry(t1)
+  r2 <- obj$task_wait(t2)
+
+  expect_type(r2, "double")
+  expect_true(r1 != r2)
+})
+
+
+test_that("Can wait on retried tasks within bundle", {
+  obj <- test_rrq()
+  ## wid <- test_worker_spawn(obj)
+  grp <- obj$lapply(1:10, function(i) runif(1, i, i + 1), timeout_task_wait = 0)
+  res1 <- obj$bulk_wait(grp, delete = FALSE)
+  expect_equal(vnapply(res1, floor), 1:10)
+
+  ## TODO: make sure that task_retry takes a character vector, and not
+  ## junk.
+  ids <- obj$task_retry(grp$task_ids[2:5])
+  ## TODO: hitting this immediaely suggests that we don't correctly do
+  ## the wait, and we block forever. That could be due to worker
+  ## death? I don't see a poll there either.
+  ##
+  ## TODO: There's an unnecessary 1s pause here too, see time_poll = 5
+  ## to make this really obvious.
+  res2 <- obj$bulk_wait(grp, time_poll = 5, delete = FALSE)
+  expect_equal(vnapply(res2, floor), 1:10)
+  expect_equal(unlist(res2) != unlist(res1), 1:10 %in% 2:5)
+  expect_equal(unname(obj$task_status(ids)), rep(TASK_COMPLETE, 4))
+})

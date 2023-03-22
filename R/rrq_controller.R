@@ -655,10 +655,12 @@ rrq_controller <- R6::R6Class(
     ##'   giving you back an `rrq_task_error` object for each failing task.
     ##'   If `error = TRUE` we throw on error instead.
     bulk_wait = function(x, timeout = NULL, time_poll = 1,
-                         progress = NULL, delete = FALSE, error = FALSE) {
+                         progress = NULL, delete = FALSE, error = FALSE,
+                         follow = NULL) {
       timeout <- timeout %||% private$timeout_task_wait
       rrq_bulk_wait(self$con, private$keys, private$store, x, timeout,
-                    time_poll, progress, delete, error)
+                    time_poll, progress, delete, error,
+                    follow %||% private$follow)
     },
 
     ##' @description List ids of all tasks known to this rrq controller
@@ -844,8 +846,9 @@ rrq_controller <- R6::R6Class(
     ##' @param check Logical indicating if we should check that the tasks
     ##'   are not running. Deleting running tasks is unlikely to result in
     ##'   desirable behaviour.
-    task_delete = function(task_ids, check = TRUE) {
-      task_delete(self$con, private$keys, private$store, task_ids, check)
+    task_delete = function(task_ids, check = TRUE, follow = NULL) {
+      task_delete(self$con, private$keys, private$store, task_ids, check,
+                  follow %||% private$follow)
     },
 
     ##' @description Cancel a single task. If the task is `PENDING` it
@@ -1372,7 +1375,7 @@ task_submit <- function(con, keys, store, task_id, dat, queue,
                 queue, separate_process, timeout, depends_on)
 }
 
-task_delete <- function(con, keys, store, task_ids, check = TRUE) {
+task_delete <- function(con, keys, store, task_ids, check, follow) {
   if (check) {
     st <- from_redis_hash(con, keys$task_status, task_ids,
                           missing = TASK_MISSING)
@@ -1482,6 +1485,11 @@ task_data <- function(con, keys, store, task_id) {
   expr <- con$HGET(keys$task_expr, task_id)
   if (is.null(expr)) {
     stop(sprintf("Task '%s' not found", task_id))
+  } else if (is.character(expr)) {
+    ## This implies something about eletion - the root task is always
+    ## present if a leaf is, so deletion of a root task deletes
+    ## its leaves.
+    return(task_data(con, keys, store, expr))
   }
   task <- bin_to_object(expr)
   data <- as.list(expression_restore_locals(task, emptyenv(), store))
@@ -1819,7 +1827,7 @@ mean.worker_load <- function(x, time = c(1, 5, 15, Inf), ...) {
 
 
 tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
-                       progress, key_complete, error, single) {
+                       progress, key_complete, error, follow, single) {
   ## This can be relaxed in recent Redis >= 6.0.0 as we then interpret
   ## time_poll as a double. To do this efficiently we'll want to get
   ## the version information stored into the redux client, which is
@@ -1829,29 +1837,27 @@ tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
     stop("time_poll cannot be less than 1")
   }
   if (follow) {
-    task_ids_from <- task_follow(con, key$task_moved_to, task_ids)
+    task_ids_from <- task_follow(con, keys$task_moved_to, task_ids)
   } else {
     task_ids_from <- task_ids
-  }
-  ## I think that in this case we probably can make things work, but
-  ## some care will be required as the complete key could hold a copy
-  ## of the old results, so we need more checking in the else clause
-  if (!is.null(key_complete) && !all(task_ids_from == task_ids)) {
-    stop("some work required here!")
   }
 
   done <- set_names(
     hash_exists(con, keys$task_result, task_ids_from, TRUE),
     task_ids)
 
+  ## TODO: There's actually a race condition here, where if *two*
+  ## processes wait on the same task, one will never complete. We
+  ## should check the actual task statuses periodically.
+  ##
+  ## TODO: CRAN may object to '<<-' because some initial submission
+  ## reviewers do not understand it.
   if (is.null(key_complete)) {
     key_complete <- rrq_key_task_complete(keys$queue_id, task_ids_from)
     fetch <- function() {
-      if (!all(done)) {
-        tmp <- con$BLPOP(key_complete[!done], time_poll)
-        if (!is.null(tmp)) {
-          done[[tmp[[2L]]]] <<- TRUE
-        }
+      tmp <- con$BLPOP(key_complete[!done], time_poll)
+      if (!is.null(tmp)) {
+        done[[tmp[[2L]]]] <<- TRUE
       }
       done
     }
@@ -1865,7 +1871,10 @@ tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
     }
   }
 
-  general_poll(fetch, 0, timeout, "tasks", TRUE, progress)
+  if (!all(done)) {
+    general_poll(fetch, 0, timeout, "tasks", TRUE, progress)
+  }
+
   ret <- tasks_result(con, keys, store, task_ids_from, error, FALSE, single)
   if (follow && !single) {
     names(ret) <- task_ids
