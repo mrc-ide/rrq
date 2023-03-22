@@ -1361,15 +1361,22 @@ task_position <- function(con, keys, task_ids, missing, queue, follow) {
   key_queue <- rrq_key_queue(keys$queue_id, queue)
   queue_contents <- vcapply(con$LRANGE(key_queue, 0, -1L), identity)
   if (follow && length(queue_contents) > 0L) {
+    ## In some ways following is the only thing that makes sense here,
+    ## as only the last id in the chain can possibly be queued.
     task_ids <- task_follow(con, keys$task_moved_to, task_ids)
   }
   match(task_ids, queue_contents, missing)
 }
 
-task_preceeding <- function(con, keys, task_id, queue) {
+task_preceeding <- function(con, keys, task_id, queue, follow) {
   key_queue <- rrq_key_queue(keys$queue_id, queue)
   queue_contents <- vcapply(con$LRANGE(key_queue, 0, -1L), identity)
   task_position <- match(task_id, queue_contents)
+  if (follow && length(queue_contents) > 0L) {
+    ## In some ways following is the only thing that makes sense here,
+    ## as only the last id in the chain can possibly be queued.
+    task_id <- task_follow(con, keys$task_moved_to, task_id)
+  }
   if (is.na(task_position)) {
     return(NULL)
   }
