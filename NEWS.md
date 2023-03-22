@@ -1,3 +1,7 @@
+# rrq 0.6.16
+
+* Extend fault tolerance support by enabling tasks to be retried; this creates a new task that the old task points at and can be used to seamlessly recover from all sorts of task failure (mrc-2683)
+
 # rrq 0.6.14
 
 * New `$task_info` method to retrieve more detailed information about where a task was run (mrc-4058)
