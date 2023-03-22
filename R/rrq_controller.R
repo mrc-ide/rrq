@@ -904,7 +904,7 @@ rrq_controller <- R6::R6Class(
     ##' @param task_ids Task ids to fetch times for.
     task_times = function(task_ids, follow = NULL) {
       if (follow %||% private$follow) {
-        task_ids_from <- task_follow(con, keys$task_moved_to, task_ids)
+        task_ids_from <- task_follow(con, keys, task_ids)
       } else {
         task_ids_from <- task_ids
       }
@@ -1339,7 +1339,7 @@ task_progress <- function(con, keys, task_id) {
 
 
 task_overview <- function(con, keys, task_ids) {
-  status <- task_status(con, keys, task_ids, follow)
+  status <- task_status(con, keys, task_ids, FALSE)
   lvls <- c(TASK$all, setdiff(unique(status), TASK$all))
   as.list(table(factor(status, lvls)))
 }
@@ -1362,7 +1362,7 @@ task_position <- function(con, keys, task_ids, missing, queue, follow) {
   if (follow && length(queue_contents) > 0L) {
     ## In some ways following is the only thing that makes sense here,
     ## as only the last id in the chain can possibly be queued.
-    task_ids <- task_follow(con, keys$task_moved_to, task_ids)
+    task_ids <- task_follow(con, keys, task_ids)
   }
   match(task_ids, queue_contents, missing)
 }
@@ -1373,7 +1373,7 @@ task_preceeding <- function(con, keys, task_id, queue, follow) {
   if (follow && length(queue_contents) > 0L) {
     ## In some ways following is the only thing that makes sense here,
     ## as only the last id in the chain can possibly be queued.
-    task_id <- task_follow(con, keys$task_moved_to, task_id)
+    task_id <- task_follow(con, keys, task_id)
   }
   task_position <- match(task_id, queue_contents)
   if (is.na(task_position)) {
@@ -1389,9 +1389,8 @@ task_submit <- function(con, keys, store, task_id, dat, queue,
 }
 
 task_delete <- function(con, keys, store, task_ids, check) {
-  task_ids_root <- unname(from_redis_hash(con, keys$task_moved_root, task_ids))
-  task_ids_root[is.na(task_ids_root)] <- task_ids[is.na(task_ids_root)]
-  task_chain <- task_follow_chain(con, keys$task_moved_to, task_ids_root)
+  task_chain <- task_follow_chain(con, keys, task_ids)
+  task_ids_root <- vcapply(task_chain, first, USE.NAMES = FALSE)
   task_ids_all <- unlist(task_chain)
 
   if (check) {
@@ -1601,7 +1600,7 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
 
 tasks_result <- function(con, keys, store, task_ids, error, follow, single) {
   if (follow) {
-    task_ids_from <- task_follow(con, keys$task_moved_to, task_ids)
+    task_ids_from <- task_follow(con, keys, task_ids)
   } else {
     task_ids_from <- task_ids
   }
@@ -1856,7 +1855,7 @@ tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
     stop("time_poll cannot be less than 1")
   }
   if (follow) {
-    task_ids_from <- task_follow(con, keys$task_moved_to, task_ids)
+    task_ids_from <- task_follow(con, keys, task_ids)
   } else {
     task_ids_from <- task_ids
   }
@@ -1913,7 +1912,7 @@ task_info <- function(con, keys, task_id) {
     dat$root <- task_id
   }
   if (!is.null(dat$root)) {
-    chain <- task_follow_chain(con, keys$task_moved_to, dat$root)
+    chain <- task_follow_chain(con, keys, dat$root)[[1L]]
     pos <- which(chain == task_id)
     if (pos > 1) {
       moved$up <- chain[seq_len(pos - 1)]
@@ -2002,10 +2001,9 @@ task_retry <- function(con, keys, task_ids) {
     stop("task_ids must not contain duplicates")
   }
 
-  ## Given we want both directions here (both root and leaf) we might
-  ## be better pulling the while chain? Let's do a survey about this
-  ## because it's important to get right.
-  task_ids_leaf <- task_follow(con, keys$task_moved_to, task_ids)
+  chain <- task_follow_chain(con, key, task_ids)
+  task_ids_leaf <- vcapply(chain, last, USE.NAMES = FALSE)
+  task_ids_root <- vcapply(chain, first, USE.NAMES = FALSE)
 
   if (anyDuplicated(task_ids_leaf)) {
     ## This one really needs a good error message, will be useful to
@@ -2031,9 +2029,6 @@ task_retry <- function(con, keys, task_ids) {
   n <- length(task_ids)
   time <- timestamp()
   task_ids_new <- ids::random_id(n)
-
-  task_ids_root <- unname(from_redis_hash(con, keys$task_moved_root, task_ids))
-  task_ids_root[is.na(task_ids_root)] <- task_ids[is.na(task_ids_root)]
 
   key_queue <- rrq_key_queue(
     keys$queue_id,
@@ -2062,19 +2057,10 @@ task_retry <- function(con, keys, task_ids) {
 }
 
 
-## TODO: we should set this to take all keys and a forward/backward or
-## up/down argument. That does not affect doing this in lua
-## particularly.
-##
 ## This is probably worth doing in lua, because we're going to hit
-## this really very often. Probably the default behaviour of follow
-## should be tuneable like timeout_task_wait is, so people can opt out
-## of the cost here.
-##
-## TODO: Another way of doing this would be to pipeline fetching the
-## hash and the "to" key; that would faster for sure; fetch task
-## result and moved to and accept the result if the moved to is empty.
-task_follow <- function(con, key, task_ids) {
+## this really very often.
+task_follow <- function(con, keys, task_ids) {
+  key <- keys$task_moved_to
   i <- rep_len(TRUE, length(task_ids))
   while (any(i)) {
     moved_to <- unname(from_redis_hash(con, key, task_ids[i]))
@@ -2085,11 +2071,20 @@ task_follow <- function(con, key, task_ids) {
   task_ids
 }
 
-task_follow_chain <- function(con, key, task_id) {
-  chain <- task_id
-  while (!is.null(task_id)) {
-    task_id <- con$HGET(key, task_id)
-    chain <- c(chain, task_id)
+
+task_follow_root <- function(con, keys, task_ids) {
+  task_ids_root <- unname(from_redis_hash(con, keys$task_moved_root, task_ids))
+  task_ids_root[is.na(task_ids_root)] <- task_ids[is.na(task_ids_root)]
+  task_ids_root
+}
+
+
+task_follow_chain <- function(con, keys, task_ids) {
+  task_ids <- task_follow_root(con, keys, task_ids)
+  chain <- NULL
+  while (!is.na(task_ids)) {
+    chain <- cbind(chain, task_ids, deparse.level = 0)
+    task_ids <- unname(from_redis_hash(con, keys$task_moved_to, task_ids))
   }
-  chain
+  lapply(seq_len(nrow(chain)), function(i) na_drop(chain[i, ]))
 }

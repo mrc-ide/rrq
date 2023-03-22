@@ -69,7 +69,7 @@ wait_status_change <- function(con, keys, task_id, status,
                                timeout = 2, time_poll = 0.05) {
   remaining <- time_checker(timeout)
   while (remaining() > 0) {
-    if (all(task_status(con, keys, task_id) != status)) {
+    if (all(task_status(con, keys, task_id, FALSE) != status)) {
       return()
     }
     Sys.sleep(time_poll)
