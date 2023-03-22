@@ -1374,12 +1374,12 @@ task_position <- function(con, keys, task_ids, missing, queue, follow) {
 task_preceeding <- function(con, keys, task_id, queue, follow) {
   key_queue <- rrq_key_queue(keys$queue_id, queue)
   queue_contents <- vcapply(con$LRANGE(key_queue, 0, -1L), identity)
-  task_position <- match(task_id, queue_contents)
   if (follow && length(queue_contents) > 0L) {
     ## In some ways following is the only thing that makes sense here,
     ## as only the last id in the chain can possibly be queued.
     task_id <- task_follow(con, keys$task_moved_to, task_id)
   }
+  task_position <- match(task_id, queue_contents)
   if (is.na(task_position)) {
     return(NULL)
   }
@@ -2045,8 +2045,9 @@ task_retry <- function(con, keys, task_ids) {
   if (all(key_queue == key_queue[[1]])) {
     queue_push <- list(redis$RPUSH(key_queue[[1]], task_ids_new))
   } else {
-    ## Just needs a test case and a loop over queues
-    stop("cope with pushing to multiple queues here...")
+    key_queue_split <- split(task_ids_new, key_queue)
+    queue_push <-
+      unname(Map(redis$RPUSH, names(key_queue_split), key_queue_split))
   }
 
   con$pipeline(

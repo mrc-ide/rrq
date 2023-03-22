@@ -1130,3 +1130,52 @@ test_that("Can get information about task retries", {
   expect_mapequal(obj$task_info(t4)$moved,
                   list(up = c(t1, t2, t3), down = NULL))
 })
+
+
+test_that("Can retry tasks that span multiple queues at once", {
+  obj <- test_rrq()
+  obj$worker_config_save("localhost", queue = c("a", "b"), verbose = FALSE)
+  t1 <- c(obj$enqueue(sin(1), queue = "a"),
+          obj$enqueue(sin(2), queue = "a"),
+          obj$enqueue(sin(3), queue = "b"))
+
+  w <- test_worker_blocking(obj)
+  for (i in 1:3) {
+    w$step(TRUE)
+  }
+
+  t2 <- obj$task_retry(t1)
+
+  expect_equal(obj$task_status(t2), set_names(rep(TASK_PENDING, 3), t2))
+  expect_equal(obj$queue_list("a"), t2[1:2])
+  expect_equal(obj$queue_list("b"), t2[3])
+
+  expect_equal(obj$task_position(t2, queue = "a"), c(1, 2, 0))
+  expect_equal(obj$task_position(t2, queue = "b"), c(0, 0, 1))
+
+  ## Can also get the position from the old ids:
+  expect_equal(obj$task_position(t1, queue = "a"), c(1, 2, 0))
+  expect_equal(obj$task_position(t1, queue = "b"), c(0, 0, 1))
+  expect_equal(obj$task_position(t1, queue = "a", follow = FALSE), c(0, 0, 0))
+  expect_equal(obj$task_position(t1, queue = "b", follow = FALSE), c(0, 0, 0))
+})
+
+
+test_that("can get task position and preceeding from retried tasks", {
+  obj <- test_rrq()
+  t1 <- obj$enqueue(sin(1))
+  w <- test_worker_blocking(obj)
+  w$step()
+
+  ta <- c(obj$enqueue(sin(2)), obj$enqueue(sin(3)))
+  t2 <- obj$task_retry(t1)
+  tb <- c(obj$enqueue(sin(4)), obj$enqueue(sin(5)), obj$enqueue(sin(6)))
+
+  expect_equal(obj$task_position(t2), 3)
+  expect_equal(obj$task_position(t1), 3)
+  expect_equal(obj$task_position(t1, follow = FALSE), 0)
+
+  expect_equal(obj$task_preceeding(t2), ta)
+  expect_equal(obj$task_preceeding(t1), ta)
+  expect_null(obj$task_preceeding(t1, follow = FALSE))
+})
