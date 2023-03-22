@@ -918,7 +918,10 @@ rrq_controller <- R6::R6Class(
       process_time <- function(x) {
         as.numeric(vcapply(x, function(x) x %||% NA_character_))
       }
-      ret <- t(vapply(times, process_time, numeric(length(task_ids))))
+      ret <- vapply(times, process_time, numeric(length(task_ids)))
+      if (length(task_ids) == 1L) {
+        task_ids <- matrix(task_ids, 1)
+      }
       rownames(ret) <- task_ids
       ret
     },
@@ -1609,7 +1612,7 @@ tasks_result <- function(con, keys, store, task_ids, error, follow, single) {
   } else {
     task_ids_from <- task_ids
   }
-  hash <- from_redis_hash(con, keys$task_result, task_ids)
+  hash <- from_redis_hash(con, keys$task_result, task_ids_from)
   is_missing <- is.na(hash)
   ## TODO - for discussion/implementation elsewhere: should these be
   ## another error type? What other errors like this are floating
