@@ -881,7 +881,8 @@ rrq_controller <- R6::R6Class(
     },
 
     ##' @description Return information about a task. This currently
-    ##' includes information about where a task is (or was) running,
+    ##' includes information about where a task is (or was) running
+    ##' and information about any retry chain,
     ##' but will expand in future. The format of the output here is
     ##' subject to change (and will probably get a nice print method)
     ##' but the values present in the output will be included in any
@@ -1891,7 +1892,25 @@ task_info <- function(con, keys, task_id) {
     local = redis$HGET(keys$task_local, task_id),
     timeout = redis$HGET(keys$task_timeout, task_id),
     worker = redis$HGET(keys$task_worker, task_id),
+    root = redis$HGET(keys$task_moved_root, task_id),
     pid = redis$HGET(keys$task_pid, task_id))
+
+  moved <- list(up = NULL, down = NULL)
+
+  if (dat$status == TASK_MOVED && is.null(dat$root)) {
+    dat$root <- task_id
+  }
+  if (!is.null(dat$root)) {
+    chain <- task_follow_chain(con, keys$task_moved_to, dat$root)
+    pos <- which(chain == task_id)
+    if (pos > 1) {
+      moved$up <- chain[seq_len(pos - 1)]
+    }
+    if (pos < length(chain)) {
+      moved$down <- chain[seq.int(pos + 1, length(chain))]
+    }
+  }
+
   list(
     id = task_id,
     status = dat$status,
@@ -1899,7 +1918,8 @@ task_info <- function(con, keys, task_id) {
     separate_process = dat$local == "FALSE",
     timeout = dat$timeout %&&% as.numeric(dat$timeout),
     worker = dat$worker,
-    pid = dat$pid %&&% as.integer(dat$pid))
+    pid = dat$pid %&&% as.integer(dat$pid),
+    moved = moved)
 }
 
 
@@ -1999,12 +2019,8 @@ task_retry <- function(con, keys, task_ids) {
     stop("Deal with impossible tasks")
   }
 
-  task_ids_root <- task_ids
-  if (any(status == TASK_MOVED)) {
-    browser()
-    task_ids_root[is_moved] <- list_to_character(
-      con$HMGET(keys$task_moved_root, task_ids[is_moved]))
-  }
+  task_ids_root <- unname(from_redis_hash(con, keys$task_moved_root, task_ids))
+  task_ids_root[is.na(task_ids_root)] <- task_ids[is.na(task_ids_root)]
   
   ## TODO: Consider allowing changing queue on retry?
   key_queue <- rrq_key_queue(
@@ -2059,4 +2075,13 @@ task_follow <- function(con, key, task_ids) {
     task_ids[i] <- moved_to[!is_terminal]
   }
   task_ids
+}
+
+task_follow_chain <- function(con, key, task_id) {
+  chain <- task_id
+  while (!is.null(task_id)) {
+    task_id <- con$HGET(key, task_id)
+    chain <- c(chain, task_id)
+  }
+  chain
 }

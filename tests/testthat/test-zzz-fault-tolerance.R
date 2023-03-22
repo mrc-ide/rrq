@@ -227,12 +227,6 @@ test_that("Can wait on retried tasks within bundle", {
   ## TODO: make sure that task_retry takes a character vector, and not
   ## junk.
   ids <- obj$task_retry(grp$task_ids[2:5])
-  ## TODO: hitting this immediaely suggests that we don't correctly do
-  ## the wait, and we block forever. That could be due to worker
-  ## death? I don't see a poll there either.
-  ##
-  ## TODO: There's an unnecessary 1s pause here too, see time_poll = 5
-  ## to make this really obvious.
   res2 <- obj$bulk_wait(grp, time_poll = 5, delete = FALSE)
   expect_equal(vnapply(res2, floor), 1:10)
   expect_equal(unlist(res2) != unlist(res1), 1:10 %in% 2:5)

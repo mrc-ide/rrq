@@ -1097,3 +1097,36 @@ test_that("Can get information about a task in a different process", {
   expect_equal(d2$worker, w$name)
   expect_type(d2$pid, "integer")
 })
+
+
+test_that("Can get information about task retries", {
+  obj <- test_rrq()
+  t <- list()
+  w <- test_worker_blocking(obj)
+
+  t1 <- obj$enqueue(identity(1))
+  w$step(TRUE)
+  expect_mapequal(obj$task_info(t1)$moved, list(up = NULL, down = NULL))
+
+  t2 <- obj$task_retry(t1)
+  w$step(TRUE)
+  expect_mapequal(obj$task_info(t1)$moved, list(up = NULL, down = t2))
+  expect_mapequal(obj$task_info(t2)$moved, list(up = t1, down = NULL))
+
+  t3 <- obj$task_retry(t2)
+  w$step(TRUE)
+  expect_mapequal(obj$task_info(t1)$moved, list(up = NULL, down = c(t2, t3)))
+  expect_mapequal(obj$task_info(t2)$moved, list(up = t1, down = t3))
+  expect_mapequal(obj$task_info(t3)$moved, list(up = c(t1, t2), down = NULL))
+
+  t4 <- obj$task_retry(t3)
+  w$step(TRUE)
+  expect_mapequal(obj$task_info(t1)$moved,
+                  list(up = NULL, down = c(t2, t3, t4)))
+  expect_mapequal(obj$task_info(t2)$moved,
+                  list(up = t1, down = c(t3, t4)))
+  expect_mapequal(obj$task_info(t3)$moved,
+                  list(up = c(t1, t2), down = t4))
+  expect_mapequal(obj$task_info(t4)$moved,
+                  list(up = c(t1, t2, t3), down = NULL))
+})
