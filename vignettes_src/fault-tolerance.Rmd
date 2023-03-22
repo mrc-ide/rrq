@@ -210,10 +210,6 @@ obj$task_status(t)
 obj$worker_status(w)
 ```
 
-<!-- ```{r} -->
-<!-- Sys.sleep(1) -->
-<!-- ``` -->
-
 We kill the worker (simulating the job crashing, or the machine turning off, etc):
 
 ```{r}

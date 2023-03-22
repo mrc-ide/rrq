@@ -54,7 +54,6 @@ worker_run_task_separate_process <- function(task, worker, private) {
     list(redis_config, queue_id, worker_id, task_id),
     package = "rrq",
     supervise = TRUE)
-  worker$log("REMOTE_PID", px$get_pid())
 
   con$HSET(keys$task_pid, task_id, px$get_pid())
 

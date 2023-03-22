@@ -134,7 +134,6 @@ rrq_bulk_wait <- function(con, keys, store, dat, timeout, time_poll, progress,
                     time_poll, progress, dat$key_complete,
                     error = FALSE, follow = follow, single = FALSE)
   if (delete) {
-    ## There's an interaction here with follow and delete to be aware of.
     task_delete(con, keys, store, dat$task_ids, FALSE)
   }
   if (error) {

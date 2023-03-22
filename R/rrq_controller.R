@@ -1512,9 +1512,6 @@ task_data <- function(con, keys, store, task_id) {
   if (is.null(expr)) {
     stop(sprintf("Task '%s' not found", task_id))
   } else if (is.character(expr)) {
-    ## This implies something about eletion - the root task is always
-    ## present if a leaf is, so deletion of a root task deletes
-    ## its leaves.
     return(task_data(con, keys, store, expr))
   }
   task <- bin_to_object(expr)
@@ -1872,12 +1869,6 @@ tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
     hash_exists(con, keys$task_result, task_ids_from, TRUE),
     task_ids)
 
-  ## TODO: There's actually a race condition here, where if *two*
-  ## processes wait on the same task, one will never complete. We
-  ## should check the actual task statuses periodically.
-  ##
-  ## TODO: CRAN may object to '<<-' because some initial submission
-  ## reviewers do not understand it.
   if (is.null(key_complete)) {
     key_complete <- rrq_key_task_complete(keys$queue_id, task_ids_from)
     fetch <- function() {
@@ -2010,18 +2001,6 @@ throw_task_errors <- function(res, single) {
   }
 }
 
-## There's always a chance of a race condition here as we fetch a
-## status and change behaviour based on it. So doing this properly
-## really requires that we block the queue somehow here. However, the
-## chance of two people redirecting the task separately is not very
-## bad, and the final effect is not terrible either (an extra task is
-## run). We could do a set to MOVING immediately (pipelined with the
-## read) and then check for that below? This feels pretty unlikely
-## though.
-##
-## It's possible that this really makes a much better lua script
-## though, as that guarantees isolation and atomicity. Get the logic
-## working here first, then consider moving over.
 task_retry <- function(con, keys, task_ids) {
   if (anyDuplicated(task_ids) > 0) {
     stop("task_ids must not contain duplicates")
@@ -2059,13 +2038,7 @@ task_retry <- function(con, keys, task_ids) {
 
   task_ids_root <- unname(from_redis_hash(con, keys$task_moved_root, task_ids))
   task_ids_root[is.na(task_ids_root)] <- task_ids[is.na(task_ids_root)]
-  
-  ## TODO: Consider allowing changing queue on retry? This might be
-  ## useful if we have a different queue with diferent memory
-  ## available? or if retries should have higher or lower priority. If
-  ## we do that then unconditionally write out the queue and read that
-  ## later in the task run. Seems like something that could be done
-  ## happily in another ticket?
+
   key_queue <- rrq_key_queue(
     keys$queue_id,
     list_to_character(con$HMGET(keys$task_queue, task_ids_root)))
