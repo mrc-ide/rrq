@@ -1,6 +1,5 @@
 test_that("can retry a task and fetch its status and result", {
   obj <- test_rrq()
-  ## obj$worker_config_save("localhost", verbose = TRUE)
   w <- test_worker_blocking(obj)
 
   ## Run a task once
