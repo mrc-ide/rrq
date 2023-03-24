@@ -575,7 +575,7 @@ Our worker will print information indicating that the heartbeat is enabled (use 
 #>  ______      /_/  /_/   \__, (_)   ______
 #> /_____/                   /_/     /_____/
 #>     worker:        careful_bighorn_1
-#>     rrq_version:   0.6.14
+#>     rrq_version:   0.6.16
 #>     platform:      x86_64-pc-linux-gnu (64-bit)
 #>     running:       Ubuntu 20.04.5 LTS
 #>     hostname:      wpia-dide136

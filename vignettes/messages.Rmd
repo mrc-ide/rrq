@@ -37,7 +37,7 @@ On startup the worker log contains:
  ______      /_/  /_/   \__, (_)   ______
 /_____/                   /_/     /_____/
     worker:        blizzardly_skimmer_1
-    rrq_version:   0.6.12
+    rrq_version:   0.6.16
     platform:      x86_64-pc-linux-gnu (64-bit)
     running:       Ubuntu 20.04.5 LTS
     hostname:      wpia-dide300
@@ -258,7 +258,7 @@ worker started up:
 obj$worker_info()[[worker_id]]
 #>   <rrq_worker_info>
 #>     worker:      blizzardly_skimmer_1
-#>     rrq_version: 0.6.12
+#>     rrq_version: 0.6.16
 #>     platform:    x86_64-pc-linux-gnu (64-bit)
 #>     running:     Ubuntu 20.04.5 LTS
 #>     hostname:    wpia-dide300
@@ -288,7 +288,7 @@ obj$message_get_response(message_id, worker_id, timeout = 10)
 #> [1] "blizzardly_skimmer_1"
 #>
 #> $blizzardly_skimmer_1$rrq_version
-#> [1] "0.6.12"
+#> [1] "0.6.16"
 #>
 #> $blizzardly_skimmer_1$platform
 #> [1] "x86_64-pc-linux-gnu (64-bit)"
