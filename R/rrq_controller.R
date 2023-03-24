@@ -2001,7 +2001,7 @@ task_retry <- function(con, keys, task_ids) {
     stop("task_ids must not contain duplicates")
   }
 
-  chain <- task_follow_chain(con, key, task_ids)
+  chain <- task_follow_chain(con, keys, task_ids)
   task_ids_leaf <- vcapply(chain, last, USE.NAMES = FALSE)
   task_ids_root <- vcapply(chain, first, USE.NAMES = FALSE)
 
