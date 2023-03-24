@@ -1862,7 +1862,7 @@ tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
 
   done <- set_names(
     hash_exists(con, keys$task_result, task_ids_from, TRUE),
-    task_ids)
+    task_ids_from)
 
   if (is.null(key_complete)) {
     key_complete <- rrq_key_task_complete(keys$queue_id, task_ids_from)
