@@ -904,7 +904,7 @@ rrq_controller <- R6::R6Class(
     ##' @param task_ids Task ids to fetch times for.
     task_times = function(task_ids, follow = NULL) {
       if (follow %||% private$follow) {
-        task_ids_from <- task_follow(con, keys, task_ids)
+        task_ids_from <- task_follow(self$con, private$keys, task_ids)
       } else {
         task_ids_from <- task_ids
       }
@@ -2082,7 +2082,7 @@ task_follow_root <- function(con, keys, task_ids) {
 task_follow_chain <- function(con, keys, task_ids) {
   task_ids <- task_follow_root(con, keys, task_ids)
   chain <- NULL
-  while (!is.na(task_ids)) {
+  while (any(!is.na(task_ids))) {
     chain <- cbind(chain, task_ids, deparse.level = 0)
     task_ids <- unname(from_redis_hash(con, keys$task_moved_to, task_ids))
   }

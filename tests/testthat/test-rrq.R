@@ -974,17 +974,20 @@ test_that("collect times", {
 
   times1 <- obj$task_times(tt)
   expect_true(is.matrix(times1)) # testthat 3e makes this quite hard
-  expect_equal(dimnames(times1), list(tt, c("submit", "start", "complete")))
+  expect_equal(dimnames(times1),
+               list(tt, c("submit", "start", "complete", "moved")))
   expect_type(times1, "double")
   expect_equal(times1[tt, "start"], set_names(rep(NA_real_, 2), tt))
   expect_equal(times1[tt, "complete"], set_names(rep(NA_real_, 2), tt))
+  expect_equal(times1[tt, "moved"], set_names(rep(NA_real_, 2), tt))
   expect_false(any(is.na(times1[tt, "submit"])))
 
   w$step(TRUE)
   times2 <- obj$task_times(tt)
   expect_equal(times2[t2, , drop = FALSE], times1[t2, , drop = FALSE])
   expect_equal(obj$task_times(t2), times1[t2, , drop = FALSE])
-  expect_false(any(is.na(times2[t1, ])))
+  expect_equal(is.na(times2[t1, ]),
+               c(submit = FALSE, start = FALSE, complete = FALSE, moved = TRUE))
 })
 
 
@@ -1047,7 +1050,8 @@ test_that("Can get information about a task in the same process", {
   d1 <- obj$task_info(t)
   expect_setequal(
     names(d1),
-    c("id", "status", "queue", "separate_process", "timeout", "worker", "pid"))
+    c("id", "status", "queue", "separate_process", "timeout", "worker", "pid",
+      "moved"))
   expect_equal(d1$id, t)
   expect_equal(d1$status, TASK_PENDING)
   expect_equal(d1$queue, "default")
@@ -1055,6 +1059,7 @@ test_that("Can get information about a task in the same process", {
   expect_null(d1$timeout)
   expect_null(d1$worker)
   expect_null(d1$pid)
+  expect_equal(d1$moved, list(up = NULL, down = NULL))
 
   w$step(TRUE)
   d2 <- obj$task_info(t)
@@ -1066,6 +1071,7 @@ test_that("Can get information about a task in the same process", {
   expect_null(d2$timeout, 5)
   expect_equal(d2$worker, w$name)
   expect_null(d2$pid, "integer")
+  expect_equal(d1$moved, list(up = NULL, down = NULL))
 })
 
 
@@ -1077,7 +1083,8 @@ test_that("Can get information about a task in a different process", {
   d1 <- obj$task_info(t)
   expect_setequal(
     names(d1),
-    c("id", "status", "queue", "separate_process", "timeout", "worker", "pid"))
+    c("id", "status", "queue", "separate_process", "timeout", "worker", "pid",
+      "moved"))
   expect_equal(d1$id, t)
   expect_equal(d1$status, TASK_PENDING)
   expect_equal(d1$queue, "default")
@@ -1085,6 +1092,7 @@ test_that("Can get information about a task in a different process", {
   expect_equal(d1$timeout, 5)
   expect_null(d1$worker)
   expect_null(d1$pid)
+  expect_equal(d1$moved, list(up = NULL, down = NULL))
 
   w$step(TRUE)
   d2 <- obj$task_info(t)
@@ -1096,6 +1104,7 @@ test_that("Can get information about a task in a different process", {
   expect_equal(d2$timeout, 5)
   expect_equal(d2$worker, w$name)
   expect_type(d2$pid, "integer")
+  expect_equal(d1$moved, list(up = NULL, down = NULL))
 })
 
 
