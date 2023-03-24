@@ -139,6 +139,8 @@ The basic task lifecycle is this:
 
 In addition there are rarer ways a task can end (`CANCELLED`, `DIED`, `TIMEOUT`) or fail to start due to dependencies between tasks (`DEFERRED` or `IMPOSSIBLE`; see below).
 
+A task in any terminal state (except `IMPOSSIBLE`, so `COMPLETE`, `ERROR`, `CANCELLED`, `DIED` or `TIMEOUT`) can be retried, at which point the status is `MOVED` and the task will "point" somewhere else (that task will move through the usual `PENDING -> RUNNING -> (terminal state)` flow). See `vignette("fault-tolerance")` for details.
+
 Above, we slept for a few seconds in order for the task to become finished. However, this is an extremely common operation, so `rrq` provides a `$task_wait` method which will wait until a task finishes, then returns the result.
 
 ```{r}

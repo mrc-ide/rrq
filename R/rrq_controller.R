@@ -14,6 +14,9 @@
 ##' * If the task is killed by an external process, crashes or the worker
 ##'   dies (and is running a heartbeat) then the task becomes `DIED`.
 ##' * The status of an unknown task is `MISSING`
+##' * Tasks in any terminal state (except `IMPOSSIBLE`) may be retried
+##'   with `task_retry` at which point they become `MOVED`, see
+##'   `vignette("fault-tolerance")` for details
 ##'
 ##' @section Worker lifecycle:
 ##'
@@ -109,6 +112,14 @@
 ##' b <- 2
 ##' ans <- obj$lapply_(1:10, quote(log), base = quote(b))
 ##' ```
+##'
+##' @param follow Optional logical, indicating if we should follow any
+##'   redirects set up by doing `$task_retry`. If not given, falls
+##'   back on the value passed into the queue, the global option
+##'   `rrq.follow`, and finally `TRUE`. Set to `FALSE` if you want to
+##'   return information about the original task, even if it has been
+##'   subsequently retried.
+##'
 ##' @export
 rrq_controller <- R6::R6Class(
   "rrq_controller",
