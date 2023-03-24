@@ -2056,7 +2056,6 @@ task_retry <- function(con, keys, task_ids) {
       redis$HMSET(keys$task_status,      task_ids_new,  rep(TASK_PENDING, n)),
       redis$HMSET(keys$task_time_moved,  task_ids_leaf, rep_len(time, n)),
       redis$HMSET(keys$task_time_submit, task_ids_new,  rep_len(time, n)),
-      redis$HMSET(keys$task_moved_from,  task_ids_new,  task_ids_leaf),
       redis$HMSET(keys$task_moved_to,    task_ids_leaf, task_ids_new),
       redis$HMSET(keys$task_moved_root,  task_ids_new,  task_ids_root),
       redis$HMSET(keys$task_expr,        task_ids_new,  task_ids_root)),

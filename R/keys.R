@@ -36,9 +36,8 @@ rrq_keys_common <- function(queue_id) {
        task_pid       = sprintf("%s:task:pid",       queue_id),
 
        ## Fault tolerance support
-       task_moved_to        = sprintf("%s:task:moved_to",        queue_id),
-       task_moved_from      = sprintf("%s:task:moved_from",      queue_id),
-       task_moved_root      = sprintf("%s:task:moved_root",      queue_id),
+       task_moved_to   = sprintf("%s:task:moved_to",   queue_id),
+       task_moved_root = sprintf("%s:task:moved_root", queue_id),
 
        ## This is the key where we store the extra complete key we
        ## might push to at.
