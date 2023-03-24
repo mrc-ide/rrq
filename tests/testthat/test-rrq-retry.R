@@ -142,3 +142,54 @@ test_that("can retry task from non-leaf tasks", {
   expect_equal(obj$task_info(t3)$moved, list(up = c(t1, t2), down = t4))
   expect_equal(obj$task_info(t4)$moved, list(up = c(t1, t2, t3), down = NULL))
 })
+
+
+test_that("Retrying a task is does the right thing with the complete key", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  grp <- obj$lapply(1:3, function(i) runif(1, i, i + 1), timeout_task_wait = 0)
+  for (i in 1:3) {
+    w$step(TRUE)
+  }
+  res1 <- obj$bulk_wait(grp, timeout = 1)
+  expect_equal(obj$con$LRANGE(grp$key_complete, 0, -1), as.list(grp$task_ids))
+
+  t2 <- obj$task_retry(grp$task_ids[2])
+  w$step(TRUE)
+
+  expect_equal(obj$task_status(t2), set_names(TASK_COMPLETE, t2))
+  ## We did push the key onto the expected complete list:
+  expect_equal(obj$con$LRANGE(grp$key_complete, 0, -1),
+               as.list(c(grp$task_ids, t2)))
+})
+
+
+test_that("Pathalogical retry key case is allowed", {
+  ## Verifies a fairly unlikely situation where we retry tasks that
+  ## were from a bundle (with a dedicated complete key) and free tasks
+  ## (without) to make sure that we set these up correctly.
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  t1 <- obj$enqueue(runif(1, 3, 4))
+  grp <- obj$lapply(2:3, function(i) runif(1, i, i + 1), timeout_task_wait = 0)
+  for (i in 1:3) {
+    w$step(TRUE)
+  }
+  res1 <- obj$bulk_wait(grp, timeout = 1)
+  expect_equal(
+    obj$con$LRANGE(rrq_key_task_complete(obj$queue_id, t1), 0, -1),
+    list(t1))
+  expect_equal(obj$con$LRANGE(grp$key_complete, 0, -1),
+               as.list(grp$task_ids))
+
+  t2 <- obj$task_retry(c(t1, grp$task_ids[2]))
+  w$step(TRUE)
+  w$step(TRUE)
+
+  expect_equal(
+    obj$con$LRANGE(rrq_key_task_complete(obj$queue_id, t2[[1]]), 0, -1),
+    list(t2[[1]]))
+  expect_equal(obj$con$LRANGE(grp$key_complete, 0, -1),
+               as.list(c(grp$task_ids, t2[[2]])))
+  expect_equal(obj$task_status(t2), set_names(rep(TASK_COMPLETE, 2), t2))
+})

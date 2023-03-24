@@ -219,15 +219,16 @@ test_that("Can wait on a retried task", {
 
 test_that("Can wait on retried tasks within bundle", {
   obj <- test_rrq()
-  ## wid <- test_worker_spawn(obj)
+  wid <- test_worker_spawn(obj)
+
   grp <- obj$lapply(1:10, function(i) runif(1, i, i + 1), timeout_task_wait = 0)
-  res1 <- obj$bulk_wait(grp, delete = FALSE)
+  res1 <- obj$bulk_wait(grp, delete = FALSE, timeout = 3)
   expect_equal(vnapply(res1, floor), 1:10)
 
-  ## TODO: make sure that task_retry takes a character vector, and not
-  ## junk.
+  ## So, hitting this immediately does not work:
   ids <- obj$task_retry(grp$task_ids[2:5])
-  res2 <- obj$bulk_wait(grp, time_poll = 5, delete = FALSE)
+  res2 <- obj$bulk_wait(grp, time_poll = 1, timeout = 3, delete = FALSE)
+
   expect_equal(vnapply(res2, floor), 1:10)
   expect_equal(unlist(res2) != unlist(res1), 1:10 %in% 2:5)
   expect_equal(unname(obj$task_status(ids)), rep(TASK_COMPLETE, 4))

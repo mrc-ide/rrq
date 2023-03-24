@@ -2041,6 +2041,15 @@ task_retry <- function(con, keys, task_ids) {
       unname(Map(redis$RPUSH, names(key_queue_split), key_queue_split))
   }
 
+  key_complete <- con$HMGET(keys$task_complete, task_ids_root)
+  i <- !vlapply(key_complete, is.null)
+  if (any(i)) {
+    set_key_complete <- list(
+      redis$HMSET(keys$task_complete, task_ids_new[i], key_complete[i]))
+  } else {
+    set_key_complete <- NULL
+  }
+
   con$pipeline(
     .commands = c(list(
       redis$HMSET(keys$task_status,      task_ids_leaf, rep(TASK_MOVED, n)),
@@ -2051,6 +2060,7 @@ task_retry <- function(con, keys, task_ids) {
       redis$HMSET(keys$task_moved_to,    task_ids_leaf, task_ids_new),
       redis$HMSET(keys$task_moved_root,  task_ids_new,  task_ids_root),
       redis$HMSET(keys$task_expr,        task_ids_new,  task_ids_root)),
+      set_key_complete,
       queue_push))
 
   task_ids_new
