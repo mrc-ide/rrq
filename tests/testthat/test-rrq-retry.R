@@ -249,3 +249,29 @@ test_that("Can fetch task data of redirected tasks", {
   t2 <- obj$task_retry(t1)
   expect_identical(obj$task_data(t2), obj$task_data(t1))
 })
+
+
+test_that("can follow nested redirect", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
+  ## Run a task once
+  set.seed(1)
+  t1 <- obj$enqueue(runif(5))
+  w$step(TRUE)
+  r1 <- obj$task_result(t1)
+  t2 <- obj$task_retry(t1)
+  w$step(TRUE)
+  r2 <- obj$task_result(t2)
+  t3 <- obj$task_retry(t2)
+  w$step(TRUE)
+  r3 <- obj$task_result(t3)
+
+  expect_equal(obj$task_status(t1), setNames(TASK_COMPLETE, t1))
+  expect_equal(obj$task_status(t2), setNames(TASK_COMPLETE, t2))
+  expect_equal(obj$task_status(t3), setNames(TASK_COMPLETE, t3))
+
+  expect_equal(obj$task_result(t1), r3)
+  expect_equal(obj$task_result(t2), r3)
+  expect_equal(obj$task_result(t3), r3)
+})

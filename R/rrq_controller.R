@@ -1324,8 +1324,7 @@ task_status <- function(con, keys, task_ids, follow) {
   status <- from_redis_hash(con, keys$task_status, task_ids,
                             missing = TASK_MISSING)
   if (follow && any(is_moved <- status == TASK_MOVED)) {
-    task_ids_moved <- list_to_character(
-      con$HMGET(keys$task_moved_to, task_ids[is_moved]))
+    task_ids_moved <- task_follow(con, keys, task_ids[is_moved])
     status[is_moved] <- task_status(con, keys, task_ids_moved, TRUE)
   }
   status
