@@ -281,3 +281,31 @@ test_that("can get worker info", {
                     "redis_port", "heartbeat_key"))
   expect_equal(info[[wid]]$rrq_version, version_info())
 })
+
+
+test_that("multiple queues format correctly when printing worker", {
+  obj <- test_rrq()
+  obj$worker_config_save("localhost", queue = c("a", "b"), verbose = FALSE)
+  t1 <- obj$enqueue(sin(1), queue = "a")
+  t2 <- obj$enqueue(sin(2), queue = "a")
+  t3 <- obj$enqueue(sin(3), queue = "b")
+  w <- test_worker_blocking(obj)
+  format <- worker_format(w)
+
+  ## Find queue string
+  is_queue <- grepl("queue:", format)
+  index_of_queue <- match(c(TRUE), is_queue)
+  queue_string <- format[index_of_queue]
+
+  ## The space between new line character and next rrq: must
+  ## be the same as the space between the first rrq: and the
+  ## start of the string (so they line up vertically)
+  location_of_rrq <- unlist(gregexpr("rrq:", queue_string))
+  location_of_new_lines <- unlist(gregexpr("\n", queue_string))
+  expect_equal(
+    location_of_rrq[2] - location_of_new_lines[1],
+    location_of_rrq[1])
+  expect_equal(
+    location_of_rrq[3] - location_of_new_lines[2],
+    location_of_rrq[1])
+})
