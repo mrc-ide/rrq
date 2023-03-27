@@ -943,13 +943,6 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param task_ids Task ids to retry.
     task_retry = function(task_ids) {
-      ## TODO: also allow retrying of dependencies (i.e., if a task is
-      ## retried, should we reassess its dependencies that were
-      ## IMPOSSIBLE? but what about FAILED? We could either just add
-      ## them back into the queue (so that their status changes and
-      ## IMPOSSIBLE is no longer a terminal state) or we could just
-      ## retry them so that the trail is more obvious. For now, we do
-      ## nothing.
       task_retry(self$con, private$keys, task_ids)
     },
 
@@ -1359,11 +1352,6 @@ task_overview <- function(con, keys, task_ids) {
 ## which is not ideal.  However, in practice it seems fairly fast.
 ## But one should be careful to adjust the polling interval of
 ## something usnig this not to flood the server with excessive load.
-##
-## NOTE: With the possibility of task retrying, this is even worse as
-## we need to check to see what the current moved id is. This does
-## make the case that we should be able to disable lookup at the queue
-## level really.
 ##
 ## A better way would possibly be to use a LUA script; especially for
 ## the case where there is a single job that'd be fairly easy to do.
