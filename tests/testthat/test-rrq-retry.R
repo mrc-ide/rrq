@@ -239,3 +239,13 @@ test_that("Can't retry duplicate tasks via redirection", {
              "  - %s\n    - %s\n    - %s"),
       t4, t1, t4, t5, t2, t5))
 })
+
+
+test_that("Can fetch task data of redirected tasks", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  t1 <- obj$enqueue(runif(5))
+  w$step(TRUE)
+  t2 <- obj$task_retry(t1)
+  expect_identical(obj$task_data(t2), obj$task_data(t1))
+})
