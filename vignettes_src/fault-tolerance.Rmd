@@ -277,13 +277,15 @@ We can create a new environment for our worker, to pick up this function:
 
 ```{r}
 obj$envir(rrq::rrq_envir(sources = "fault2.R"))
+w <- rrq::rrq_worker_spawn(obj)
 ```
 
 ```{r, include = FALSE}
 # this ensures that the worker produces the random numbers
 #   0.2655087, 0.3721239, 0.5728534
 # in order, which we rely on below
-obj$message_send_and_wait("EVAL", quote(set.seed(1)), w, progress = FALSE)
+obj$message_send_and_wait("EVAL", quote(set.seed(1)), w, progress = FALSE,
+                          timeout = 10)
 ```
 
 Now, we enqueue a task as usual, then wait on it
@@ -370,12 +372,12 @@ It is possible to change the default behaviour of `follow` to not follow through
 
 To change this behaviour, pass the `follow` argument to the queue constructor, for example:
 
-```{r}
+```r
 obj_nofollow <- rrq::rrq_controller$new(obj$queue_id, follow = FALSE)
 obj_nofollow$task_result(t1)
 ```
 
-Here, we created a queue controller object with the default follow behaviour set to `FALSE` and so accessing a task result of a moved task
+Here, we would create a queue controller object with the default follow behaviour set to `FALSE` and so accessing a task result of a moved task would not search down through any potential retries unless `follow = TRUE` was explicitly passed.
 
 ### Deleting tasks that have been retried
 
