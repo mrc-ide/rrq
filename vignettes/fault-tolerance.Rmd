@@ -35,9 +35,8 @@ fit_model <- function(x, y) {
 ```r
 obj <- rrq::rrq_controller$new(paste0("rrq:", ids::random_id(bytes = 4)))
 obj$envir(rrq::rrq_envir(sources = "fault.R"))
-rrq::rrq_worker_spawn(obj)
-#> Spawning 1 worker with prefix veryveryveryflying_irukandjijellyfish
-#> [1] "veryveryveryflying_irukandjijellyfish_1"
+w <- rrq::rrq_worker_spawn(obj)
+#> Spawning 1 worker with prefix bold_gnu
 ```
 
 In the happy case, everything works as expected:
@@ -54,9 +53,9 @@ obj$task_wait(t, 10)
 #>
 #> Coefficients:
 #> (Intercept)            x
-#>      0.3131       1.2989
+#>     0.02565      1.80062
 obj$task_status(t)
-#> 6804dc79e94909b3143af5a856afdd9b
+#> d6a92245994535613981dcff4b36275e
 #>                       "COMPLETE"
 ```
 
@@ -69,8 +68,8 @@ obj$task_wait(t, 10)
 #> <rrq_task_error>
 #>   from:   model.frame.default(formula = y ~ x, drop.unused.levels = TRUE)
 #>   error:  invalid type (NULL) for variable 'y'
-#>   queue:  rrq:81b322b2
-#>   task:   9cb24b2a17ee248d5c129d3128a7af39
+#>   queue:  rrq:9da680b9
+#>   task:   68e3b1c7dc26bd31110838b3577d7bbc
 #>   status: ERROR
 #>   * To throw this error, use stop() with it
 #>   * This error has a stack trace, use '$trace' to see it
@@ -85,8 +84,8 @@ r
 #> <rrq_task_error>
 #>   from:   model.frame.default(formula = y ~ x, drop.unused.levels = TRUE)
 #>   error:  invalid type (NULL) for variable 'y'
-#>   queue:  rrq:81b322b2
-#>   task:   9cb24b2a17ee248d5c129d3128a7af39
+#>   queue:  rrq:9da680b9
+#>   task:   68e3b1c7dc26bd31110838b3577d7bbc
 #>   status: ERROR
 #>   * To throw this error, use stop() with it
 #>   * This error has a stack trace, use '$trace' to see it
@@ -164,7 +163,7 @@ with the same task run in a separate process on the worker
 system.time(
   obj$task_wait(obj$enqueue(identity(1), separate_process = TRUE), 10))
 #>    user  system elapsed
-#>   0.001   0.000   0.234
+#>   0.001   0.000   0.264
 ```
 
 We expect this difference to be ~100 fold in local workers. Almost all the cost is due to the overhead of starting and terminating a fresh R session. If your queue uses a lot of packages there will be additional overhead here too as these are loaded. However, this cost is fixed and will decrease as a fraction of the total running time as the running time of your task increases. So for long-running tasks the additional safety of separate processes is probably worthwhile. For smaller tasks you may want to make sure you run a heartbeat process so that you can handle failures via that route.
@@ -193,7 +192,7 @@ Because the task was run in a separate process, our worker could detect that the
 
 ```r
 obj$task_status(t)
-#> 66b2d847d2828e71f95bd1e5d42460e4
+#> 1ce1fbb0784f251a9bb6768e80770c0b
 #>                           "DIED"
 ```
 
@@ -207,8 +206,8 @@ r <- obj$task_result(t)
 r
 #> <rrq_task_error>
 #>   error:  Task not successful: DIED
-#>   queue:  rrq:81b322b2
-#>   task:   66b2d847d2828e71f95bd1e5d42460e4
+#>   queue:  rrq:9da680b9
+#>   task:   1ce1fbb0784f251a9bb6768e80770c0b
 #>   status: DIED
 #>   * To throw this error, use stop() with it
 ```
@@ -241,7 +240,7 @@ When you spawn a worker it will pick up this configuration, and we'll be able to
 
 ```r
 w <- rrq::rrq_worker_spawn(obj)
-#> Spawning 1 worker with prefix capillary_irishterrier
+#> Spawning 1 worker with prefix sociopathic_dove
 ```
 
 In order to simulate the loss of the worker, we need its [process id (PID)](https://en.wikipedia.org/wiki/Process_identifier), which we can get from the controller object:
@@ -250,7 +249,7 @@ In order to simulate the loss of the worker, we need its [process id (PID)](http
 ```r
 w_pid <- obj$worker_info()[[w]]$pid
 w_pid
-#> [1] 1446751
+#> [1] 1996165
 ```
 
 Now, we can queue some long running process, which this worker will start:
@@ -267,16 +266,12 @@ The worker wil pick the task up fairly quickly, and the status will change to `R
 
 ```r
 obj$task_status(t)
-#> 70db5d215affb4ba0c155c05d66803ce
+#> 01140660b7a4f5cb88e1ae99cdc273d1
 #>                        "RUNNING"
 obj$worker_status(w)
-#> capillary_irishterrier_1
-#>                   "BUSY"
+#> sociopathic_dove_1
+#>             "BUSY"
 ```
-
-<!-- ```{r} -->
-<!-- Sys.sleep(1) -->
-<!-- ``` -->
 
 We kill the worker (simulating the job crashing, or the machine turning off, etc):
 
@@ -290,11 +285,11 @@ Because the worker has been killed, it can't write to redis to tell us that the 
 
 ```r
 obj$task_status(t)
-#> 70db5d215affb4ba0c155c05d66803ce
+#> 01140660b7a4f5cb88e1ae99cdc273d1
 #>                        "RUNNING"
 obj$worker_status(w)
-#> capillary_irishterrier_1
-#>                   "BUSY"
+#> sociopathic_dove_1
+#>             "BUSY"
 ```
 
 The heartbeat will persist for 3 times the period given above (this multiplier is not configurable and while any number greater than 1 should be OK, we picked this as it allows for occasional network connectivity issues or slowness on the node - we may reduce it in a future version). This means that after 9s (3 * 3s) the key will have expired:
@@ -310,9 +305,9 @@ We can then use the `worker_detect_exited()` method to clean up
 ```r
 obj$worker_detect_exited()
 #> Lost 1 worker:
-#>   - capillary_irishterrier_1
+#>   - sociopathic_dove_1
 #> Orphaning 1 task:
-#>   - 70db5d215affb4ba0c155c05d66803ce
+#>   - 01140660b7a4f5cb88e1ae99cdc273d1
 ```
 
 At this point, the statuses of our task and worker are correct:
@@ -320,11 +315,11 @@ At this point, the statuses of our task and worker are correct:
 
 ```r
 obj$task_status(t)
-#> 70db5d215affb4ba0c155c05d66803ce
+#> 01140660b7a4f5cb88e1ae99cdc273d1
 #>                           "DIED"
 obj$worker_status(w)
-#> capillary_irishterrier_1
-#>                   "LOST"
+#> sociopathic_dove_1
+#>             "LOST"
 ```
 
 Fetching the task result provides the same DIED error as above:
@@ -334,10 +329,278 @@ Fetching the task result provides the same DIED error as above:
 obj$task_result(t)
 #> <rrq_task_error>
 #>   error:  Task not successful: DIED
-#>   queue:  rrq:81b322b2
-#>   task:   70db5d215affb4ba0c155c05d66803ce
+#>   queue:  rrq:9da680b9
+#>   task:   01140660b7a4f5cb88e1ae99cdc273d1
 #>   status: DIED
 #>   * To throw this error, use stop() with it
 ```
 
-This is still not terribly useful, as we have not provided any mechanism to automatically requeue a lost task or restart a dead worker.
+This is still not terribly useful, as we have not provided any mechanism to automatically requeue a lost task or restart a dead worker, which we cover in the next section.
+
+## Retrying tasks
+
+Regardless of how your tasks got to be in a broken situation, the mechanism for getting them out of this situation remains the same; you want to retry the task:
+
+* Your task might have errored because of some resource being unavailable or full and now it is back on line
+* The worker might have died because someone turned off the machine
+* Your memory errors only happen sometimes and you feel lucky (in this case you should also fix your program!)
+
+Alternatively, perhaps your task ran to successful completion but you simply want to rerun it (e.g., some stochastic algorithm that is displaying a non-fatal pathology).
+
+You can use the `$task_retry` method to retry and number of tasks that have *completed* (in one of the terminal states - including `COMPLETE` but also `ERROR`, `CANCELLED` `DIED` or `TIMEOUT`). This is nondestructive to any of the task data, in particular its result, so you will still have access to the failed run and its stack trace (but see below).
+
+### An example where retrying fixes an error
+
+In this example, we'll run some "model" that may or may not converge, and we want to retry until it does. This represents some badly behaved task with a stochastic component that will eventually work if tried enough times:
+
+```r
+stochastic_failure <- function(p) {
+  x <- runif(1)
+  if (x < p) {
+    stop(sprintf("Convergence failure - x is only %0.2f", x))
+  }
+  x
+}
+```
+
+We can create a new environment for our worker, to pick up this function:
+
+
+```r
+obj$envir(rrq::rrq_envir(sources = "fault2.R"))
+w <- rrq::rrq_worker_spawn(obj)
+#> Spawning 1 worker with prefix productive_aphid
+```
+
+
+
+Now, we enqueue a task as usual, then wait on it
+
+
+```r
+t1 <- obj$enqueue(stochastic_failure(0.5))
+obj$task_wait(t1, timeout = 10)
+#> <rrq_task_error>
+#>   from:   stochastic_failure(0.5)
+#>   error:  Convergence failure - x is only 0.27
+#>   queue:  rrq:9da680b9
+#>   task:   a2f600eb3b3ac10dff8480053f4aacf8
+#>   status: ERROR
+#>   * To throw this error, use stop() with it
+#>   * This error has a stack trace, use '$trace' to see it
+```
+
+Oh no, this task has failed!
+
+We can use the `task_retry` method to requeue this job, meaning that it will run exactly as before. However, the random number stream has moved on and this task will return a different answer - perhaps it will work this time?
+
+
+```r
+t2 <- obj$task_retry(t1)
+obj$task_wait(t2, timeout = 10)
+#> <rrq_task_error>
+#>   from:   stochastic_failure(0.5)
+#>   error:  Convergence failure - x is only 0.37
+#>   queue:  rrq:9da680b9
+#>   task:   3a7d90e2b968d2e523b70edb594d521a
+#>   status: ERROR
+#>   * To throw this error, use stop() with it
+#>   * This error has a stack trace, use '$trace' to see it
+```
+
+The task has failed again. Note here that `task_retry` has taken a task id and returned a new task id, which we have waited on. However, we could also have used the original id (more on this below).
+
+Let's give it one more go:
+
+
+```r
+t3 <- obj$task_retry(t2)
+obj$task_wait(t3, timeout = 10)
+#> [1] 0.5728534
+```
+
+Success!  The task has run to completion and we no longer have an error.
+
+When you retry a task, rrq sets up redirects that point from the old task id to the new one, and in most cases you can use whichever you find more convenient. For example, we can now read the successful task result from any of the task ids:
+
+
+```r
+obj$tasks_result(c(t1, t2, t3))
+#> $a2f600eb3b3ac10dff8480053f4aacf8
+#> [1] 0.5728534
+#>
+#> $`3a7d90e2b968d2e523b70edb594d521a`
+#> [1] 0.5728534
+#>
+#> $`6924f454e6ced2ceab2911849ad51080`
+#> [1] 0.5728534
+```
+
+To prevent this, pass `follow = FALSE` to return the original result
+
+
+```r
+obj$tasks_result(c(t1, t2, t3), follow = FALSE)
+#> $a2f600eb3b3ac10dff8480053f4aacf8
+#> <rrq_task_error>
+#>   from:   stochastic_failure(0.5)
+#>   error:  Convergence failure - x is only 0.27
+#>   queue:  rrq:9da680b9
+#>   task:   a2f600eb3b3ac10dff8480053f4aacf8
+#>   status: ERROR
+#>   * To throw this error, use stop() with it
+#>   * This error has a stack trace, use '$trace' to see it
+#>
+#> $`3a7d90e2b968d2e523b70edb594d521a`
+#> <rrq_task_error>
+#>   from:   stochastic_failure(0.5)
+#>   error:  Convergence failure - x is only 0.37
+#>   queue:  rrq:9da680b9
+#>   task:   3a7d90e2b968d2e523b70edb594d521a
+#>   status: ERROR
+#>   * To throw this error, use stop() with it
+#>   * This error has a stack trace, use '$trace' to see it
+#>
+#> $`6924f454e6ced2ceab2911849ad51080`
+#> [1] 0.5728534
+```
+
+Here, we can see that the first two times we ran the task they failed, along with the error and any backtraces. The same logic applies to other methods, such as `$task_status()`
+
+
+```r
+obj$task_status(c(t1, t2, t3))
+#> a2f600eb3b3ac10dff8480053f4aacf8 3a7d90e2b968d2e523b70edb594d521a
+#>                       "COMPLETE"                       "COMPLETE"
+#> 6924f454e6ced2ceab2911849ad51080
+#>                       "COMPLETE"
+obj$task_status(c(t1, t2, t3), follow = FALSE)
+#> a2f600eb3b3ac10dff8480053f4aacf8 3a7d90e2b968d2e523b70edb594d521a
+#>                          "MOVED"                          "MOVED"
+#> 6924f454e6ced2ceab2911849ad51080
+#>                       "COMPLETE"
+```
+
+Note that the task status above has overwritten the original status (previously it was ERROR, but now it is MOVED). However, you can always read the original status in the error object's status field, should you need it.
+
+You can also extract times that events happened with `$task_times()`
+
+
+```r
+obj$task_times(c(t1, t2, t3))
+#>                                      submit      start   complete moved
+#> a2f600eb3b3ac10dff8480053f4aacf8 1679912902 1679912902 1679912902    NA
+#> 3a7d90e2b968d2e523b70edb594d521a 1679912902 1679912902 1679912902    NA
+#> 6924f454e6ced2ceab2911849ad51080 1679912902 1679912902 1679912902    NA
+obj$task_times(c(t1, t2, t3), follow = FALSE)
+#>                                      submit      start   complete      moved
+#> a2f600eb3b3ac10dff8480053f4aacf8 1679912901 1679912901 1679912902 1679912902
+#> 3a7d90e2b968d2e523b70edb594d521a 1679912902 1679912902 1679912902 1679912902
+#> 6924f454e6ced2ceab2911849ad51080 1679912902 1679912902 1679912902         NA
+```
+
+
+This means that most of the time you can ignore that a task has been retried and work with whatever task id you have handy.
+
+You can inspect the chain of tasks by looking at the return values `$task_info`. In the above example we have a chain of three tasks a2f600... -> 3a7d90... -> 6924f4..., which we can discover this way:
+
+
+```r
+obj$task_info(t1)
+#> $id
+#> [1] "a2f600eb3b3ac10dff8480053f4aacf8"
+#>
+#> $status
+#> [1] "MOVED"
+#>
+#> $queue
+#> [1] "default"
+#>
+#> $separate_process
+#> [1] FALSE
+#>
+#> $timeout
+#> NULL
+#>
+#> $worker
+#> [1] "productive_aphid_1"
+#>
+#> $pid
+#> NULL
+#>
+#> $moved
+#> $moved$up
+#> NULL
+#>
+#> $moved$down
+#> [1] "3a7d90e2b968d2e523b70edb594d521a" "6924f454e6ced2ceab2911849ad51080"
+```
+
+Here, the `moved` field shows the tasks that are upstream (`up`) and downstream (`down`) of this task. For tasks that have never been retried both elements are `NULL`. The elements are always ordered from oldest to newest, and chains of tasks are always linear (i.e., there is no forking).
+
+For the middle task in the chain, both `up` and `down` point at different tasks:
+
+
+```r
+obj$task_info(t2)$moved
+#> $up
+#> [1] "a2f600eb3b3ac10dff8480053f4aacf8"
+#>
+#> $down
+#> [1] "6924f454e6ced2ceab2911849ad51080"
+```
+
+and for the leaf task:
+
+
+```r
+obj$task_info(t3)$moved
+#> $up
+#> [1] "a2f600eb3b3ac10dff8480053f4aacf8" "3a7d90e2b968d2e523b70edb594d521a"
+#>
+#> $down
+#> NULL
+```
+
+### Performance considerations
+
+It is possible to change the default behaviour of `follow` to not follow through a task chain. Doing this might be slightly more efficient in cases where you are interested in running large numbers of small tasks and do not want to retry failed tasks. This is because almost every request that involves a task id will have to check to see if it has been moved.
+
+To change this behaviour, pass the `follow` argument to the queue constructor, for example:
+
+```r
+obj_nofollow <- rrq::rrq_controller$new(obj$queue_id, follow = FALSE)
+obj_nofollow$task_result(t1)
+```
+
+Here, we would create a queue controller object with the default follow behaviour set to `FALSE` and so accessing a task result of a moved task would not search down through any potential retries unless `follow = TRUE` was explicitly passed.
+
+### Deleting tasks that have been retried
+
+Deletion will operate on all tasks in a chain. So if you delete a task that has been retried then it deletes everything upstream (up to the original task) and downstream (down to the last time that the task was retried). This is because otherwise it is too easy to end up with inconsistent state. So if we run
+
+
+```r
+obj$task_delete(t1)
+```
+
+all three tasks in the chain are deleted:
+
+
+```r
+obj$task_status(c(t1, t2, t3), follow = FALSE)
+#> a2f600eb3b3ac10dff8480053f4aacf8 3a7d90e2b968d2e523b70edb594d521a
+#>                        "MISSING"                        "MISSING"
+#> 6924f454e6ced2ceab2911849ad51080
+#>                        "MISSING"
+```
+
+### Going further
+
+Currently this system does not allow you to do a few things that would be useful
+
+* You can't change queue when you retry a task (for configurations with multiple queues)
+* You can't automatically retry a task on failure (e.g., try this up to 5 times before giving up entirely)
+* You can't retry tasks that have become impossible due to failure of a dependent task, even if that task has been retried and since succeeded
+
+We will relax these limitations soon.
