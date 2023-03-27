@@ -1188,3 +1188,39 @@ test_that("can get task position and preceeding from retried tasks", {
   expect_equal(obj$task_preceeding(t1), ta)
   expect_null(obj$task_preceeding(t1, follow = FALSE))
 })
+
+
+test_that("Can set the follow default on controller creation", {
+  obj <- test_rrq()
+
+  f <- function(follow) {
+    r <- rrq_controller$new(obj$queue_id, follow = follow)
+    r6_private(r)$follow
+  }
+
+  withr::with_options(list(rrq.follow = FALSE), {
+    expect_equal(f(TRUE), TRUE)
+    expect_equal(f(FALSE), FALSE)
+    expect_equal(f(NULL), FALSE)
+  })
+
+  withr::with_options(list(rrq.follow = NULL), {
+    expect_equal(f(TRUE), TRUE)
+    expect_equal(f(FALSE), FALSE)
+    expect_equal(f(NULL), TRUE)
+  })
+})
+
+
+test_that("Can avoid following on controller creation", {
+  obj1 <- test_rrq(follow = FALSE)
+  obj2 <- rrq_controller$new(obj1$queue_id, follow = TRUE)
+  w <- test_worker_blocking(obj1)
+
+  t1 <- obj1$enqueue(runif(1))
+  w$step(TRUE)
+
+  t2 <- obj1$task_retry(t1)
+  expect_equal(obj1$task_status(t1), set_names(TASK_MOVED, t1))
+  expect_equal(obj2$task_status(t1), set_names(TASK_PENDING, t1))
+})

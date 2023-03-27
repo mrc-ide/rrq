@@ -77,7 +77,8 @@ test_name <- function(name) {
 
 test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
                      name = NULL, timeout_worker_stop = NULL,
-                     store_max_size = Inf, offload_path = NULL) {
+                     store_max_size = Inf, offload_path = NULL,
+                     follow = NULL) {
   skip_if_no_redis()
   skip_if_not_installed("withr")
   Sys.setenv(R_TESTS = "")
@@ -104,7 +105,7 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
                   offload_path = offload_path)
   }
 
-  obj <- rrq_controller$new(name)
+  obj <- rrq_controller$new(name, follow = follow)
 
   obj$worker_config_save("localhost", time_poll = 1, verbose = verbose)
   obj$envir(create)
