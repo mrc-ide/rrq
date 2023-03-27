@@ -1997,7 +1997,10 @@ throw_task_errors <- function(res, single) {
 
 task_retry <- function(con, keys, task_ids) {
   if (anyDuplicated(task_ids) > 0) {
-    stop("task_ids must not contain duplicates")
+    stop(sprintf(
+      "task_ids must not contain duplicates:\n%s",
+      paste(sprintf("  - %s", unique(task_ids[duplicated(task_ids)])),
+            collapse = "\n")))
   }
 
   chain <- task_follow_chain(con, keys, task_ids)
@@ -2005,19 +2008,19 @@ task_retry <- function(con, keys, task_ids) {
   task_ids_root <- vcapply(chain, first, USE.NAMES = FALSE)
 
   if (anyDuplicated(task_ids_leaf)) {
-    ## This one really needs a good error message, will be useful to
-    ## combine with the below to truncate the list?
-    stop("task_ids must point to distinct tasks")
+    dup <- task_ids[duplicated(task_ids_leaf)]
+    i <- task_ids_leaf %in% dup
+    err <- vcapply(split(task_ids[i], factor(task_ids_leaf[i], dup)),
+                   function(x) paste(sprintf("    - %s", x), collapse = "\n"))
+    stop(sprintf(
+      "task_ids must point to distinct tasks:\n%s",
+      paste(sprintf("  - %s\n%s", names(err), err), collapse = "\n")))
   }
 
   status <- task_status(con, keys, task_ids_leaf, follow = FALSE)
 
   is_error <- !(status %in% TASK$retriable)
   if (any(is_error)) {
-    ## TODO: use some nice formatting here to truncate the task ids?
-    ##
-    ## TODO: we might indicate which ids are redirected as otherwise
-    ## it's not super obvious
     stop(sprintf(
       "Can't retry tasks that are in state: %s:\n%s",
       paste(squote(unique(status[is_error])), collapse = ", "),

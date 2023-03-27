@@ -192,3 +192,50 @@ test_that("Pathalogical retry key case is allowed", {
                as.list(c(grp$task_ids, t2[[2]])))
   expect_equal(obj$task_status(t2), set_names(rep(TASK_COMPLETE, 2), t2))
 })
+
+
+test_that("Can't retry duplicate tasks", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  t1 <- obj$enqueue(runif(5))
+  t2 <- obj$enqueue(runif(5))
+  w$step(TRUE)
+  w$step(TRUE)
+
+  expect_error(
+    obj$task_retry(c(t1, t1, t1)),
+    sprintf("task_ids must not contain duplicates:\n  - %s", t1))
+  expect_error(
+    obj$task_retry(c(t1, t1, t2, t2)),
+    sprintf("task_ids must not contain duplicates:\n  - %s\n  - %s", t1, t2))
+})
+
+
+test_that("Can't retry duplicate tasks via redirection", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+  t1 <- obj$enqueue(runif(5))
+  t2 <- obj$enqueue(runif(5))
+  t3 <- obj$enqueue(runif(5))
+  w$step(TRUE)
+  w$step(TRUE)
+  w$step(TRUE)
+
+  t4 <- obj$task_retry(t1)
+  t5 <- obj$task_retry(t2)
+  w$step(TRUE)
+  w$step(TRUE)
+
+  expect_error(
+    obj$task_retry(c(t1, t4)),
+    msg <- sprintf(
+      "task_ids must point to distinct tasks:\n  - %s\n    - %s\n    - %s",
+      t4, t1, t4))
+  expect_error(
+    obj$task_retry(c(t1, t2, t3, t4, t5)),
+    sprintf(
+      paste0("task_ids must point to distinct tasks:\n",
+             "  - %s\n    - %s\n    - %s\n",
+             "  - %s\n    - %s\n    - %s"),
+      t4, t1, t4, t5, t2, t5))
+})
