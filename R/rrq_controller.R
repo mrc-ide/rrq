@@ -2018,12 +2018,12 @@ task_retry <- function(con, keys, task_ids) {
 
   status <- task_status(con, keys, task_ids_leaf, follow = FALSE)
 
-  is_error <- !(status %in% TASK$retriable)
-  if (any(is_error)) {
+  not_retriable <- !(status %in% TASK$retriable)
+  if (any(not_retriable)) {
     stop(sprintf(
       "Can't retry tasks that are in state: %s:\n%s",
-      paste(squote(unique(status[is_error])), collapse = ", "),
-      paste(sprintf("  - %s", task_ids[is_error]), collapse = "\n")),
+      paste(squote(unique(status[not_retriable])), collapse = ", "),
+      paste(sprintf("  - %s", task_ids[not_retriable]), collapse = "\n")),
       call. = FALSE)
   }
 
