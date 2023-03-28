@@ -16,7 +16,7 @@ test_that("clean up exited workers", {
     set_names(list("BYE"), w$name))
 
   log <- obj$worker_log_tail(w$name, n = Inf)
-  expect_equal(log$command, c("ALIVE", "QUEUE", "ENVIR", "ENVIR",
+  expect_equal(log$command, c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
                               "MESSAGE", "RESPONSE", "STOP"))
 
   expect_equal(obj$worker_list_exited(), w$name)

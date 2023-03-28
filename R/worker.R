@@ -147,14 +147,13 @@ rrq_worker <- R6::R6Class(
 
       if (private$is_child) {
         self$log("CHILD")
+        self$load_envir()
       } else {
         withCallingHandlers(
           worker_initialise(self, private, worker_queue(queue),
                             key_alive, timeout_idle, heartbeat_period),
           error = worker_catch_error(self, private))
       }
-
-      self$load_envir()
     },
 
     ##' @description Return information about this worker, a list of
@@ -365,6 +364,7 @@ worker_initialise <- function(worker, private, queue, key_alive, timeout_idle,
   }
 
   worker$log("ALIVE")
+  worker$load_envir()
   worker$log("QUEUE", queue)
 
   ## This announces that we're up; things may monitor this
