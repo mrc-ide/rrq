@@ -17,6 +17,7 @@ test_that("empty", {
   expect_equal(
     obj$worker_log_tail(),
     data_frame(worker_id = character(0),
+               child = integer(0),
                time = numeric(0),
                command = character(0),
                message = character(0)))
@@ -437,7 +438,9 @@ test_that("Cancel job sent to new process", {
   st <- obj$task_status(t)
   log <- obj$worker_log_tail(w, Inf)
   expect_equal(log$command,
-               c("ALIVE", "TASK_START", "REMOTE", "CANCEL", "TASK_CANCELLED"))
+               c("ALIVE", "QUEUE", "ENVIR", "ENVIR",
+                 "TASK_START", "REMOTE",
+                 "CHILD", "ENVIR", "ENVIR", "CANCEL", "TASK_CANCELLED"))
   expect_equal(obj$task_status(t), set_names(TASK_CANCELLED, t))
   expect_equal(obj$task_result(t),
                worker_task_failed(TASK_CANCELLED, obj$queue_id, t))
@@ -456,7 +459,9 @@ test_that("Delete job after cancellation", {
   st <- obj$task_status(t)
   log <- obj$worker_log_tail(w, Inf)
   expect_equal(log$command,
-               c("ALIVE", "TASK_START", "REMOTE", "CANCEL", "TASK_CANCELLED"))
+               c("ALIVE", "QUEUE", "ENVIR", "ENVIR",
+                 "TASK_START", "REMOTE",
+                 "CHILD", "ENVIR", "ENVIR", "CANCEL", "TASK_CANCELLED"))
   expect_equal(obj$task_status(t), set_names(TASK_MISSING, t))
 })
 
@@ -877,7 +882,9 @@ test_that("submit a task with a timeout", {
                worker_task_failed(TASK_TIMEOUT, obj$queue_id, t))
 
   expect_equal(obj$worker_log_tail(w$name, Inf)$command,
-               c("ALIVE", "TASK_START", "REMOTE", "TIMEOUT", "TASK_TIMEOUT"))
+               c("ALIVE", "QUEUE", "ENVIR", "ENVIR",
+                 "TASK_START", "REMOTE",
+                 "CHILD", "ENVIR", "ENVIR", "TIMEOUT", "TASK_TIMEOUT"))
 })
 
 

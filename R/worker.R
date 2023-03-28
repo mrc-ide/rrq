@@ -351,6 +351,7 @@ worker_initialise <- function(worker, private, queue, key_alive, timeout_idle,
 
   private$heartbeat <- worker_heartbeat(con, keys, heartbeat_period,
                                         private$verbose)
+  private$queue <- rrq_key_queue(keys$queue_id, queue)
 
   con$pipeline(
     redis$SADD(keys$worker_name,   worker$name),
@@ -362,8 +363,6 @@ worker_initialise <- function(worker, private, queue, key_alive, timeout_idle,
   if (!is.null(timeout_idle)) {
     run_message_timeout_set(worker, private, timeout_idle)
   }
-
-  private$queue <- rrq_key_queue(keys$queue_id, queue)
 
   worker$log("ALIVE")
   worker$log("QUEUE", queue)

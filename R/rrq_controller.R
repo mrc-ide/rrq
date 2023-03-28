@@ -1717,6 +1717,9 @@ worker_load <- function(con, keys, worker_ids) {
   logs <- worker_log_tail(con, keys, worker_ids, Inf)
   logs <- logs[order(logs$time), ]
 
+  keep <- c("ALIVE", "STOP", "TASK_START", "TASK_COMPLETE")
+  logs <- logs[logs$command %in% keep & is.na(logs$child), ]
+
   logs$worker <- 0
   logs$worker[logs$command == "ALIVE"] <- 1
   logs$worker[logs$command == "STOP"] <- -1

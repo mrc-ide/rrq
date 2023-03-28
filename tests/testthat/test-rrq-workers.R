@@ -16,7 +16,8 @@ test_that("clean up exited workers", {
     set_names(list("BYE"), w$name))
 
   log <- obj$worker_log_tail(w$name, n = Inf)
-  expect_equal(log$command, c("ALIVE", "MESSAGE", "RESPONSE", "STOP"))
+  expect_equal(log$command, c("ALIVE", "QUEUE", "ENVIR", "ENVIR",
+                              "MESSAGE", "RESPONSE", "STOP"))
 
   expect_equal(obj$worker_list_exited(), w$name)
   expect_equal(obj$worker_delete_exited(), w$name)
@@ -31,15 +32,29 @@ test_that("log parse", {
   worker_id <- "id"
   expect_equal(
     worker_log_parse("123.456 ALIVE", worker_id),
-    data_frame(worker_id = worker_id, time = 123.456, command = "ALIVE",
-               message = ""))
+    data_frame(worker_id = worker_id, child = NA_integer_, time = 123.456,
+               command = "ALIVE", message = ""))
   expect_equal(
     worker_log_parse("123.456 ALIVE ", worker_id),
-    data_frame(worker_id = worker_id, time = 123.456, command = "ALIVE",
-               message = ""))
+    data_frame(worker_id = worker_id, child = NA_integer_, time = 123.456,
+               command = "ALIVE", message = ""))
   expect_equal(
     worker_log_parse("123.456 MESSAGE the value", worker_id),
-    data_frame(worker_id = worker_id, time = 123.456, command = "MESSAGE",
+    data_frame(worker_id = worker_id, child = NA_integer_, time = 123.456,
+               command = "MESSAGE",
+               message = "the value"))
+  expect_equal(
+    worker_log_parse("123.456/42 ALIVE", worker_id),
+    data_frame(worker_id = worker_id, child = 42L, time = 123.456,
+               command = "ALIVE", message = ""))
+  expect_equal(
+    worker_log_parse("123.456/42 ALIVE ", worker_id),
+    data_frame(worker_id = worker_id, child = 42L, time = 123.456,
+               command = "ALIVE", message = ""))
+  expect_equal(
+    worker_log_parse("123.456/42 MESSAGE the value", worker_id),
+    data_frame(worker_id = worker_id, child = 42L, time = 123.456,
+               command = "MESSAGE",
                message = "the value"))
   expect_error(
     worker_log_parse("x123.456 MESSAGE the value", worker_id),

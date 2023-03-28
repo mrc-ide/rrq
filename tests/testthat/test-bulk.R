@@ -20,7 +20,7 @@ test_that("lapply simple case", {
 
   log <- obj$worker_log_tail(w$name, Inf)
   expect_equal(log$command,
-               c("ALIVE",
+               c("ALIVE", "QUEUE", "ENVIR", "ENVIR",
                  rep(c("TASK_START", "TASK_COMPLETE"), 10),
                  "STOP"))
 })
