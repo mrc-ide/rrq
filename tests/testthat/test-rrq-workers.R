@@ -96,6 +96,16 @@ test_that("worker names can't be duplicated", {
 })
 
 
+test_that("Child workers require a parent", {
+  con <- test_hiredis()
+  name <- ids::random_id()
+  queue_id <- test_name(NULL)
+  expect_error(
+    rrq_worker$new(queue_id, con, worker_name = name, is_child = TRUE),
+    "Can't be a child of nonexistant worker")
+})
+
+
 test_that("Timer is recreated after task run", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)

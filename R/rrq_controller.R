@@ -1577,6 +1577,7 @@ worker_log_tail <- function(con, keys, worker_ids = NULL, n = 1) {
     ret
   } else {
     data_frame(worker_id = character(0),
+               child = integer(0),
                time = numeric(0),
                command = character(0),
                message = character(0))
@@ -1595,14 +1596,15 @@ worker_log_tail_1 <- function(con, keys, worker_id, n = 1) {
 
 
 worker_log_parse <- function(log, worker_id) {
-  re <- "^([0-9.]+) ([^ ]+) ?(.*)$"
+  re <- "^([0-9.]+)(/[0-9]+)? ([^ ]+) ?(.*)$"
   if (!all(grepl(re, log))) {
     stop("Corrupt log")
   }
   time <- as.numeric(sub(re, "\\1", log))
-  command <- sub(re, "\\2", log)
-  message <- lstrip(sub(re, "\\3", log))
-  data.frame(worker_id, time, command, message, stringsAsFactors = FALSE)
+  child <- as.integer(sub("/", "", sub(re, "\\2", log)))
+  command <- sub(re, "\\3", log)
+  message <- lstrip(sub(re, "\\4", log))
+  data_frame(worker_id, child, time, command, message)
 }
 
 

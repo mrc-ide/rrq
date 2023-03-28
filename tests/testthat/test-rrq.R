@@ -411,6 +411,7 @@ test_that("Send job to new process", {
   skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
+  obj$worker_log_tail(w$name, Inf)
 
   t <- obj$enqueue(slowdouble(0.1), separate_process = TRUE)
   expect_type(t, "character")
@@ -862,6 +863,7 @@ test_that("submit a task with a timeout requires separate process", {
 
 
 test_that("submit a task with a timeout", {
+  skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")
   t <- obj$enqueue(slowdouble(10), timeout_task_run = 1,
                    separate_process = TRUE)
@@ -1070,6 +1072,7 @@ test_that("Can get information about a task in the same process", {
 
 
 test_that("Can get information about a task in a different process", {
+  skip_if_not_installed("callr")
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
   t <- obj$enqueue(sqrt(4), separate_process = TRUE, timeout_task_run = 5)
@@ -1096,4 +1099,34 @@ test_that("Can get information about a task in a different process", {
   expect_equal(d2$timeout, 5)
   expect_equal(d2$worker, w$name)
   expect_type(d2$pid, "integer")
+})
+
+
+test_that("Running in separate process produces coherent logs", {
+  skip_if_not_installed("callr")
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
+  log0 <- obj$worker_log_tail(w$name, Inf)
+
+  t <- obj$enqueue(runif(1), separate_process = TRUE)
+  expect_type(t, "character")
+  w$step(TRUE)
+
+  expect_equal(obj$task_status(t), set_names(TASK_COMPLETE, t))
+
+  log <- obj$worker_log_tail(w$name, Inf)
+  expect_equal(log[seq_len(nrow(log0)), ], log0)
+
+  log1 <- log[-seq_len(nrow(log0)), ]
+
+  expect_true(all(log1$worker_id == w$name))
+  expect_equal(
+    log1$command,
+    c("TASK_START", "REMOTE",
+      "CHILD", "ENVIR", "ENVIR", "STOP",
+      "TASK_COMPLETE"))
+  expect_equal(
+    is.na(log1$child),
+    c(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, TRUE))
 })
