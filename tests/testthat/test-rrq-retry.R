@@ -93,7 +93,7 @@ test_that("Can delete tasks consistently from root", {
   w$step(TRUE)
   t2 <- obj$task_retry(t1)
   w$step(TRUE)
-  t3 <- obj$task_retry(t2) # TODO: broken if given t1, failing to follow
+  t3 <- obj$task_retry(t2)
   w$step(TRUE)
 
   info <- obj$task_info(t1)
