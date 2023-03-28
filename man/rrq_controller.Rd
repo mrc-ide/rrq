@@ -1315,7 +1315,9 @@ all active workers are used.}
 \subsection{Method \code{worker_log_tail()}}{
 Returns the last (few) elements in the worker
 log. The log will be returned as a \link{data.frame} of entries
-\code{worker_id} (the worker id), \code{time} (the time in Redis when the
+\code{worker_id} (the worker id), \code{child} (the process id, an integer,
+where logs come from a child process from a task queued with
+\code{separate_process = TRUE}), \code{time} (the time in Redis when the
 event happened; see \link[redux:redis_time]{redux::redis_time} to convert this to an R
 time), \code{command} (the worker command) and \code{message} (the message
 corresponding to that command).

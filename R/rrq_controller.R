@@ -965,7 +965,9 @@ rrq_controller <- R6::R6Class(
 
     ##' @description Returns the last (few) elements in the worker
     ##' log. The log will be returned as a [data.frame] of entries
-    ##' `worker_id` (the worker id), `time` (the time in Redis when the
+    ##' `worker_id` (the worker id), `child` (the process id, an integer,
+    ##' where logs come from a child process from a task queued with
+    ##' `separate_process = TRUE`), `time` (the time in Redis when the
     ##' event happened; see [redux::redis_time] to convert this to an R
     ##' time), `command` (the worker command) and `message` (the message
     ##' corresponding to that command).
