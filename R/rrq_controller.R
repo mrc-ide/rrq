@@ -1504,7 +1504,7 @@ task_data <- function(con, keys, store, task_id) {
   expr <- con$HGET(keys$task_expr, task_id)
   if (is.null(expr)) {
     stop(sprintf("Task '%s' not found", task_id))
-  } else if (is.character(expr)) {
+  } else if (is_task_redirect(expr)) {
     return(task_data(con, keys, store, expr))
   }
   task <- bin_to_object(expr)
@@ -2097,4 +2097,9 @@ task_follow_chain <- function(con, keys, task_ids) {
     task_ids <- unname(from_redis_hash(con, keys$task_moved_to, task_ids))
   }
   lapply(seq_len(nrow(chain)), function(i) na_drop(chain[i, ]))
+}
+
+
+is_task_redirect <- function(x) {
+  is.character(x)
 }
