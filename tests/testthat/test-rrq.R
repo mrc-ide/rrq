@@ -437,13 +437,17 @@ test_that("Cancel job sent to new process", {
   obj$task_cancel(t, wait = TRUE, delete = FALSE)
   st <- obj$task_status(t)
   log <- obj$worker_log_tail(w, Inf)
+  expect_equal(obj$task_status(t), set_names(TASK_CANCELLED, t))
+  expect_equal(obj$task_result(t),
+               worker_task_failed(TASK_CANCELLED, obj$queue_id, t))
+
+  ## Flakey on covr, probably due to the job being cancelled before
+  ## the second process really finishes starting up.
+  skip_on_covr()
   expect_equal(log$command,
                c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
                  "TASK_START", "REMOTE",
                  "CHILD", "ENVIR", "ENVIR", "CANCEL", "TASK_CANCELLED"))
-  expect_equal(obj$task_status(t), set_names(TASK_CANCELLED, t))
-  expect_equal(obj$task_result(t),
-               worker_task_failed(TASK_CANCELLED, obj$queue_id, t))
 })
 
 
@@ -456,13 +460,16 @@ test_that("Delete job after cancellation", {
   t <- obj$enqueue(slowdouble(50), separate_process = TRUE)
   wait_status(t, obj)
   obj$task_cancel(t, wait = TRUE, delete = TRUE)
-  st <- obj$task_status(t)
+  expect_equal(obj$task_status(t), set_names(TASK_MISSING, t))
+
+  ## Flakey on covr, probably due to the job being cancelled before
+  ## the second process really finishes starting up.
+  skip_on_covr()
   log <- obj$worker_log_tail(w, Inf)
   expect_equal(log$command,
                c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
                  "TASK_START", "REMOTE",
                  "CHILD", "ENVIR", "ENVIR", "CANCEL", "TASK_CANCELLED"))
-  expect_equal(obj$task_status(t), set_names(TASK_MISSING, t))
 })
 
 
@@ -881,6 +888,9 @@ test_that("submit a task with a timeout", {
   expect_equal(obj$task_result(t),
                worker_task_failed(TASK_TIMEOUT, obj$queue_id, t))
 
+  ## Flakey on covr, probably due to the job being cancelled before
+  ## the second process really finishes starting up.
+  skip_on_covr()
   expect_equal(obj$worker_log_tail(w$name, Inf)$command,
                c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
                  "TASK_START", "REMOTE",
