@@ -122,7 +122,7 @@ worker_run_task_start <- function(worker, private, task_id) {
     redis$HGET(keys$task_expr,       task_id),
     redis$HGET(keys$task_cancel,     task_id))
 
-  if (task_is_redirect(dat[[9]])) {
+  if (is_task_redirect(dat[[9]])) {
     task_id_root <- dat[[9]]
     dat[7:9] <-
       private$con$pipeline(
