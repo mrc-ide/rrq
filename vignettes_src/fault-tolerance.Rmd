@@ -42,7 +42,7 @@ lang_output(readLines("fault.R"), "r")
 ```{r}
 obj <- rrq::rrq_controller$new(paste0("rrq:", ids::random_id(bytes = 4)))
 obj$envir(rrq::rrq_envir(sources = "fault.R"))
-rrq::rrq_worker_spawn(obj)
+w <- rrq::rrq_worker_spawn(obj)
 ```
 
 In the happy case, everything works as expected:
@@ -126,7 +126,8 @@ t <- obj$enqueue(Sys.sleep(3600), separate_process = TRUE)
 ```{r, include = FALSE}
 # small sleep here needed so that the pid is actually available;
 # two small conditions to pass.
-rrq:::wait_status_change(obj$con, rrq:::rrq_keys(obj$queue_id), t, rrq:::TASK_PENDING)
+rrq:::wait_status_change(obj$con, rrq:::rrq_keys(obj$queue_id), t,
+                         rrq:::TASK_PENDING)
 rrq:::wait_timeout("pid not available in time", 10,
                    function() is.null(obj$task_info(t)$pid))
 ```
@@ -139,7 +140,8 @@ tools::pskill(info$pid)
 ```
 
 ```{r, include = FALSE}
-rrq:::wait_status_change(obj$con, rrq:::rrq_keys(obj$queue_id), t, rrq:::TASK_RUNNING)
+rrq:::wait_status_change(obj$con, rrq:::rrq_keys(obj$queue_id), t,
+                         rrq:::TASK_RUNNING)
 ```
 
 Because the task was run in a separate process, our worker could detect that the task has died unexpectedly:
@@ -200,7 +202,8 @@ t <- obj$enqueue(Sys.sleep(3600))
 ```
 
 ```{r, include = FALSE}
-rrq:::wait_status_change(obj$con, rrq:::rrq_keys(obj$queue_id), t, rrq:::TASK_PENDING)
+rrq:::wait_status_change(obj$con, rrq:::rrq_keys(obj$queue_id), t,
+                         rrq:::TASK_PENDING)
 ```
 
 The worker wil pick the task up fairly quickly, and the status will change to `RUNNING`:
@@ -209,10 +212,6 @@ The worker wil pick the task up fairly quickly, and the status will change to `R
 obj$task_status(t)
 obj$worker_status(w)
 ```
-
-<!-- ```{r} -->
-<!-- Sys.sleep(1) -->
-<!-- ``` -->
 
 We kill the worker (simulating the job crashing, or the machine turning off, etc):
 
@@ -252,4 +251,154 @@ Fetching the task result provides the same `r rrq:::TASK_DIED` error as above:
 obj$task_result(t)
 ```
 
-This is still not terribly useful, as we have not provided any mechanism to automatically requeue a lost task or restart a dead worker.
+This is still not terribly useful, as we have not provided any mechanism to automatically requeue a lost task or restart a dead worker, which we cover in the next section.
+
+## Retrying tasks
+
+Regardless of how your tasks got to be in a broken situation, the mechanism for getting them out of this situation remains the same; you want to retry the task:
+
+* Your task might have errored because of some resource being unavailable or full and now it is back on line
+* The worker might have died because someone turned off the machine
+* Your memory errors only happen sometimes and you feel lucky (in this case you should also fix your program!)
+
+Alternatively, perhaps your task ran to successful completion but you simply want to rerun it (e.g., some stochastic algorithm that is displaying a non-fatal pathology).
+
+You can use the `$task_retry` method to retry any number of tasks that have *completed* (in one of the terminal states - including `COMPLETE` but also `ERROR`, `CANCELLED` `DIED` or `TIMEOUT`). This is nondestructive to any of the task data, in particular its result, so you will still have access to the failed run and its stack trace (but see below).
+
+### An example where retrying fixes an error
+
+In this example, we'll run some "model" that may or may not converge, and we want to retry until it does. This represents some badly behaved task with a stochastic component that will eventually work if tried enough times:
+
+```{r results = "asis", echo = FALSE}
+lang_output(readLines("fault2.R"), "r")
+```
+
+We can create a new environment for our worker, to pick up this function:
+
+```{r}
+obj$envir(rrq::rrq_envir(sources = "fault2.R"))
+w <- rrq::rrq_worker_spawn(obj)
+```
+
+```{r, include = FALSE}
+# this ensures that the worker produces the random numbers
+#   0.2655087, 0.3721239, 0.5728534
+# in order, which we rely on below
+obj$message_send_and_wait("EVAL", quote(set.seed(1)), w, progress = FALSE,
+                          timeout = 10)
+```
+
+Now, we enqueue a task as usual, then wait on it
+
+```{r}
+t1 <- obj$enqueue(stochastic_failure(0.5))
+obj$task_wait(t1, timeout = 10)
+```
+
+Oh no, this task has failed!
+
+We can use the `task_retry` method to requeue this job, meaning that it will run exactly as before. However, the random number stream has moved on and this task will return a different answer - perhaps it will work this time?
+
+```{r}
+t2 <- obj$task_retry(t1)
+obj$task_wait(t2, timeout = 10)
+```
+
+The task has failed again. Note here that `task_retry` has taken a task id and returned a new task id, which we have waited on. However, we could also have used the original id (more on this below).
+
+Let's give it one more go:
+
+```{r}
+t3 <- obj$task_retry(t2)
+obj$task_wait(t3, timeout = 10)
+```
+
+Success!  The task has run to completion and we no longer have an error.
+
+When you retry a task, rrq sets up redirects that point from the old task id to the new one, and in most cases you can use whichever you find more convenient. For example, we can now read the successful task result from any of the task ids:
+
+```{r}
+obj$tasks_result(c(t1, t2, t3))
+```
+
+To prevent this, pass `follow = FALSE` to return the original result
+
+```{r}
+obj$tasks_result(c(t1, t2, t3), follow = FALSE)
+```
+
+Here, we can see that the first two times we ran the task they failed, along with the error and any backtraces. The same logic applies to other methods, such as `$task_status()`
+
+```{r}
+obj$task_status(c(t1, t2, t3))
+obj$task_status(c(t1, t2, t3), follow = FALSE)
+```
+
+Note that the task status above has overwritten the original status (previously it was `r rrq:::TASK_ERROR`, but now it is `r rrq:::TASK_MOVED`). However, you can always read the original status in the error object's status field, should you need it.
+
+You can also extract times that events happened with `$task_times()`
+
+```{r}
+obj$task_times(c(t1, t2, t3))
+obj$task_times(c(t1, t2, t3), follow = FALSE)
+```
+
+
+This means that most of the time you can ignore that a task has been retried and work with whatever task id you have handy.
+
+You can inspect the chain of tasks by looking at the return values `$task_info`. In the above example we have a chain of three tasks `r paste0(substr(c(t1, t2, t3), 1, 6), "...", collapse = " -> ")`, which we can discover this way:
+
+```{r}
+obj$task_info(t1)
+```
+
+Here, the `moved` field shows the tasks that are upstream (`up`) and downstream (`down`) of this task. For tasks that have never been retried both elements are `NULL`. The elements are always ordered from oldest to newest, and chains of tasks are always linear (i.e., there is no forking).
+
+For the middle task in the chain, both `up` and `down` point at different tasks:
+
+```{r}
+obj$task_info(t2)$moved
+```
+
+and for the leaf task:
+
+```{r}
+obj$task_info(t3)$moved
+```
+
+### Performance considerations
+
+It is possible to change the default behaviour of `follow` to not follow through a task chain. Doing this might be slightly more efficient in cases where you are interested in running large numbers of small tasks and do not want to retry failed tasks. This is because almost every request that involves a task id will have to check to see if it has been moved.
+
+To change this behaviour, pass the `follow` argument to the queue constructor, for example:
+
+```r
+obj_nofollow <- rrq::rrq_controller$new(obj$queue_id, follow = FALSE)
+obj_nofollow$task_result(t1)
+```
+
+Here, we would create a queue controller object with the default follow behaviour set to `FALSE` and so accessing a task result of a moved task would not search down through any potential retries unless `follow = TRUE` was explicitly passed.
+
+### Deleting tasks that have been retried
+
+Deletion will operate on all tasks in a chain. So if you delete a task that has been retried then it deletes everything upstream (up to the original task) and downstream (down to the last time that the task was retried). This is because otherwise it is too easy to end up with inconsistent state. So if we run
+
+```{r}
+obj$task_delete(t1)
+```
+
+all three tasks in the chain are deleted:
+
+```{r}
+obj$task_status(c(t1, t2, t3), follow = FALSE)
+```
+
+### Going further
+
+Currently this system does not allow you to do a few things that would be useful
+
+* You can't change queue when you retry a task (for configurations with multiple queues)
+* You can't automatically retry a task on failure (e.g., try this up to 5 times before giving up entirely)
+* You can't retry tasks that have become impossible due to failure of a dependent task, even if that task has been retried and since succeeded
+
+We will relax these limitations soon.

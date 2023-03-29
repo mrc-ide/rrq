@@ -338,3 +338,20 @@ test_that("can summarise fetching many failed bulk tasks", {
   expect_s3_class(err$errors[[4]], "rrq_task_error")
   expect_equal(err$errors[[4]], obj$task_result(grp$task_ids[[4]]))
 })
+
+
+test_that("Set completion keys", {
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
+  grp <- obj$lapply_(1:4, sin, dots = list(base = 2), timeout_task_wait = 0)
+  for (i in seq_along(grp$task_ids)) {
+    w$step(immediate = TRUE)
+  }
+
+  expect_equal(obj$con$LRANGE(grp$key_complete, 0, -1),
+               as.list(grp$task_ids))
+  expect_equal(lapply(rrq_key_task_complete(obj$queue_id, grp$task_ids),
+                      function(k) list_to_character(obj$con$LRANGE(k, 0, -1))),
+               as.list(grp$task_ids))
+})

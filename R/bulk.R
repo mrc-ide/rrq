@@ -7,7 +7,7 @@ rrq_lapply <- function(con, keys, store, x, fun, dots, envir, queue,
     return(dat)
   }
   rrq_bulk_wait(con, keys, store, dat, timeout_task_wait, time_poll, progress,
-                delete, error)
+                delete, error, FALSE)
 }
 
 
@@ -22,7 +22,7 @@ rrq_enqueue_bulk <- function(con, keys, store, x, fun, dots,
     return(dat)
   }
   rrq_bulk_wait(con, keys, store, dat, timeout_task_wait, time_poll, progress,
-                delete, error)
+                delete, error, FALSE)
 }
 
 
@@ -128,11 +128,11 @@ rrq_bulk_prepare_call_x <- function(x) {
 
 
 rrq_bulk_wait <- function(con, keys, store, dat, timeout, time_poll, progress,
-                          delete, error) {
+                          delete, error, follow) {
   assert_is(dat, "rrq_bulk")
   ret <- tasks_wait(con, keys, store, dat$task_ids, timeout,
                     time_poll, progress, dat$key_complete,
-                    error = FALSE, single = FALSE)
+                    error = FALSE, follow = follow, single = FALSE)
   if (delete) {
     task_delete(con, keys, store, dat$task_ids, FALSE)
   }

@@ -122,6 +122,15 @@ worker_run_task_start <- function(worker, private, task_id) {
     redis$HGET(keys$task_expr,       task_id),
     redis$HGET(keys$task_cancel,     task_id))
 
+  if (is_task_redirect(dat[[9]])) {
+    task_id_root <- dat[[9]]
+    dat[7:9] <-
+      private$con$pipeline(
+        redis$HGET(keys$task_complete, task_id_root),
+        redis$HGET(keys$task_local,    task_id_root),
+        redis$HGET(keys$task_expr,     task_id_root))
+  }
+
   ## This holds the bits of worker state we might need to refer to
   ## later for a running task:
   private$active_task <- list(task_id = task_id, key_complete = dat[[7]])

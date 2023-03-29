@@ -138,7 +138,7 @@ test_that("task_overview", {
   expect_equal(
     obj$task_overview(),
     list(PENDING = 0, RUNNING = 0, COMPLETE = 0, ERROR = 0, CANCELLED = 0,
-         DIED = 0, TIMEOUT = 0, IMPOSSIBLE = 0, DEFERRED = 0))
+         DIED = 0, TIMEOUT = 0, IMPOSSIBLE = 0, DEFERRED = 0, MOVED = 0))
 
   t1 <- obj$enqueue(sin(1))
   t2 <- obj$enqueue(sin(1))
@@ -147,7 +147,7 @@ test_that("task_overview", {
   expect_equal(
     obj$task_overview(),
     list(PENDING = 3, RUNNING = 0, COMPLETE = 0, ERROR = 0, CANCELLED = 0,
-         DIED = 0, TIMEOUT = 0, IMPOSSIBLE = 0, DEFERRED = 0))
+         DIED = 0, TIMEOUT = 0, IMPOSSIBLE = 0, DEFERRED = 0, MOVED = 0))
 })
 
 
@@ -974,17 +974,20 @@ test_that("collect times", {
 
   times1 <- obj$task_times(tt)
   expect_true(is.matrix(times1)) # testthat 3e makes this quite hard
-  expect_equal(dimnames(times1), list(tt, c("submit", "start", "complete")))
+  expect_equal(dimnames(times1),
+               list(tt, c("submit", "start", "complete", "moved")))
   expect_type(times1, "double")
   expect_equal(times1[tt, "start"], set_names(rep(NA_real_, 2), tt))
   expect_equal(times1[tt, "complete"], set_names(rep(NA_real_, 2), tt))
+  expect_equal(times1[tt, "moved"], set_names(rep(NA_real_, 2), tt))
   expect_false(any(is.na(times1[tt, "submit"])))
 
   w$step(TRUE)
   times2 <- obj$task_times(tt)
   expect_equal(times2[t2, , drop = FALSE], times1[t2, , drop = FALSE])
   expect_equal(obj$task_times(t2), times1[t2, , drop = FALSE])
-  expect_false(any(is.na(times2[t1, ])))
+  expect_equal(is.na(times2[t1, ]),
+               c(submit = FALSE, start = FALSE, complete = FALSE, moved = TRUE))
 })
 
 
@@ -1047,7 +1050,8 @@ test_that("Can get information about a task in the same process", {
   d1 <- obj$task_info(t)
   expect_setequal(
     names(d1),
-    c("id", "status", "queue", "separate_process", "timeout", "worker", "pid"))
+    c("id", "status", "queue", "separate_process", "timeout", "worker", "pid",
+      "moved"))
   expect_equal(d1$id, t)
   expect_equal(d1$status, TASK_PENDING)
   expect_equal(d1$queue, "default")
@@ -1055,6 +1059,7 @@ test_that("Can get information about a task in the same process", {
   expect_null(d1$timeout)
   expect_null(d1$worker)
   expect_null(d1$pid)
+  expect_equal(d1$moved, list(up = NULL, down = NULL))
 
   w$step(TRUE)
   d2 <- obj$task_info(t)
@@ -1066,6 +1071,7 @@ test_that("Can get information about a task in the same process", {
   expect_null(d2$timeout, 5)
   expect_equal(d2$worker, w$name)
   expect_null(d2$pid, "integer")
+  expect_equal(d1$moved, list(up = NULL, down = NULL))
 })
 
 
@@ -1077,7 +1083,8 @@ test_that("Can get information about a task in a different process", {
   d1 <- obj$task_info(t)
   expect_setequal(
     names(d1),
-    c("id", "status", "queue", "separate_process", "timeout", "worker", "pid"))
+    c("id", "status", "queue", "separate_process", "timeout", "worker", "pid",
+      "moved"))
   expect_equal(d1$id, t)
   expect_equal(d1$status, TASK_PENDING)
   expect_equal(d1$queue, "default")
@@ -1085,6 +1092,7 @@ test_that("Can get information about a task in a different process", {
   expect_equal(d1$timeout, 5)
   expect_null(d1$worker)
   expect_null(d1$pid)
+  expect_equal(d1$moved, list(up = NULL, down = NULL))
 
   w$step(TRUE)
   d2 <- obj$task_info(t)
@@ -1096,4 +1104,123 @@ test_that("Can get information about a task in a different process", {
   expect_equal(d2$timeout, 5)
   expect_equal(d2$worker, w$name)
   expect_type(d2$pid, "integer")
+  expect_equal(d1$moved, list(up = NULL, down = NULL))
+})
+
+
+test_that("Can get information about task retries", {
+  obj <- test_rrq()
+  t <- list()
+  w <- test_worker_blocking(obj)
+
+  t1 <- obj$enqueue(identity(1))
+  w$step(TRUE)
+  expect_mapequal(obj$task_info(t1)$moved, list(up = NULL, down = NULL))
+
+  t2 <- obj$task_retry(t1)
+  w$step(TRUE)
+  expect_mapequal(obj$task_info(t1)$moved, list(up = NULL, down = t2))
+  expect_mapequal(obj$task_info(t2)$moved, list(up = t1, down = NULL))
+
+  t3 <- obj$task_retry(t2)
+  w$step(TRUE)
+  expect_mapequal(obj$task_info(t1)$moved, list(up = NULL, down = c(t2, t3)))
+  expect_mapequal(obj$task_info(t2)$moved, list(up = t1, down = t3))
+  expect_mapequal(obj$task_info(t3)$moved, list(up = c(t1, t2), down = NULL))
+
+  t4 <- obj$task_retry(t3)
+  w$step(TRUE)
+  expect_mapequal(obj$task_info(t1)$moved,
+                  list(up = NULL, down = c(t2, t3, t4)))
+  expect_mapequal(obj$task_info(t2)$moved,
+                  list(up = t1, down = c(t3, t4)))
+  expect_mapequal(obj$task_info(t3)$moved,
+                  list(up = c(t1, t2), down = t4))
+  expect_mapequal(obj$task_info(t4)$moved,
+                  list(up = c(t1, t2, t3), down = NULL))
+})
+
+
+test_that("Can retry tasks that span multiple queues at once", {
+  obj <- test_rrq()
+  obj$worker_config_save("localhost", queue = c("a", "b"), verbose = FALSE)
+  t1 <- c(obj$enqueue(sin(1), queue = "a"),
+          obj$enqueue(sin(2), queue = "a"),
+          obj$enqueue(sin(3), queue = "b"))
+
+  w <- test_worker_blocking(obj)
+  for (i in 1:3) {
+    w$step(TRUE)
+  }
+
+  t2 <- obj$task_retry(t1)
+
+  expect_equal(obj$task_status(t2), set_names(rep(TASK_PENDING, 3), t2))
+  expect_equal(obj$queue_list("a"), t2[1:2])
+  expect_equal(obj$queue_list("b"), t2[3])
+
+  expect_equal(obj$task_position(t2, queue = "a"), c(1, 2, 0))
+  expect_equal(obj$task_position(t2, queue = "b"), c(0, 0, 1))
+
+  ## Can also get the position from the old ids:
+  expect_equal(obj$task_position(t1, queue = "a"), c(1, 2, 0))
+  expect_equal(obj$task_position(t1, queue = "b"), c(0, 0, 1))
+  expect_equal(obj$task_position(t1, queue = "a", follow = FALSE), c(0, 0, 0))
+  expect_equal(obj$task_position(t1, queue = "b", follow = FALSE), c(0, 0, 0))
+})
+
+
+test_that("can get task position and preceeding from retried tasks", {
+  obj <- test_rrq()
+  t1 <- obj$enqueue(sin(1))
+  w <- test_worker_blocking(obj)
+  w$step()
+
+  ta <- c(obj$enqueue(sin(2)), obj$enqueue(sin(3)))
+  t2 <- obj$task_retry(t1)
+  tb <- c(obj$enqueue(sin(4)), obj$enqueue(sin(5)), obj$enqueue(sin(6)))
+
+  expect_equal(obj$task_position(t2), 3)
+  expect_equal(obj$task_position(t1), 3)
+  expect_equal(obj$task_position(t1, follow = FALSE), 0)
+
+  expect_equal(obj$task_preceeding(t2), ta)
+  expect_equal(obj$task_preceeding(t1), ta)
+  expect_null(obj$task_preceeding(t1, follow = FALSE))
+})
+
+
+test_that("Can set the follow default on controller creation", {
+  obj <- test_rrq()
+
+  f <- function(follow) {
+    r <- rrq_controller$new(obj$queue_id, follow = follow)
+    r6_private(r)$follow
+  }
+
+  withr::with_options(list(rrq.follow = FALSE), {
+    expect_equal(f(TRUE), TRUE)
+    expect_equal(f(FALSE), FALSE)
+    expect_equal(f(NULL), FALSE)
+  })
+
+  withr::with_options(list(rrq.follow = NULL), {
+    expect_equal(f(TRUE), TRUE)
+    expect_equal(f(FALSE), FALSE)
+    expect_equal(f(NULL), TRUE)
+  })
+})
+
+
+test_that("Can avoid following on controller creation", {
+  obj1 <- test_rrq(follow = FALSE)
+  obj2 <- rrq_controller$new(obj1$queue_id, follow = TRUE)
+  w <- test_worker_blocking(obj1)
+
+  t1 <- obj1$enqueue(runif(1))
+  w$step(TRUE)
+
+  t2 <- obj1$task_retry(t1)
+  expect_equal(obj1$task_status(t1), set_names(TASK_MOVED, t1))
+  expect_equal(obj2$task_status(t1), set_names(TASK_PENDING, t1))
 })

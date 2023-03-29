@@ -219,3 +219,17 @@ squote <- function(x) {
 timestamp <- function(time = Sys.time()) {
   as.numeric(as.POSIXlt(time, tz = "UTC"))
 }
+
+na_drop <- function(x) {
+  x[!is.na(x)]
+}
+
+
+first <- function(x) {
+  x[[1L]]
+}
+
+
+last <- function(x) {
+  x[[length(x)]]
+}

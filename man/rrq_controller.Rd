@@ -18,6 +18,9 @@ A queue controller.  Use this to interact with a queue/cluster.
 \item If the task is killed by an external process, crashes or the worker
 dies (and is running a heartbeat) then the task becomes \code{DIED}.
 \item The status of an unknown task is \code{MISSING}
+\item Tasks in any terminal state (except \code{IMPOSSIBLE}) may be retried
+with \code{task_retry} at which point they become \code{MOVED}, see
+\code{vignette("fault-tolerance")} for details
 }
 }
 
@@ -152,6 +155,7 @@ after creation.}
 \item \href{#method-rrq_controller-task_data}{\code{rrq_controller$task_data()}}
 \item \href{#method-rrq_controller-task_info}{\code{rrq_controller$task_info()}}
 \item \href{#method-rrq_controller-task_times}{\code{rrq_controller$task_times()}}
+\item \href{#method-rrq_controller-task_retry}{\code{rrq_controller$task_retry()}}
 \item \href{#method-rrq_controller-queue_length}{\code{rrq_controller$queue_length()}}
 \item \href{#method-rrq_controller-queue_list}{\code{rrq_controller$queue_list()}}
 \item \href{#method-rrq_controller-queue_remove}{\code{rrq_controller$queue_remove()}}
@@ -184,7 +188,12 @@ after creation.}
 \subsection{Method \code{new()}}{
 Constructor
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$new(queue_id, con = redux::hiredis(), timeout_task_wait = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$new(
+  queue_id,
+  con = redux::hiredis(),
+  timeout_task_wait = NULL,
+  follow = NULL
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -202,6 +211,16 @@ connection using default ports, or environment variables set as in
 waiting for tasks (e.g., with \verb{$task_wait()}, \verb{$tasks_wait()},
 \verb{$lapply()}, etc). If not given, then we fall back on the
 global option \code{rrq.timeout_task_wait}, and if that is not set,}
+
+\item{\code{follow}}{An optional default logical to use for tasks
+that may (or may not) be retried. If not given we fall back
+on the global option \code{rrq.follow}, and if that is not set then
+\code{TRUE} (i.e., we do follow). The value \code{follow = TRUE} is
+potentially slower than \code{follow = FALSE} for some operations
+because we need to dereference every task id. If you never use
+\verb{$task_retry} then this dereference never has an effect and we
+can skip it. See \code{vignette("fault-tolerance")} for more
+information.}
 }
 \if{html}{\out{</div>}}
 }
@@ -748,7 +767,8 @@ Wait for a group of tasks
   time_poll = 1,
   progress = NULL,
   delete = FALSE,
-  error = FALSE
+  error = FALSE,
+  follow = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -776,6 +796,13 @@ buildup of lots of content in your Redis database.}
 should throw. Like \verb{$task_result()} the default is not to throw,
 giving you back an \code{rrq_task_error} object for each failing task.
 If \code{error = TRUE} we throw on error instead.}
+
+\item{\code{follow}}{Optional logical, indicating if we should follow any
+redirects set up by doing \verb{$task_retry}. If not given, falls
+back on the value passed into the queue, the global option
+\code{rrq.follow}, and finally \code{TRUE}. Set to \code{FALSE} if you want to
+return information about the original task, even if it has been
+subsequently retried.}
 }
 \if{html}{\out{</div>}}
 }
@@ -816,7 +843,7 @@ Return a character vector of task statuses. The name
 of each element corresponds to a task id, and the value will be
 one of the possible statuses ("PENDING", "COMPLETE", etc).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_status(task_ids = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_status(task_ids = NULL, follow = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -825,6 +852,13 @@ one of the possible statuses ("PENDING", "COMPLETE", etc).
 \item{\code{task_ids}}{Optional character vector of task ids for which you
 would like statuses. If not given (or \code{NULL}) then the status of
 all task ids known to this rrq controller is returned.}
+
+\item{\code{follow}}{Optional logical, indicating if we should follow any
+redirects set up by doing \verb{$task_retry}. If not given, falls
+back on the value passed into the queue, the global option
+\code{rrq.follow}, and finally \code{TRUE}. Set to \code{FALSE} if you want to
+return information about the original task, even if it has been
+subsequently retried.}
 }
 \if{html}{\out{</div>}}
 }
@@ -875,7 +909,12 @@ all task ids known to this rrq controller is used.}
 \subsection{Method \code{task_position()}}{
 Find the position of one or more tasks in the queue.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_position(task_ids, missing = 0L, queue = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_position(
+  task_ids,
+  missing = 0L,
+  queue = NULL,
+  follow = NULL
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -890,6 +929,13 @@ indicating its position (with 1) being the next task to run.}
 
 \item{\code{queue}}{The name of the queue to query (defaults to the
 "default" queue).}
+
+\item{\code{follow}}{Optional logical, indicating if we should follow any
+redirects set up by doing \verb{$task_retry}. If not given, falls
+back on the value passed into the queue, the global option
+\code{rrq.follow}, and finally \code{TRUE}. Set to \code{FALSE} if you want to
+return information about the original task, even if it has been
+subsequently retried.}
 }
 \if{html}{\out{</div>}}
 }
@@ -903,7 +949,7 @@ If the task is missing from the queue this will return NULL. If
 the task is next in the queue this will return an empty character
 vector.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_preceeding(task_id, queue = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_preceeding(task_id, queue = NULL, follow = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -913,6 +959,13 @@ vector.
 
 \item{\code{queue}}{The name of the queue to query (defaults to the
 "default" queue).}
+
+\item{\code{follow}}{Optional logical, indicating if we should follow any
+redirects set up by doing \verb{$task_retry}. If not given, falls
+back on the value passed into the queue, the global option
+\code{rrq.follow}, and finally \code{TRUE}. Set to \code{FALSE} if you want to
+return information about the original task, even if it has been
+subsequently retried.}
 }
 \if{html}{\out{</div>}}
 }
@@ -926,7 +979,7 @@ for a method for efficiently getting multiple results at once).
 Returns the value of running the task if it is complete, and an
 error otherwise.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_result(task_id, error = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_result(task_id, error = FALSE, follow = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -940,6 +993,13 @@ in the case of the task result returning an error we return
 an object of class \code{rrq_task_error}, which contains information
 about the error. Passing \code{error = TRUE} simply calls \code{stop()}
 on this error if it is returned.}
+
+\item{\code{follow}}{Optional logical, indicating if we should follow any
+redirects set up by doing \verb{$task_retry}. If not given, falls
+back on the value passed into the queue, the global option
+\code{rrq.follow}, and finally \code{TRUE}. Set to \code{FALSE} if you want to
+return information about the original task, even if it has been
+subsequently retried.}
 }
 \if{html}{\out{</div>}}
 }
@@ -951,7 +1011,7 @@ on this error if it is returned.}
 Get the results of a group of tasks, returning them as a
 list.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$tasks_result(task_ids, error = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$tasks_result(task_ids, error = FALSE, follow = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -962,6 +1022,13 @@ is wanted.}
 
 \item{\code{error}}{Logical, indicating if we should throw an error if
 the task was not successful. See \verb{$task_result()} for details.}
+
+\item{\code{follow}}{Optional logical, indicating if we should follow any
+redirects set up by doing \verb{$task_retry}. If not given, falls
+back on the value passed into the queue, the global option
+\code{rrq.follow}, and finally \code{TRUE}. Set to \code{FALSE} if you want to
+return information about the original task, even if it has been
+subsequently retried.}
 }
 \if{html}{\out{</div>}}
 }
@@ -980,7 +1047,8 @@ efficient way of doing this for a group of tasks.
   timeout = NULL,
   time_poll = 1,
   progress = NULL,
-  error = FALSE
+  error = FALSE,
+  follow = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -1011,6 +1079,13 @@ progress bar if in an interactive session.}
 the task was not successful. See \verb{$task_result()} for details.
 Note that an error is always thrown if not all tasks are fetched
 in time.}
+
+\item{\code{follow}}{Optional logical, indicating if we should follow any
+redirects set up by doing \verb{$task_retry}. If not given, falls
+back on the value passed into the queue, the global option
+\code{rrq.follow}, and finally \code{TRUE}. Set to \code{FALSE} if you want to
+return information about the original task, even if it has been
+subsequently retried.}
 }
 \if{html}{\out{</div>}}
 }
@@ -1028,7 +1103,8 @@ this is roughly equivalent to \code{tasks_result}.
   timeout = NULL,
   time_poll = 1,
   progress = NULL,
-  error = FALSE
+  error = FALSE,
+  follow = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -1053,6 +1129,13 @@ progress bar if in an interactive session.}
 the task was not successful. See \verb{$task_result()} for details.
 Note that an error is always thrown if not all tasks are fetched
 in time.}
+
+\item{\code{follow}}{Optional logical, indicating if we should follow any
+redirects set up by doing \verb{$task_retry}. If not given, falls
+back on the value passed into the queue, the global option
+\code{rrq.follow}, and finally \code{TRUE}. Set to \code{FALSE} if you want to
+return information about the original task, even if it has been
+subsequently retried.}
 }
 \if{html}{\out{</div>}}
 }
@@ -1132,7 +1215,8 @@ Fetch internal data about a task from Redis
 \if{latex}{\out{\hypertarget{method-rrq_controller-task_info}{}}}
 \subsection{Method \code{task_info()}}{
 Return information about a task. This currently
-includes information about where a task is (or was) running,
+includes information about where a task is (or was) running
+and information about any retry chain,
 but will expand in future. The format of the output here is
 subject to change (and will probably get a nice print method)
 but the values present in the output will be included in any
@@ -1162,13 +1246,43 @@ the time will be \code{NA}).  Times are returned in unix timestamp
 format in UTC; you can use \link[redux:redis_time]{redux::redis_time_to_r} to convert
 them to a POSIXt object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_times(task_ids)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_times(task_ids, follow = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{task_ids}}{Task ids to fetch times for.}
+
+\item{\code{follow}}{Optional logical, indicating if we should follow any
+redirects set up by doing \verb{$task_retry}. If not given, falls
+back on the value passed into the queue, the global option
+\code{rrq.follow}, and finally \code{TRUE}. Set to \code{FALSE} if you want to
+return information about the original task, even if it has been
+subsequently retried.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-rrq_controller-task_retry"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-task_retry}{}}}
+\subsection{Method \code{task_retry()}}{
+Retry a task (or set of tasks). Typically this
+is after failure (e.g., \code{ERROR}, \code{DIED} or similar) but you can
+retry even successfully completed tasks. Once retried, methods
+that retrieve information about a task (e.g., \verb{$task_status()},
+\verb{$task_result()}) will behave differently depending on the value
+of their \code{follow} argument. See \code{vignette("fault-tolerance")}
+for more details.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_retry(task_ids)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{task_ids}}{Task ids to retry.}
 }
 \if{html}{\out{</div>}}
 }
