@@ -1640,7 +1640,9 @@ all active workers are used.</p></dd>
 <h3 id="method-worker-log-tail-">Method <code>worker_log_tail()</code><a class="anchor" aria-label="anchor" href="#method-worker-log-tail-"></a></h3>
 <p>Returns the last (few) elements in the worker
 log. The log will be returned as a <a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a> of entries
-<code>worker_id</code> (the worker id), <code>time</code> (the time in Redis when the
+<code>worker_id</code> (the worker id), <code>child</code> (the process id, an integer,
+where logs come from a child process from a task queued with
+<code>separate_process = TRUE</code>), <code>time</code> (the time in Redis when the
 event happened; see <a href="https://rdrr.io/pkg/redux/man/redis_time.html" class="external-link">redux::redis_time</a> to convert this to an R
 time), <code>command</code> (the worker command) and <code>message</code> (the message
 corresponding to that command).</p><div class="section">

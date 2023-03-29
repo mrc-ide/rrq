@@ -116,7 +116,7 @@ but will sit and poll a queue for jobs.</p>
 <span>  timeout_idle <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  heartbeat_period <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  register <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  is_child <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  timeout_poll <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  timeout_die <span class="op">=</span> <span class="fl">2</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
@@ -178,12 +178,11 @@ logs from the worker then it is wasted time.  Logging to the
 redis server is always enabled.</p></dd>
 
 
-<dt><code>register</code></dt>
-<dd><p>Logical, indicating if the worker should be
-registered with the controller. Typically this is <code>TRUE</code>, but
-set to <code>FALSE</code> if you need to impersonate a worker, or create a
-temporary worker. This is passed as <code>FALSE</code> when running a task
-in a separate process.</p></dd>
+<dt><code>is_child</code></dt>
+<dd><p>Logical, used to indicate that this is a child of
+the real worker.  If <code>is_child</code> is <code>TRUE</code>, then most other
+arguments here have no effect (e.g., <code>queue</code> all the timeout /
+idle / polling arguments) as they come from the parent.</p></dd>
 
 
 <dt><code>timeout_poll</code></dt>
