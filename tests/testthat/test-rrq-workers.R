@@ -286,26 +286,17 @@ test_that("can get worker info", {
 test_that("multiple queues format correctly when printing worker", {
   obj <- test_rrq()
   obj$worker_config_save("localhost", queue = c("a", "b"), verbose = FALSE)
-  t1 <- obj$enqueue(sin(1), queue = "a")
-  t2 <- obj$enqueue(sin(2), queue = "a")
-  t3 <- obj$enqueue(sin(3), queue = "b")
   w <- test_worker_blocking(obj)
   format <- worker_format(w)
 
   ## Find queue string
-  is_queue <- grepl("queue:", format)
-  index_of_queue <- match(c(TRUE), is_queue)
-  queue_string <- format[index_of_queue]
-
-  ## The space between new line character and next rrq: must
-  ## be the same as the space between the first rrq: and the
-  ## start of the string (so they line up vertically)
-  location_of_rrq <- unlist(gregexpr("rrq:", queue_string))
-  location_of_new_lines <- unlist(gregexpr("\n", queue_string))
-  expect_equal(
-    location_of_rrq[2] - location_of_new_lines[1],
-    location_of_rrq[1])
-  expect_equal(
-    location_of_rrq[3] - location_of_new_lines[2],
-    location_of_rrq[1])
+  queue_string <- grep("queue:", format, value = TRUE)
+  queue_string_split <- strsplit(queue_string, "\n")[[1]]
+  ## Three strings, one per queue:
+  expect_length(queue_string_split, 3)
+  ## All strings queue strings start at the same length:
+  loc <- regexpr(obj$queue_id, queue_string_split)
+  expect_length(unique(loc), 1)
+  expect_equal(sub(".+:queue:", "", queue_string_split),
+               c("a", "b", "default"))
 })
