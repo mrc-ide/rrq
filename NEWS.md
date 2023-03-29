@@ -1,6 +1,7 @@
 # rrq 0.6.16
 
 * Extend fault tolerance support by enabling tasks to be retried; this creates a new task that the old task points at and can be used to seamlessly recover from all sorts of task failure (mrc-2683)
+* Queues print vertically when printing out worker info (mrc-4114)
 
 # rrq 0.6.14
 
