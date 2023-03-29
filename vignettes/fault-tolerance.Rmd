@@ -347,7 +347,7 @@ Regardless of how your tasks got to be in a broken situation, the mechanism for 
 
 Alternatively, perhaps your task ran to successful completion but you simply want to rerun it (e.g., some stochastic algorithm that is displaying a non-fatal pathology).
 
-You can use the `$task_retry` method to retry and number of tasks that have *completed* (in one of the terminal states - including `COMPLETE` but also `ERROR`, `CANCELLED` `DIED` or `TIMEOUT`). This is nondestructive to any of the task data, in particular its result, so you will still have access to the failed run and its stack trace (but see below).
+You can use the `$task_retry` method to retry any number of tasks that have *completed* (in one of the terminal states - including `COMPLETE` but also `ERROR`, `CANCELLED` `DIED` or `TIMEOUT`). This is nondestructive to any of the task data, in particular its result, so you will still have access to the failed run and its stack trace (but see below).
 
 ### An example where retrying fixes an error
 
