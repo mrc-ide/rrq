@@ -17,6 +17,7 @@ test_that("empty", {
   expect_equal(
     obj$worker_log_tail(),
     data_frame(worker_id = character(0),
+               child = integer(0),
                time = numeric(0),
                command = character(0),
                message = character(0)))
@@ -411,6 +412,7 @@ test_that("Send job to new process", {
   skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
+  obj$worker_log_tail(w$name, Inf)
 
   t <- obj$enqueue(slowdouble(0.1), separate_process = TRUE)
   expect_type(t, "character")
@@ -435,11 +437,17 @@ test_that("Cancel job sent to new process", {
   obj$task_cancel(t, wait = TRUE, delete = FALSE)
   st <- obj$task_status(t)
   log <- obj$worker_log_tail(w, Inf)
-  expect_equal(log$command,
-               c("ALIVE", "TASK_START", "REMOTE", "CANCEL", "TASK_CANCELLED"))
   expect_equal(obj$task_status(t), set_names(TASK_CANCELLED, t))
   expect_equal(obj$task_result(t),
                worker_task_failed(TASK_CANCELLED, obj$queue_id, t))
+
+  ## Flakey on covr, probably due to the job being cancelled before
+  ## the second process really finishes starting up.
+  skip_on_covr()
+  expect_equal(log$command,
+               c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
+                 "TASK_START", "REMOTE",
+                 "CHILD", "ENVIR", "ENVIR", "CANCEL", "TASK_CANCELLED"))
 })
 
 
@@ -452,11 +460,16 @@ test_that("Delete job after cancellation", {
   t <- obj$enqueue(slowdouble(50), separate_process = TRUE)
   wait_status(t, obj)
   obj$task_cancel(t, wait = TRUE, delete = TRUE)
-  st <- obj$task_status(t)
+  expect_equal(obj$task_status(t), set_names(TASK_MISSING, t))
+
+  ## Flakey on covr, probably due to the job being cancelled before
+  ## the second process really finishes starting up.
+  skip_on_covr()
   log <- obj$worker_log_tail(w, Inf)
   expect_equal(log$command,
-               c("ALIVE", "TASK_START", "REMOTE", "CANCEL", "TASK_CANCELLED"))
-  expect_equal(obj$task_status(t), set_names(TASK_MISSING, t))
+               c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
+                 "TASK_START", "REMOTE",
+                 "CHILD", "ENVIR", "ENVIR", "CANCEL", "TASK_CANCELLED"))
 })
 
 
@@ -862,6 +875,7 @@ test_that("submit a task with a timeout requires separate process", {
 
 
 test_that("submit a task with a timeout", {
+  skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")
   t <- obj$enqueue(slowdouble(10), timeout_task_run = 1,
                    separate_process = TRUE)
@@ -874,8 +888,13 @@ test_that("submit a task with a timeout", {
   expect_equal(obj$task_result(t),
                worker_task_failed(TASK_TIMEOUT, obj$queue_id, t))
 
+  ## Flakey on covr, probably due to the job being cancelled before
+  ## the second process really finishes starting up.
+  skip_on_covr()
   expect_equal(obj$worker_log_tail(w$name, Inf)$command,
-               c("ALIVE", "TASK_START", "REMOTE", "TIMEOUT", "TASK_TIMEOUT"))
+               c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
+                 "TASK_START", "REMOTE",
+                 "CHILD", "ENVIR", "ENVIR", "TIMEOUT", "TASK_TIMEOUT"))
 })
 
 
@@ -1076,6 +1095,7 @@ test_that("Can get information about a task in the same process", {
 
 
 test_that("Can get information about a task in a different process", {
+  skip_if_not_installed("callr")
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
   t <- obj$enqueue(sqrt(4), separate_process = TRUE, timeout_task_run = 5)
@@ -1223,4 +1243,34 @@ test_that("Can avoid following on controller creation", {
   t2 <- obj1$task_retry(t1)
   expect_equal(obj1$task_status(t1), set_names(TASK_MOVED, t1))
   expect_equal(obj2$task_status(t1), set_names(TASK_PENDING, t1))
+})
+
+
+test_that("Running in separate process produces coherent logs", {
+  skip_if_not_installed("callr")
+  obj <- test_rrq()
+  w <- test_worker_blocking(obj)
+
+  log0 <- obj$worker_log_tail(w$name, Inf)
+
+  t <- obj$enqueue(runif(1), separate_process = TRUE)
+  expect_type(t, "character")
+  w$step(TRUE)
+
+  expect_equal(obj$task_status(t), set_names(TASK_COMPLETE, t))
+
+  log <- obj$worker_log_tail(w$name, Inf)
+  expect_equal(log[seq_len(nrow(log0)), ], log0)
+
+  log1 <- log[-seq_len(nrow(log0)), ]
+
+  expect_true(all(log1$worker_id == w$name))
+  expect_equal(
+    log1$command,
+    c("TASK_START", "REMOTE",
+      "CHILD", "ENVIR", "ENVIR", "STOP",
+      "TASK_COMPLETE"))
+  expect_equal(
+    is.na(log1$child),
+    c(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, TRUE))
 })

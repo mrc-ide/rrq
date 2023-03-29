@@ -52,7 +52,7 @@ Constructor
   timeout_idle = NULL,
   heartbeat_period = NULL,
   verbose = TRUE,
-  register = TRUE,
+  is_child = FALSE,
   timeout_poll = 1,
   timeout_die = 2
 )}\if{html}{\out{</div>}}
@@ -97,11 +97,10 @@ measurable performance cost, and if you will not collect system
 logs from the worker then it is wasted time.  Logging to the
 redis server is always enabled.}
 
-\item{\code{register}}{Logical, indicating if the worker should be
-registered with the controller. Typically this is \code{TRUE}, but
-set to \code{FALSE} if you need to impersonate a worker, or create a
-temporary worker. This is passed as \code{FALSE} when running a task
-in a separate process.}
+\item{\code{is_child}}{Logical, used to indicate that this is a child of
+the real worker.  If \code{is_child} is \code{TRUE}, then most other
+arguments here have no effect (e.g., \code{queue} all the timeout /
+idle / polling arguments) as they come from the parent.}
 
 \item{\code{timeout_poll}}{Optional timeout indicating how long to wait
 for a background process to produce stdout or stderr. Only used

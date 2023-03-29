@@ -198,7 +198,9 @@ test_that("Cope with dying subprocess task", {
 
   log <- obj$worker_log_tail(wid, Inf)
   expect_equal(log$command,
-               c("ALIVE", "TASK_START", "REMOTE", "TASK_DIED"))
+               c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
+                 "TASK_START", "REMOTE",
+                 "CHILD", "ENVIR", "ENVIR", "TASK_DIED"))
 })
 
 

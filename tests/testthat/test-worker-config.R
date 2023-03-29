@@ -34,14 +34,14 @@ test_that("create short-lived worker", {
   remaining <- time_checker(3)
   while (remaining() > 0) {
     log <- obj$worker_log_tail(wid, Inf)
-    if (nrow(log) >= 2L) {
+    if (nrow(log) >= 5L) {
       break
     } else {
       Sys.sleep(0.1)
     }
   }
-  expect_equal(nrow(log), 2L)
-  expect_equal(log$command[[2]], "STOP")
+  expect_equal(nrow(log), 5L)
+  expect_equal(log$command[[5]], "STOP")
 
   logfile <- file.path(logs, wid)
   expect_true(file.exists(logfile))

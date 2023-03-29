@@ -102,12 +102,6 @@ rrq_worker <- R6::R6Class(
     ##' @param queue Queues to listen on, listed in decreasing order of
     ##'   priority. If not given, we listen on the "default" queue.
     ##'
-    ##' @param register Logical, indicating if the worker should be
-    ##'   registered with the controller. Typically this is `TRUE`, but
-    ##'   set to `FALSE` if you need to impersonate a worker, or create a
-    ##'   temporary worker. This is passed as `FALSE` when running a task
-    ##'   in a separate process.
-    ##'
     ##' @param timeout_poll Optional timeout indicating how long to wait
     ##'   for a background process to produce stdout or stderr. Only used
     ##'   for tasks queued with `separate_process` `TRUE`.
@@ -116,11 +110,16 @@ rrq_worker <- R6::R6Class(
     ##'   wait for the background process to respond to SIGTERM before
     ##'   we stop the worker. Only used for tasks queued with
     ##'   `separate_process` `TRUE`.
+    ##'
+    ##' @param is_child Logical, used to indicate that this is a child of
+    ##'   the real worker.  If `is_child` is `TRUE`, then most other
+    ##'   arguments here have no effect (e.g., `queue` all the timeout /
+    ##'   idle / polling arguments) as they come from the parent.
     initialize = function(queue_id, con = redux::hiredis(),
                           key_alive = NULL, worker_name = NULL,
                           queue = NULL, time_poll = NULL, timeout_idle = NULL,
                           heartbeat_period = NULL, verbose = TRUE,
-                          register = TRUE, timeout_poll = 1, timeout_die = 2) {
+                          is_child = FALSE, timeout_poll = 1, timeout_die = 2) {
       assert_is(con, "redis_api")
 
       private$con <- con
@@ -128,15 +127,17 @@ rrq_worker <- R6::R6Class(
       lockBinding("name", self)
       private$keys <- rrq_keys(queue_id, self$name)
       private$verbose <- verbose
+      private$is_child <- is_child
 
       rrq_version_check(private$con, private$keys)
 
-      queue <- worker_queue(queue)
-      private$queue <- rrq_key_queue(queue_id, queue)
-      self$log("QUEUE", queue)
-
-      if (private$con$SISMEMBER(private$keys$worker_name, self$name) == 1L) {
-        stop("Looks like this worker exists already...")
+      worker_exists <- con$SISMEMBER(private$keys$worker_name, self$name) == 1L
+      if (is_child != worker_exists) {
+        if (is_child) {
+          stop("Can't be a child of nonexistant worker...")
+        } else {
+          stop("Looks like this worker exists already...")
+        }
       }
 
       private$store <- rrq_object_store(private$con, private$keys)
@@ -144,10 +145,12 @@ rrq_worker <- R6::R6Class(
       private$timeout_poll <- timeout_poll
       private$timeout_die <- timeout_die
 
-      self$load_envir()
-      if (register) {
+      if (private$is_child) {
+        self$log("CHILD")
+        self$load_envir()
+      } else {
         withCallingHandlers(
-          worker_initialise(self, private,
+          worker_initialise(self, private, worker_queue(queue),
                             key_alive, timeout_idle, heartbeat_period),
           error = worker_catch_error(self, private))
       }
@@ -166,7 +169,8 @@ rrq_worker <- R6::R6Class(
     ##'
     ##' @param value Character vector (or null) with log values
     log = function(label, value = NULL) {
-      worker_log(private$con, private$keys, label, value, private$verbose)
+      worker_log(private$con, private$keys, label, value, private$is_child,
+                 private$verbose)
     },
 
     ##' @description Load the worker environment by creating a new
@@ -312,6 +316,7 @@ rrq_worker <- R6::R6Class(
     store = NULL,
     time_poll = NULL,
     verbose = NULL,
+    is_child = NULL,
     timeout_poll = NULL,
     timeout_die = NULL
   ))
@@ -338,13 +343,14 @@ worker_info_collect <- function(worker, private) {
 }
 
 
-worker_initialise <- function(worker, private, key_alive, timeout_idle,
+worker_initialise <- function(worker, private, queue, key_alive, timeout_idle,
                               heartbeat_period) {
   con <- private$con
   keys <- private$keys
 
   private$heartbeat <- worker_heartbeat(con, keys, heartbeat_period,
                                         private$verbose)
+  private$queue <- rrq_key_queue(keys$queue_id, queue)
 
   con$pipeline(
     redis$SADD(keys$worker_name,   worker$name),
@@ -358,6 +364,8 @@ worker_initialise <- function(worker, private, key_alive, timeout_idle,
   }
 
   worker$log("ALIVE")
+  worker$load_envir()
+  worker$log("QUEUE", queue)
 
   ## This announces that we're up; things may monitor this
   ## queue, and rrq_worker_spawn does a BLPOP to
@@ -462,10 +470,14 @@ worker_format <- function(worker) {
 }
 
 
-worker_log_format <- function(label, value) {
+worker_log_format <- function(label, value, is_child) {
   t <- Sys.time()
   ts <- as.character(t)
   td <- sprintf("%.04f", t) # to nearest 1/10000 s
+  if (is_child) {
+    ts <- sprintf("%s (%d)", ts, Sys.getpid())
+    td <- sprintf("%s/%d", td, Sys.getpid())
+  }
   if (is.null(value)) {
     str_redis <- sprintf("%s %s", td, label)
     str_screen <- sprintf("[%s] %s", ts, label)
@@ -483,8 +495,8 @@ worker_log_format <- function(label, value) {
 }
 
 
-worker_log <- function(con, keys, label, value, verbose) {
-  res <- worker_log_format(label, value)
+worker_log <- function(con, keys, label, value, is_child, verbose) {
+  res <- worker_log_format(label, value, is_child)
   if (verbose) {
     message(res$screen)
   }

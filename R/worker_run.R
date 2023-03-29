@@ -99,10 +99,10 @@ worker_run_task_separate_process <- function(task, worker, private) {
 
 
 remote_run_task <- function(redis_config, queue_id, worker_id, task_id) {
-  worker_name <- sprintf("%s_%s", worker_id, ids::random_id(bytes = 4))
   con <- redux::hiredis(config = redis_config)
-  worker <- rrq_worker$new(queue_id, con, worker_name = worker_name,
-                           register = FALSE)
+  worker <- rrq_worker$new(queue_id, con, worker_name = worker_id,
+                           is_child = TRUE)
+  on.exit(worker$log("STOP", "OK"))
   worker$task_eval(task_id)
 }
 
@@ -111,7 +111,8 @@ worker_run_task_start <- function(worker, private, task_id) {
   keys <- private$keys
   name <- worker$name
   dat <- private$con$pipeline(
-    worker_log(redis, keys, "TASK_START", task_id, private$verbose),
+    worker_log(redis, keys, "TASK_START", task_id,
+               private$is_child, private$verbose),
     redis$HSET(keys$worker_status,   name,    WORKER_BUSY),
     redis$HSET(keys$worker_task,     name,    task_id),
     redis$HSET(keys$task_worker,     task_id, name),
@@ -158,7 +159,8 @@ worker_run_task_cleanup <- function(worker, private, status, value) {
   private$con$pipeline(
     redis$HSET(keys$worker_status,      name,    WORKER_IDLE),
     redis$HDEL(keys$worker_task,        name),
-    worker_log(redis, keys, log_status, task$task_id, private$verbose))
+    worker_log(redis, keys, log_status, task$task_id,
+               private$is_child, private$verbose))
 
   private$active_task <- NULL
   invisible()

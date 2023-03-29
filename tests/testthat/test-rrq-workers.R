@@ -16,7 +16,8 @@ test_that("clean up exited workers", {
     set_names(list("BYE"), w$name))
 
   log <- obj$worker_log_tail(w$name, n = Inf)
-  expect_equal(log$command, c("ALIVE", "MESSAGE", "RESPONSE", "STOP"))
+  expect_equal(log$command, c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
+                              "MESSAGE", "RESPONSE", "STOP"))
 
   expect_equal(obj$worker_list_exited(), w$name)
   expect_equal(obj$worker_delete_exited(), w$name)
@@ -31,15 +32,29 @@ test_that("log parse", {
   worker_id <- "id"
   expect_equal(
     worker_log_parse("123.456 ALIVE", worker_id),
-    data_frame(worker_id = worker_id, time = 123.456, command = "ALIVE",
-               message = ""))
+    data_frame(worker_id = worker_id, child = NA_integer_, time = 123.456,
+               command = "ALIVE", message = ""))
   expect_equal(
     worker_log_parse("123.456 ALIVE ", worker_id),
-    data_frame(worker_id = worker_id, time = 123.456, command = "ALIVE",
-               message = ""))
+    data_frame(worker_id = worker_id, child = NA_integer_, time = 123.456,
+               command = "ALIVE", message = ""))
   expect_equal(
     worker_log_parse("123.456 MESSAGE the value", worker_id),
-    data_frame(worker_id = worker_id, time = 123.456, command = "MESSAGE",
+    data_frame(worker_id = worker_id, child = NA_integer_, time = 123.456,
+               command = "MESSAGE",
+               message = "the value"))
+  expect_equal(
+    worker_log_parse("123.456/42 ALIVE", worker_id),
+    data_frame(worker_id = worker_id, child = 42L, time = 123.456,
+               command = "ALIVE", message = ""))
+  expect_equal(
+    worker_log_parse("123.456/42 ALIVE ", worker_id),
+    data_frame(worker_id = worker_id, child = 42L, time = 123.456,
+               command = "ALIVE", message = ""))
+  expect_equal(
+    worker_log_parse("123.456/42 MESSAGE the value", worker_id),
+    data_frame(worker_id = worker_id, child = 42L, time = 123.456,
+               command = "MESSAGE",
                message = "the value"))
   expect_error(
     worker_log_parse("x123.456 MESSAGE the value", worker_id),
@@ -93,6 +108,16 @@ test_that("worker names can't be duplicated", {
     test_worker_blocking(obj, worker_name = name),
     "Looks like this worker exists already...",
     fixed = TRUE)
+})
+
+
+test_that("Child workers require a parent", {
+  con <- test_hiredis()
+  name <- ids::random_id()
+  queue_id <- test_name(NULL)
+  expect_error(
+    rrq_worker$new(queue_id, con, worker_name = name, is_child = TRUE),
+    "Can't be a child of nonexistant worker")
 })
 
 

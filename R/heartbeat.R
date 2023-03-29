@@ -1,10 +1,11 @@
 worker_heartbeat <- function(con, keys, period, verbose) {
   if (!is.null(period)) {
+    is_child <- FALSE
     key <- keys$worker_heartbeat
-    worker_log(con, keys, "HEARTBEAT", key, verbose)
+    worker_log(con, keys, "HEARTBEAT", key, is_child, verbose)
     config <- con$config()
     ret <- rrq_heartbeat$new(key, period, config = config)
-    worker_log(con, keys, "HEARTBEAT", "OK", verbose)
+    worker_log(con, keys, "HEARTBEAT", "OK", is_child, verbose)
     ret
   }
 }
