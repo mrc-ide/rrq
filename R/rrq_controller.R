@@ -1417,13 +1417,10 @@ task_delete <- function(con, keys, store, task_ids, check) {
       redis$HDEL(keys$task_progress, task_ids_all),
       redis$HDEL(keys$task_worker,   task_ids_all),
       redis$HDEL(keys$task_local,    task_ids_all),
-      redis$SREM(keys$deferred_set,  task_ids_all)
-    ),
-    ## can be redis$DEL(original_deps_keys) etc
-    lapply(original_deps_keys, redis$DEL),
-    lapply(dependency_keys, redis$DEL),
-    lapply(dependent_keys, redis$DEL)
-    ))
+      redis$SREM(keys$deferred_set,  task_ids_all),
+      redis$DEL(original_deps_keys),
+      redis$DEL(dependency_keys),
+      redis$DEL(dependent_keys))))
 
   queue <- list_to_character(con$HMGET(keys$task_queue, task_ids_root))
   queue_remove(con, keys, task_ids_all, queue)
