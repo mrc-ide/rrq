@@ -1,3 +1,7 @@
+# rrq 0.6.16
+
+* Queues print vertically when printing out worker info (mrc-4114)
+
 # rrq 0.6.14
 
 * New `$task_info` method to retrieve more detailed information about where a task was run (mrc-4058)

@@ -456,6 +456,8 @@ worker_format <- function(worker) {
   x$heartbeat_key <- x$heartbeat_key %||% "<not set>"
   n <- nchar(names(x))
   pad <- vcapply(max(n) - n, function(n) strrep(" ", n))
+  queue_indent <- paste("\n", strrep(" ", max(n)), "    ")
+  x$queue <- paste(x$queue, collapse = queue_indent)
   sprintf("    %s:%s %s", names(x), pad, as.character(x))
 }
 

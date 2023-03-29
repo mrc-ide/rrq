@@ -281,3 +281,22 @@ test_that("can get worker info", {
                     "redis_port", "heartbeat_key"))
   expect_equal(info[[wid]]$rrq_version, version_info())
 })
+
+
+test_that("multiple queues format correctly when printing worker", {
+  obj <- test_rrq()
+  obj$worker_config_save("localhost", queue = c("a", "b"), verbose = FALSE)
+  w <- test_worker_blocking(obj)
+  format <- worker_format(w)
+
+  ## Find queue string
+  queue_string <- grep("queue:", format, value = TRUE)
+  queue_string_split <- strsplit(queue_string, "\n")[[1]]
+  ## Three strings, one per queue:
+  expect_length(queue_string_split, 3)
+  ## All strings queue strings start at the same length:
+  loc <- regexpr(obj$queue_id, queue_string_split)
+  expect_length(unique(loc), 1)
+  expect_equal(sub(".+:queue:", "", queue_string_split),
+               c("a", "b", "default"))
+})
