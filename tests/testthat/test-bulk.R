@@ -162,45 +162,41 @@ test_that("bulk tasks can be queued with dependency", {
   ## Original dependencies are stored
   grp_id_1 <- grp$task_ids[[1]]
   grp_id_2 <- grp$task_ids[[2]]
-  original_grp_dep_id_1 <- rrq_key_task_dependencies_original(
+  original_grp_dep_id_1 <- rrq_key_task_depends_up_original(
     obj$queue_id, grp_id_1)
   expect_setequal(obj$con$SMEMBERS(original_grp_dep_id_1), c(t, t2))
-  original_grp_dep_id_2 <- rrq_key_task_dependencies_original(
+  original_grp_dep_id_2 <- rrq_key_task_depends_up_original(
     obj$queue_id, grp_id_2)
   expect_setequal(obj$con$SMEMBERS(original_grp_dep_id_2), c(t, t2))
-  original_deps_keys_t3 <- rrq_key_task_dependencies_original(
+  original_deps_keys_t3 <- rrq_key_task_depends_up_original(
     obj$queue_id, t3)
   expect_setequal(obj$con$SMEMBERS(original_deps_keys_t3), grp$task_ids)
 
   ## Pending dependencies are stored
-  grp_dep_id_1 <- rrq_key_task_dependencies(obj$queue_id, grp_id_1)
+  grp_dep_id_1 <- rrq_key_task_depends_up(obj$queue_id, grp_id_1)
   expect_setequal(obj$con$SMEMBERS(grp_dep_id_1), c(t, t2))
-  grp_dep_id_2 <- rrq_key_task_dependencies(obj$queue_id, grp_id_2)
+  grp_dep_id_2 <- rrq_key_task_depends_up(obj$queue_id, grp_id_2)
   expect_setequal(obj$con$SMEMBERS(grp_dep_id_2), c(t, t2))
-  dependency_keys_t3 <- rrq_key_task_dependencies(obj$queue_id, t3)
+  dependency_keys_t3 <- rrq_key_task_depends_up(obj$queue_id, t3)
   expect_setequal(obj$con$SMEMBERS(dependency_keys_t3), grp$task_ids)
 
   ## Inverse depends_on relationship is stored
-  dependent_keys_t <- rrq_key_task_dependents(obj$queue_id, t)
+  dependent_keys_t <- rrq_key_task_depends_down(obj$queue_id, t)
   for (key in dependent_keys_t) {
     expect_setequal(obj$con$SMEMBERS(key), grp$task_ids)
   }
-  dependent_keys_t2 <- rrq_key_task_dependents(obj$queue_id, t2)
+  dependent_keys_t2 <- rrq_key_task_depends_down(obj$queue_id, t2)
   for (key in dependent_keys_t2) {
     expect_setequal(obj$con$SMEMBERS(key), grp$task_ids)
   }
-  grp_dependents_1 <- rrq_key_task_dependents(obj$queue_id, grp_id_1)
+  grp_dependents_1 <- rrq_key_task_depends_down(obj$queue_id, grp_id_1)
   for (key in grp_dependents_1) {
     expect_setequal(obj$con$SMEMBERS(key), t3)
   }
-  grp_dependents_2 <- rrq_key_task_dependents(obj$queue_id, grp_id_2)
+  grp_dependents_2 <- rrq_key_task_depends_down(obj$queue_id, grp_id_2)
   for (key in grp_dependents_2) {
     expect_setequal(obj$con$SMEMBERS(key), t3)
   }
-
-  ## Items are in deferred queue
-  deferred_set <- queue_keys(obj)$deferred_set
-  expect_setequal(obj$con$SMEMBERS(deferred_set), c(grp$task_ids, t3))
 
   w$step(TRUE)
   obj$task_wait(t, 2)
@@ -218,14 +214,12 @@ test_that("bulk tasks can be queued with dependency", {
   expect_equal(unname(obj$task_status(t3)), "DEFERRED")
   queue <- obj$queue_list()
   expect_setequal(queue, grp$task_ids)
-  expect_equal(obj$con$SMEMBERS(deferred_set), list(t3))
 
   w$step(TRUE)
   obj$task_wait(queue[1], 2)
   expect_setequal(obj$task_status(grp$task_ids), c("COMPLETE", "PENDING"))
   expect_equal(unname(obj$task_status(t3)), "DEFERRED")
   expect_equal(obj$queue_list(), queue[2])
-  expect_equal(obj$con$SMEMBERS(deferred_set), list(t3))
 
   w$step(TRUE)
   obj$task_wait(queue[2], 2)
@@ -233,7 +227,6 @@ test_that("bulk tasks can be queued with dependency", {
                c("COMPLETE", "COMPLETE"))
   expect_equal(unname(obj$task_status(t3)), "PENDING")
   expect_equal(obj$queue_list(), t3)
-  expect_equal(obj$con$SMEMBERS(deferred_set), list())
 
   w$step(TRUE)
   obj$task_wait(t3, 2)

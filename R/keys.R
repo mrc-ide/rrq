@@ -48,9 +48,7 @@ rrq_keys_common <- function(queue_id) {
        task_time_submit   = sprintf("%s:task:time_submit",   queue_id),
        task_time_start    = sprintf("%s:task:time_start",    queue_id),
        task_time_complete = sprintf("%s:task:time_complete", queue_id),
-       task_time_moved    = sprintf("%s:task:time_moved",    queue_id),
-
-       deferred_set   = sprintf("%s:deferred", queue_id))
+       task_time_moved    = sprintf("%s:task:time_moved",    queue_id))
 }
 
 rrq_keys_worker <- function(queue, worker) {
@@ -91,14 +89,14 @@ rrq_key_worker_alive <- function(queue_id) {
   sprintf("%s:worker:alive:%s", queue_id, ids::random_id())
 }
 
-rrq_key_task_dependencies <- function(queue_id, task_id) {
-  sprintf("%s:task:%s:dependencies", queue_id, task_id)
+rrq_key_task_depends_up <- function(queue_id, task_id) {
+  sprintf("%s:task:%s:depends:up", queue_id, task_id)
 }
 
-rrq_key_task_dependencies_original <- function(queue_id, task_id) {
-  sprintf("%s:task:%s:dependencies:original", queue_id, task_id)
+rrq_key_task_depends_up_original <- function(queue_id, task_id) {
+  sprintf("%s:task:%s:depends:up:original", queue_id, task_id)
 }
 
-rrq_key_task_dependents <- function(queue_id, task_id) {
-  sprintf("%s:task:%s:dependents", queue_id, task_id)
+rrq_key_task_depends_down <- function(queue_id, task_id) {
+  sprintf("%s:task:%s:depends:down", queue_id, task_id)
 }

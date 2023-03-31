@@ -1404,10 +1404,10 @@ task_delete <- function(con, keys, store, task_ids, check) {
     }
   }
 
-  original_deps_keys <- rrq_key_task_dependencies_original(
+  original_deps_keys <- rrq_key_task_depends_up_original(
     keys$queue_id, task_ids_all)
-  dependency_keys <- rrq_key_task_dependencies(keys$queue_id, task_ids_all)
-  dependent_keys <- rrq_key_task_dependents(keys$queue_id, task_ids_all)
+  dependency_keys <- rrq_key_task_depends_up(keys$queue_id, task_ids_all)
+  dependent_keys <- rrq_key_task_depends_down(keys$queue_id, task_ids_all)
   res <- con$pipeline(.commands = c(
     lapply(task_ids, function(x) redis$HGET(keys$task_status, x)),
     set_names(lapply(dependent_keys, redis$SMEMBERS), task_ids_all),
@@ -1419,7 +1419,6 @@ task_delete <- function(con, keys, store, task_ids, check) {
       redis$HDEL(keys$task_progress, task_ids_all),
       redis$HDEL(keys$task_worker,   task_ids_all),
       redis$HDEL(keys$task_local,    task_ids_all),
-      redis$SREM(keys$deferred_set,  task_ids_all),
       redis$DEL(original_deps_keys),
       redis$DEL(dependency_keys),
       redis$DEL(dependent_keys))))
@@ -1529,10 +1528,10 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
       redis$HMSET(keys$task_timeout, task_ids, as.character(timeout)))
   }
 
-  original_deps_keys <- rrq_key_task_dependencies_original(
+  original_deps_keys <- rrq_key_task_depends_up_original(
     keys$queue_id, task_ids)
-  dependency_keys <- rrq_key_task_dependencies(keys$queue_id, task_ids)
-  dependent_keys <- rrq_key_task_dependents(keys$queue_id, depends_on)
+  dependency_keys <- rrq_key_task_depends_up(keys$queue_id, task_ids)
+  dependent_keys <- rrq_key_task_depends_down(keys$queue_id, depends_on)
 
   if (!is.null(key_complete)) {
     cmds <- list(
@@ -1559,9 +1558,7 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
         redis$HMSET(keys$task_status, task_ids, rep_len(TASK_DEFERRED, n))),
       lapply(original_deps_keys, redis$SADD, depends_on),
       lapply(dependency_keys, redis$SADD, depends_on),
-      lapply(dependent_keys, redis$SADD, task_ids),
-      list(redis$SADD(keys$deferred_set, task_ids))
-    )
+      lapply(dependent_keys, redis$SADD, task_ids))
   } else {
     cmds <- c(cmds, list(redis$RPUSH(key_queue, task_ids)))
   }
@@ -1924,6 +1921,9 @@ task_info <- function(con, keys, task_id) {
     }
   }
 
+  depends <- list(up = task_depends_up(con, keys, task_id),
+                  down = task_depends_down(con, keys, task_id))
+
   list(
     id = task_id,
     status = dat$status,
@@ -1932,6 +1932,7 @@ task_info <- function(con, keys, task_id) {
     timeout = dat$timeout %&&% as.numeric(dat$timeout),
     worker = dat$worker,
     pid = dat$pid %&&% as.integer(dat$pid),
+    depends = depends,
     moved = moved)
 }
 
@@ -2106,4 +2107,30 @@ task_follow_chain <- function(con, keys, task_ids) {
 
 is_task_redirect <- function(x) {
   is.character(x)
+}
+
+
+task_depends_down <- function(con, keys, task_ids) {
+  key <- function(k) rrq_key_task_depends_down(keys$queue_id, k)
+  task_depends_walk(con, key, task_ids)
+}
+
+
+task_depends_up <- function(con, keys, task_ids) {
+  key <- function(k) rrq_key_task_depends_up_original(keys$queue_id, k)
+  task_depends_walk(con, key, task_ids)
+}
+
+
+task_depends_walk <- function(con, key, task_ids) {
+  ret <- list()
+  while (length(task_ids) > 0) {
+    deps <- lapply(
+      con$pipeline(.commands = lapply(key(task_ids), redis$SMEMBERS)),
+      list_to_character)
+    i <- lengths(deps) > 0
+    ret <- c(ret, set_names(deps[i], task_ids[i]))
+    task_ids <- unique(unlist(deps[i]))
+  }
+  if (length(ret) == 0) NULL else ret
 }
