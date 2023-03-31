@@ -2113,28 +2113,24 @@ is_task_redirect <- function(x) {
 }
 
 
-## The format for downstream will be:
-## id: immediate deps
 task_depends_down <- function(con, keys, task_ids) {
-  ret <- list()
-  while (length(task_ids) > 0) {
-    key_deps <- rrq_key_task_dependents(keys$queue_id, task_ids)
-    deps <- lapply(con$pipeline(.commands = lapply(key_deps, redis$SMEMBERS)),
-                   list_to_character)
-    i <- lengths(deps) > 0
-    ret <- c(ret, set_names(deps[i], task_ids[i]))
-    task_ids <- unique(unlist(deps[i]))
-  }
-  if (length(ret) == 0) NULL else ret
+  key <- function(k) rrq_key_task_dependents(keys$queue_id, k)
+  task_depends_walk(con, key, task_ids)
 }
 
 
 task_depends_up <- function(con, keys, task_ids) {
+  key <- function(k) rrq_key_task_dependencies_original(keys$queue_id, k)
+  task_depends_walk(con, key, task_ids)
+}
+
+
+task_depends_walk <- function(con, key, task_ids) {
   ret <- list()
   while (length(task_ids) > 0) {
-    key_deps <- rrq_key_task_dependencies_original(keys$queue_id, task_ids)
-    deps <- lapply(con$pipeline(.commands = lapply(key_deps, redis$SMEMBERS)),
-                   list_to_character)
+    deps <- lapply(
+      con$pipeline(.commands = lapply(key(task_ids), redis$SMEMBERS)),
+      list_to_character)
     i <- lengths(deps) > 0
     ret <- c(ret, set_names(deps[i], task_ids[i]))
     task_ids <- unique(unlist(deps[i]))

@@ -1301,12 +1301,12 @@ test_that("Can extract dependency information", {
   expect_equal(deps3$down, set_names(list(t5), t3))
 
   expect_setequal(names(deps4$up), c(t4, t2))
-  expect_equal(deps4$up[[t4]], c(t1, t2))
+  expect_setequal(deps4$up[[t4]], c(t1, t2))
   expect_equal(deps4$up[[t2]], deps2$up[[t2]])
   expect_equal(deps4$down, set_names(list(t5), t4))
 
   expect_setequal(names(deps5$up), c(t5, t4, t3, t2))
-  expect_equal(deps5$up[[t5]], c(t4, t3))
+  expect_setequal(deps5$up[[t5]], c(t4, t3))
   expect_equal(deps5$up[[t4]], deps4$up[[t4]])
   expect_equal(deps5$up[[t3]], deps3$up[[t3]])
   expect_equal(deps5$up[[t2]], deps2$up[[t2]])
