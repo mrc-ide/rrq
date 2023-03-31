@@ -1274,3 +1274,28 @@ test_that("Running in separate process produces coherent logs", {
     is.na(log1$child),
     c(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, TRUE))
 })
+
+
+test_that("Can extract dependency information", {
+  obj <- test_rrq()
+  t1 <- obj$enqueue(identity(1))
+  t2 <- obj$enqueue(identity(2), depends_on = t1)
+  t3 <- obj$enqueue(identity(3), depends_on = t1)
+  t4 <- obj$enqueue(identity(4), depends_on = c(t1, t2))
+  t5 <- obj$enqueue(identity(4), depends_on = c(t4, t3))
+
+  expect_null(obj$task_info(t5)$depends$down)
+  expect_equal(obj$task_info(t4)$depends$down,
+               set_names(list(t5), t4))
+  expect_equal(obj$task_info(t3)$depends$down,
+               set_names(list(t5), t3))
+  expect_equal(obj$task_info(t2)$depends$down,
+               set_names(list(t4, t5), c(t2, t4)))
+  ## This one is the hard one:
+  deps1 <- obj$task_info(t1)$depends$down
+  expect_setequal(names(deps1), c(t1, t2, t3, t4))
+  expect_setequal(deps1[[t1]], c(t2, t3, t4))
+  expect_equal(deps1[[t2]], t4)
+  expect_equal(deps1[[t3]], t5)
+  expect_equal(deps1[[t4]], t5)
+})

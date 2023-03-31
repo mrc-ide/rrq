@@ -1924,6 +1924,9 @@ task_info <- function(con, keys, task_id) {
     }
   }
 
+  depends <- list(up = NULL,
+                  down = task_depends_down(con, keys, task_id))
+
   list(
     id = task_id,
     status = dat$status,
@@ -1932,6 +1935,7 @@ task_info <- function(con, keys, task_id) {
     timeout = dat$timeout %&&% as.numeric(dat$timeout),
     worker = dat$worker,
     pid = dat$pid %&&% as.integer(dat$pid),
+    depends = depends,
     moved = moved)
 }
 
@@ -2106,4 +2110,20 @@ task_follow_chain <- function(con, keys, task_ids) {
 
 is_task_redirect <- function(x) {
   is.character(x)
+}
+
+
+## The format for downstream will be:
+## id: immediate deps
+task_depends_down <- function(con, keys, task_ids) {
+  ret <- list()
+  while (length(task_ids) > 0) {
+    key_deps <- rrq_key_task_dependents(keys$queue_id, task_ids)
+    deps <- lapply(con$pipeline(.commands = lapply(key_deps, redis$SMEMBERS)),
+                   list_to_character)
+    i <- lengths(deps) > 0
+    ret <- c(ret, set_names(deps[i], task_ids[i]))
+    task_ids <- unique(unlist(deps[i]))
+  }
+  if (length(ret) == 0) NULL else ret
 }

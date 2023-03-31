@@ -99,6 +99,7 @@ rrq_key_task_dependencies_original <- function(queue_id, task_id) {
   sprintf("%s:task:%s:dependencies:original", queue_id, task_id)
 }
 
+## These are tasks that immediately depend on task_id
 rrq_key_task_dependents <- function(queue_id, task_id) {
   sprintf("%s:task:%s:dependents", queue_id, task_id)
 }
