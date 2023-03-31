@@ -39,7 +39,7 @@ queue_dependencies <- function(con, keys, task_id, deferred_task_ids) {
 }
 
 
-deferred_list <- function(con, keys, original) {
+deferred_list <- function(con, keys) {
   status <- redux::scan_find(con, "*", type = "HSCAN", key = keys$task_status)
   deferred_task_ids <- status[, "field"][status[, "value"] == TASK_DEFERRED]
   tmp <- rrq_key_task_depends_up_original(keys$queue_id, deferred_task_ids)
