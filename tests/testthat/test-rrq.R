@@ -1069,7 +1069,7 @@ test_that("Can get information about a task in the same process", {
   expect_setequal(
     names(d1),
     c("id", "status", "queue", "separate_process", "timeout", "worker", "pid",
-      "moved"))
+      "moved", "depends"))
   expect_equal(d1$id, t)
   expect_equal(d1$status, TASK_PENDING)
   expect_equal(d1$queue, "default")
@@ -1078,6 +1078,7 @@ test_that("Can get information about a task in the same process", {
   expect_null(d1$worker)
   expect_null(d1$pid)
   expect_equal(d1$moved, list(up = NULL, down = NULL))
+  expect_equal(d1$depends, list(up = NULL, down = NULL))
 
   w$step(TRUE)
   d2 <- obj$task_info(t)
@@ -1089,7 +1090,8 @@ test_that("Can get information about a task in the same process", {
   expect_null(d2$timeout, 5)
   expect_equal(d2$worker, w$name)
   expect_null(d2$pid, "integer")
-  expect_equal(d1$moved, list(up = NULL, down = NULL))
+  expect_equal(d2$moved, list(up = NULL, down = NULL))
+  expect_equal(d2$depends, list(up = NULL, down = NULL))
 })
 
 
@@ -1103,7 +1105,7 @@ test_that("Can get information about a task in a different process", {
   expect_setequal(
     names(d1),
     c("id", "status", "queue", "separate_process", "timeout", "worker", "pid",
-      "moved"))
+      "moved", "depends"))
   expect_equal(d1$id, t)
   expect_equal(d1$status, TASK_PENDING)
   expect_equal(d1$queue, "default")
@@ -1112,6 +1114,7 @@ test_that("Can get information about a task in a different process", {
   expect_null(d1$worker)
   expect_null(d1$pid)
   expect_equal(d1$moved, list(up = NULL, down = NULL))
+  expect_equal(d1$depends, list(up = NULL, down = NULL))
 
   w$step(TRUE)
   d2 <- obj$task_info(t)
@@ -1123,7 +1126,8 @@ test_that("Can get information about a task in a different process", {
   expect_equal(d2$timeout, 5)
   expect_equal(d2$worker, w$name)
   expect_type(d2$pid, "integer")
-  expect_equal(d1$moved, list(up = NULL, down = NULL))
+  expect_equal(d2$moved, list(up = NULL, down = NULL))
+  expect_equal(d2$depends, list(up = NULL, down = NULL))
 })
 
 
