@@ -1,10 +1,10 @@
 get_dependent_ids <- function(con, queue_id, task_id) {
-  dependent_keys <- rrq_key_task_dependents(queue_id, task_id)
+  dependent_keys <- rrq_key_task_depends_down(queue_id, task_id)
   con$SMEMBERS(dependent_keys)
 }
 
 cancel_dependencies <- function(con, keys, store, ids) {
-  dependent_keys <- rrq_key_task_dependents(keys$queue_id, ids)
+  dependent_keys <- rrq_key_task_depends_down(keys$queue_id, ids)
   dependent_ids <- unique(unlist(lapply(dependent_keys, con$SMEMBERS)))
   n <- length(dependent_ids)
 
@@ -16,7 +16,7 @@ cancel_dependencies <- function(con, keys, store, ids) {
 }
 
 queue_dependencies <- function(con, keys, task_id, deferred_task_ids) {
-  dependency_keys <- rrq_key_task_dependencies(keys$queue_id, deferred_task_ids)
+  dependency_keys <- rrq_key_task_depends_up(keys$queue_id, deferred_task_ids)
   res <- con$pipeline(.commands = c(
     lapply(dependency_keys, redis$SREM, task_id),
     set_names(lapply(dependency_keys, redis$SCARD), deferred_task_ids))
@@ -43,8 +43,8 @@ queue_dependencies <- function(con, keys, task_id, deferred_task_ids) {
 deferred_list <- function(con, keys) {
   deferred_task_ids <- con$SMEMBERS(keys$deferred_set)
   deferred <- lapply(deferred_task_ids, function(deferred_task) {
-    dependency_key <- rrq_key_task_dependencies_original(keys$queue_id,
-                                                         deferred_task)
+    dependency_key <- rrq_key_task_depends_up_original(keys$queue_id,
+                                                       deferred_task)
     deps <- con$SMEMBERS(dependency_key)
     set_names(con$HMGET(keys$task_status, deps), deps)
   })

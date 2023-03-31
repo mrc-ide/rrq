@@ -162,38 +162,38 @@ test_that("bulk tasks can be queued with dependency", {
   ## Original dependencies are stored
   grp_id_1 <- grp$task_ids[[1]]
   grp_id_2 <- grp$task_ids[[2]]
-  original_grp_dep_id_1 <- rrq_key_task_dependencies_original(
+  original_grp_dep_id_1 <- rrq_key_task_depends_up_original(
     obj$queue_id, grp_id_1)
   expect_setequal(obj$con$SMEMBERS(original_grp_dep_id_1), c(t, t2))
-  original_grp_dep_id_2 <- rrq_key_task_dependencies_original(
+  original_grp_dep_id_2 <- rrq_key_task_depends_up_original(
     obj$queue_id, grp_id_2)
   expect_setequal(obj$con$SMEMBERS(original_grp_dep_id_2), c(t, t2))
-  original_deps_keys_t3 <- rrq_key_task_dependencies_original(
+  original_deps_keys_t3 <- rrq_key_task_depends_up_original(
     obj$queue_id, t3)
   expect_setequal(obj$con$SMEMBERS(original_deps_keys_t3), grp$task_ids)
 
   ## Pending dependencies are stored
-  grp_dep_id_1 <- rrq_key_task_dependencies(obj$queue_id, grp_id_1)
+  grp_dep_id_1 <- rrq_key_task_depends_up(obj$queue_id, grp_id_1)
   expect_setequal(obj$con$SMEMBERS(grp_dep_id_1), c(t, t2))
-  grp_dep_id_2 <- rrq_key_task_dependencies(obj$queue_id, grp_id_2)
+  grp_dep_id_2 <- rrq_key_task_depends_up(obj$queue_id, grp_id_2)
   expect_setequal(obj$con$SMEMBERS(grp_dep_id_2), c(t, t2))
-  dependency_keys_t3 <- rrq_key_task_dependencies(obj$queue_id, t3)
+  dependency_keys_t3 <- rrq_key_task_depends_up(obj$queue_id, t3)
   expect_setequal(obj$con$SMEMBERS(dependency_keys_t3), grp$task_ids)
 
   ## Inverse depends_on relationship is stored
-  dependent_keys_t <- rrq_key_task_dependents(obj$queue_id, t)
+  dependent_keys_t <- rrq_key_task_depends_down(obj$queue_id, t)
   for (key in dependent_keys_t) {
     expect_setequal(obj$con$SMEMBERS(key), grp$task_ids)
   }
-  dependent_keys_t2 <- rrq_key_task_dependents(obj$queue_id, t2)
+  dependent_keys_t2 <- rrq_key_task_depends_down(obj$queue_id, t2)
   for (key in dependent_keys_t2) {
     expect_setequal(obj$con$SMEMBERS(key), grp$task_ids)
   }
-  grp_dependents_1 <- rrq_key_task_dependents(obj$queue_id, grp_id_1)
+  grp_dependents_1 <- rrq_key_task_depends_down(obj$queue_id, grp_id_1)
   for (key in grp_dependents_1) {
     expect_setequal(obj$con$SMEMBERS(key), t3)
   }
-  grp_dependents_2 <- rrq_key_task_dependents(obj$queue_id, grp_id_2)
+  grp_dependents_2 <- rrq_key_task_depends_down(obj$queue_id, grp_id_2)
   for (key in grp_dependents_2) {
     expect_setequal(obj$con$SMEMBERS(key), t3)
   }

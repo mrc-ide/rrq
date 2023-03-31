@@ -91,15 +91,14 @@ rrq_key_worker_alive <- function(queue_id) {
   sprintf("%s:worker:alive:%s", queue_id, ids::random_id())
 }
 
-rrq_key_task_dependencies <- function(queue_id, task_id) {
-  sprintf("%s:task:%s:dependencies", queue_id, task_id)
+rrq_key_task_depends_up <- function(queue_id, task_id) {
+  sprintf("%s:task:%s:depends:up", queue_id, task_id)
 }
 
-rrq_key_task_dependencies_original <- function(queue_id, task_id) {
-  sprintf("%s:task:%s:dependencies:original", queue_id, task_id)
+rrq_key_task_depends_up_original <- function(queue_id, task_id) {
+  sprintf("%s:task:%s:depends:up:original", queue_id, task_id)
 }
 
-## These are tasks that immediately depend on task_id
-rrq_key_task_dependents <- function(queue_id, task_id) {
-  sprintf("%s:task:%s:dependents", queue_id, task_id)
+rrq_key_task_depends_down <- function(queue_id, task_id) {
+  sprintf("%s:task:%s:depends:down", queue_id, task_id)
 }

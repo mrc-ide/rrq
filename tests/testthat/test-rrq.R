@@ -510,16 +510,15 @@ test_that("task can be queued with dependency", {
   expect_equal(unname(obj$task_status(t3)), "DEFERRED")
 
   ## Original dependencies are stored
-  original_deps_keys <- rrq_key_task_dependencies_original(
-    obj$queue_id, t3)
+  original_deps_keys <- rrq_key_task_depends_up_original(obj$queue_id, t3)
   expect_setequal(obj$con$SMEMBERS(original_deps_keys), c(t, t2))
 
   ## Pending dependencies are stored
-  dependency_keys <- rrq_key_task_dependencies(obj$queue_id, t3)
+  dependency_keys <- rrq_key_task_depends_up(obj$queue_id, t3)
   expect_setequal(obj$con$SMEMBERS(dependency_keys), c(t, t2))
 
   ## Inverse depends_on relationship is stored
-  dependent_keys <- rrq_key_task_dependents(obj$queue_id, c(t, t2))
+  dependent_keys <- rrq_key_task_depends_down(obj$queue_id, c(t, t2))
   for (key in dependent_keys) {
     expect_equal(obj$con$SMEMBERS(key), list(t3))
   }

@@ -1404,10 +1404,10 @@ task_delete <- function(con, keys, store, task_ids, check) {
     }
   }
 
-  original_deps_keys <- rrq_key_task_dependencies_original(
+  original_deps_keys <- rrq_key_task_depends_up_original(
     keys$queue_id, task_ids_all)
-  dependency_keys <- rrq_key_task_dependencies(keys$queue_id, task_ids_all)
-  dependent_keys <- rrq_key_task_dependents(keys$queue_id, task_ids_all)
+  dependency_keys <- rrq_key_task_depends_up(keys$queue_id, task_ids_all)
+  dependent_keys <- rrq_key_task_depends_down(keys$queue_id, task_ids_all)
   res <- con$pipeline(.commands = c(
     lapply(task_ids, function(x) redis$HGET(keys$task_status, x)),
     set_names(lapply(dependent_keys, redis$SMEMBERS), task_ids_all),
@@ -1529,10 +1529,10 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
       redis$HMSET(keys$task_timeout, task_ids, as.character(timeout)))
   }
 
-  original_deps_keys <- rrq_key_task_dependencies_original(
+  original_deps_keys <- rrq_key_task_depends_up_original(
     keys$queue_id, task_ids)
-  dependency_keys <- rrq_key_task_dependencies(keys$queue_id, task_ids)
-  dependent_keys <- rrq_key_task_dependents(keys$queue_id, depends_on)
+  dependency_keys <- rrq_key_task_depends_up(keys$queue_id, task_ids)
+  dependent_keys <- rrq_key_task_depends_down(keys$queue_id, depends_on)
 
   if (!is.null(key_complete)) {
     cmds <- list(
@@ -2114,13 +2114,13 @@ is_task_redirect <- function(x) {
 
 
 task_depends_down <- function(con, keys, task_ids) {
-  key <- function(k) rrq_key_task_dependents(keys$queue_id, k)
+  key <- function(k) rrq_key_task_depends_down(keys$queue_id, k)
   task_depends_walk(con, key, task_ids)
 }
 
 
 task_depends_up <- function(con, keys, task_ids) {
-  key <- function(k) rrq_key_task_dependencies_original(keys$queue_id, k)
+  key <- function(k) rrq_key_task_depends_up_original(keys$queue_id, k)
   task_depends_walk(con, key, task_ids)
 }
 
