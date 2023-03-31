@@ -1284,18 +1284,31 @@ test_that("Can extract dependency information", {
   t4 <- obj$enqueue(identity(4), depends_on = c(t1, t2))
   t5 <- obj$enqueue(identity(4), depends_on = c(t4, t3))
 
-  expect_null(obj$task_info(t5)$depends$down)
-  expect_equal(obj$task_info(t4)$depends$down,
-               set_names(list(t5), t4))
-  expect_equal(obj$task_info(t3)$depends$down,
-               set_names(list(t5), t3))
-  expect_equal(obj$task_info(t2)$depends$down,
-               set_names(list(t4, t5), c(t2, t4)))
-  ## This one is the hard one:
-  deps1 <- obj$task_info(t1)$depends$down
-  expect_setequal(names(deps1), c(t1, t2, t3, t4))
-  expect_setequal(deps1[[t1]], c(t2, t3, t4))
-  expect_equal(deps1[[t2]], t4)
-  expect_equal(deps1[[t3]], t5)
-  expect_equal(deps1[[t4]], t5)
+  deps1 <- obj$task_info(t1)$depends
+  deps2 <- obj$task_info(t2)$depends
+  deps3 <- obj$task_info(t3)$depends
+  deps4 <- obj$task_info(t4)$depends
+  deps5 <- obj$task_info(t5)$depends
+
+  expect_null(deps1$up)
+  expect_setequal(names(deps1$down), c(t1, t2, t3, t4))
+  expect_setequal(deps1$down[[t1]], c(t2, t3, t4))
+
+  expect_equal(deps2$up, set_names(list(t1), t2))
+  expect_equal(deps2$down, set_names(list(t4, t5), c(t2, t4)))
+
+  expect_equal(deps3$up, set_names(list(t1), t3))
+  expect_equal(deps3$down, set_names(list(t5), t3))
+
+  expect_setequal(names(deps4$up), c(t4, t2))
+  expect_equal(deps4$up[[t4]], c(t1, t2))
+  expect_equal(deps4$up[[t2]], deps2$up[[t2]])
+  expect_equal(deps4$down, set_names(list(t5), t4))
+
+  expect_setequal(names(deps5$up), c(t5, t4, t3, t2))
+  expect_equal(deps5$up[[t5]], c(t4, t3))
+  expect_equal(deps5$up[[t4]], deps4$up[[t4]])
+  expect_equal(deps5$up[[t3]], deps3$up[[t3]])
+  expect_equal(deps5$up[[t2]], deps2$up[[t2]])
+  expect_null(deps5$depends$down)
 })

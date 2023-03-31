@@ -1924,7 +1924,7 @@ task_info <- function(con, keys, task_id) {
     }
   }
 
-  depends <- list(up = NULL,
+  depends <- list(up = task_depends_up(con, keys, task_id),
                   down = task_depends_down(con, keys, task_id))
 
   list(
@@ -2119,6 +2119,20 @@ task_depends_down <- function(con, keys, task_ids) {
   ret <- list()
   while (length(task_ids) > 0) {
     key_deps <- rrq_key_task_dependents(keys$queue_id, task_ids)
+    deps <- lapply(con$pipeline(.commands = lapply(key_deps, redis$SMEMBERS)),
+                   list_to_character)
+    i <- lengths(deps) > 0
+    ret <- c(ret, set_names(deps[i], task_ids[i]))
+    task_ids <- unique(unlist(deps[i]))
+  }
+  if (length(ret) == 0) NULL else ret
+}
+
+
+task_depends_up <- function(con, keys, task_ids) {
+  ret <- list()
+  while (length(task_ids) > 0) {
+    key_deps <- rrq_key_task_dependencies_original(keys$queue_id, task_ids)
     deps <- lapply(con$pipeline(.commands = lapply(key_deps, redis$SMEMBERS)),
                    list_to_character)
     i <- lengths(deps) > 0
