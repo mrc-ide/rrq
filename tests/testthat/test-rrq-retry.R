@@ -50,7 +50,7 @@ test_that("Can't retry a task that has not been run", {
 })
 
 
-test_that("Can get deferred times", {
+test_that("Can get moved times", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
   set.seed(1)

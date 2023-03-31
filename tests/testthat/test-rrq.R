@@ -523,10 +523,6 @@ test_that("task can be queued with dependency", {
     expect_equal(obj$con$SMEMBERS(key), list(t3))
   }
 
-  ## t3 is in deferred set
-  deferred_set <- queue_keys(obj)$deferred_set
-  expect_equal(obj$con$SMEMBERS(deferred_set), list(t3))
-
   ## Function to retrieve status of t3 and see what it is waiting for
 
   w$step(TRUE)
@@ -539,7 +535,6 @@ test_that("task can be queued with dependency", {
   ## Status of it has updated
   expect_setequal(obj$con$SMEMBERS(original_deps_keys), c(t, t2))
   expect_equal(obj$con$SMEMBERS(dependency_keys), list(t2))
-  expect_equal(obj$con$SMEMBERS(deferred_set), list(t3))
 
   w$step(TRUE)
   obj$task_wait(t2, 2)
@@ -550,7 +545,6 @@ test_that("task can be queued with dependency", {
   ## Status can be retrieved
   expect_setequal(obj$con$SMEMBERS(original_deps_keys), c(t, t2))
   expect_equal(obj$con$SMEMBERS(dependency_keys), list())
-  expect_equal(obj$con$SMEMBERS(deferred_set), list())
 
   w$step(TRUE)
   obj$task_wait(t3, 2)
@@ -589,10 +583,6 @@ test_that("queueing with depends_on errored task fails", {
                       t, ": ERROR"),
                fixed = TRUE)
 
-  ## deferred set is empty
-  deferred_set <- queue_keys(obj)$deferred_set
-  expect_equal(obj$con$SMEMBERS(deferred_set), list())
-
   ## Task is set to impossible
   status <- obj$task_status()
   expect_length(status, 2)
@@ -625,8 +615,6 @@ test_that("dependent tasks updated if dependency fails", {
   expect_equal(unname(obj$task_status(t3)), "IMPOSSIBLE")
   expect_equal(unname(obj$task_status(t4)), "IMPOSSIBLE")
   expect_equal(obj$queue_list(), character(0))
-  deferred_set <- queue_keys(obj)$deferred_set
-  expect_equal(obj$con$SMEMBERS(deferred_set), list())
 })
 
 
@@ -641,18 +629,12 @@ test_that("multiple tasks can be queued with same dependency", {
   expect_equal(unname(obj$task_status(t2)), "DEFERRED")
   expect_equal(unname(obj$task_status(t3)), "DEFERRED")
 
-  ## t3 is in deferred set
-  deferred_set <- queue_keys(obj)$deferred_set
-  expect_setequal(obj$con$SMEMBERS(deferred_set), c(t2, t3))
-
   w$step(TRUE)
   obj$task_wait(t, 2)
   expect_equal(unname(obj$task_status(t)), "COMPLETE")
   expect_equal(unname(obj$task_status(t2)), "PENDING")
   expect_equal(unname(obj$task_status(t3)), "PENDING")
   expect_setequal(obj$queue_list(), c(t2, t3))
-
-  expect_equal(obj$con$SMEMBERS(deferred_set), list())
 })
 
 
@@ -665,15 +647,12 @@ test_that("deferred task is added to specified queue", {
   t3 <- obj$enqueue(sin(0), depends_on = t, queue = "a")
   expect_equal(obj$queue_list(), t)
   expect_equal(obj$queue_list("a"), character(0))
-  deferred_set <- queue_keys(obj)$deferred_set
-  expect_setequal(obj$con$SMEMBERS(deferred_set), list(t2, t3))
 
   w$step(TRUE)
   obj$task_wait(t, 2)
 
   expect_equal(obj$queue_list(), t2)
   expect_equal(obj$queue_list("a"), t3)
-  expect_equal(obj$con$SMEMBERS(deferred_set), list())
 })
 
 
@@ -688,8 +667,6 @@ test_that("task set to impossible cannot be added to queue", {
   expect_equal(unname(obj$task_status(t2)), "PENDING")
   expect_equal(unname(obj$task_status(t3)), "DEFERRED")
   expect_equal(obj$queue_list(), c(t, t2))
-  deferred_set <- queue_keys(obj)$deferred_set
-  expect_equal(obj$con$SMEMBERS(deferred_set), list(t3))
 
   w$step(TRUE)
   res <- obj$task_result(t)
@@ -699,7 +676,6 @@ test_that("task set to impossible cannot be added to queue", {
   expect_equal(unname(obj$task_status(t2)), "PENDING")
   expect_equal(unname(obj$task_status(t3)), "IMPOSSIBLE")
   expect_equal(obj$queue_list(), t2)
-  expect_equal(obj$con$SMEMBERS(deferred_set), list())
 
   w$step(TRUE)
   obj$task_wait(t2, 2)
@@ -707,7 +683,6 @@ test_that("task set to impossible cannot be added to queue", {
   expect_equal(unname(obj$task_status(t2)), "COMPLETE")
   expect_equal(unname(obj$task_status(t3)), "IMPOSSIBLE")
   expect_equal(obj$queue_list(), character(0))
-  expect_equal(obj$con$SMEMBERS(deferred_set), list())
 })
 
 
@@ -720,13 +695,10 @@ test_that("deferred task delete", {
 
   expect_setequal(obj$task_list(), c(t1, t2, t3, t4))
   expect_equal(obj$queue_list(), t1)
-  deferred_set <- queue_keys(obj)$deferred_set
-  expect_setequal(obj$con$SMEMBERS(deferred_set), list(t2, t3, t4))
 
   obj$task_delete(t2)
   expect_setequal(obj$task_list(), c(t1, t3, t4))
   expect_equal(obj$queue_list(), t1)
-  expect_setequal(obj$con$SMEMBERS(deferred_set), list(t3, t4))
   expect_equal(unname(obj$task_status(t1)), "PENDING")
   expect_equal(unname(obj$task_status(t2)), "MISSING")
   expect_equal(unname(obj$task_status(t3)), "DEFERRED")
@@ -735,7 +707,6 @@ test_that("deferred task delete", {
   obj$task_delete(t1)
   expect_setequal(obj$task_list(), c(t3, t4))
   expect_setequal(obj$queue_list(), character(0))
-  expect_equal(obj$con$SMEMBERS(deferred_set), list())
   expect_equal(unname(obj$task_status(t1)), "MISSING")
   expect_equal(unname(obj$task_status(t2)), "MISSING")
   expect_equal(unname(obj$task_status(t3)), "IMPOSSIBLE")
@@ -744,7 +715,6 @@ test_that("deferred task delete", {
   obj$task_delete(t3)
   expect_setequal(obj$task_list(), t4)
   expect_setequal(obj$queue_list(), character(0))
-  expect_equal(obj$con$SMEMBERS(deferred_set), list())
   expect_equal(unname(obj$task_status(t1)), "MISSING")
   expect_equal(unname(obj$task_status(t2)), "MISSING")
   expect_equal(unname(obj$task_status(t3)), "MISSING")
@@ -783,20 +753,16 @@ test_that("deferred task cancel", {
 
   expect_setequal(obj$task_list(), c(t1, t2, t3, t4))
   expect_equal(obj$queue_list(), t1)
-  deferred_set <- queue_keys(obj)$deferred_set
-  expect_setequal(obj$con$SMEMBERS(deferred_set), list(t2, t3, t4))
 
   obj$task_cancel(t2)
   expect_setequal(obj$task_list(), c(t1, t3, t4))
   expect_equal(obj$queue_list(), t1)
-  expect_setequal(obj$con$SMEMBERS(deferred_set), list(t3, t4))
   expect_equal(unname(obj$task_status(t3)), "DEFERRED")
   expect_equal(unname(obj$task_status(t4)), "DEFERRED")
 
   obj$task_cancel(t1)
   expect_setequal(obj$task_list(), c(t3, t4))
   expect_setequal(obj$queue_list(), character(0))
-  expect_equal(obj$con$SMEMBERS(deferred_set), list())
   expect_equal(unname(obj$task_status(t3)), "IMPOSSIBLE")
   expect_equal(unname(obj$task_status(t4)), "IMPOSSIBLE")
 })

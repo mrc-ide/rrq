@@ -1419,7 +1419,6 @@ task_delete <- function(con, keys, store, task_ids, check) {
       redis$HDEL(keys$task_progress, task_ids_all),
       redis$HDEL(keys$task_worker,   task_ids_all),
       redis$HDEL(keys$task_local,    task_ids_all),
-      redis$SREM(keys$deferred_set,  task_ids_all),
       redis$DEL(original_deps_keys),
       redis$DEL(dependency_keys),
       redis$DEL(dependent_keys))))
@@ -1559,9 +1558,7 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
         redis$HMSET(keys$task_status, task_ids, rep_len(TASK_DEFERRED, n))),
       lapply(original_deps_keys, redis$SADD, depends_on),
       lapply(dependency_keys, redis$SADD, depends_on),
-      lapply(dependent_keys, redis$SADD, task_ids),
-      list(redis$SADD(keys$deferred_set, task_ids))
-    )
+      lapply(dependent_keys, redis$SADD, task_ids))
   } else {
     cmds <- c(cmds, list(redis$RPUSH(key_queue, task_ids)))
   }

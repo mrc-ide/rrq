@@ -10,8 +10,7 @@ run_task_cleanup <- function(con, keys, store, task_ids, status, value) {
       redis$RPUSH(rrq_key_task_complete(keys$queue_id, task_id), task_id),
       if (!is.null(key_complete)) {
         redis$RPUSH(key_complete, task_id)
-      },
-      redis$SREM(keys$deferred_set, task_id)
+      }
     )
   }
   cmds <- Map(cleanup_one, task_ids)

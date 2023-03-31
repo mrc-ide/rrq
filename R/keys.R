@@ -48,9 +48,7 @@ rrq_keys_common <- function(queue_id) {
        task_time_submit   = sprintf("%s:task:time_submit",   queue_id),
        task_time_start    = sprintf("%s:task:time_start",    queue_id),
        task_time_complete = sprintf("%s:task:time_complete", queue_id),
-       task_time_moved    = sprintf("%s:task:time_moved",    queue_id),
-
-       deferred_set   = sprintf("%s:deferred", queue_id))
+       task_time_moved    = sprintf("%s:task:time_moved",    queue_id))
 }
 
 rrq_keys_worker <- function(queue, worker) {
