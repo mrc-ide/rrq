@@ -254,6 +254,7 @@ test_that("change environment", {
       envir$x <- value
     }
   }
+  environment(create) <- .GlobalEnv # avoid serialisation warning
 
   obj <- test_rrq()
   obj$envir(create(1))
@@ -287,7 +288,8 @@ test_that("cancel queued task", {
   t <- obj$enqueue(sqrt(1))
   expect_equal(obj$task_status(t), set_names(TASK_PENDING, t))
   obj$task_cancel(t)
-  expect_equal(obj$task_status(t), set_names(TASK_MISSING, t))
+
+  expect_equal(obj$task_status(t), set_names(TASK_CANCELLED, t))
   expect_equal(obj$queue_list(), character(0))
 })
 
@@ -300,7 +302,7 @@ test_that("cancel queued task from alternative queue", {
   expect_equal(obj$queue_list("other"), c(t1, t2, t3))
   obj$task_cancel(t2)
   expect_equal(obj$queue_list("other"), c(t1, t3))
-  expect_equal(obj$task_status(t2), set_names(TASK_MISSING, t2))
+  expect_equal(obj$task_status(t2), set_names(TASK_CANCELLED, t2))
 })
 
 
@@ -312,6 +314,7 @@ test_that("can't cancel completed task", {
   expect_error(
     obj$task_cancel(t),
     "Task [[:xdigit:]]{32} is not cancelable \\(COMPLETE\\)")
+  expect_equal(obj$task_result(t), 1)
 })
 
 
@@ -330,7 +333,7 @@ test_that("can't cancel running in-process task", {
   t <- obj$enqueue(Sys.sleep(20))
   wait_status(t, obj)
   expect_error(
-    obj$task_cancel(t, wait = TRUE, delete = FALSE),
+    obj$task_cancel(t, wait = TRUE),
     "Can't cancel running task '[[:xdigit:]]{32}' as not in separate process")
   obj$worker_stop(w, "kill_local")
 })
@@ -431,11 +434,9 @@ test_that("Cancel job sent to new process", {
   obj <- test_rrq("myfuns.R")
 
   w <- test_worker_spawn(obj)
-
   t <- obj$enqueue(slowdouble(50), separate_process = TRUE)
   wait_status(t, obj)
-  obj$task_cancel(t, wait = TRUE, delete = FALSE)
-  st <- obj$task_status(t)
+  obj$task_cancel(t, wait = TRUE)
   log <- obj$worker_log_tail(w, Inf)
   expect_equal(obj$task_status(t), set_names(TASK_CANCELLED, t))
   expect_equal(obj$task_result(t),
@@ -444,28 +445,6 @@ test_that("Cancel job sent to new process", {
   ## Flakey on covr, probably due to the job being cancelled before
   ## the second process really finishes starting up.
   skip_on_covr()
-  expect_equal(log$command,
-               c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
-                 "TASK_START", "REMOTE",
-                 "CHILD", "ENVIR", "ENVIR", "CANCEL", "TASK_CANCELLED"))
-})
-
-
-test_that("Delete job after cancellation", {
-  skip_if_not_installed("callr")
-  obj <- test_rrq("myfuns.R")
-
-  w <- test_worker_spawn(obj)
-
-  t <- obj$enqueue(slowdouble(50), separate_process = TRUE)
-  wait_status(t, obj)
-  obj$task_cancel(t, wait = TRUE, delete = TRUE)
-  expect_equal(obj$task_status(t), set_names(TASK_MISSING, t))
-
-  ## Flakey on covr, probably due to the job being cancelled before
-  ## the second process really finishes starting up.
-  skip_on_covr()
-  log <- obj$worker_log_tail(w, Inf)
   expect_equal(log$command,
                c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
                  "TASK_START", "REMOTE",
@@ -755,13 +734,13 @@ test_that("deferred task cancel", {
   expect_equal(obj$queue_list(), t1)
 
   obj$task_cancel(t2)
-  expect_setequal(obj$task_list(), c(t1, t3, t4))
+  expect_setequal(obj$task_list(), c(t1, t2, t3, t4))
   expect_equal(obj$queue_list(), t1)
   expect_equal(unname(obj$task_status(t3)), "DEFERRED")
   expect_equal(unname(obj$task_status(t4)), "DEFERRED")
 
   obj$task_cancel(t1)
-  expect_setequal(obj$task_list(), c(t3, t4))
+  expect_setequal(obj$task_list(), c(t1, t2, t3, t4))
   expect_setequal(obj$queue_list(), character(0))
   expect_equal(unname(obj$task_status(t3)), "IMPOSSIBLE")
   expect_equal(unname(obj$task_status(t4)), "IMPOSSIBLE")

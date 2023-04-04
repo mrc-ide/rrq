@@ -5,17 +5,19 @@ worker_run_task <- function(worker, private, task_id) {
   } else {
     res <- worker_run_task_local(task, worker, private)
   }
-  task_status <- res$status
-  dependent_ids <- get_dependent_ids(private$con, private$keys$queue_id,
-                                     task_id)
-  if (length(dependent_ids) > 0) {
-    if (identical(task_status, TASK_COMPLETE)) {
-      queue_dependencies(private$con, private$keys, task_id, dependent_ids)
-    } else {
-      cancel_dependencies(private$con, private$keys, private$store, task_id)
-    }
-  }
-  worker_run_task_cleanup(worker, private, task_status, res$value)
+
+  con <- private$con
+  keys <- private$keys
+  run_task_cleanup(con, keys, private$store, task_id, res$status, res$value)
+
+  con$pipeline(
+    redis$HSET(keys$worker_status, worker$name, WORKER_IDLE),
+    redis$HDEL(keys$worker_task,   worker$name),
+    worker_log(redis, keys, paste0("TASK_", res$status), task_id,
+               private$is_child, private$verbose))
+
+  private$active_task <- NULL
+  invisible()
 }
 
 
@@ -142,28 +144,6 @@ worker_run_task_start <- function(worker, private, task_id) {
   ret$separate_process <- dat[[8]] == "FALSE" # NOTE: not a coersion
   ret$id <- task_id
   ret
-}
-
-
-worker_run_task_cleanup <- function(worker, private, status, value) {
-  task <- private$active_task
-  key_complete <- task$key_complete
-
-  keys <- private$keys
-  name <- worker$name
-  log_status <- paste0("TASK_", status)
-
-  run_task_cleanup(private$con, keys, private$store, task$task_id, status,
-                   value)
-
-  private$con$pipeline(
-    redis$HSET(keys$worker_status,      name,    WORKER_IDLE),
-    redis$HDEL(keys$worker_task,        name),
-    worker_log(redis, keys, log_status, task$task_id,
-               private$is_child, private$verbose))
-
-  private$active_task <- NULL
-  invisible()
 }
 
 

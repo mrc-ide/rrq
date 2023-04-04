@@ -74,6 +74,11 @@ list_to_character <- function(x) {
 }
 
 
+list_to_numeric <- function(x) {
+  vnapply(x, identity)
+}
+
+
 data_frame <- function(...) {
   data.frame(..., stringsAsFactors = FALSE)
 }
@@ -232,4 +237,9 @@ first <- function(x) {
 
 last <- function(x) {
   x[[length(x)]]
+}
+
+
+rep_along <- function(x, v) {
+  rep_len(x, length(v))
 }
