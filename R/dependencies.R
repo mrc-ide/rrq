@@ -1,20 +1,3 @@
-get_dependent_ids <- function(con, queue_id, task_id) {
-  dependent_keys <- rrq_key_task_depends_down(queue_id, task_id)
-  con$SMEMBERS(dependent_keys)
-}
-
-cancel_dependencies <- function(con, keys, store, ids) {
-  dependent_keys <- rrq_key_task_depends_down(keys$queue_id, ids)
-  dependent_ids <- unique(unlist(lapply(dependent_keys, con$SMEMBERS)))
-  n <- length(dependent_ids)
-
-  run_task_cleanup(con, keys, store, dependent_ids, TASK_IMPOSSIBLE, NULL)
-
-  if (n > 0) {
-    cancel_dependencies(con, keys, store, dependent_ids)
-  }
-}
-
 queue_dependencies <- function(con, keys, task_id, deferred_task_ids) {
   dependency_keys <- rrq_key_task_depends_up(keys$queue_id, deferred_task_ids)
   res <- con$pipeline(.commands = c(

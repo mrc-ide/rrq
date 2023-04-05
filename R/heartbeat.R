@@ -47,9 +47,7 @@ cleanup_orphans <- function(con, keys, store, time) {
       "Orphaning %s %s:\n%s",
       length(task_ids), ngettext(sum(i), "task", "tasks"),
       paste0("  - ", task_ids, collapse = "\n")))
-    for (id in task_ids) {
-      run_task_cleanup(con, keys, store, id, TASK_DIED, NULL)
-    }
+    run_task_cleanup_failure(con, keys, store, task_ids, TASK_DIED, NULL)
   }
 
   con$HMSET(keys$worker_status, worker_id, rep(WORKER_LOST, length(worker_id)))

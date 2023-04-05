@@ -862,24 +862,23 @@ rrq_controller <- R6::R6Class(
     },
 
     ##' @description Cancel a single task. If the task is `PENDING` it
-    ##' will be deleted. If `RUNNING` then the task will be stopped if
-    ##' it was set to run in a separate process (i.e., queued with
-    ##' `separate_process = TRUE`). Dependent tasks will be marked as
-    ##' impossible.
+    ##' will be unqueued and the status set to `CANCELED`.  If `RUNNING`
+    ##' then the task will be stopped if it was set to run in
+    ##' a separate process (i.e., queued with `separate_process = TRUE`).
+    ##' Dependent tasks will be marked as impossible.
     ##'
     ##' @param task_id Id of the task to cancel
     ##'
-    ##' @param wait Wait for the task to be stopped, if it was running. If
-    ##'   `delete` is `TRUE`, then we will always wait for the task to stop.
+    ##' @param wait Wait for the task to be stopped, if it was running.
     ##'
-    ##' @param delete Delete the task after cancelling (if cancelling
-    ##'   was successful).
+    ##' @param timeout_wait Maximum time, in seconds, to wait for the task
+    ##'   to be cancelled by the worker.
     ##'
     ##' @return Nothing if successfully cancelled, otherwise throws an
     ##' error with task_id and status e.g. Task 123 is not running (MISSING)
-    task_cancel = function(task_id, wait = TRUE, delete = TRUE) {
+    task_cancel = function(task_id, wait = TRUE, timeout_wait = 10) {
       task_cancel(self$con, private$keys, private$store, private$scripts,
-                  task_id, wait, delete)
+                  task_id, wait, timeout_wait)
     },
 
     ##' @description Fetch internal data about a task from Redis
@@ -1404,24 +1403,24 @@ task_delete <- function(con, keys, store, task_ids, check) {
     }
   }
 
-  original_deps_keys <- rrq_key_task_depends_up_original(
+  depends_up_original_keys <- rrq_key_task_depends_up_original(
     keys$queue_id, task_ids_all)
-  dependency_keys <- rrq_key_task_depends_up(keys$queue_id, task_ids_all)
-  dependent_keys <- rrq_key_task_depends_down(keys$queue_id, task_ids_all)
-  res <- con$pipeline(.commands = c(
-    lapply(task_ids, function(x) redis$HGET(keys$task_status, x)),
-    set_names(lapply(dependent_keys, redis$SMEMBERS), task_ids_all),
-    list(
-      redis$HDEL(keys$task_expr,     task_ids_all),
-      redis$HDEL(keys$task_status,   task_ids_all),
-      redis$HDEL(keys$task_result,   task_ids_all),
-      redis$HDEL(keys$task_complete, task_ids_all),
-      redis$HDEL(keys$task_progress, task_ids_all),
-      redis$HDEL(keys$task_worker,   task_ids_all),
-      redis$HDEL(keys$task_local,    task_ids_all),
-      redis$DEL(original_deps_keys),
-      redis$DEL(dependency_keys),
-      redis$DEL(dependent_keys))))
+  depends_up_keys <- rrq_key_task_depends_up(keys$queue_id, task_ids_all)
+  depends_down_keys <- rrq_key_task_depends_down(keys$queue_id, task_ids_all)
+  res <- con$pipeline(
+    .commands = c(
+      lapply(depends_down_keys, redis$SCARD),
+      list(
+        redis$HMGET(keys$task_status,  task_ids_all),
+        redis$HDEL(keys$task_expr,     task_ids_all),
+        redis$HDEL(keys$task_status,   task_ids_all),
+        redis$HDEL(keys$task_result,   task_ids_all),
+        redis$HDEL(keys$task_complete, task_ids_all),
+        redis$HDEL(keys$task_progress, task_ids_all),
+        redis$HDEL(keys$task_worker,   task_ids_all),
+        redis$HDEL(keys$task_local,    task_ids_all),
+        redis$DEL(depends_up_original_keys),
+        redis$DEL(depends_up_keys))))
 
   queue <- list_to_character(con$HMGET(keys$task_queue, task_ids_root))
   queue_remove(con, keys, task_ids_all, queue)
@@ -1432,23 +1431,34 @@ task_delete <- function(con, keys, store, task_ids, check) {
   ## A. They are dependents of a task which is PENDING or DEFERRED AND
   ## B. Their dependencies have not already been deleted or set to ERRORED, etc.
   ## i.e. their dependencies are also DEFERRED
-  status <- res[seq_along(task_ids_all)]
-  ids_to_cancel <- task_ids_all[unlist(status) %in% TASK$unstarted]
-  dependents <- unique(unlist(res[ids_to_cancel]))
-  if (length(dependents) > 0) {
-    status_dependent <- con$HMGET(keys$task_status, dependents)
-    cancel <- dependents[status_dependent == TASK_DEFERRED]
-    if (length(cancel) > 0) {
-      run_task_cleanup(con, keys, store, cancel, TASK_IMPOSSIBLE, NULL)
-      cancel_dependencies(con, keys, store, cancel)
+  n <- length(task_ids_all)
+  check_dependencies <-
+    (list_to_numeric(res[seq_len(n)]) > 0) &
+    vlapply(res[[n + 1]], function(x) !is.null(x) && x %in% TASK$unstarted)
+  if (any(check_dependencies)) {
+    ids_all_deps <- unlist(
+      task_depends_down(con, keys, task_ids_all[check_dependencies]),
+      FALSE, FALSE)
+    ids_deps <- setdiff(ids_all_deps, task_ids_all)
+    status_deps <- task_status(con, keys, ids_deps, follow = FALSE)
+    ids_impossible <- ids_deps[status_deps == TASK_DEFERRED]
+    if (length(ids_impossible) > 0) {
+      run_task_cleanup_failure(con, keys, store, ids_impossible,
+                               TASK_IMPOSSIBLE, NULL)
     }
   }
+
+  con$DEL(depends_down_keys)
 
   invisible()
 }
 
-task_cancel <- function(con, keys, store, scripts, task_id, wait = FALSE,
-                        delete = TRUE) {
+task_cancel <- function(con, keys, store, scripts, task_id, wait,
+                        timeout_wait) {
+  assert_scalar_character(task_id)
+  assert_scalar_logical(wait)
+  assert_valid_timeout(timeout_wait)
+
   ## There are several steps here, which will all be executed in one
   ## block which removes the possibility of race conditions:
   ##
@@ -1465,33 +1475,32 @@ task_cancel <- function(con, keys, store, scripts, task_id, wait = FALSE,
   ##
   ## * Retrieve the status so that we know the task status before any
   ##   change can happen.
+  ##
+  ## Unfortunately it's not possible to also cancel dependencies in a
+  ## race-free way and we'll tidy that up later.
+  key_queue <- rrq_key_queue(keys$queue_id, con$HGET(keys$task_queue, task_id))
+
   dat <- con$pipeline(
-    dropped = redis$EVALSHA(scripts$queue_delete, 1L, keys$task_queue, task_id),
+    dropped = redis$LREM(key_queue, 1, task_id),
     cancel = redis$HSET(keys$task_cancel, task_id, "TRUE"),
     status = redis$HGET(keys$task_status, task_id),
     local = redis$HGET(keys$task_local, task_id))
 
   task_status <- dat$status %||% TASK_MISSING
-
   if (!(task_status %in% TASK$unfinished)) {
     stop(sprintf("Task %s is not cancelable (%s)", task_id, task_status))
   }
-
-  cancel_dependencies(con, keys, store, task_id)
 
   if (task_status == TASK_RUNNING) {
     if (dat$local != "FALSE") {
       stop(sprintf(
         "Can't cancel running task '%s' as not in separate process", task_id))
     }
-    if (delete || wait) {
-      timeout_wait <- 10
+    if (wait) {
       wait_status_change(con, keys, task_id, TASK_RUNNING, timeout_wait)
     }
-  }
-
-  if (delete) {
-    task_delete(con, keys, store, task_id, FALSE)
+  } else {
+    run_task_cleanup_failure(con, keys, store, task_id, TASK_CANCELLED, NULL)
   }
 
   invisible(NULL)
@@ -1528,10 +1537,10 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
       redis$HMSET(keys$task_timeout, task_ids, as.character(timeout)))
   }
 
-  original_deps_keys <- rrq_key_task_depends_up_original(
+  depends_up_original_keys <- rrq_key_task_depends_up_original(
     keys$queue_id, task_ids)
-  dependency_keys <- rrq_key_task_depends_up(keys$queue_id, task_ids)
-  dependent_keys <- rrq_key_task_depends_down(keys$queue_id, depends_on)
+  depends_up_keys <- rrq_key_task_depends_up(keys$queue_id, task_ids)
+  depends_down_keys <- rrq_key_task_depends_down(keys$queue_id, depends_on)
 
   if (!is.null(key_complete)) {
     cmds <- list(
@@ -1556,9 +1565,9 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
       list(
         status = redis$HMGET(keys$task_status, depends_on),
         redis$HMSET(keys$task_status, task_ids, rep_len(TASK_DEFERRED, n))),
-      lapply(original_deps_keys, redis$SADD, depends_on),
-      lapply(dependency_keys, redis$SADD, depends_on),
-      lapply(dependent_keys, redis$SADD, task_ids))
+      lapply(depends_up_original_keys, redis$SADD, depends_on),
+      lapply(depends_up_keys, redis$SADD, depends_on),
+      lapply(depends_down_keys, redis$SADD, task_ids))
   } else {
     cmds <- c(cmds, list(redis$RPUSH(key_queue, task_ids)))
   }
@@ -1574,8 +1583,7 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
   ## In the time between 2 and 3 A could have finished and failed meaning that
   ## the dependency of B will never be satisfied and it will never be run.
   if (any(response$status %in% TASK$terminal_fail)) {
-    run_task_cleanup(con, keys, store, task_ids, TASK_IMPOSSIBLE, NULL)
-    cancel_dependencies(con, keys, store, task_ids)
+    run_task_cleanup_failure(con, keys, store, task_ids, TASK_IMPOSSIBLE, NULL)
     incomplete <- response$status[response$status %in% TASK$terminal_fail]
     names(incomplete) <- depends_on[response$status %in% TASK$terminal_fail]
     stop(sprintf("Failed to queue as dependent tasks failed:\n%s",
