@@ -8,16 +8,18 @@ worker_run_task <- function(worker, private, task_id) {
 
   con <- private$con
   keys <- private$keys
+  store <- private$store
+  status <- res$status
   if (status == TASK_COMPLETE) {
-    run_task_cleanup_success(con, keys, store, task_id, res$status, res$value)
+    run_task_cleanup_success(con, keys, store, task_id, status, res$value)
   } else {
-    run_task_cleanup_failure(con, keys, store, task_id, res$status, res$value)
+    run_task_cleanup_failure(con, keys, store, task_id, status, res$value)
   }
 
   con$pipeline(
     redis$HSET(keys$worker_status, worker$name, WORKER_IDLE),
     redis$HDEL(keys$worker_task,   worker$name),
-    worker_log(redis, keys, paste0("TASK_", res$status), task_id,
+    worker_log(redis, keys, paste0("TASK_", status), task_id,
                private$is_child, private$verbose))
 
   private$active_task <- NULL
