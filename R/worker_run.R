@@ -8,7 +8,11 @@ worker_run_task <- function(worker, private, task_id) {
 
   con <- private$con
   keys <- private$keys
-  run_task_cleanup(con, keys, private$store, task_id, res$status, res$value)
+  if (status == TASK_COMPLETE) {
+    run_task_cleanup_success(con, keys, store, task_id, res$status, res$value)
+  } else {
+    run_task_cleanup_failure(con, keys, store, task_id, res$status, res$value)
+  }
 
   con$pipeline(
     redis$HSET(keys$worker_status, worker$name, WORKER_IDLE),

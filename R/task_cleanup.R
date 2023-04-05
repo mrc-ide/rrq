@@ -1,12 +1,3 @@
-run_task_cleanup <- function(con, keys, store, task_id, status, value) {
-  if (status == TASK_COMPLETE) {
-    run_task_cleanup_success(con, keys, store, task_id, status, value)
-  } else {
-    run_task_cleanup_failure(con, keys, store, task_id, status, value)
-  }
-}
-
-
 run_task_cleanup_success <- function(con, keys, store, task_id, status, value) {
   task_result <- store$set(value, task_id)
   key_complete <- con$HGET(keys$task_complete, task_id)
@@ -27,6 +18,9 @@ run_task_cleanup_success <- function(con, keys, store, task_id, status, value) {
 }
 
 
+## NOTE: unlike the success path (which is guaranteed to be a single
+## task, single result) the failure path must be vectorised as we'll
+## do bulk deletions quite frequently.
 run_task_cleanup_failure <- function(con, keys, store, task_ids, status,
                                      value) {
   ## TODO: we can do this more efficiently with some HMSET commands, I think
