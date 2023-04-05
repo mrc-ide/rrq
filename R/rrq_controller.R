@@ -1584,7 +1584,7 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
   ## In the time between 2 and 3 A could have finished and failed meaning that
   ## the dependency of B will never be satisfied and it will never be run.
   if (any(response$status %in% TASK$terminal_fail)) {
-    run_task_cleanup(con, keys, store, task_ids, TASK_IMPOSSIBLE, NULL)
+    run_task_cleanup_failure(con, keys, store, task_ids, TASK_IMPOSSIBLE, NULL)
     incomplete <- response$status[response$status %in% TASK$terminal_fail]
     names(incomplete) <- depends_on[response$status %in% TASK$terminal_fail]
     stop(sprintf("Failed to queue as dependent tasks failed:\n%s",
