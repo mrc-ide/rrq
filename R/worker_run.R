@@ -17,8 +17,8 @@ worker_run_task <- function(worker, private, task_id) {
   }
 
   con$pipeline(
-    redis$HSET(keys$worker_status, worker$name, WORKER_IDLE),
-    redis$HDEL(keys$worker_task,   worker$name),
+    redis$HSET(keys$worker_status, worker$id, WORKER_IDLE),
+    redis$HDEL(keys$worker_task,   worker$id),
     worker_log(redis, keys, paste0("TASK_", status), task_id,
                private$is_child, private$verbose))
 
@@ -48,7 +48,7 @@ worker_run_task_separate_process <- function(task, worker, private) {
   keys <- private$keys
   redis_config <- con$config()
   queue_id <- keys$queue_id
-  worker_id <- worker$name
+  worker_id <- worker$id
   task_id <- task$id
   key_cancel <- keys$task_cancel
   timeout_poll <- private$timeout_poll
@@ -108,7 +108,7 @@ worker_run_task_separate_process <- function(task, worker, private) {
 
 remote_run_task <- function(redis_config, queue_id, worker_id, task_id) {
   con <- redux::hiredis(config = redis_config)
-  worker <- rrq_worker$new(queue_id, con, worker_name = worker_id,
+  worker <- rrq_worker$new(queue_id, con, worker_id = worker_id,
                            is_child = TRUE)
   on.exit(worker$log("STOP", "OK"))
   worker$task_eval(task_id)
@@ -117,15 +117,15 @@ remote_run_task <- function(redis_config, queue_id, worker_id, task_id) {
 
 worker_run_task_start <- function(worker, private, task_id) {
   keys <- private$keys
-  name <- worker$name
+  worker_id <- worker$id
   dat <- private$con$pipeline(
     worker_log(redis, keys, "TASK_START", task_id,
                private$is_child, private$verbose),
-    redis$HSET(keys$worker_status,   name,    WORKER_BUSY),
-    redis$HSET(keys$worker_task,     name,    task_id),
-    redis$HSET(keys$task_worker,     task_id, name),
-    redis$HSET(keys$task_status,     task_id, TASK_RUNNING),
-    redis$HSET(keys$task_time_start, task_id, timestamp()),
+    redis$HSET(keys$worker_status,   worker_id, WORKER_BUSY),
+    redis$HSET(keys$worker_task,     worker_id, task_id),
+    redis$HSET(keys$task_worker,     task_id,   worker_id),
+    redis$HSET(keys$task_status,     task_id,   TASK_RUNNING),
+    redis$HSET(keys$task_time_start, task_id,   timestamp()),
     redis$HGET(keys$task_complete,   task_id),
     redis$HGET(keys$task_local,      task_id),
     redis$HGET(keys$task_expr,       task_id),

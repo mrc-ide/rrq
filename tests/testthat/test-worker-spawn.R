@@ -1,15 +1,15 @@
 test_that("Don't wait", {
   obj <- test_rrq()
   res <- test_worker_spawn(obj, 4, timeout = 0)
-  expect_type(res$names, "character")
-  expect_match(res$names, "_[0-9]+$")
+  expect_type(res$ids, "character")
+  expect_match(res$ids, "_[0-9]+$")
   expect_type(res$key_alive, "character")
 
   ans <- rrq_worker_wait(obj, res$key_alive, timeout = 10, time_poll = 1)
-  expect_setequal(ans, res$names)
+  expect_setequal(ans, res$ids)
 
   ans <- rrq_worker_wait(obj, res$key_alive, timeout = 10, time_poll = 1)
-  expect_equal(ans, res$names)
+  expect_equal(ans, res$ids)
 })
 
 

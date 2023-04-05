@@ -92,7 +92,7 @@ test_that("worker timeout", {
 
   id <- obj$message_send("TIMEOUT_GET")
   w$step(TRUE)
-  res <- obj$message_get_response(id, w$name)[[1]]
+  res <- obj$message_get_response(id, w$id)[[1]]
   expect_equal(res[["timeout_idle"]], t)
   expect_lte(res[["remaining"]], t)
 })
@@ -108,7 +108,7 @@ test_that("infinite timeout", {
 
   id <- obj$message_send("TIMEOUT_GET")
   w$step(TRUE)
-  res <- obj$message_get_response(id, w$name)[[1]]
+  res <- obj$message_get_response(id, w$id)[[1]]
   expect_equal(res, c(timeout_idle = Inf, remaining = Inf))
 })
 

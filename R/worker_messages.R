@@ -60,7 +60,7 @@ run_message_stop <- function(worker, private, message_id, args) {
 
 run_message_info <- function(worker, private) {
   info <- worker$info()
-  private$con$HSET(private$keys$worker_info, worker$name, object_to_bin(info))
+  private$con$HSET(private$keys$worker_info, worker$id, object_to_bin(info))
   info
 }
 
@@ -74,7 +74,7 @@ run_message_pause <- function(worker, private) {
     "NOOP"
   } else {
     private$paused <- TRUE
-    private$con$HSET(private$keys$worker_status, worker$name, WORKER_PAUSED)
+    private$con$HSET(private$keys$worker_status, worker$id, WORKER_PAUSED)
     "OK"
   }
 }
@@ -82,7 +82,7 @@ run_message_pause <- function(worker, private) {
 run_message_resume <- function(worker, private) {
   if (private$paused) {
     private$paused <- FALSE
-    private$con$HSET(private$keys$worker_status, worker$name, WORKER_IDLE)
+    private$con$HSET(private$keys$worker_status, worker$id, WORKER_IDLE)
     "OK"
   } else {
     "NOOP"

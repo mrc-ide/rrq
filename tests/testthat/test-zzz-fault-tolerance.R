@@ -9,7 +9,7 @@ test_that("heartbeat", {
   w <- test_worker_blocking(obj)
   dat <- w$info()
   expect_equal(dat$heartbeat_key,
-               rrq_key_worker_heartbeat(obj$queue_id, w$name))
+               rrq_key_worker_heartbeat(obj$queue_id, w$id))
 
   expect_equal(obj$con$EXISTS(dat$heartbeat_key), 1)
   expect_lte(obj$con$PTTL(dat$heartbeat_key),
