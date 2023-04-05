@@ -1484,8 +1484,7 @@ task_cancel <- function(con, keys, store, scripts, task_id, wait,
     dropped = redis$LREM(key_queue, 1, task_id),
     cancel = redis$HSET(keys$task_cancel, task_id, "TRUE"),
     status = redis$HGET(keys$task_status, task_id),
-    local = redis$HGET(keys$task_local, task_id),
-    n_deps = redis$SCARD(rrq_key_task_depends_down(keys$queue_id, task_id)))
+    local = redis$HGET(keys$task_local, task_id))
 
   task_status <- dat$status %||% TASK_MISSING
   if (!(task_status %in% TASK$unfinished)) {
