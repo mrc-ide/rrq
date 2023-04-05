@@ -38,7 +38,6 @@ run_task_cleanup_failure <- function(con, keys, store, task_ids, status,
       })
   }
 
-  ## This is not quite right, dependent tasks need to go in as IMPOSSIBLE
   task_ids_all <- union(
     task_ids,
     unlist(task_depends_down(con, keys, task_ids), FALSE, FALSE))
