@@ -64,7 +64,7 @@ rrq_worker_spawn <- function(obj, n = 1, logdir = NULL,
   for (i in seq_len(n)) {
     args <- c(obj$queue_id,
               "--config", worker_config,
-              "--id", worker_ids[[i]],
+              "--worker-id", worker_ids[[i]],
               "--key-alive", key_alive)
     system2(rrq_worker, args, env = env, wait = FALSE,
             stdout = logfile[[i]], stderr = logfile[[i]])

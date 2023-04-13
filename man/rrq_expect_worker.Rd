@@ -4,12 +4,12 @@
 \alias{rrq_expect_worker}
 \title{Register expected workers}
 \usage{
-rrq_expect_worker(obj, names)
+rrq_expect_worker(obj, ids)
 }
 \arguments{
 \item{obj}{A rrq_controller object}
 
-\item{names}{Names of expected workers}
+\item{ids}{Ids of expected workers}
 }
 \description{
 Register that workers are expected.  This generates a key that one

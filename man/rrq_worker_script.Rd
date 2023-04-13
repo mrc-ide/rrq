@@ -48,7 +48,7 @@ The helper script supports the same arguments as
 \itemize{
 \item \code{queue_id} as the sole positional argument
 \item \code{worker_config} as \code{--config}
-\item \code{worker_name} as \code{--name}
+\item \code{worker_id} as \code{--worker-id}
 \item \code{key_alive} as \code{--key-alive}
 }
 
@@ -58,7 +58,7 @@ environment variable (see \code{\link[redux:hiredis]{redux::hiredis()}} for deta
 For example to create a worker \code{myworker} with configuration
 \code{myconfig} on queue \code{myqueue} you might use
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{./rrq_worker --config=myconfig --name=myworker myqueue
+\if{html}{\out{<div class="sourceCode">}}\preformatted{./rrq_worker --config=myconfig --worker-id=myworker myqueue
 }\if{html}{\out{</div>}}
 }
 \examples{

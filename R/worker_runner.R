@@ -25,7 +25,7 @@
 ##'
 ##' * `queue_id` as the sole positional argument
 ##' * `worker_config` as `--config`
-##' * `worker_id` as `--id`
+##' * `worker_id` as `--worker-id`
 ##' * `key_alive` as `--key-alive`
 ##'
 ##' To change the redis connection settings, set the `REDIS_URL`
@@ -35,7 +35,7 @@
 ##' `myconfig` on queue `myqueue` you might use
 ##'
 ##' ```
-##' ./rrq_worker --config=myconfig --id=myworker myqueue
+##' ./rrq_worker --config=myconfig --worker-id=myworker myqueue
 ##' ```
 ##'
 ##' @title Write worker runner script
@@ -74,7 +74,7 @@ rrq_worker_script <- function(path, versioned = FALSE) {
 
 rrq_worker_main <- function(args = commandArgs(TRUE)) {
   dat <- rrq_worker_main_args(args)
-  worker <- rrq_worker_from_config(dat$queue_id, dat$config, dat$id,
+  worker <- rrq_worker_from_config(dat$queue_id, dat$config, dat$worker_id,
                                    dat$key_alive)
   worker$loop()
   invisible()
@@ -87,13 +87,13 @@ rrq_worker_main_args <- function(args) {
 
 Options:
 --config=NAME    Name of a worker configuration [default: localhost]
---id=ID          Id of the worker (optional)
+--worker-id=ID   Id of the worker (optional)
 --key-alive=KEY  Key to write to once alive (optional)"
   dat <- docopt::docopt(doc, args)
   names(dat) <- gsub("-", "_", names(dat), fixed = TRUE)
   list(queue_id = dat$id,
        config = dat$config,
-       id = dat$id,
+       worker_id = dat$worker_id,
        key_alive = dat[["key_alive"]])
 }
 

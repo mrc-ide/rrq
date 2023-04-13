@@ -7,7 +7,7 @@
 rrq_worker_from_config(
   queue_id,
   worker_config = "localhost",
-  worker_name = NULL,
+  worker_id = NULL,
   key_alive = NULL,
   con = redux::hiredis(),
   timeout = 5
@@ -19,8 +19,8 @@ rrq_worker_from_config(
 \item{worker_config}{Optional name of the configuration. The
 default "localhost" configuration always exists.}
 
-\item{worker_name}{The name of the worker (if not given a random
-name is used)}
+\item{worker_id}{The id of the worker (if not given a random
+id is used)}
 
 \item{key_alive}{Optional key to write to, indicating that the
 worker is alive. This can be passed to

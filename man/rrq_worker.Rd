@@ -15,7 +15,7 @@ but will sit and poll a queue for jobs.
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{name}}{The name of the worker}
+\item{\code{id}}{The id of the worker}
 }
 \if{html}{\out{</div>}}
 }
@@ -46,7 +46,7 @@ Constructor
   queue_id,
   con = redux::hiredis(),
   key_alive = NULL,
-  worker_name = NULL,
+  worker_id = NULL,
   queue = NULL,
   time_poll = NULL,
   timeout_idle = NULL,
@@ -69,8 +69,8 @@ prefix to all the keys in the redis database}
 \item{\code{key_alive}}{Optional key that will be written once the
 worker is alive.}
 
-\item{\code{worker_name}}{Optional worker name.  If omitted, a random
-name will be created.}
+\item{\code{worker_id}}{Optional worker id.  If omitted, a random
+id will be created.}
 
 \item{\code{queue}}{Queues to listen on, listed in decreasing order of
 priority. If not given, we listen on the "default" queue.}
