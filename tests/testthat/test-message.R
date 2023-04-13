@@ -361,34 +361,34 @@ test_that("send and wait", {
   obj <- test_rrq()
 
   obj$worker_config_save("localhost", time_poll = 1)
-  wid <- test_worker_spawn(obj, 5)
+  w <- test_worker_spawn(obj, 5)
 
   st <- obj$worker_status()
-  expect_equal(sort(names(st)), sort(wid))
-  expect_equal(unname(st), rep(WORKER_IDLE, length(wid)))
+  expect_equal(sort(names(st)), sort(w$id))
+  expect_equal(unname(st), rep(WORKER_IDLE, length(w$id)))
 
   res <- obj$message_send_and_wait("PING")
-  expect_equal(sort(names(res)), sort(wid))
-  expect_equal(unname(res), rep(list("PONG"), length(wid)))
+  expect_equal(sort(names(res)), sort(w$id))
+  expect_equal(unname(res), rep(list("PONG"), length(w$id)))
 
   ## Send to just one worker:
-  res <- obj$message_send_and_wait("PING", worker_ids = wid[[1]])
-  expect_equal(res, set_names(list("PONG"), wid[[1]]))
+  res <- obj$message_send_and_wait("PING", worker_ids = w$id[[1]])
+  expect_equal(res, set_names(list("PONG"), w$id[[1]]))
 
   ## Don't delete:
-  res <- obj$message_send_and_wait("PING", worker_ids = wid[[1]],
+  res <- obj$message_send_and_wait("PING", worker_ids = w$id[[1]],
                                    delete = FALSE)
 
   expect_equal(res[[1]], "PONG")
-  expect_equal(names(res), wid[[1]])
+  expect_equal(names(res), w$id[[1]])
   id <- attr(res, "message_id")
   expect_type(id, "character")
-  expect_equal(obj$message_get_response(id, wid[[1]]),
-               set_names(list("PONG"), wid[[1]]))
+  expect_equal(obj$message_get_response(id, w$id[[1]]),
+               set_names(list("PONG"), w$id[[1]]))
 
   res <- obj$message_send_and_wait("STOP")
-  expect_equal(sort(names(res)), sort(wid))
-  expect_equal(unname(res), rep(list("BYE"), length(wid)))
+  expect_equal(sort(names(res)), sort(w$id))
+  expect_equal(unname(res), rep(list("BYE"), length(w$id)))
 })
 
 

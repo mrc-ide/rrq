@@ -2,7 +2,6 @@
 % Please edit documentation in R/worker_spawn.R
 \name{rrq_worker_spawn}
 \alias{rrq_worker_spawn}
-\alias{rrq_worker_wait}
 \title{Spawn a worker}
 \usage{
 rrq_worker_spawn(
@@ -15,8 +14,6 @@ rrq_worker_spawn(
   time_poll = 1,
   progress = NULL
 )
-
-rrq_worker_wait(obj, key_alive, timeout = 600, time_poll = 1, progress = NULL)
 }
 \arguments{
 \item{obj}{An \code{rrq_controller} object}
@@ -26,7 +23,9 @@ rrq_worker_wait(obj, key_alive, timeout = 600, time_poll = 1, progress = NULL)
 \item{logdir}{Path of a log directory to write the worker process
 log to, interpreted relative to the current working directory}
 
-\item{timeout}{Time to wait for workers to appear}
+\item{timeout}{Time to wait for workers to appear. If 0 then we
+don't wait for workers to appear (you can run the \code{wait_alive}
+method of the returned object to run this test manually)}
 
 \item{worker_config}{Name of the configuration to use.  By default
 the \code{"localhost"} configuration is used}
@@ -40,9 +39,6 @@ workers to come up.  Must be an integer, at least 1.}
 
 \item{progress}{Show a progress bar while waiting for workers
 (when \code{timeout} is at least 0)}
-
-\item{key_alive}{A key name (generated from
-\code{\link{rrq_expect_worker}} or \code{rrq_worker_spawn})}
 }
 \description{
 Spawn a worker in the background

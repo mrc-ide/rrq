@@ -18,7 +18,9 @@
 ##' @param logdir Path of a log directory to write the worker process
 ##'   log to, interpreted relative to the current working directory
 ##'
-##' @param timeout Time to wait for workers to appear
+##' @param timeout Time to wait for workers to appear. If 0 then we
+##'   don't wait for workers to appear (you can run the `wait_alive`
+##'   method of the returned object to run this test manually)
 ##'
 ##' @param worker_config Name of the configuration to use.  By default
 ##'   the \code{"localhost"} configuration is used
@@ -34,89 +36,30 @@
 ##'   (when \code{timeout} is at least 0)
 ##'
 ##' @export
+##' @return An `rrq_worker_manager` object with fields:
+##'
+##' * `id`: the ids of the spawned workers
+##' * `wait_alive`: a method to wait for workers to come alive
+##' * `stop`: a method to stop workers
+##' * `kill`: a method to kill workers abruptly by sending a signal
+##' * `is_alive`: a method that checks if a worker is currently alive
+##' * `logs`: a method that returns logs for a single worker
+##'
+##' All the methods accept a vector of worker names, or integers,
+##'   except `logs` which requires a single worker id (as a string or
+##'   integer). For all methods except `logs`, the default of `NULL`
+##'   means "all managed workers".
 rrq_worker_spawn <- function(obj, n = 1, logdir = NULL,
                              timeout = 600, worker_config = "localhost",
                              worker_id_base = NULL,
                              time_poll = 1, progress = NULL) {
-  assert_is(obj, "rrq_controller")
-  if (!(worker_config %in% obj$worker_config_list())) {
-    stop(sprintf("Invalid rrq worker configuration key '%s'", worker_config))
-  }
-
-  rrq_worker <- rrq_worker_script(tempfile(), versioned = TRUE)
-  env <- paste0("RLIBS=", paste(.libPaths(), collapse = ":"),
-                ' R_TESTS=""')
-  worker_id_base <- worker_id_base %||% ids::adjective_animal()
-  worker_ids <- sprintf("%s_%d", worker_id_base, seq_len(n))
-  key_alive <- rrq_expect_worker(obj, worker_ids)
-
-  ## log files for the process
-  logdir <- logdir %||% tempfile()
-  dir.create(logdir, FALSE, TRUE)
-  logfile <- file.path(logdir, worker_ids)
-
-  message(sprintf("Spawning %d %s with prefix %s",
-                  n, ngettext(n, "worker", "workers"), worker_id_base))
-
-  keys <- rrq_keys(obj$queue_id)
-  obj$con$HMSET(keys$worker_process, worker_ids, logfile)
-
-  for (i in seq_len(n)) {
-    args <- c(obj$queue_id,
-              "--config", worker_config,
-              "--worker-id", worker_ids[[i]],
-              "--key-alive", key_alive)
-    system2(rrq_worker, args, env = env, wait = FALSE,
-            stdout = logfile[[i]], stderr = logfile[[i]])
-  }
-
+  ret <- rrq_worker_manager$new(obj, n, logdir, worker_config, worker_id_base)
   if (timeout > 0) {
-    rrq_worker_wait(obj, key_alive, timeout, time_poll, progress)
-  } else {
-    list(key_alive = key_alive,
-         ids = worker_ids)
+    ret$wait_alive(timeout, time_poll, progress)
   }
+  ret
 }
 
-##' @export
-##' @rdname rrq_worker_spawn
-##' @param key_alive A key name (generated from
-##'   \code{\link{rrq_expect_worker}} or \code{rrq_worker_spawn})
-rrq_worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
-                            progress = NULL) {
-  assert_is(obj, "rrq_controller")
-  con <- obj$con
-  keys <- rrq_keys(obj$queue_id)
-
-  bin <- con$HGET(keys$worker_expect, key_alive)
-  if (is.null(bin)) {
-    stop("No workers expected on that key")
-  }
-
-  expected <- bin_to_object(bin)
-  previous <- worker_list(con, keys)
-  done <- set_names(expected %in% previous, expected)
-  if (!all(done)) {
-    fetch <- function() {
-      tmp <- con$BLPOP(key_alive, time_poll)
-      if (!is.null(tmp)) {
-        done[[tmp[[2L]]]] <<- TRUE
-      }
-      done
-    }
-    general_poll(fetch, 0, timeout, "workers", FALSE, progress)
-
-    if (!all(done)) {
-      message(sprintf("%d / %d workers not identified in time",
-                      sum(!done), length(done)))
-      logs <- worker_read_failed_logs(con, keys, names(done)[!done])
-      worker_print_failed_logs(logs)
-      stop("Not all workers recovered")
-    }
-  }
-
-  expected
-}
 
 ##' Register that workers are expected.  This generates a key that one
 ##' or more workers will write to when they start up (as used by
@@ -133,14 +76,148 @@ rrq_expect_worker <- function(obj, ids) {
   key_alive
 }
 
-## These bits exist in separate functions to keep the bits above
-## relatively straightforward and to help with (eventual) unit
-## testing.
-worker_read_failed_logs <- function(con, keys, missing) {
-  log_file <- from_redis_hash(con, keys$worker_process, missing)
-  i <- !is.na(log_file) & file.exists(log_file)
-  set_names(lapply(log_file[i], readLines), missing[i])
-}
+
+rrq_worker_manager <- R6::R6Class(
+  "rrq_worker_manager",
+
+  private = list(
+    con = NULL,
+    keys = NULL,
+    process = NULL,
+    logfile = NULL,
+    key_alive = NULL,
+    worker_id_base = NULL,
+
+    check_worker_id = function(worker_id) {
+      if (is.null(worker_id)) {
+        return(self$id)
+      }
+      if (is.numeric(worker_id)) {
+        assert_integer_like(worker_id)
+        worker_id <- sprintf("%s_%d", private$worker_id_base, worker_id)
+      }
+      assert_character(worker_id)
+      err <- !(worker_id %in% self$id)
+      if (any(err)) {
+        stop(sprintf("Worker not controlled by this manager: %s",
+                     paste(squote(worker_id), collapse = ", ")))
+      }
+      worker_id
+    }
+  ),
+
+  public = list(
+    id = NULL,
+
+    initialize = function(obj, n, logdir = NULL, worker_config = "localhost",
+                          worker_id_base = NULL) {
+      assert_is(obj, "rrq_controller")
+      if (!(worker_config %in% obj$worker_config_list())) {
+        stop(sprintf("Invalid rrq worker configuration key '%s'",
+                     worker_config))
+      }
+      worker_id_base <- worker_id_base %||% ids::adjective_animal()
+      worker_ids <- sprintf("%s_%d", worker_id_base, seq_len(n))
+      key_alive <- rrq_expect_worker(obj, worker_ids)
+      logdir <- logdir %||% tempfile()
+      dir.create(logdir, FALSE, TRUE)
+      con <- obj$con
+      keys <- rrq_keys(obj$queue_id)
+
+      logfile <- file.path(logdir, worker_ids)
+      con$HMSET(keys$worker_process, worker_ids, logfile)
+
+      message(sprintf("Spawning %d %s with prefix %s",
+                      n, ngettext(n, "worker", "workers"), worker_id_base))
+
+      args <- list(keys$queue_id, worker_config, key_alive, con$config())
+      process <- set_names(vector("list", n), worker_ids)
+      for (i in seq_len(n)) {
+        args_i <- c(list(worker_ids[[i]]), args)
+        process[[i]] <- callr::r_bg(
+        function(worker_id, queue_id, worker_config, key_alive, config) {
+            con <- redux::hiredis(config)
+            w <- rrq_worker_from_config(
+              queue_id, worker_config = worker_config, worker_id = worker_id,
+              key_alive = key_alive, con = con)
+            w$loop()
+          },
+          args = args_i, package = TRUE, supervise = FALSE,
+          stdout = logfile[[i]], stderr = logfile[[i]])
+      }
+
+      private$con <- con
+      private$keys <- keys
+      private$process <- process
+      private$logfile <- set_names(logfile, worker_ids)
+      private$key_alive <- key_alive
+      private$worker_id_base <- worker_id_base
+
+      self$id <- worker_ids
+      lockBinding("id", self)
+    },
+
+    logs = function(worker_id) {
+      assert_scalar(worker_id)
+      worker_id <- private$check_worker_id(worker_id)
+      logfile <- private$logfile[[worker_id]]
+      if (file.exists(logfile)) {
+        readLines(logfile)
+      } else {
+        NULL
+      }
+    },
+
+    kill = function(worker_id = NULL) {
+      worker_id <- private$check_worker_id(worker_id)
+      for (id in worker_id) {
+        private$process[[id]]$kill()
+      }
+    },
+
+    stop = function(worker_id = NULL, ...) {
+      worker_id <- private$check_worker_id(worker_id)
+      worker_stop(private$con, private$keys, worker_id, ...)
+    },
+
+    is_alive = function(worker_id = NULL) {
+      vlapply(private$process[private$check_worker_id(worker_id)],
+              function(p) p$is_alive())
+    },
+
+    wait_alive = function(timeout, time_poll = 1, progress = NULL) {
+      con <- private$con
+
+      worker_done <- function() {
+        list_to_numeric(con$SMISMEMBER(private$keys$worker_id, self$id)) == 1 |
+          !vlapply(private$process, function(p) p$is_alive())
+      }
+
+      fetch <- function() {
+        con$BLPOP(private$key_alive, time_poll)
+        worker_done()
+      }
+
+      t0 <- Sys.time()
+      done <- worker_done()
+      if (!all(done)) {
+        done <- general_poll(fetch, 0, timeout, "workers", FALSE, progress)
+      }
+
+      is_alive <- vlapply(private$process, function(p) p$is_alive())
+      ok <- done & is_alive
+      if (!all(ok)) {
+        message(sprintf("%d / %d workers not identified in time",
+                        sum(!ok), length(done)))
+        logs <- lapply(self$id[!ok], self$logs)
+        worker_print_failed_logs(logs)
+        stop("Not all workers recovered")
+      }
+
+      invisible(Sys.time() - t0)
+    }
+  ))
+
 
 worker_print_failed_logs <- function(logs) {
   if (is.null(logs)) {
