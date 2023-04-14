@@ -134,16 +134,21 @@ rrq_worker_manager <- R6::R6Class(
       process <- set_names(vector("list", n), worker_ids)
       for (i in seq_len(n)) {
         args_i <- c(list(worker_ids[[i]]), args)
+        ## NOTE: use cleanup = FALSE here because this stops a fight
+        ## between finalizers and preserves the old behaviour of
+        ## spawned workers being allowed to outlive their parents. We
+        ## will rarely want the default callr/processx cleanup as we
+        ## want to tidy away the worker first.
         process[[i]] <- callr::r_bg(
-        function(worker_id, queue_id, worker_config, key_alive, config) {
+          function(worker_id, queue_id, worker_config, key_alive, config) {
             con <- redux::hiredis(config)
             w <- rrq_worker_from_config(
               queue_id, worker_config = worker_config, worker_id = worker_id,
               key_alive = key_alive, con = con)
             w$loop()
           },
-          args = args_i, package = TRUE, supervise = FALSE,
-          stdout = logfile[[i]], stderr = logfile[[i]])
+          args = args_i, package = TRUE, supervise = FALSE, cleanup = FALSE,
+          stdout = logfile[[i]], stderr = logfile[[i]],)
       }
 
       private$con <- con
