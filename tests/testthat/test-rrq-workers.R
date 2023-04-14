@@ -318,3 +318,21 @@ test_that("multiple queues format correctly when printing worker", {
   expect_equal(sub(".+:queue:", "", queue_string_split),
                c("a", "b", "default"))
 })
+
+
+test_that("worker main dispatches correctly", {
+  skip_if_not_installed("mockery")
+  mock_worker <- list(loop = mockery::mock())
+  mock_rrq_worker_from_config <- mockery::mock(mock_worker)
+  mockery::stub(rrq_worker_main, "rrq_worker_from_config",
+                mock_rrq_worker_from_config)
+  res <- rrq_worker_main(c("queue_id", "--worker-id=worker_id"))
+  expect_null(res)
+
+  mockery::expect_called(mock_rrq_worker_from_config, 1)
+  expect_equal(mockery::mock_args(mock_rrq_worker_from_config)[[1]],
+               list("queue_id", "localhost", "worker_id", NULL))
+
+  mockery::expect_called(mock_worker$loop, 1)
+  expect_equal(mockery::mock_args(mock_worker$loop)[[1]], list())
+})
