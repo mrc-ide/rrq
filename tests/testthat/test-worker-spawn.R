@@ -10,11 +10,10 @@ test_that("Don't wait", {
   expect_false(ans$visible)
   expect_s3_class(ans$value, "difftime")
 
-  ans <- rrq_worker_wait(obj, res$key_alive, timeout = 10, time_poll = 1)
-  expect_setequal(ans, res$ids)
-
-  ans <- rrq_worker_wait(obj, res$key_alive, timeout = 10, time_poll = 1)
-  expect_equal(ans, res$ids)
+  ## Can call again with no ill effect:
+  expect_s3_class(
+    res$wait_alive(timeout = 10, time_poll = 1),
+    "difftime")
 })
 
 
