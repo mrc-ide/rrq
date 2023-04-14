@@ -40,6 +40,22 @@ workers to come up.  Must be an integer, at least 1.}
 \item{progress}{Show a progress bar while waiting for workers
 (when \code{timeout} is at least 0)}
 }
+\value{
+An \code{rrq_worker_manager} object with fields:
+\itemize{
+\item \code{id}: the ids of the spawned workers
+\item \code{wait_alive}: a method to wait for workers to come alive
+\item \code{stop}: a method to stop workers
+\item \code{kill}: a method to kill workers abruptly by sending a signal
+\item \code{is_alive}: a method that checks if a worker is currently alive
+\item \code{logs}: a method that returns logs for a single worker
+}
+
+All the methods accept a vector of worker names, or integers,
+except \code{logs} which requires a single worker id (as a string or
+integer). For all methods except \code{logs}, the default of \code{NULL}
+means "all managed workers".
+}
 \description{
 Spawn a worker in the background
 }
