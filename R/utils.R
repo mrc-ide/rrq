@@ -238,8 +238,3 @@ first <- function(x) {
 last <- function(x) {
   x[[length(x)]]
 }
-
-
-rep_along <- function(x, v) {
-  rep_len(x, length(v))
-}
