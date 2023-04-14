@@ -62,3 +62,15 @@ test_that("wait for worker exit", {
     redux::scan_find(con, paste0(queue_id, ":*")),
     character(0))
 })
+
+
+test_that("error if we try to interact with non-managed worker", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_spawn(obj)
+  expect_error(
+    w$logs(2),
+    "Worker not controlled by this manager: '.+_2'")
+  expect_error(
+    w$logs("fred"),
+    "Worker not controlled by this manager: 'fred'")
+})

@@ -166,11 +166,7 @@ rrq_worker_manager <- R6::R6Class(
       assert_scalar(worker_id)
       worker_id <- private$check_worker_id(worker_id)
       logfile <- private$logfile[[worker_id]]
-      if (file.exists(logfile)) {
-        readLines(logfile)
-      } else {
-        NULL
-      }
+      readLines(logfile)
     },
 
     kill = function(worker_id = NULL) {
