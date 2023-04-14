@@ -148,7 +148,7 @@ rrq_worker_manager <- R6::R6Class(
             w$loop()
           },
           args = args_i, package = TRUE, supervise = FALSE, cleanup = FALSE,
-          stdout = logfile[[i]], stderr = logfile[[i]],)
+          stdout = logfile[[i]], stderr = logfile[[i]])
       }
 
       private$con <- con
