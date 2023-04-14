@@ -194,7 +194,7 @@ rrq_worker_manager <- R6::R6Class(
       con <- private$con
 
       worker_done <- function() {
-        list_to_numeric(con$SMISMEMBER(private$keys$worker_id, self$id)) == 1 |
+        self$id %in% list_to_character(con$SMEMBERS(private$keys$worker_id)) |
           !vlapply(private$process, function(p) p$is_alive())
       }
 
