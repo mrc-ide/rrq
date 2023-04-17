@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.19</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.20</span>
       </span>
     </div>
 
@@ -78,9 +78,7 @@
 <span>  worker_id_base <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  time_poll <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  progress <span class="op">=</span> <span class="cn">NULL</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu">rrq_worker_wait</span><span class="op">(</span><span class="va">obj</span>, <span class="va">key_alive</span>, timeout <span class="op">=</span> <span class="fl">600</span>, time_poll <span class="op">=</span> <span class="fl">1</span>, progress <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -99,7 +97,9 @@ log to, interpreted relative to the current working directory</p></dd>
 
 
 <dt>timeout</dt>
-<dd><p>Time to wait for workers to appear</p></dd>
+<dd><p>Time to wait for workers to appear. If 0 then we
+don't wait for workers to appear (you can run the <code>wait_alive</code>
+method of the returned object to run this test manually)</p></dd>
 
 
 <dt>worker_config</dt>
@@ -122,12 +122,24 @@ workers to come up.  Must be an integer, at least 1.</p></dd>
 <dd><p>Show a progress bar while waiting for workers
 (when <code>timeout</code> is at least 0)</p></dd>
 
-
-<dt>key_alive</dt>
-<dd><p>A key name (generated from
-<code><a href="rrq_expect_worker.html">rrq_expect_worker</a></code> or <code>rrq_worker_spawn</code>)</p></dd>
-
 </dl></div>
+    <div id="value">
+    <h2>Value</h2>
+    
+
+<p>An <code>rrq_worker_manager</code> object with fields:</p><ul><li><p><code>id</code>: the ids of the spawned workers</p></li>
+<li><p><code>wait_alive</code>: a method to wait for workers to come alive</p></li>
+<li><p><code>stop</code>: a method to stop workers</p></li>
+<li><p><code>kill</code>: a method to kill workers abruptly by sending a signal</p></li>
+<li><p><code>is_alive</code>: a method that checks if a worker is currently alive</p></li>
+<li><p><code>logs</code>: a method that returns logs for a single worker</p></li>
+</ul><p>All the methods accept a vector of worker names, or integers,
+except <code>logs</code> which requires a single worker id (as a string or
+integer). For all methods except <code>logs</code>, the default of <code>NULL</code></p>
+
+
+<p>means "all managed workers".</p>
+    </div>
     <div id="details">
     <h2>Details</h2>
     <p>Spawning multiple workers.  If <code>n</code> is greater than one,
