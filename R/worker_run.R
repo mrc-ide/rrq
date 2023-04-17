@@ -120,14 +120,14 @@ worker_run_task_start <- function(worker, private, task_id) {
   worker_id <- worker$id
   dat <- private$con$pipeline(
     worker_log(redis, keys, "TASK_START", task_id,
-               private$is_child, private$verbose),            # 1
-    redis$HSET(keys$worker_status,   worker_id, WORKER_BUSY), # 2
-    redis$HSET(keys$worker_task,     worker_id, task_id),     # 3
-    redis$HSET(keys$task_worker,     task_id,   worker_id),   # 4
-    redis$HSET(keys$task_status,     task_id,   TASK_RUNNING),# 5
-    redis$HSET(keys$task_time_start, task_id,   timestamp()), # 6
-    redis$HGET(keys$task_local,      task_id),                # 7
-    redis$HGET(keys$task_expr,       task_id))                # 8
+               private$is_child, private$verbose),             # 1
+    redis$HSET(keys$worker_status,   worker_id, WORKER_BUSY),  # 2
+    redis$HSET(keys$worker_task,     worker_id, task_id),      # 3
+    redis$HSET(keys$task_worker,     task_id,   worker_id),    # 4
+    redis$HSET(keys$task_status,     task_id,   TASK_RUNNING), # 5
+    redis$HSET(keys$task_time_start, task_id,   timestamp()),  # 6
+    redis$HGET(keys$task_local,      task_id),                 # 7
+    redis$HGET(keys$task_expr,       task_id))                 # 8
 
   if (is_task_redirect(dat[[8]])) {
     task_id_root <- dat[[8]]
