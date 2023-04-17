@@ -22,7 +22,7 @@ worker_run_task <- function(worker, private, task_id) {
     worker_log(redis, keys, paste0("TASK_", status), task_id,
                private$is_child, private$verbose))
 
-  private$active_task <- NULL
+  private$active_task_id <- NULL
   invisible()
 }
 
@@ -120,34 +120,29 @@ worker_run_task_start <- function(worker, private, task_id) {
   worker_id <- worker$id
   dat <- private$con$pipeline(
     worker_log(redis, keys, "TASK_START", task_id,
-               private$is_child, private$verbose),
-    redis$HSET(keys$worker_status,   worker_id, WORKER_BUSY),
-    redis$HSET(keys$worker_task,     worker_id, task_id),
-    redis$HSET(keys$task_worker,     task_id,   worker_id),
-    redis$HSET(keys$task_status,     task_id,   TASK_RUNNING),
-    redis$HSET(keys$task_time_start, task_id,   timestamp()),
-    redis$HGET(keys$task_complete,   task_id),
-    redis$HGET(keys$task_local,      task_id),
-    redis$HGET(keys$task_expr,       task_id),
-    redis$HGET(keys$task_cancel,     task_id))
+               private$is_child, private$verbose),             # 1
+    redis$HSET(keys$worker_status,   worker_id, WORKER_BUSY),  # 2
+    redis$HSET(keys$worker_task,     worker_id, task_id),      # 3
+    redis$HSET(keys$task_worker,     task_id,   worker_id),    # 4
+    redis$HSET(keys$task_status,     task_id,   TASK_RUNNING), # 5
+    redis$HSET(keys$task_time_start, task_id,   timestamp()),  # 6
+    redis$HGET(keys$task_local,      task_id),                 # 7
+    redis$HGET(keys$task_expr,       task_id))                 # 8
 
-  if (is_task_redirect(dat[[9]])) {
-    task_id_root <- dat[[9]]
-    dat[7:9] <-
-      private$con$pipeline(
-        redis$HGET(keys$task_complete, task_id_root),
-        redis$HGET(keys$task_local,    task_id_root),
-        redis$HGET(keys$task_expr,     task_id_root))
+  if (is_task_redirect(dat[[8]])) {
+    task_id_root <- dat[[8]]
+    dat[7:8] <- private$con$pipeline(
+      redis$HGET(keys$task_local,    task_id_root),
+      redis$HGET(keys$task_expr,     task_id_root))
   }
 
-  ## This holds the bits of worker state we might need to refer to
-  ## later for a running task:
-  private$active_task <- list(task_id = task_id, key_complete = dat[[7]])
+  ## This might be used later for recording task progress
+  private$active_task_id <- task_id
 
   ## And this holds the data used in worker_run_task_to actually run
   ## the task
-  ret <- bin_to_object(dat[[9]])
-  ret$separate_process <- dat[[8]] == "FALSE" # NOTE: not a coersion
+  ret <- bin_to_object(dat[[8]])
+  ret$separate_process <- dat[[7]] == "FALSE" # NOTE: not a coersion
   ret$id <- task_id
   ret
 }

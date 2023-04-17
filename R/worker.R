@@ -256,7 +256,7 @@ rrq_worker <- R6::R6Class(
     ##'   an `rrq` job, or to `TRUE` if you want to be sure that
     ##'   progress messages have made it to the server.
     progress = function(value, error = TRUE) {
-      task_id <- private$active_task$task_id
+      task_id <- private$active_task_id
       if (is.null(task_id)) {
         if (error) {
           stop("rrq_task_progress_update called with no active task")
@@ -277,7 +277,7 @@ rrq_worker <- R6::R6Class(
       cache$active_worker <- self
       on.exit(cache$active_worker <- NULL)
       task <- bin_to_object(private$con$HGET(private$keys$task_expr, task_id))
-      private$active_task <- list(task_id = task_id)
+      private$active_task_id <- task_id
       worker_run_task_local(task, self, private)
     },
 
@@ -302,7 +302,7 @@ rrq_worker <- R6::R6Class(
   ),
 
   private = list(
-    active_task = NULL,
+    active_task_id = NULL,
     envir = NULL,
     loop_continue = FALSE,
     paused = FALSE,
