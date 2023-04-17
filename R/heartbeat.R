@@ -51,7 +51,7 @@ cleanup_orphans <- function(con, keys, store, time) {
   }
 
   con$HMSET(keys$worker_status, worker_id, rep(WORKER_LOST, length(worker_id)))
-  con$SREM(keys$worker_name, worker_id)
+  con$SREM(keys$worker_id, worker_id)
 
   invisible(task_ids)
 }

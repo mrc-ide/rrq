@@ -1,9 +1,9 @@
-rrq_keys <- function(queue_id, worker_name = NULL) {
-  if (is.null(worker_name)) {
+rrq_keys <- function(queue_id, worker_id = NULL) {
+  if (is.null(worker_id)) {
     rrq_keys_common(queue_id)
   } else {
     c(rrq_keys_common(queue_id),
-      rrq_keys_worker(queue_id, worker_name))
+      rrq_keys_worker(queue_id, worker_id))
   }
 }
 
@@ -18,7 +18,7 @@ rrq_keys_common <- function(queue_id) {
        envir          = sprintf("%s:envir",          queue_id),
 
        worker_config       = sprintf("%s:worker:config",       queue_id),
-       worker_name         = sprintf("%s:worker:name",         queue_id),
+       worker_id           = sprintf("%s:worker:id",           queue_id),
        worker_status       = sprintf("%s:worker:status",       queue_id),
        worker_task         = sprintf("%s:worker:task",         queue_id),
        worker_info         = sprintf("%s:worker:info",         queue_id),

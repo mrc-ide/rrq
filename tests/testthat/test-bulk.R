@@ -18,7 +18,7 @@ test_that("lapply simple case", {
   expect_equal(obj$task_status(grp$task_ids),
                set_names(rep(TASK_MISSING, 10), grp$task_ids))
 
-  log <- obj$worker_log_tail(w$name, Inf)
+  log <- obj$worker_log_tail(w$id, Inf)
   expect_equal(log$command,
                c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
                  rep(c("TASK_START", "TASK_COMPLETE"), 10),

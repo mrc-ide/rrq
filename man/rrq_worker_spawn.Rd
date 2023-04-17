@@ -11,7 +11,7 @@ rrq_worker_spawn(
   logdir = NULL,
   timeout = 600,
   worker_config = "localhost",
-  worker_name_base = NULL,
+  worker_id_base = NULL,
   time_poll = 1,
   progress = NULL
 )
@@ -31,8 +31,9 @@ log to, interpreted relative to the current working directory}
 \item{worker_config}{Name of the configuration to use.  By default
 the \code{"localhost"} configuration is used}
 
-\item{worker_name_base}{Optional base to construct the worker
-names from.  If omitted a random name will be used.}
+\item{worker_id_base}{Optional base to construct the worker ids
+from.  If omitted a random base will be used. Actual ids will be
+created but appending integers to this base.}
 
 \item{time_poll}{Polling period (in seconds) while waiting for
 workers to come up.  Must be an integer, at least 1.}

@@ -2,7 +2,7 @@ test_that("clean up exited workers", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
 
-  expect_equal(obj$worker_list(), w$name)
+  expect_equal(obj$worker_list(), w$id)
 
   id <- obj$message_send("STOP")
 
@@ -12,18 +12,18 @@ test_that("clean up exited workers", {
   w$shutdown()
 
   expect_equal(
-    obj$message_get_response(id, w$name),
-    set_names(list("BYE"), w$name))
+    obj$message_get_response(id, w$id),
+    set_names(list("BYE"), w$id))
 
-  log <- obj$worker_log_tail(w$name, n = Inf)
+  log <- obj$worker_log_tail(w$id, n = Inf)
   expect_equal(log$command, c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
                               "MESSAGE", "RESPONSE", "STOP"))
 
-  expect_equal(obj$worker_list_exited(), w$name)
-  expect_equal(obj$worker_delete_exited(), w$name)
+  expect_equal(obj$worker_list_exited(), w$id)
+  expect_equal(obj$worker_delete_exited(), w$id)
   expect_equal(obj$worker_list_exited(), character(0))
   expect_equal(obj$worker_delete_exited(), character(0))
-  expect_error(obj$worker_delete_exited(w$name),
+  expect_error(obj$worker_delete_exited(w$id),
                "Workers .+ may not have exited or may not exist")
 })
 
@@ -69,11 +69,11 @@ test_that("worker catch graceful stop", {
   worker_catch_stop(w, r6_private(w))(rrq_worker_stop(w, "message"))
 
   expect_false(r6_private(w)$loop_continue)
-  log <- obj$worker_log_tail(w$name)
+  log <- obj$worker_log_tail(w$id)
   expect_equal(log$command, "STOP")
   expect_equal(log$message, "OK (message)")
   expect_equal(obj$worker_list(), character(0))
-  expect_equal(obj$worker_list_exited(), w$name)
+  expect_equal(obj$worker_list_exited(), w$id)
 })
 
 
@@ -91,21 +91,21 @@ test_that("worker catch naked error", {
                all = FALSE)
 
   expect_false(r6_private(w)$loop_continue)
-  log <- obj$worker_log_tail(w$name)
+  log <- obj$worker_log_tail(w$id)
   expect_equal(log$command, "STOP")
   expect_equal(log$message, "ERROR")
   expect_equal(obj$worker_list(), character(0))
-  expect_equal(obj$worker_list_exited(), w$name)
+  expect_equal(obj$worker_list_exited(), w$id)
 })
 
 
-test_that("worker names can't be duplicated", {
+test_that("worker ids can't be duplicated", {
   obj <- test_rrq()
-  name <- ids::random_id()
-  w <- test_worker_blocking(obj, worker_name = name)
-  expect_equal(w$name, name)
+  id <- ids::random_id()
+  w <- test_worker_blocking(obj, worker_id = id)
+  expect_equal(w$id, id)
   expect_error(
-    test_worker_blocking(obj, worker_name = name),
+    test_worker_blocking(obj, worker_id = id),
     "Looks like this worker exists already...",
     fixed = TRUE)
 })
@@ -113,10 +113,10 @@ test_that("worker names can't be duplicated", {
 
 test_that("Child workers require a parent", {
   con <- test_hiredis()
-  name <- ids::random_id()
+  id <- ids::random_id()
   queue_id <- test_name(NULL)
   expect_error(
-    rrq_worker$new(queue_id, con, worker_name = name, is_child = TRUE),
+    rrq_worker$new(queue_id, con, worker_id = id, is_child = TRUE),
     "Can't be a child of nonexistant worker")
 })
 
@@ -181,11 +181,11 @@ test_that("Can't kill non-local workers", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
 
-  info <- obj$worker_info(w$name)[[w$name]]
+  info <- obj$worker_info(w$id)[[w$id]]
   info$hostname <- paste0(info$hostname, "_but_on_mars")
-  obj$con$HSET(queue_keys(obj)$worker_info, w$name, object_to_bin(info))
+  obj$con$HSET(queue_keys(obj)$worker_info, w$id, object_to_bin(info))
   expect_error(
-    obj$worker_stop(w$name, "kill_local"),
+    obj$worker_stop(w$id, "kill_local"),
     "Not all workers are local:")
 })
 
@@ -195,28 +195,28 @@ test_that("rrq_worker_main_args parse", {
     rrq_worker_main_args("name"),
     list(queue_id = "name",
          config = "localhost",
-         name = NULL,
+         worker_id = NULL,
          key_alive = NULL))
 
   expect_equal(
-    rrq_worker_main_args(c("name", "--name=bob")),
+    rrq_worker_main_args(c("name", "--worker-id=bob")),
     list(queue_id = "name",
          config = "localhost",
-         name = "bob",
+         worker_id = "bob",
          key_alive = NULL))
 
   expect_equal(
     rrq_worker_main_args(c("name", "--key-alive=key")),
     list(queue_id = "name",
          config = "localhost",
-         name = NULL,
+         worker_id = NULL,
          key_alive = "key"))
 
   expect_equal(
     rrq_worker_main_args(c("name", "--config=config")),
     list(queue_id = "name",
          config = "config",
-         name = NULL,
+         worker_id = NULL,
          key_alive = NULL))
 })
 
@@ -226,7 +226,7 @@ test_that("can pass --key-alive", {
     rrq_worker_main_args(c("name", "--key-alive=key")),
     list(queue_id = "name",
          config = "localhost",
-         name = NULL,
+         worker_id = NULL,
          key_alive = "key"))
 })
 
@@ -265,9 +265,9 @@ test_that("clean up worker when one still running", {
   w1 <- test_worker_blocking(obj)
   w2 <- test_worker_blocking(obj)
 
-  expect_setequal(obj$worker_list(), c(w1$name, w2$name))
+  expect_setequal(obj$worker_list(), c(w1$id, w2$id))
 
-  id <- obj$message_send("STOP", worker_ids = w1$name)
+  id <- obj$message_send("STOP", worker_ids = w1$id)
 
   expect_error(
     w1$step(), "BYE", class = "rrq_worker_stop")
@@ -276,13 +276,13 @@ test_that("clean up worker when one still running", {
   w1$shutdown()
 
   expect_equal(
-    obj$message_get_response(id, w1$name),
-    set_names(list("BYE"), w1$name))
+    obj$message_get_response(id, w1$id),
+    set_names(list("BYE"), w1$id))
 
-  expect_equal(obj$worker_list_exited(), w1$name)
+  expect_equal(obj$worker_list_exited(), w1$id)
 
-  expect_equal(obj$worker_delete_exited(), w1$name)
-  expect_setequal(obj$worker_list(), w2$name)
+  expect_equal(obj$worker_delete_exited(), w1$id)
+  expect_setequal(obj$worker_list(), w2$id)
   expect_equal(obj$worker_list_exited(), character(0))
   expect_equal(obj$worker_delete_exited(), character(0))
 })

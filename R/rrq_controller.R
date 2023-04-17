@@ -1633,10 +1633,10 @@ tasks_result <- function(con, keys, store, task_ids, error, follow, single) {
 }
 
 worker_len <- function(con, keys) {
-  con$SCARD(keys$worker_name)
+  con$SCARD(keys$worker_id)
 }
 worker_list <- function(con, keys) {
-  worker_naturalsort(as.character(con$SMEMBERS(keys$worker_name)))
+  worker_naturalsort(as.character(con$SMEMBERS(keys$worker_id)))
 }
 
 worker_list_exited <- function(con, keys) {
@@ -1720,7 +1720,7 @@ worker_delete_exited <- function(con, keys, worker_ids = NULL) {
   }
 
   if (length(worker_ids) > 0L) {
-    con$SREM(keys$worker_name,   worker_ids)
+    con$SREM(keys$worker_id,     worker_ids)
     con$HDEL(keys$worker_status, worker_ids)
     con$HDEL(keys$worker_task,   worker_ids)
     con$HDEL(keys$worker_info,   worker_ids)

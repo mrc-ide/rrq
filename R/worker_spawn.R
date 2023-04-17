@@ -23,8 +23,9 @@
 ##' @param worker_config Name of the configuration to use.  By default
 ##'   the \code{"localhost"} configuration is used
 ##'
-##' @param worker_name_base Optional base to construct the worker
-##'   names from.  If omitted a random name will be used.
+##' @param worker_id_base Optional base to construct the worker ids
+##'   from.  If omitted a random base will be used. Actual ids will be
+##'   created but appending integers to this base.
 ##'
 ##' @param time_poll Polling period (in seconds) while waiting for
 ##'   workers to come up.  Must be an integer, at least 1.
@@ -35,7 +36,7 @@
 ##' @export
 rrq_worker_spawn <- function(obj, n = 1, logdir = NULL,
                              timeout = 600, worker_config = "localhost",
-                             worker_name_base = NULL,
+                             worker_id_base = NULL,
                              time_poll = 1, progress = NULL) {
   assert_is(obj, "rrq_controller")
   if (!(worker_config %in% obj$worker_config_list())) {
@@ -45,25 +46,25 @@ rrq_worker_spawn <- function(obj, n = 1, logdir = NULL,
   rrq_worker <- rrq_worker_script(tempfile(), versioned = TRUE)
   env <- paste0("RLIBS=", paste(.libPaths(), collapse = ":"),
                 ' R_TESTS=""')
-  worker_name_base <- worker_name_base %||% ids::adjective_animal()
-  worker_names <- sprintf("%s_%d", worker_name_base, seq_len(n))
-  key_alive <- rrq_expect_worker(obj, worker_names)
+  worker_id_base <- worker_id_base %||% ids::adjective_animal()
+  worker_ids <- sprintf("%s_%d", worker_id_base, seq_len(n))
+  key_alive <- rrq_expect_worker(obj, worker_ids)
 
   ## log files for the process
   logdir <- logdir %||% tempfile()
   dir.create(logdir, FALSE, TRUE)
-  logfile <- file.path(logdir, worker_names)
+  logfile <- file.path(logdir, worker_ids)
 
   message(sprintf("Spawning %d %s with prefix %s",
-                  n, ngettext(n, "worker", "workers"), worker_name_base))
+                  n, ngettext(n, "worker", "workers"), worker_id_base))
 
   keys <- rrq_keys(obj$queue_id)
-  obj$con$HMSET(keys$worker_process, worker_names, logfile)
+  obj$con$HMSET(keys$worker_process, worker_ids, logfile)
 
   for (i in seq_len(n)) {
     args <- c(obj$queue_id,
               "--config", worker_config,
-              "--name", worker_names[[i]],
+              "--worker-id", worker_ids[[i]],
               "--key-alive", key_alive)
     system2(rrq_worker, args, env = env, wait = FALSE,
             stdout = logfile[[i]], stderr = logfile[[i]])
@@ -73,7 +74,7 @@ rrq_worker_spawn <- function(obj, n = 1, logdir = NULL,
     rrq_worker_wait(obj, key_alive, timeout, time_poll, progress)
   } else {
     list(key_alive = key_alive,
-         names = worker_names)
+         ids = worker_ids)
   }
 }
 
@@ -122,13 +123,13 @@ rrq_worker_wait <- function(obj, key_alive, timeout = 600, time_poll = 1,
 ##' \code{rrq_worker_spawn}).
 ##' @title Register expected workers
 ##' @param obj A rrq_controller object
-##' @param names Names of expected workers
+##' @param ids Ids of expected workers
 ##' @export
-rrq_expect_worker <- function(obj, names) {
+rrq_expect_worker <- function(obj, ids) {
   assert_is(obj, "rrq_controller")
   key_alive <- rrq_key_worker_alive(obj$queue_id)
   keys <- rrq_keys(obj$queue_id)
-  obj$con$HSET(keys$worker_expect, key_alive, object_to_bin(names))
+  obj$con$HSET(keys$worker_expect, key_alive, object_to_bin(ids))
   key_alive
 }
 

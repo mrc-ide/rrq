@@ -1166,12 +1166,12 @@ desirable behaviour.}
 \if{latex}{\out{\hypertarget{method-rrq_controller-task_cancel}{}}}
 \subsection{Method \code{task_cancel()}}{
 Cancel a single task. If the task is \code{PENDING} it
-will be deleted. If \code{RUNNING} then the task will be stopped if
-it was set to run in a separate process (i.e., queued with
-\code{separate_process = TRUE}). Dependent tasks will be marked as
-impossible.
+will be unqueued and the status set to \code{CANCELED}.  If \code{RUNNING}
+then the task will be stopped if it was set to run in
+a separate process (i.e., queued with \code{separate_process = TRUE}).
+Dependent tasks will be marked as impossible.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_cancel(task_id, wait = TRUE, delete = TRUE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_cancel(task_id, wait = TRUE, timeout_wait = 10)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1179,11 +1179,10 @@ impossible.
 \describe{
 \item{\code{task_id}}{Id of the task to cancel}
 
-\item{\code{wait}}{Wait for the task to be stopped, if it was running. If
-\code{delete} is \code{TRUE}, then we will always wait for the task to stop.}
+\item{\code{wait}}{Wait for the task to be stopped, if it was running.}
 
-\item{\code{delete}}{Delete the task after cancelling (if cancelling
-was successful).}
+\item{\code{timeout_wait}}{Maximum time, in seconds, to wait for the task
+to be cancelled by the worker.}
 }
 \if{html}{\out{</div>}}
 }

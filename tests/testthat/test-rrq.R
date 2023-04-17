@@ -204,7 +204,7 @@ test_that("Can't read logs unless enabled", {
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
   expect_error(
-    obj$worker_process_log(w$name),
+    obj$worker_process_log(w$id),
     "Process log not enabled for this worker")
 })
 
@@ -240,7 +240,7 @@ test_that("worker load", {
   w2 <- test_worker_blocking(obj)
   load <- obj$worker_load()
   expect_s3_class(load, "worker_load")
-  expect_setequal(load$worker_id, c(w1$name, w2$name))
+  expect_setequal(load$worker_id, c(w1$id, w2$id))
   avg <- mean(load)
   expect_true(all(avg["used", ] == 0))
   expect_true(all(avg["available", ] == 1))
@@ -415,7 +415,7 @@ test_that("Send job to new process", {
   skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
-  obj$worker_log_tail(w$name, Inf)
+  obj$worker_log_tail(w$id, Inf)
 
   t <- obj$enqueue(slowdouble(0.1), separate_process = TRUE)
   expect_type(t, "character")
@@ -835,7 +835,7 @@ test_that("submit a task with a timeout", {
   ## Flakey on covr, probably due to the job being cancelled before
   ## the second process really finishes starting up.
   skip_on_covr()
-  expect_equal(obj$worker_log_tail(w$name, Inf)$command,
+  expect_equal(obj$worker_log_tail(w$id, Inf)$command,
                c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
                  "TASK_START", "REMOTE",
                  "CHILD", "ENVIR", "ENVIR", "TIMEOUT", "TASK_TIMEOUT"))
@@ -1033,7 +1033,7 @@ test_that("Can get information about a task in the same process", {
   expect_equal(d2$queue, "default")
   expect_false(d2$separate_process)
   expect_null(d2$timeout, 5)
-  expect_equal(d2$worker, w$name)
+  expect_equal(d2$worker, w$id)
   expect_null(d2$pid, "integer")
   expect_equal(d2$moved, list(up = NULL, down = NULL))
   expect_equal(d2$depends, list(up = NULL, down = NULL))
@@ -1069,7 +1069,7 @@ test_that("Can get information about a task in a different process", {
   expect_equal(d2$queue, "default")
   expect_true(d2$separate_process)
   expect_equal(d2$timeout, 5)
-  expect_equal(d2$worker, w$name)
+  expect_equal(d2$worker, w$id)
   expect_type(d2$pid, "integer")
   expect_equal(d2$moved, list(up = NULL, down = NULL))
   expect_equal(d2$depends, list(up = NULL, down = NULL))
@@ -1199,7 +1199,7 @@ test_that("Running in separate process produces coherent logs", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
 
-  log0 <- obj$worker_log_tail(w$name, Inf)
+  log0 <- obj$worker_log_tail(w$id, Inf)
 
   t <- obj$enqueue(runif(1), separate_process = TRUE)
   expect_type(t, "character")
@@ -1207,12 +1207,12 @@ test_that("Running in separate process produces coherent logs", {
 
   expect_equal(obj$task_status(t), set_names(TASK_COMPLETE, t))
 
-  log <- obj$worker_log_tail(w$name, Inf)
+  log <- obj$worker_log_tail(w$id, Inf)
   expect_equal(log[seq_len(nrow(log0)), ], log0)
 
   log1 <- log[-seq_len(nrow(log0)), ]
 
-  expect_true(all(log1$worker_id == w$name))
+  expect_true(all(log1$worker_id == w$id))
   expect_equal(
     log1$command,
     c("TASK_START", "REMOTE",
