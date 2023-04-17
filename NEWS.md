@@ -1,3 +1,8 @@
+# rrq 0.8.0
+
+* We now use `rlang` for non-standard evaluation, allowing use of the `!!` and `{{` operators to program with in a consistent way; see `vignette("rrq")` for details
+* The old "trailing underscore" methods `enqueue_`, `enqueue_bulk_` and `lapply_` are deprecated and will be removed soon
+
 # rrq 0.7.0
 
 * Overhaul worker configuration and creation; now all worker configuration options (except redis and storage control) are set through a named worker configuration; this reduces the number of arguments being passed around and improves documentation (mrc-4068)

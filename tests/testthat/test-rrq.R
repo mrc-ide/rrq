@@ -1257,3 +1257,52 @@ test_that("Can extract dependency information", {
   expect_equal(deps5$up[[t2]], deps2$up[[t2]])
   expect_null(deps5$depends$down)
 })
+
+
+test_that("Can substitute into expressions", {
+  obj <- test_rrq("myfuns.R")
+
+  x <- 10
+  t <- obj$enqueue(sqrt(!!x))
+  expect_equal(obj$task_info(t)$expr, list(expr = quote(sqrt(10))))
+
+  w <- test_worker_blocking(obj)
+  w$step(TRUE)
+  expect_equal(obj$task_wait(t, 2), sqrt(x))
+})
+
+
+test_that("Can use expressions as literal input to enqueue", {
+  obj <- test_rrq("myfuns.R")
+  x <- 10
+  expr <- quote(sqrt(x))
+  t <- obj$enqueue({{ expr }})
+  expect_equal(obj$task_info(t)$expr,
+               list(expr = quote(sqrt(x)),
+                    objects = c(x = hash_data(object_to_bin(x)))))
+  w <- test_worker_blocking(obj)
+  w$step(TRUE)
+  expect_equal(obj$task_wait(t, 2), sqrt(x))
+})
+
+
+test_that("old-style expression interface warns", {
+  rlang::reset_warning_verbosity("rrq$enqueue_")
+  obj <- test_rrq("myfuns.R")
+  x <- 10
+  expr <- quote(sqrt(x))
+
+  expect_warning(
+    t1 <- obj$enqueue_({{ expr }}),
+    "'$enqueue_(expr, ...)' is deprecated, please use '$enqueue({{ expr }})'",
+    fixed = TRUE)
+  expect_silent(
+    t2 <- obj$enqueue_({{ expr }}))
+
+  w <- test_worker_blocking(obj)
+  w$step(TRUE)
+  w$step(TRUE)
+
+  expect_equal(obj$task_result(t1), sqrt(x))
+  expect_equal(obj$task_result(t2), sqrt(x))
+})

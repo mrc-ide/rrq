@@ -160,6 +160,50 @@ obj$task_wait(t)
 obj$task_result(t)
 ```
 
+## Variable lookup and programming
+
+The above code works like "magic" where we use R's lazy evaluation to intercept an expression and send it to a worker to evaluate later. This tends to work very well interactively but you will find yourself wanting more control.
+
+Sometimes it is convenient to build an expression that you want to compute and pass that around, before finally passing it into `enqueue`; in this case you can do:
+
+```{r}
+expr <- quote(sqrt(10))
+t <- obj$enqueue({{ expr }})
+```
+
+this is then computed as you'd expect, to return `r round(sqrt(10), 3)`:
+
+```{r}
+obj$task_wait(t, 10)
+```
+
+You can combine this approach with `rlang`'s "bang-bang" operator (see also [this chapter on "quasiquotation"](https://adv-r.hadley.nz/quasiquotation.html):
+
+```{r}
+for (x in c(2, 3, 4)) {
+  t <- obj$enqueue(sqrt(!!x))
+  message(sprintf("sqrt(%d) => %f", x, obj$task_wait(t, 2)))
+}
+```
+
+There's not much advantage of doing this over the built-in rrq approach though:
+
+```{r}
+for (x in c(2, 3, 4)) {
+  t <- obj$enqueue(sqrt(x))
+  message(sprintf("sqrt(%d) => %f", x, obj$task_wait(t, 2)))
+}
+```
+
+Finally, you could combine `!!` and `{{`; but do to this you need to use `rlang::inject`:
+
+```{r}
+x <- 2
+expr <- rlang::inject(quote(sqrt(!!x)))
+t <- obj$enqueue({{ expr }})
+obj$task_wait(t, 2)
+```
+
 ## Configuring the worker environment
 
 It is rare that we want our workers to run in completely empty R environments (no extra loaded packages, no custom functions available). Quite often you will want to run something to configure the workers before they accept tasks.

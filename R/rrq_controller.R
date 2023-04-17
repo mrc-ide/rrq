@@ -296,8 +296,17 @@ rrq_controller <- R6::R6Class(
     enqueue = function(expr, envir = parent.frame(), queue = NULL,
                        separate_process = FALSE, timeout_task_run = NULL,
                        depends_on = NULL, export = NULL) {
-      self$enqueue_(substitute(expr), envir, queue,
-                    separate_process, timeout_task_run, depends_on, export)
+      quo <- rlang::enquo(expr)
+      expr_safe <- rlang::quo_get_expr(quo)
+      envir_use <- envir %||% rlang::quo_get_env(quo)
+
+      task_id <- ids::random_id()
+      verify_dependencies_exist(self, depends_on)
+      dat <- expression_prepare(expr_safe, envir_use, private$store, task_id,
+                                export = export)
+
+      task_submit(self$con, private$keys, private$store, task_id, dat, queue,
+                  separate_process, timeout_task_run, depends_on)
     },
 
     ##' @description Queue an expression
@@ -336,12 +345,15 @@ rrq_controller <- R6::R6Class(
                         queue = NULL, separate_process = FALSE,
                         timeout_task_run = NULL,
                         depends_on = NULL, export = NULL) {
-      task_id <- ids::random_id()
-      verify_dependencies_exist(self, depends_on)
-      dat <- expression_prepare(expr, envir, private$store, task_id,
-                                export = export)
-      task_submit(self$con, private$keys, private$store, task_id, dat, queue,
-                  separate_process, timeout_task_run, depends_on)
+      rlang::warn(
+        paste("'$enqueue_(expr, ...)' is deprecated, please use",
+              "'$enqueue({{ expr }})'; see vignette('rrq') for details"),
+        .frequency = "regularly",
+        .frequency_id = "rrq$enqueue_")
+      self$enqueue({{ expr }}, envir = envir, queue = queue,
+                   separate_process = separate_process,
+                   timeout_task_run = timeout_task_run,
+                   depends_on = depends_on, export = export)
     },
 
     ##' @description Apply a function over a list of data. This is
@@ -356,7 +368,7 @@ rrq_controller <- R6::R6Class(
     ##' @param dots As an alternative to `...`, you can provide the dots
     ##'   as a list of additional arguments. This may be easier to program
     ##'   against.
-    ##'
+    ##'1
     ##' @param envir The environment to use to try and find the function
     ##'
     ##' @param timeout_task_wait Optional timeout, in seconds, after which an
@@ -1869,6 +1881,7 @@ tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
 task_info <- function(con, keys, task_id) {
   assert_scalar_character(task_id)
   dat <- con$pipeline(
+    expr = redis$HGET(keys$task_expr, task_id),
     status = redis$HGET(keys$task_status, task_id),
     queue = redis$HGET(keys$task_queue, task_id),
     local = redis$HGET(keys$task_local, task_id),
@@ -1892,12 +1905,17 @@ task_info <- function(con, keys, task_id) {
       moved$down <- chain[seq.int(pos + 1, length(chain))]
     }
   }
+  if (dat$status == TASK_MOVED) {
+    dat$expr <- redis$HGET(keys$task_expr, dat$root)
+  }
+  expr <- bin_to_object(dat$expr)
 
   depends <- list(up = task_depends_up(con, keys, task_id),
                   down = task_depends_down(con, keys, task_id))
 
   list(
     id = task_id,
+    expr = expr,
     status = dat$status,
     queue = dat$queue,
     separate_process = dat$local == "FALSE",
