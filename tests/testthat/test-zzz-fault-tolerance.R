@@ -1,5 +1,4 @@
 test_that("heartbeat", {
-  skip_if_not_installed("callr")
   obj <- test_rrq()
 
   res <- obj$worker_config_save("localhost", heartbeat_period = 3,
@@ -36,7 +35,7 @@ test_that("detecting exited workers with no workers is quiet", {
 
 test_that("detecting workers with no heartbeat is quiet", {
   obj <- test_rrq("myfuns.R")
-  wid <- test_worker_spawn(obj)
+  w <- test_worker_spawn(obj)
 
   expect_silent(res <- withVisible(obj$worker_detect_exited()))
   expect_false(res$visible)
@@ -50,7 +49,6 @@ test_that("detecting workers with no heartbeat is quiet", {
 
 
 test_that("detecting output with clean exit is quiet", {
-  skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")
 
   ## We need to set time_poll to be fairly fast because BLPOP is not
@@ -60,14 +58,13 @@ test_that("detecting output with clean exit is quiet", {
                                 heartbeat_period = 1,
                                 verbose = FALSE)
 
-  wid <- test_worker_spawn(obj)
-  pid <- obj$worker_info()[[wid]]$pid
+  w <- test_worker_spawn(obj)
 
   expect_silent(res <- withVisible(obj$worker_detect_exited()))
   expect_false(res$visible)
   expect_null(res$value)
 
-  obj$worker_stop(wid)
+  w$stop()
 
   Sys.sleep(3)
   expect_silent(res <- withVisible(obj$worker_detect_exited()))
@@ -83,7 +80,6 @@ test_that("detecting output with clean exit is quiet", {
 
 
 test_that("detect killed worker (via heartbeat)", {
-  skip_if_not_installed("callr")
   skip_on_covr() # possibly causing corrupt covr output
   obj <- test_rrq("myfuns.R", timeout_worker_stop = 0)
 
@@ -94,10 +90,9 @@ test_that("detect killed worker (via heartbeat)", {
                                 heartbeat_period = 1,
                                 verbose = FALSE)
 
-  wid <- test_worker_spawn(obj)
-  pid <- obj$worker_info()[[wid]]$pid
+  w <- test_worker_spawn(obj)
 
-  key <- rrq_key_worker_heartbeat(obj$queue_id, wid)
+  key <- rrq_key_worker_heartbeat(obj$queue_id, w$id)
   expect_equal(obj$con$EXISTS(key), 1)
   expire <- res$heartbeat_period * 3
   expect_equal(obj$con$GET(key), as.character(expire))
@@ -106,12 +101,12 @@ test_that("detect killed worker (via heartbeat)", {
   t <- obj$enqueue(slowdouble(10000))
   wait_status(t, obj, status = TASK_PENDING)
   expect_equal(obj$task_status(t), setNames(TASK_RUNNING, t))
-  expect_equal(obj$worker_status(wid), setNames(WORKER_BUSY, wid))
+  expect_equal(obj$worker_status(w$id), setNames(WORKER_BUSY, w$id))
 
-  tools::pskill(pid, tools::SIGTERM)
+  w$kill()
   Sys.sleep(0.1)
   expect_equal(obj$task_status(t), setNames(TASK_RUNNING, t))
-  expect_equal(obj$worker_status(wid), setNames(WORKER_BUSY, wid))
+  expect_equal(obj$worker_status(w$id), setNames(WORKER_BUSY, w$id))
 
   ## This is a bit annoying as it takes a while to run through;
   Sys.sleep(expire)
@@ -119,10 +114,10 @@ test_that("detect killed worker (via heartbeat)", {
   ## Our key has gone!  Marvellous!
   expect_equal(obj$con$EXISTS(key), 0)
 
-  expect_equal(obj$worker_list(), wid)
+  expect_equal(obj$worker_list(), w$id)
   msg <- capture_messages(res <- obj$worker_detect_exited())
-  expect_equal(res, set_names(t, wid))
-  expect_match(msg, sprintf("Lost 1 worker:\\s+- %s", wid),
+  expect_equal(res, set_names(t, w$id))
+  expect_match(msg, sprintf("Lost 1 worker:\\s+- %s", w$id),
                all = FALSE)
   expect_match(msg, sprintf("Orphaning 1 task:\\s+- %s", t),
                all = FALSE)
@@ -138,22 +133,19 @@ test_that("detect killed worker (via heartbeat)", {
 
 ## See https://github.com/mrc-ide/rrq/issues/22
 test_that("detect multiple killed workers", {
-  skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R", timeout_worker_stop = 0)
 
   res <- obj$worker_config_save("localhost", time_poll = 1,
                                 heartbeat_period = 1, verbose = FALSE)
 
-  wid <- test_worker_spawn(obj, n = 2)
-  pid <- vnapply(obj$worker_info()[wid], "[[", "pid")
+  w <- test_worker_spawn(obj, n = 2)
 
   t1 <- obj$enqueue(slowdouble(10000))
   t2 <- obj$enqueue(slowdouble(10000))
   wait_status(t1, obj, status = TASK_PENDING)
   wait_status(t2, obj, status = TASK_PENDING)
 
-  tools::pskill(pid[[1]], tools::SIGTERM)
-  tools::pskill(pid[[2]], tools::SIGTERM)
+  w$kill()
 
   expire <- res$heartbeat_period * 3
   Sys.sleep(expire)
@@ -161,7 +153,7 @@ test_that("detect multiple killed workers", {
   res <- evaluate_promise(obj$worker_detect_exited())
 
   expect_equal(length(res$result), 2)
-  expect_setequal(names(res$result), wid)
+  expect_setequal(names(res$result), w$id)
   expect_setequal(unname(res$result), c(t1, t2))
 
   expect_match(res$messages, "Lost 2 workers", all = FALSE)
@@ -181,7 +173,7 @@ test_that("detect multiple killed workers", {
 
 test_that("Cope with dying subprocess task", {
   obj <- test_rrq("myfuns.R")
-  wid <- test_worker_spawn(obj)
+  w <- test_worker_spawn(obj)
 
   path <- tempfile()
   t <- obj$enqueue(pid_and_sleep(path, 600), separate_process = TRUE)
@@ -196,7 +188,7 @@ test_that("Cope with dying subprocess task", {
   expect_equal(obj$task_result(t),
                worker_task_failed(TASK_DIED, obj$queue_id, t))
 
-  log <- obj$worker_log_tail(wid, Inf)
+  log <- obj$worker_log_tail(w$id, Inf)
   expect_equal(log$command,
                c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
                  "TASK_START", "REMOTE",
@@ -206,7 +198,7 @@ test_that("Cope with dying subprocess task", {
 
 test_that("Can wait on a retried task", {
   obj <- test_rrq("myfuns.R")
-  wid <- test_worker_spawn(obj)
+  w <- test_worker_spawn(obj)
 
   t1 <- obj$enqueue(runif(1))
   r1 <- obj$task_wait(t1)
@@ -221,7 +213,7 @@ test_that("Can wait on a retried task", {
 
 test_that("Can wait on retried tasks within bundle", {
   obj <- test_rrq()
-  wid <- test_worker_spawn(obj)
+  w <- test_worker_spawn(obj)
 
   grp <- obj$lapply(1:10, function(i) runif(1, i, i + 1), timeout_task_wait = 0)
   res1 <- obj$bulk_wait(grp, delete = FALSE, timeout = 3)

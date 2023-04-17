@@ -187,7 +187,6 @@ expect_is_function <- function(x) {
 
 rrq_installed_version <- function() {
   if (!exists("rrq_installed_version", envir = cache, inherits = FALSE)) {
-    testthat::skip_if_not_installed("callr")
     cache$rrq_installed_version <-
       tryCatch(callr::r(function() utils::packageVersion("rrq")),
                error = function(e) NULL)

@@ -138,20 +138,15 @@ test_that("Timer is recreated after task run", {
 
 
 test_that("kill worker with a signal", {
-  skip_if_not_installed("callr")
   skip_on_os("windows")
 
   obj <- test_rrq(timeout_worker_stop = 0)
   res <- obj$worker_config_save("localhost", heartbeat_period = 3)
-  wid <- test_worker_spawn(obj)
+  w <- test_worker_spawn(obj)
 
-  pid <- obj$worker_info(wid)[[1]]$pid
-  alive_value <- tools::pskill(pid, 0)
-  expect_equal(obj$message_send_and_wait("PING", wid)[[1]], "PONG")
-
-  obj$worker_stop(wid, "kill")
+  obj$worker_stop(w$id, "kill")
   Sys.sleep(0.5)
-  expect_false(tools::pskill(pid, 0) == alive_value)
+  expect_false(w$is_alive())
 })
 
 
@@ -159,21 +154,20 @@ test_that("kill worker locally", {
   skip_on_os("windows")
 
   obj <- test_rrq(timeout_worker_stop = 0)
-  wid <- test_worker_spawn(obj)
+  w <- test_worker_spawn(obj)
 
-  pid <- obj$worker_info(wid)[[1]]$pid
-  alive_value <- tools::pskill(pid, 0)
-  expect_equal(obj$message_send_and_wait("PING", wid)[[1]], "PONG")
+  expect_equal(obj$message_send_and_wait("PING", w$id)[[1]], "PONG")
 
   ## Can't kill with heartbeat:
   expect_error(
-    obj$worker_stop(wid, "kill"),
+    obj$worker_stop(w$id, "kill"),
     "Worker does not support heatbeat - can't kill with signal:")
+  expect_true(w$is_alive())
 
   ## But can kill locally:
-  obj$worker_stop(wid, "kill_local")
+  obj$worker_stop(w$id, "kill_local")
   Sys.sleep(0.5)
-  expect_false(tools::pskill(pid, 0) == alive_value)
+  expect_false(w$is_alive())
 })
 
 
@@ -289,22 +283,21 @@ test_that("clean up worker when one still running", {
 
 
 test_that("can get worker info", {
-  skip_if_not_installed("callr")
   skip_on_os("windows")
 
   obj <- test_rrq(timeout_worker_stop = 10)
   res <- obj$worker_config_save("localhost", heartbeat_period = 3)
-  wid <- test_worker_spawn(obj)
+  w <- test_worker_spawn(obj)
 
-  info <- obj$worker_info(wid)
+  info <- obj$worker_info(w$id)
   expect_length(info, 1)
   expect_s3_class(info[[1]], "rrq_worker_info")
-  expect_equal(names(info), wid)
-  expect_setequal(names(info[[wid]]),
+  expect_equal(names(info), w$id)
+  expect_setequal(names(info[[w$id]]),
                   c("worker", "rrq_version", "platform", "running", "hostname",
                     "username", "queue", "wd", "pid", "redis_host",
                     "redis_port", "heartbeat_key"))
-  expect_equal(info[[wid]]$rrq_version, version_info())
+  expect_equal(info[[w$id]]$rrq_version, version_info())
 })
 
 
@@ -324,4 +317,22 @@ test_that("multiple queues format correctly when printing worker", {
   expect_length(unique(loc), 1)
   expect_equal(sub(".+:queue:", "", queue_string_split),
                c("a", "b", "default"))
+})
+
+
+test_that("worker main dispatches correctly", {
+  skip_if_not_installed("mockery")
+  mock_worker <- list(loop = mockery::mock())
+  mock_rrq_worker_from_config <- mockery::mock(mock_worker)
+  mockery::stub(rrq_worker_main, "rrq_worker_from_config",
+                mock_rrq_worker_from_config)
+  res <- rrq_worker_main(c("queue_id", "--worker-id=worker_id"))
+  expect_null(res)
+
+  mockery::expect_called(mock_rrq_worker_from_config, 1)
+  expect_equal(mockery::mock_args(mock_rrq_worker_from_config)[[1]],
+               list("queue_id", "localhost", "worker_id", NULL))
+
+  mockery::expect_called(mock_worker$loop, 1)
+  expect_equal(mockery::mock_args(mock_worker$loop)[[1]], list())
 })

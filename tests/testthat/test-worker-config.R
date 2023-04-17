@@ -25,15 +25,15 @@ test_that("create short-lived worker", {
 
   ## Remote:
   logs <- tempfile()
-  wid <- test_worker_spawn(obj, worker_config = key, logdir = logs)
-  expect_type(wid, "character")
-  log <- obj$worker_log_tail(wid, Inf)
+  w <- test_worker_spawn(obj, worker_config = key, logdir = logs)
+  expect_type(w$id, "character")
+  log <- obj$worker_log_tail(w$id, Inf)
   expect_s3_class(log, "data.frame")
   expect_true(nrow(log) >= 1)
 
   remaining <- time_checker(3)
   while (remaining() > 0) {
-    log <- obj$worker_log_tail(wid, Inf)
+    log <- obj$worker_log_tail(w$id, Inf)
     if (nrow(log) >= 5L) {
       break
     } else {
@@ -43,10 +43,7 @@ test_that("create short-lived worker", {
   expect_equal(nrow(log), 5L)
   expect_equal(log$command[[5]], "STOP")
 
-  logfile <- file.path(logs, wid)
-  expect_true(file.exists(logfile))
-  txt <- readLines(logfile)
-  expect_true(any(grepl("STOP OK (TIMEOUT)", txt, fixed = TRUE)))
+  expect_true(any(grepl("STOP OK (TIMEOUT)", w$logs(1), fixed = TRUE)))
 })
 
 
@@ -61,14 +58,6 @@ test_that("Sensible error message on missing config", {
   expect_error(
     test_worker_spawn(obj, worker_config = key),
     "Invalid rrq worker configuration key 'nonexistant'")
-})
-
-
-test_that("Sensible error if requesting workers on empty key", {
-  obj <- test_rrq()
-  expect_error(
-    rrq_worker_wait(obj, "no workers here", timeout = 10, time_poll = 1),
-    "No workers expected on that key")
 })
 
 

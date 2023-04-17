@@ -48,7 +48,7 @@ t
 We'll also need some worker processes to carry out our tasks. Here, we'll spawn two for now (see the section below on alternatives to this)
 
 ```{r}
-rrq::rrq_worker_spawn(obj, 2)
+w <- rrq::rrq_worker_spawn(obj, 2)
 ```
 
 Retrieve the result, polling if needed:
@@ -320,8 +320,8 @@ obj$worker_config_list()
 Above, we create two configurations: "short" which just listens on the queue `short`, and `all` which listens both on the short and long task queues (note that both these workers will also listen on the default queue).
 
 ```{r}
-rrq::rrq_worker_spawn(obj, worker_config = "short")
-rrq::rrq_worker_spawn(obj, worker_config = "all")
+w_short <- rrq::rrq_worker_spawn(obj, worker_config = "short")
+w_all <- rrq::rrq_worker_spawn(obj, worker_config = "all")
 ```
 
 We can then submit a long task to the worker:
@@ -391,7 +391,7 @@ then we create the queue object as normal (and spawn a worker so that we can use
 
 ```{r}
 obj <- rrq::rrq_controller$new(id)
-rrq::rrq_worker_spawn(obj, 1)
+w <- rrq::rrq_worker_spawn(obj, 1)
 ```
 
 It's not hard at all to get to 1KB of data, we can do that by simulating a big pile of random numbers:
@@ -487,7 +487,7 @@ res <- obj$worker_config_save("localhost", heartbeat_period = 2)
 Then, launch a worker
 
 ```{r}
-rrq::rrq_worker_spawn(obj, 1)
+w <- rrq::rrq_worker_spawn(obj, 1)
 ```
 
 Our worker will print information indicating that the heartbeat is enabled (use `obj$worker_process_log()`)

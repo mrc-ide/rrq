@@ -1,15 +1,19 @@
 test_that("Don't wait", {
   obj <- test_rrq()
   res <- test_worker_spawn(obj, 4, timeout = 0)
-  expect_type(res$ids, "character")
-  expect_match(res$ids, "_[0-9]+$")
-  expect_type(res$key_alive, "character")
 
-  ans <- rrq_worker_wait(obj, res$key_alive, timeout = 10, time_poll = 1)
-  expect_setequal(ans, res$ids)
+  expect_s3_class(res, "rrq_worker_manager")
+  expect_type(res$id, "character")
+  expect_match(res$id, "_[0-9]+$")
 
-  ans <- rrq_worker_wait(obj, res$key_alive, timeout = 10, time_poll = 1)
-  expect_equal(ans, res$ids)
+  ans <- withVisible(res$wait_alive(timeout = 10, time_poll = 1))
+  expect_false(ans$visible)
+  expect_s3_class(ans$value, "difftime")
+
+  ## Can call again with no ill effect:
+  expect_s3_class(
+    res$wait_alive(timeout = 10, time_poll = 1),
+    "difftime")
 })
 
 
@@ -37,17 +41,18 @@ test_that("failed spawn", {
 
 test_that("read worker process log", {
   obj <- test_rrq(verbose = TRUE)
-  wid <- test_worker_spawn(obj, 1)
+  w <- test_worker_spawn(obj, 1)
   obj$message_send_and_wait("STOP")
-  txt <- obj$worker_process_log(wid)
+  txt <- obj$worker_process_log(w$id)
   expect_type(txt, "character")
   expect_match(txt, "ALIVE", all = FALSE)
+  expect_equal(txt, w$logs(1))
 })
 
 
 test_that("wait for worker exit", {
   obj <- test_rrq("myfuns.R", timeout_worker_stop = 0)
-  wid <- test_worker_spawn(obj)
+  w <- test_worker_spawn(obj)
 
   con <- obj$con # save a copy
   queue_id <- obj$queue_id
@@ -56,4 +61,16 @@ test_that("wait for worker exit", {
   expect_equal(
     redux::scan_find(con, paste0(queue_id, ":*")),
     character(0))
+})
+
+
+test_that("error if we try to interact with non-managed worker", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_spawn(obj)
+  expect_error(
+    w$logs(2),
+    "Worker not controlled by this manager: '.+_2'")
+  expect_error(
+    w$logs("fred"),
+    "Worker not controlled by this manager: 'fred'")
 })

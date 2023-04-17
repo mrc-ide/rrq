@@ -28,7 +28,7 @@ test_that("basic use", {
 
 test_that("update progress from interface function", {
   obj <- test_rrq("myfuns.R")
-  wid <- test_worker_spawn(obj, 1)
+  w <- test_worker_spawn(obj, 1)
 
   t <- obj$enqueue(run_with_progress(5, 0))
   res <- obj$task_wait(t)
@@ -39,7 +39,7 @@ test_that("update progress from interface function", {
 
 test_that("update progress multiple times in task", {
   obj <- test_rrq("myfuns.R")
-  wid <- test_worker_spawn(obj, 1)
+  w <- test_worker_spawn(obj, 1)
   p <- tempfile()
 
   t <- obj$enqueue(run_with_progress_interactive(p))
@@ -103,9 +103,8 @@ test_that("collect progress from signal", {
 
 ## TODO: this test is sli[ghly flakey, and I don't see why.
 test_that("collect progress from separate process", {
-  skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")
-  wid <- test_worker_spawn(obj, 1)
+  w <- test_worker_spawn(obj, 1)
   p <- tempfile()
 
   t <- obj$enqueue(run_with_progress_interactive(p),

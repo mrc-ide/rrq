@@ -188,12 +188,7 @@ When you spawn a worker it will pick up this configuration, and we'll be able to
 w <- rrq::rrq_worker_spawn(obj)
 ```
 
-In order to simulate the loss of the worker, we need its [process id (PID)](https://en.wikipedia.org/wiki/Process_identifier), which we can get from the controller object:
-
-```{r}
-w_pid <- obj$worker_info()[[w]]$pid
-w_pid
-```
+In order to simulate the loss of the worker, we will kill it after starting a long-running task:
 
 Now, we can queue some long running process, which this worker will start:
 
@@ -210,20 +205,20 @@ The worker wil pick the task up fairly quickly, and the status will change to `R
 
 ```{r}
 obj$task_status(t)
-obj$worker_status(w)
+obj$worker_status(w$id)
 ```
 
 We kill the worker (simulating the job crashing, or the machine turning off, etc):
 
 ```{r}
-tools::pskill(w_pid)
+w$kill()
 ```
 
 Because the worker has been killed, it can't write to redis to tell us that the task can't be completed, so this status will never change:
 
 ```{r}
 obj$task_status(t)
-obj$worker_status(w)
+obj$worker_status(w$id)
 ```
 
 The heartbeat will persist for 3 times the period given above (this multiplier is not configurable and while any number greater than 1 should be OK, we picked this as it allows for occasional network connectivity issues or slowness on the node - we may reduce it in a future version). This means that after 9s (3 * 3s) the key will have expired:
@@ -242,7 +237,7 @@ At this point, the statuses of our task and worker are correct:
 
 ```{r}
 obj$task_status(t)
-obj$worker_status(w)
+obj$worker_status(w$id)
 ```
 
 Fetching the task result provides the same `r rrq:::TASK_DIED` error as above:
@@ -284,7 +279,7 @@ w <- rrq::rrq_worker_spawn(obj)
 # this ensures that the worker produces the random numbers
 #   0.2655087, 0.3721239, 0.5728534
 # in order, which we rely on below
-obj$message_send_and_wait("EVAL", quote(set.seed(1)), w, progress = FALSE,
+obj$message_send_and_wait("EVAL", quote(set.seed(1)), w$id, progress = FALSE,
                           timeout = 10)
 ```
 

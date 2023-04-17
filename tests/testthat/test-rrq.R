@@ -114,7 +114,7 @@ test_that("task_preceeding", {
   expect_equal(obj$task_preceeding(t3), c(t1, t2))
   expect_null(obj$task_preceeding("not a real task"))
 
-  wid <- test_worker_spawn(obj)
+  w <- test_worker_spawn(obj)
   obj$task_wait(t3)
   expect_null(obj$task_preceeding(t3))
 })
@@ -154,7 +154,7 @@ test_that("task_overview", {
 
 test_that("wait for tasks", {
   obj <- test_rrq("myfuns.R")
-  wid <- test_worker_spawn(obj)
+  w <- test_worker_spawn(obj)
 
   t1 <- obj$enqueue(1 + 1)
   t2 <- obj$enqueue(2 + 2)
@@ -335,7 +335,7 @@ test_that("can't cancel running in-process task", {
   expect_error(
     obj$task_cancel(t, wait = TRUE),
     "Can't cancel running task '[[:xdigit:]]{32}' as not in separate process")
-  obj$worker_stop(w, "kill_local")
+  w$stop(type = "kill_local")
 })
 
 
@@ -412,7 +412,6 @@ test_that("Query jobs in different queues", {
 
 
 test_that("Send job to new process", {
-  skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
   obj$worker_log_tail(w$id, Inf)
@@ -430,14 +429,13 @@ test_that("Send job to new process", {
 ## an in-process version by being a bit sneaky and writing a job that
 ## will cancel itself.
 test_that("Cancel job sent to new process", {
-  skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")
 
   w <- test_worker_spawn(obj)
   t <- obj$enqueue(slowdouble(50), separate_process = TRUE)
   wait_status(t, obj)
   obj$task_cancel(t, wait = TRUE)
-  log <- obj$worker_log_tail(w, Inf)
+  log <- obj$worker_log_tail(w$id, Inf)
   expect_equal(obj$task_status(t), set_names(TASK_CANCELLED, t))
   expect_equal(obj$task_result(t),
                worker_task_failed(TASK_CANCELLED, obj$queue_id, t))
@@ -819,7 +817,6 @@ test_that("submit a task with a timeout requires separate process", {
 
 
 test_that("submit a task with a timeout", {
-  skip_if_not_installed("callr")
   obj <- test_rrq("myfuns.R")
   t <- obj$enqueue(slowdouble(10), timeout_task_run = 1,
                    separate_process = TRUE)
@@ -1041,7 +1038,6 @@ test_that("Can get information about a task in the same process", {
 
 
 test_that("Can get information about a task in a different process", {
-  skip_if_not_installed("callr")
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
   t <- obj$enqueue(sqrt(4), separate_process = TRUE, timeout_task_run = 5)
@@ -1195,7 +1191,6 @@ test_that("Can avoid following on controller creation", {
 
 
 test_that("Running in separate process produces coherent logs", {
-  skip_if_not_installed("callr")
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
 
