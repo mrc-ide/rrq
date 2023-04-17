@@ -20,7 +20,7 @@ rrq_controller object."><!-- mathjax --><script src="https://cdnjs.cloudflare.co
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.18</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.19</span>
       </span>
     </div>
 
@@ -78,7 +78,7 @@ configurations by running <code>$worker_config_save</code> from the
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rrq_worker_from_config</span><span class="op">(</span></span>
 <span>  <span class="va">queue_id</span>,</span>
 <span>  worker_config <span class="op">=</span> <span class="st">"localhost"</span>,</span>
-<span>  worker_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  worker_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  key_alive <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  con <span class="op">=</span> <span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  timeout <span class="op">=</span> <span class="fl">5</span></span>
@@ -96,9 +96,9 @@ configurations by running <code>$worker_config_save</code> from the
 default "localhost" configuration always exists.</p></dd>
 
 
-<dt>worker_name</dt>
-<dd><p>The name of the worker (if not given a random
-name is used)</p></dd>
+<dt>worker_id</dt>
+<dd><p>The id of the worker (if not given a random
+id is used)</p></dd>
 
 
 <dt>key_alive</dt>

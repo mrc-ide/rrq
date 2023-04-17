@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.18</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.19</span>
       </span>
     </div>
 
@@ -102,26 +102,26 @@ vignette shows what the possible messages do.</p>
 <code class="sourceCode R"><span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="va"><a href="../reference/rrq_controller.html">rrq_controller</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"rrq:messages"</span><span class="op">)</span></span>
 <span><span class="va">logdir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">worker_id</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/rrq_worker_spawn.html">rrq_worker_spawn</a></span><span class="op">(</span><span class="va">obj</span>, logdir <span class="op">=</span> <span class="va">logdir</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Spawning 1 worker with prefix verastile_ozarkbigearedbat</span></span></code></pre></div>
+<span><span class="co">#&gt; Spawning 1 worker with prefix shortish_anophelesmosquito</span></span></code></pre></div>
 <p>On startup the worker log contains:</p>
-<pre class="plain"><code>[2023-04-05 14:33:12] ALIVE
-[2023-04-05 14:33:12] ENVIR new
-[2023-04-05 14:33:12] QUEUE default
+<pre class="plain"><code>[2023-04-17 09:38:22] ALIVE
+[2023-04-17 09:38:22] ENVIR new
+[2023-04-17 09:38:22] QUEUE default
                                  __
                 ______________ _/ /
       ______   / ___/ ___/ __ `/ /_____
      /_____/  / /  / /  / /_/ /_/_____/
  ______      /_/  /_/   \__, (_)   ______
 /_____/                   /_/     /_____/
-    worker:        verastile_ozarkbigearedbat_1
-    rrq_version:   0.6.18
+    worker:        shortish_anophelesmosquito_1
+    rrq_version:   0.6.19
     platform:      x86_64-pc-linux-gnu (64-bit)
     running:       Ubuntu 22.04.2 LTS
-    hostname:      fv-az396-764
+    hostname:      fv-az341-407
     username:      runner
     queue:         rrq:messages:queue:default
     wd:            /home/runner/work/rrq/rrq/vignettes
-    pid:           6285
+    pid:           6407
     redis_host:    127.0.0.1
     redis_port:    6379
     heartbeat_key: &lt;not set&gt;</code></pre>
@@ -172,12 +172,12 @@ because it does so little</p>
 <p>The message id is going to be useful for getting responses:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">message_id</span></span>
-<span><span class="co">#&gt; [1] "1680705192.263338"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "1681724302.185010"</span></span></code></pre></div>
 <p>(this is derived from the current time, according to Redis which is
 the central reference point of time for the whole system).</p>
-<pre class="plain"><code>[2023-04-05 14:33:12] MESSAGE PING
+<pre class="plain"><code>[2023-04-17 09:38:22] MESSAGE PING
 PONG
-[2023-04-05 14:33:12] RESPONSE PING</code></pre>
+[2023-04-17 09:38:22] RESPONSE PING</code></pre>
 <p>The logfile prints:</p>
 <ol style="list-style-type: decimal">
 <li>the request for the <code>PING</code>
@@ -190,11 +190,11 @@ something is written to the response stream.</li>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_log_tail</span><span class="op">(</span>n <span class="op">=</span> <span class="cn">Inf</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                      worker_id child       time  command message</span></span>
-<span><span class="co">#&gt; 1 verastile_ozarkbigearedbat_1    NA 1680705192    ALIVE        </span></span>
-<span><span class="co">#&gt; 2 verastile_ozarkbigearedbat_1    NA 1680705192    ENVIR     new</span></span>
-<span><span class="co">#&gt; 3 verastile_ozarkbigearedbat_1    NA 1680705192    QUEUE default</span></span>
-<span><span class="co">#&gt; 4 verastile_ozarkbigearedbat_1    NA 1680705192  MESSAGE    PING</span></span>
-<span><span class="co">#&gt; 5 verastile_ozarkbigearedbat_1    NA 1680705192 RESPONSE    PING</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 shortish_anophelesmosquito_1    NA 1681724302    ALIVE        </span></span>
+<span><span class="co">#&gt; 2 shortish_anophelesmosquito_1    NA 1681724302    ENVIR     new</span></span>
+<span><span class="co">#&gt; 3 shortish_anophelesmosquito_1    NA 1681724302    QUEUE default</span></span>
+<span><span class="co">#&gt; 4 shortish_anophelesmosquito_1    NA 1681724302  MESSAGE    PING</span></span>
+<span><span class="co">#&gt; 5 shortish_anophelesmosquito_1    NA 1681724302 RESPONSE    PING</span></span></code></pre></div>
 <p>This includes the <code>ALIVE</code> message as the worker comes
 up.</p>
 <p>Inspecting the logs is fine for interactive use, but it’s going to be
@@ -203,54 +203,54 @@ more useful often to poll for a response.</p>
 anyway:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_has_response</span><span class="op">(</span><span class="va">message_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; verastile_ozarkbigearedbat_1 </span></span>
+<span><span class="co">#&gt; shortish_anophelesmosquito_1 </span></span>
 <span><span class="co">#&gt;                         TRUE</span></span></code></pre></div>
 <p>Or inversely we can as what messages a given worker has responses
 for:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_response_ids</span><span class="op">(</span><span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "1680705192.263338"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "1681724302.185010"</span></span></code></pre></div>
 <p>To fetch the responses from all workers it was sent to (always
 returning a named list):</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1</span></span>
 <span><span class="co">#&gt; [1] "PONG"</span></span></code></pre></div>
 <p>or to fetch the response from a given worker:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1</span></span>
 <span><span class="co">#&gt; [1] "PONG"</span></span></code></pre></div>
 <p>The response can be deleted by passing <code>delete = TRUE</code> to
 this method:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, delete <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1</span></span>
 <span><span class="co">#&gt; [1] "PONG"</span></span></code></pre></div>
 <p>after which recalling the message will throw an error:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Error in message_get_response(self$con, private$keys, message_id, worker_ids, : Response missing for workers: verastile_ozarkbigearedbat_1</span></span></code></pre></div>
+<span><span class="co">#&gt; Error in message_get_response(self$con, private$keys, message_id, worker_ids, : Response missing for workers: shortish_anophelesmosquito_1</span></span></code></pre></div>
 <p>There is also a <code>timeout</code> argument that lets you wait
 until a response is ready (as in <code>$task_wait()</code>).</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "fc22e5a43bed0c3482ba06996cc01a7a"</span></span>
+<span><span class="co">#&gt; [1] "e6cac09966e4095a07858ec4436942af"</span></span>
 <span><span class="va">message_id</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"PING"</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, delete <span class="op">=</span> <span class="cn">TRUE</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1</span></span>
 <span><span class="co">#&gt; [1] "PONG"</span></span></code></pre></div>
 <p>Looking at the log will show what went on here:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_log_tail</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                      worker_id child       time       command</span></span>
-<span><span class="co">#&gt; 1 verastile_ozarkbigearedbat_1    NA 1680705193    TASK_START</span></span>
-<span><span class="co">#&gt; 2 verastile_ozarkbigearedbat_1    NA 1680705195 TASK_COMPLETE</span></span>
-<span><span class="co">#&gt; 3 verastile_ozarkbigearedbat_1    NA 1680705195       MESSAGE</span></span>
-<span><span class="co">#&gt; 4 verastile_ozarkbigearedbat_1    NA 1680705195      RESPONSE</span></span>
+<span><span class="co">#&gt; 1 shortish_anophelesmosquito_1    NA 1681724303    TASK_START</span></span>
+<span><span class="co">#&gt; 2 shortish_anophelesmosquito_1    NA 1681724305 TASK_COMPLETE</span></span>
+<span><span class="co">#&gt; 3 shortish_anophelesmosquito_1    NA 1681724305       MESSAGE</span></span>
+<span><span class="co">#&gt; 4 shortish_anophelesmosquito_1    NA 1681724305      RESPONSE</span></span>
 <span><span class="co">#&gt;                            message</span></span>
-<span><span class="co">#&gt; 1 fc22e5a43bed0c3482ba06996cc01a7a</span></span>
-<span><span class="co">#&gt; 2 fc22e5a43bed0c3482ba06996cc01a7a</span></span>
+<span><span class="co">#&gt; 1 e6cac09966e4095a07858ec4436942af</span></span>
+<span><span class="co">#&gt; 2 e6cac09966e4095a07858ec4436942af</span></span>
 <span><span class="co">#&gt; 3                             PING</span></span>
 <span><span class="co">#&gt; 4                             PING</span></span></code></pre></div>
 <ol style="list-style-type: decimal">
@@ -262,11 +262,11 @@ until a response is ready (as in <code>$task_wait()</code>).</p>
 <p>However, because the message is only processed after the task is
 completed, the response takes a while to come back. Equivalently, from
 the worker log:</p>
-<pre class="plain"><code>[2023-04-05 14:33:13] TASK_START fc22e5a43bed0c3482ba06996cc01a7a
-[2023-04-05 14:33:15] TASK_COMPLETE fc22e5a43bed0c3482ba06996cc01a7a
-[2023-04-05 14:33:15] MESSAGE PING
+<pre class="plain"><code>[2023-04-17 09:38:22] TASK_START e6cac09966e4095a07858ec4436942af
+[2023-04-17 09:38:25] TASK_COMPLETE e6cac09966e4095a07858ec4436942af
+[2023-04-17 09:38:25] MESSAGE PING
 PONG
-[2023-04-05 14:33:15] RESPONSE PING</code></pre>
+[2023-04-17 09:38:25] RESPONSE PING</code></pre>
 </div>
 <div class="section level2">
 <h2 id="echo">
@@ -278,11 +278,11 @@ prints an arbitrary string to the log. It always returns
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">message_id</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"ECHO"</span>, <span class="st">"hello world!"</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1</span></span>
 <span><span class="co">#&gt; [1] "OK"</span></span></code></pre></div>
-<pre class="plain"><code>[2023-04-05 14:33:15] MESSAGE ECHO
+<pre class="plain"><code>[2023-04-17 09:38:25] MESSAGE ECHO
 hello world!
-[2023-04-05 14:33:15] RESPONSE ECHO</code></pre>
+[2023-04-17 09:38:25] RESPONSE ECHO</code></pre>
 </div>
 <div class="section level2">
 <h2 id="info">
@@ -295,15 +295,15 @@ worker started up:</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_info</span><span class="op">(</span><span class="op">)</span><span class="op">[[</span><span class="va">worker_id</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="co">#&gt;   &lt;rrq_worker_info&gt;</span></span>
-<span><span class="co">#&gt;     worker:      verastile_ozarkbigearedbat_1</span></span>
-<span><span class="co">#&gt;     rrq_version: 0.6.18</span></span>
+<span><span class="co">#&gt;     worker:      shortish_anophelesmosquito_1</span></span>
+<span><span class="co">#&gt;     rrq_version: 0.6.19</span></span>
 <span><span class="co">#&gt;     platform:    x86_64-pc-linux-gnu (64-bit)</span></span>
 <span><span class="co">#&gt;     running:     Ubuntu 22.04.2 LTS</span></span>
-<span><span class="co">#&gt;     hostname:    fv-az396-764</span></span>
+<span><span class="co">#&gt;     hostname:    fv-az341-407</span></span>
 <span><span class="co">#&gt;     username:    runner</span></span>
 <span><span class="co">#&gt;     queue:       rrq:messages:queue:default</span></span>
 <span><span class="co">#&gt;     wd:          /home/runner/work/rrq/rrq/vignettes</span></span>
-<span><span class="co">#&gt;     pid:         6285</span></span>
+<span><span class="co">#&gt;     pid:         6407</span></span>
 <span><span class="co">#&gt;     redis_host:  127.0.0.1</span></span>
 <span><span class="co">#&gt;     redis_port:  6379</span></span></code></pre></div>
 <p>We can force the worker to refresh:</p>
@@ -313,38 +313,38 @@ worker started up:</p>
 <code>envir</code> field:</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1</span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1$worker</span></span>
-<span><span class="co">#&gt; [1] "verastile_ozarkbigearedbat_1"</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1$worker</span></span>
+<span><span class="co">#&gt; [1] "shortish_anophelesmosquito_1"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1$rrq_version</span></span>
-<span><span class="co">#&gt; [1] "0.6.18"</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1$rrq_version</span></span>
+<span><span class="co">#&gt; [1] "0.6.19"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1$platform</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1$platform</span></span>
 <span><span class="co">#&gt; [1] "x86_64-pc-linux-gnu (64-bit)"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1$running</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1$running</span></span>
 <span><span class="co">#&gt; [1] "Ubuntu 22.04.2 LTS"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1$hostname</span></span>
-<span><span class="co">#&gt; [1] "fv-az396-764"</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1$hostname</span></span>
+<span><span class="co">#&gt; [1] "fv-az341-407"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1$username</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1$username</span></span>
 <span><span class="co">#&gt; [1] "runner"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1$queue</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1$queue</span></span>
 <span><span class="co">#&gt; [1] "rrq:messages:queue:default"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1$wd</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1$wd</span></span>
 <span><span class="co">#&gt; [1] "/home/runner/work/rrq/rrq/vignettes"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1$pid</span></span>
-<span><span class="co">#&gt; [1] 6285</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1$pid</span></span>
+<span><span class="co">#&gt; [1] 6407</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1$redis_host</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1$redis_host</span></span>
 <span><span class="co">#&gt; [1] "127.0.0.1"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1$redis_port</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1$redis_port</span></span>
 <span><span class="co">#&gt; [1] 6379</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -358,7 +358,7 @@ environment in which queued code is evaluated in.</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">message_id</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"EVAL"</span>, <span class="st">"1 + 1"</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1</span></span>
 <span><span class="co">#&gt; [1] 2</span></span></code></pre></div>
 <p>This could be used to evaluate code that has side effects, such as
 installing packages. However, due to limitations with how R loads
@@ -374,29 +374,29 @@ prevent workers from picking up new work (and then allowing them to
 start again).</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_status</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; verastile_ozarkbigearedbat_1 </span></span>
+<span><span class="co">#&gt; shortish_anophelesmosquito_1 </span></span>
 <span><span class="co">#&gt;                       "IDLE"</span></span>
 <span><span class="va">message_id</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"PAUSE"</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1</span></span>
 <span><span class="co">#&gt; [1] "OK"</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_status</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; verastile_ozarkbigearedbat_1 </span></span>
+<span><span class="co">#&gt; shortish_anophelesmosquito_1 </span></span>
 <span><span class="co">#&gt;                     "PAUSED"</span></span></code></pre></div>
 <p>Once paused workers ignore tasks, which stay on the queue:</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 52c7a9048b86b307c9f53b44b9409612 </span></span>
+<span><span class="co">#&gt; 925a98e1fb28eb9bdc78ad008605e1b6 </span></span>
 <span><span class="co">#&gt;                        "PENDING"</span></span></code></pre></div>
 <p>Sending a <code>RESUME</code> message unpauses the worker:</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">message_id</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"RESUME"</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1</span></span>
 <span><span class="co">#&gt; [1] "OK"</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">task_wait</span><span class="op">(</span><span class="va">t</span>, <span class="fl">5</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.9515312 0.6548178 0.9033312 0.9522127 0.4499284</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.4252232 0.8339410 0.7407873 0.5119868 0.5568778</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="set_timeout-get_timeout">
@@ -409,27 +409,27 @@ set it with <code>SET_TIMEOUT</code>. For our worker above the timeout
 is infinite; it will never quit:</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_send_and_wait</span><span class="op">(</span><span class="st">"TIMEOUT_GET"</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1</span></span>
 <span><span class="co">#&gt; timeout_idle    remaining </span></span>
 <span><span class="co">#&gt;          Inf          Inf</span></span></code></pre></div>
 <p>We can set this to a finite value, in seconds:</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_send_and_wait</span><span class="op">(</span><span class="st">"TIMEOUT_SET"</span>, <span class="fl">600</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1</span></span>
 <span><span class="co">#&gt; [1] "OK"</span></span></code></pre></div>
 <p>Here the timeout is set to 10 minutes (600s).</p>
 <p>Once set, the <code>TIMEOUT_GET</code> returns the length of time
 remaining before the worker exits</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">message_send_and_wait</span><span class="op">(</span><span class="st">"TIMEOUT_GET"</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1</span></span>
 <span><span class="co">#&gt; timeout_idle    remaining </span></span>
-<span><span class="co">#&gt;     600.0000     599.8778</span></span>
+<span><span class="co">#&gt;     600.0000     599.8772</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">message_send_and_wait</span><span class="op">(</span><span class="st">"TIMEOUT_GET"</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1</span></span>
 <span><span class="co">#&gt; timeout_idle    remaining </span></span>
-<span><span class="co">#&gt;     600.0000     594.8192</span></span></code></pre></div>
+<span><span class="co">#&gt;      600.000      594.818</span></span></code></pre></div>
 <p>One useful pattern is to send work to workers, then set the timeout
 to zero. This means that when work is complete they will exit (almost)
 immediately:</p>
@@ -440,28 +440,28 @@ immediately:</p>
 <span><span class="op">}</span>, timeout_task_wait <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="st">"TIMEOUT_SET"</span>, <span class="fl">0</span>, <span class="va">worker_id</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">tasks_wait</span><span class="op">(</span><span class="va">grp</span><span class="op">$</span><span class="va">task_ids</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $`12ee972551566b3a964f3bc5683e26bd`</span></span>
-<span><span class="co">#&gt; [1] 0.2976695</span></span>
+<span><span class="co">#&gt; $f5adc7bb13acb0fbae2f1961b1492774</span></span>
+<span><span class="co">#&gt; [1] 0.3616653</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $bf25a4d05d02634d7fd7d3b4fb51c9b0</span></span>
-<span><span class="co">#&gt; [1] 0.8419430 0.0345528</span></span>
+<span><span class="co">#&gt; $`24f5cc55298b552f65cbf8d8aefcc458`</span></span>
+<span><span class="co">#&gt; [1] 0.6448242 0.9798063</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $b660a612722234da6ef073c0bcbc8fc4</span></span>
-<span><span class="co">#&gt; [1] 0.8547103 0.5149925 0.6982151</span></span>
+<span><span class="co">#&gt; $c92f2fe73f9bfc999528d9add6f73a2c</span></span>
+<span><span class="co">#&gt; [1] 0.05038707 0.43305093 0.08408548</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $`14818bfc7fa15f314882fe4fb59c7cd7`</span></span>
-<span><span class="co">#&gt; [1] 0.3353457 0.7967430 0.6561391 0.6686644</span></span>
+<span><span class="co">#&gt; $b5ea173208b3a4e7d959772124374b6e</span></span>
+<span><span class="co">#&gt; [1] 0.8102041 0.7375864 0.9949437 0.4472804</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $`6230f12534965718096d75f59640f549`</span></span>
-<span><span class="co">#&gt; [1] 0.9595139 0.8432013 0.8106950 0.8064485 0.7039739</span></span></code></pre></div>
+<span><span class="co">#&gt; $`3c0021b46f9f0676de692cb83b07543e`</span></span>
+<span><span class="co">#&gt; [1] 0.76984802 0.36934179 0.21374458 0.94852626 0.05090334</span></span></code></pre></div>
 <p>The worker will remain idle for 60s (by default) which is the length
 of time that one poll for work lasts, then it will exit.</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_status</span><span class="op">(</span><span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; verastile_ozarkbigearedbat_1 </span></span>
+<span><span class="co">#&gt; shortish_anophelesmosquito_1 </span></span>
 <span><span class="co">#&gt;                       "IDLE"</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">message_send_and_wait</span><span class="op">(</span><span class="st">"TIMEOUT_GET"</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $verastile_ozarkbigearedbat_1</span></span>
+<span><span class="co">#&gt; $shortish_anophelesmosquito_1</span></span>
 <span><span class="co">#&gt; timeout_idle    remaining </span></span>
 <span><span class="co">#&gt;            0            0</span></span></code></pre></div>
 </div>

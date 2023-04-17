@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.18</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.19</span>
       </span>
     </div>
 
@@ -1386,12 +1386,12 @@ desirable behaviour.</p></dd>
 </div><p></p><hr><a id="method-rrq_controller-task_cancel"></a><div class="section">
 <h3 id="method-task-cancel-">Method <code>task_cancel()</code><a class="anchor" aria-label="anchor" href="#method-task-cancel-"></a></h3>
 <p>Cancel a single task. If the task is <code>PENDING</code> it
-will be deleted. If <code>RUNNING</code> then the task will be stopped if
-it was set to run in a separate process (i.e., queued with
-<code>separate_process = TRUE</code>). Dependent tasks will be marked as
-impossible.</p><div class="section">
+will be unqueued and the status set to <code>CANCELED</code>.  If <code>RUNNING</code>
+then the task will be stopped if it was set to run in
+a separate process (i.e., queued with <code>separate_process = TRUE</code>).
+Dependent tasks will be marked as impossible.</p><div class="section">
 <h4 id="usage-22">Usage<a class="anchor" aria-label="anchor" href="#usage-22"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">task_cancel</span><span class="op">(</span><span class="va">task_id</span>, wait <span class="op">=</span> <span class="cn">TRUE</span>, delete <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">task_cancel</span><span class="op">(</span><span class="va">task_id</span>, wait <span class="op">=</span> <span class="cn">TRUE</span>, timeout_wait <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -1401,13 +1401,12 @@ impossible.</p><div class="section">
 
 
 <dt><code>wait</code></dt>
-<dd><p>Wait for the task to be stopped, if it was running. If
-<code>delete</code> is <code>TRUE</code>, then we will always wait for the task to stop.</p></dd>
+<dd><p>Wait for the task to be stopped, if it was running.</p></dd>
 
 
-<dt><code>delete</code></dt>
-<dd><p>Delete the task after cancelling (if cancelling
-was successful).</p></dd>
+<dt><code>timeout_wait</code></dt>
+<dd><p>Maximum time, in seconds, to wait for the task
+to be cancelled by the worker.</p></dd>
 
 
 </dl><p></p></div>

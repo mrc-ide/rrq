@@ -18,7 +18,7 @@ rrq queue worker"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.18</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.19</span>
       </span>
     </div>
 
@@ -78,8 +78,8 @@ but will sit and poll a queue for jobs.</p>
     </div>
     <div id="public-fields">
     <h2>Public fields</h2>
-    <p></p><div class="r6-fields"><dl><dt><code>name</code></dt>
-<dd><p>The name of the worker</p></dd>
+    <p></p><div class="r6-fields"><dl><dt><code>id</code></dt>
+<dd><p>The id of the worker</p></dd>
 
 
 </dl><p></p></div>
@@ -110,7 +110,7 @@ but will sit and poll a queue for jobs.</p>
 <span>  <span class="va">queue_id</span>,</span>
 <span>  con <span class="op">=</span> <span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  key_alive <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  worker_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  worker_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  queue <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  time_poll <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  timeout_idle <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -138,9 +138,9 @@ prefix to all the keys in the redis database</p></dd>
 worker is alive.</p></dd>
 
 
-<dt><code>worker_name</code></dt>
-<dd><p>Optional worker name.  If omitted, a random
-name will be created.</p></dd>
+<dt><code>worker_id</code></dt>
+<dd><p>Optional worker id.  If omitted, a random
+id will be created.</p></dd>
 
 
 <dt><code>queue</code></dt>
