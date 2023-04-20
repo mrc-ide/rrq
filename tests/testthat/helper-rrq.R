@@ -134,13 +134,13 @@ test_worker_spawn <- function(obj, ..., timeout = 10) {
 }
 
 
-test_worker_blocking <- function(obj, worker_config = "localhost", ...) {
-  rrq_worker_from_config(obj$queue_id, worker_config, ...)
+test_worker_blocking <- function(obj, ...) {
+  rrq_worker$new(obj$queue_id, ...)
 }
 
 
-test_worker_watch <- function(queue_id, worker_config = "localhost", ...) {
-  w <- rrq_worker_from_config(queue_id, worker_config, ...)
+test_worker_watch <- function(queue_id, ...) {
+  w <- rrq_worker$new(queue_id, ...)
   w_private <- r6_private(w)
   w_private$verbose <- TRUE
   w$loop()

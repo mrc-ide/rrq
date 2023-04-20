@@ -1,56 +1,3 @@
-##' Create a worker based on a named configuration. This is a wrapper
-##' around directly constructing a [`rrq::rrq_worker`]. Create new
-##' configurations by running `$worker_config_save` from the
-##' [`rrq::rrq_controller`] object.
-##'
-##' @title Create a worker
-##'
-##' @param queue_id The name of the queue
-##'
-##' @param worker_config Optional name of the configuration. The
-##'   default "localhost" configuration always exists.
-##'
-##' @param worker_id The id of the worker (if not given a random
-##'   id is used)
-##'
-##' @param key_alive Optional key to write to, indicating that the
-##'   worker is alive. This can be passed to
-##'   [`rrq::rrq_expect_worker`] so that a controlling process can
-##'   wait for workers to come up.
-##'
-##' @param con Redis configuration
-##'
-##' @param timeout How long to try and read the worker config for. Will
-##'   attempt to read once a second and throw an error if config cannot
-##'   be located after `timeout` seconds.
-##'
-##' @return A [`rrq::rrq_worker`] object. If you want to "run" the
-##'   worker, you would want to use the `$loop()` method of this
-##'   object. Other methods are for advanced use.
-##'
-##' @export
-rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
-                                   worker_id = NULL, key_alive = NULL,
-                                   con = redux::hiredis(), timeout = 5) {
-  keys <- rrq_keys(queue_id)
-  config_read <- function() {
-    worker_config_read(con, keys, worker_config)
-  }
-  config <- wait_success("config not readable in time", timeout, config_read, 1)
-
-  rrq_worker$new(queue_id, con,
-                 key_alive = key_alive,
-                 worker_id = worker_id,
-                 queue = config$queue,
-                 time_poll = config$time_poll,
-                 timeout_idle = config$timeout_idle,
-                 heartbeat_period = config$heartbeat_period,
-                 verbose = config$verbose,
-                 timeout_poll = config$timeout_poll,
-                 timeout_die = config$timeout_die)
-}
-
-
 ##' A rrq queue worker.  These are not typically for interacting with
 ##' but will sit and poll a queue for jobs.
 ##'
@@ -64,73 +11,53 @@ rrq_worker <- R6::R6Class(
     ##' @field id The id of the worker
     id = NULL,
 
+    ##' @field config The name of the configuration used by this worker
+    config = NULL,
+
     ##' @description Constructor
     ##'
-    ##' @param queue_id Name of the queue to connect to.  This will be the
-    ##'   prefix to all the keys in the redis database
+    ##' @param queue_id The queue id
     ##'
-    ##' @param con A redis connection
-    ##'
-    ##' @param key_alive Optional key that will be written once the
-    ##'   worker is alive.
+    ##' @param name_config Optional name of the configuration. The
+    ##'   default "localhost" configuration always exists. Create new
+    ##'   configurations using the `$worker_config_save` method on the
+    ##'  [`rrq::rrq_controller`] object.
     ##'
     ##' @param worker_id Optional worker id.  If omitted, a random
     ##'   id will be created.
     ##'
-    ##' @param time_poll Poll time.  Longer values here will reduce the
-    ##'   impact on the database but make workers less responsive to being
-    ##'   killed with an interrupt (control-C or Escape).  The default
-    ##'   should be good for most uses, but shorter values are used for
-    ##'   debugging.
+    ##' @param key_alive Optional key that will be written once the
+    ##'   worker is alive. This can be passed to [`rrq::rrq_expect_worker`]
+    ##'   so that a controlling process can efficiently wait for workers to
+    ##'   appear .
     ##'
-    ##' @param timeout_idle Optional timeout to set for the worker.  This is
-    ##'   (roughly) equivalent to issuing a \code{TIMEOUT_SET} message
-    ##'   after initialising the worker, except that it's guaranteed to be
-    ##'   run by all workers.
-    ##'
-    ##' @param heartbeat_period Optional period for the heartbeat.  If
-    ##'   non-NULL then a heartbeat process will be started (using
-    ##'   [`rrq::rrq_heartbeat`]) which can be used to build fault
-    ##'   tolerant queues.
-    ##'
-    ##' @param verbose Logical, indicating if the worker should print
-    ##'   logging output to the screen.  Logging to screen has a small but
-    ##'   measurable performance cost, and if you will not collect system
-    ##'   logs from the worker then it is wasted time.  Logging to the
-    ##'   redis server is always enabled.
-    ##'
-    ##' @param queue Queues to listen on, listed in decreasing order of
-    ##'   priority. If not given, we listen on the "default" queue.
-    ##'
-    ##' @param timeout_poll Optional timeout indicating how long to wait
-    ##'   for a background process to produce stdout or stderr. Only used
-    ##'   for tasks queued with `separate_process` `TRUE`.
-    ##'
-    ##' @param timeout_die Optional timeout indicating how long to wait
-    ##'   wait for the background process to respond to SIGTERM before
-    ##'   we stop the worker. Only used for tasks queued with
-    ##'   `separate_process` `TRUE`.
+    ##' @param timeout_config How long to try and read the worker
+    ##'   configuration for. Will attempt to read once a second and throw
+    ##'   an error if config cannot be located after `timeout` seconds.
+    ##'   Use this to create workers before their configurations are
+    ##'   available. The default (0) is to assume that the configuration
+    ##'   is immediately available.
     ##'
     ##' @param is_child Logical, used to indicate that this is a child of
-    ##'   the real worker.  If `is_child` is `TRUE`, then most other
-    ##'   arguments here have no effect (e.g., `queue` all the timeout /
-    ##'   idle / polling arguments) as they come from the parent.
-    initialize = function(queue_id, con = redux::hiredis(),
-                          key_alive = NULL, worker_id = NULL,
-                          queue = NULL, time_poll = NULL, timeout_idle = NULL,
-                          heartbeat_period = NULL, verbose = TRUE,
-                          is_child = FALSE, timeout_poll = 1, timeout_die = 2) {
+    ##'   the real worker.  Not for general use.
+    ##'
+    ##' @param con A redis connection
+    initialize = function(queue_id, name_config = "localhost",
+                          worker_id = NULL, key_alive = NULL,
+                          timeout_config = 0, is_child = FALSE,
+                          con = redux::hiredis()) {
+      assert_scalar_character(queue_id)
       assert_is(con, "redis_api")
 
-      private$con <- con
+      ## TODO: default config name should be "default", not localhost
+
       self$id <- worker_id %||% ids::adjective_animal()
-      lockBinding("id", self)
+      self$config <- name_config
+      private$con <- con
       private$keys <- rrq_keys(queue_id, self$id)
-      private$verbose <- verbose
-      private$is_child <- is_child
 
+      ## Check to see if this is a reasonable thing to be doing:
       rrq_version_check(private$con, private$keys)
-
       worker_exists <- con$SISMEMBER(private$keys$worker_id, self$id) == 1L
       if (is_child != worker_exists) {
         if (is_child) {
@@ -140,20 +67,29 @@ rrq_worker <- R6::R6Class(
         }
       }
 
+      config <- worker_config_read(private$con, private$keys, name_config,
+                                   timeout_config)
+
       private$store <- rrq_object_store(private$con, private$keys)
-      private$time_poll <- time_poll %||% 60
-      private$timeout_poll <- timeout_poll
-      private$timeout_die <- timeout_die
+      private$verbose <- config$verbose
+      private$is_child <- is_child
+      private$time_poll <- config$time_poll
+      private$timeout_poll <- config$timeout_poll
+      private$timeout_die <- config$timeout_die
 
       if (private$is_child) {
         self$log("CHILD")
         self$load_envir()
       } else {
         withCallingHandlers(
-          worker_initialise(self, private, worker_queue(queue),
-                            key_alive, timeout_idle, heartbeat_period),
+          worker_initialise(self, private, worker_queue(config$queue),
+                            key_alive, config$timeout_idle,
+                            config$heartbeat_period),
           error = worker_catch_error(self, private))
       }
+
+      lockBinding("id", self)
+      lockBinding("config", self)
     },
 
     ##' @description Return information about this worker, a list of
@@ -325,7 +261,8 @@ rrq_worker <- R6::R6Class(
 worker_info_collect <- function(worker, private) {
   sys <- sessionInfo()
   redis_config <- private$con$config()
-  dat <- list(worker = worker$id,
+  dat <- list(worker = worker$id, # TODO: worker -> id
+              config = worker$config,
               rrq_version = version_info(),
               platform = sys$platform,
               running = sys$running,

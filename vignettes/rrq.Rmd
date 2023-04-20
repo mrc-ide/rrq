@@ -379,9 +379,9 @@ Above, we create two configurations: "short" which just listens on the queue `sh
 
 
 ```r
-w_short <- rrq::rrq_worker_spawn(obj, worker_config = "short")
+w_short <- rrq::rrq_worker_spawn(obj, name_config = "short")
 #> Spawning 1 worker with prefix chargeful_xenopus
-w_all <- rrq::rrq_worker_spawn(obj, worker_config = "all")
+w_all <- rrq::rrq_worker_spawn(obj, name_config = "all")
 #> Spawning 1 worker with prefix exportable_beardeddragon
 ```
 

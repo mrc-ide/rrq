@@ -1128,8 +1128,9 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param time_poll Poll time.  Longer values here will reduce the
     ##'   impact on the database but make workers less responsive to being
-    ##'   killed with an interrupt.  The default should be good for most
-    ##'   uses, but shorter values are used for debugging.
+    ##'   killed with an interrupt (control-C or Escape).  The default
+    ##'   should be good for most uses, but shorter values are used for
+    ##'   debugging.
     ##'
     ##' @param timeout_idle Optional timeout that sets the length of time
     ##'   after which the worker will exit if it has not processed a task.
@@ -1147,7 +1148,8 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param heartbeat_period Optional period for the heartbeat.  If
     ##'   non-NULL then a heartbeat process will be started (using
-    ##' [`rrq::rrq_heartbeat`] which can be used to build fault tolerant queues.
+    ##'   [`rrq::rrq_heartbeat`]) which can be used to build fault
+    ##'   tolerant queues. See `vignette("fault-tolerance")` for details.
     ##'
     ##' @param verbose Logical, indicating if the worker should print
     ##'   logging output to the screen.  Logging to screen has a small but
@@ -1188,7 +1190,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param name Name of the configuration
     worker_config_read = function(name) {
-      worker_config_read(self$con, private$keys, name)
+      worker_config_read(self$con, private$keys, name, 0)
     },
 
     ##' Report on worker "load" (the number of workers being used over

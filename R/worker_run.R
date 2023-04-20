@@ -107,9 +107,8 @@ worker_run_task_separate_process <- function(task, worker, private) {
 
 
 remote_run_task <- function(redis_config, queue_id, worker_id, task_id) {
-  con <- redux::hiredis(config = redis_config)
-  worker <- rrq_worker$new(queue_id, con, worker_id = worker_id,
-                           is_child = TRUE)
+  worker <- rrq_worker$new(queue_id, worker_id = worker_id, is_child = TRUE,
+                           con = redux::hiredis(config = redis_config))
   on.exit(worker$log("STOP", "OK"))
   worker$task_eval(task_id)
 }

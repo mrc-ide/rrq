@@ -22,7 +22,7 @@
 ##'   don't wait for workers to appear (you can run the `wait_alive`
 ##'   method of the returned object to run this test manually)
 ##'
-##' @param worker_config Name of the configuration to use.  By default
+##' @param name_config Name of the configuration to use.  By default
 ##'   the \code{"localhost"} configuration is used
 ##'
 ##' @param worker_id_base Optional base to construct the worker ids
@@ -50,10 +50,10 @@
 ##'   integer). For all methods except `logs`, the default of `NULL`
 ##'   means "all managed workers".
 rrq_worker_spawn <- function(obj, n = 1, logdir = NULL,
-                             timeout = 600, worker_config = "localhost",
+                             timeout = 600, name_config = "localhost",
                              worker_id_base = NULL,
                              time_poll = 1, progress = NULL) {
-  ret <- rrq_worker_manager$new(obj, n, logdir, worker_config, worker_id_base)
+  ret <- rrq_worker_manager$new(obj, n, logdir, name_config, worker_id_base)
   if (timeout > 0) {
     ret$wait_alive(timeout, time_poll, progress)
   }
@@ -109,12 +109,12 @@ rrq_worker_manager <- R6::R6Class(
   public = list(
     id = NULL,
 
-    initialize = function(obj, n, logdir = NULL, worker_config = "localhost",
+    initialize = function(obj, n, logdir = NULL, name_config = "localhost",
                           worker_id_base = NULL) {
       assert_is(obj, "rrq_controller")
-      if (!(worker_config %in% obj$worker_config_list())) {
+      if (!(name_config %in% obj$worker_config_list())) {
         stop(sprintf("Invalid rrq worker configuration key '%s'",
-                     worker_config))
+                     name_config))
       }
       worker_id_base <- worker_id_base %||% ids::adjective_animal()
       worker_ids <- sprintf("%s_%d", worker_id_base, seq_len(n))
@@ -130,7 +130,7 @@ rrq_worker_manager <- R6::R6Class(
       message(sprintf("Spawning %d %s with prefix %s",
                       n, ngettext(n, "worker", "workers"), worker_id_base))
 
-      args <- list(keys$queue_id, worker_config, key_alive, con$config())
+      args <- list(keys$queue_id, name_config, key_alive, con$config())
       process <- set_names(vector("list", n), worker_ids)
       for (i in seq_len(n)) {
         args_i <- c(list(worker_ids[[i]]), args)
@@ -140,10 +140,10 @@ rrq_worker_manager <- R6::R6Class(
         ## will rarely want the default callr/processx cleanup as we
         ## want to tidy away the worker first.
         process[[i]] <- callr::r_bg(
-          function(worker_id, queue_id, worker_config, key_alive, config) {
+          function(worker_id, queue_id, name_config, key_alive, config) {
             con <- redux::hiredis(config)
-            w <- rrq_worker_from_config(
-              queue_id, worker_config = worker_config, worker_id = worker_id,
+            w <- rrq_worker$new(
+              queue_id, name_config = name_config, worker_id = worker_id,
               key_alive = key_alive, con = con)
             w$loop()
           },

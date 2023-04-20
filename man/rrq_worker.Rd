@@ -16,6 +16,8 @@ but will sit and poll a queue for jobs.
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
 \item{\code{id}}{The id of the worker}
+
+\item{\code{config}}{The name of the configuration used by this worker}
 }
 \if{html}{\out{</div>}}
 }
@@ -44,72 +46,44 @@ Constructor
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_worker$new(
   queue_id,
-  con = redux::hiredis(),
-  key_alive = NULL,
+  name_config = "localhost",
   worker_id = NULL,
-  queue = NULL,
-  time_poll = NULL,
-  timeout_idle = NULL,
-  heartbeat_period = NULL,
-  verbose = TRUE,
+  key_alive = NULL,
+  timeout_config = 0,
   is_child = FALSE,
-  timeout_poll = 1,
-  timeout_die = 2
+  con = redux::hiredis()
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{queue_id}}{Name of the queue to connect to.  This will be the
-prefix to all the keys in the redis database}
+\item{\code{queue_id}}{The queue id}
 
-\item{\code{con}}{A redis connection}
-
-\item{\code{key_alive}}{Optional key that will be written once the
-worker is alive.}
+\item{\code{name_config}}{Optional name of the configuration. The
+default "localhost" configuration always exists. Create new
+configurations using the \verb{$worker_config_save} method on the
+\code{\link{rrq_controller}} object.}
 
 \item{\code{worker_id}}{Optional worker id.  If omitted, a random
 id will be created.}
 
-\item{\code{queue}}{Queues to listen on, listed in decreasing order of
-priority. If not given, we listen on the "default" queue.}
+\item{\code{key_alive}}{Optional key that will be written once the
+worker is alive. This can be passed to \code{\link{rrq_expect_worker}}
+so that a controlling process can efficiently wait for workers to
+appear .}
 
-\item{\code{time_poll}}{Poll time.  Longer values here will reduce the
-impact on the database but make workers less responsive to being
-killed with an interrupt (control-C or Escape).  The default
-should be good for most uses, but shorter values are used for
-debugging.}
-
-\item{\code{timeout_idle}}{Optional timeout to set for the worker.  This is
-(roughly) equivalent to issuing a \code{TIMEOUT_SET} message
-after initialising the worker, except that it's guaranteed to be
-run by all workers.}
-
-\item{\code{heartbeat_period}}{Optional period for the heartbeat.  If
-non-NULL then a heartbeat process will be started (using
-\code{\link{rrq_heartbeat}}) which can be used to build fault
-tolerant queues.}
-
-\item{\code{verbose}}{Logical, indicating if the worker should print
-logging output to the screen.  Logging to screen has a small but
-measurable performance cost, and if you will not collect system
-logs from the worker then it is wasted time.  Logging to the
-redis server is always enabled.}
+\item{\code{timeout_config}}{How long to try and read the worker
+configuration for. Will attempt to read once a second and throw
+an error if config cannot be located after \code{timeout} seconds.
+Use this to create workers before their configurations are
+available. The default (0) is to assume that the configuration
+is immediately available.}
 
 \item{\code{is_child}}{Logical, used to indicate that this is a child of
-the real worker.  If \code{is_child} is \code{TRUE}, then most other
-arguments here have no effect (e.g., \code{queue} all the timeout /
-idle / polling arguments) as they come from the parent.}
+the real worker.  Not for general use.}
 
-\item{\code{timeout_poll}}{Optional timeout indicating how long to wait
-for a background process to produce stdout or stderr. Only used
-for tasks queued with \code{separate_process} \code{TRUE}.}
-
-\item{\code{timeout_die}}{Optional timeout indicating how long to wait
-wait for the background process to respond to SIGTERM before
-we stop the worker. Only used for tasks queued with
-\code{separate_process} \code{TRUE}.}
+\item{\code{con}}{A redis connection}
 }
 \if{html}{\out{</div>}}
 }
