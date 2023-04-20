@@ -18,14 +18,14 @@ test_that("create short-lived worker", {
 
   ## Local:
   msg1 <- capture_messages(
-    w <- rrq_worker_from_config(obj$queue_id, key))
+    w <- rrq_worker$new(obj$queue_id, key))
   msg2 <- capture_messages(res <- w$loop())
   expect_null(res)
   expect_true(any(grepl("STOP OK (TIMEOUT)", msg2, fixed = TRUE)))
 
   ## Remote:
   logs <- tempfile()
-  w <- test_worker_spawn(obj, worker_config = key, logdir = logs)
+  w <- test_worker_spawn(obj, name_config = key, logdir = logs)
   expect_type(w$id, "character")
   log <- obj$worker_log_tail(w$id, Inf)
   expect_s3_class(log, "data.frame")
@@ -53,10 +53,10 @@ test_that("Sensible error message on missing config", {
   key <- "nonexistant"
 
   msg <- capture_messages(expect_error(
-    rrq_worker_from_config(obj$queue_id, key),
+    rrq_worker$new(obj$queue_id, key),
     "Invalid rrq worker configuration key 'nonexistant'"))
   expect_error(
-    test_worker_spawn(obj, worker_config = key),
+    test_worker_spawn(obj, name_config = key),
     "Invalid rrq worker configuration key 'nonexistant'")
 })
 
@@ -91,7 +91,7 @@ test_that("infinite timeout", {
   obj <- test_rrq("myfuns.R")
   obj$worker_config_save("infinite", timeout_idle = Inf, verbose = FALSE)
 
-  w <- test_worker_blocking(obj, worker_config = "infinite")
+  w <- test_worker_blocking(obj, name_config = "infinite")
   expect_equal(r6_private(w)$timeout_idle, Inf)
   expect_equal(r6_private(w)$timer(), Inf)
 

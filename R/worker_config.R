@@ -1,3 +1,5 @@
+## TODO: remove defaults here, they're never used and are confusing. We
+## should validate here too.
 worker_config_save <- function(con, keys, name,
                                time_poll = NULL, timeout_idle = NULL,
                                queue = NULL,
@@ -20,12 +22,21 @@ worker_config_save <- function(con, keys, name,
 }
 
 
-worker_config_read <- function(con, keys, name) {
-  config <- con$HGET(keys$worker_config, name)
-  if (is.null(config)) {
-    stop(sprintf("Invalid rrq worker configuration key '%s'", name))
+worker_config_read <- function(con, keys, name, timeout) {
+  read <- function() {
+    config <- con$HGET(keys$worker_config, name)
+    if (is.null(config)) {
+      stop(sprintf("Invalid rrq worker configuration key '%s'", name))
+    }
+    bin_to_object(config)
   }
-  bin_to_object(config)
+
+  if (timeout > 0) {
+    time_poll <- 1
+    wait_success("config not readable in time", timeout, read, time_poll)
+  } else {
+    read()
+  }
 }
 
 
