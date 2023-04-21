@@ -1,5 +1,3 @@
-## TODO: remove defaults here, they're never used and are confusing. We
-## should validate here too.
 worker_config_save <- function(con, keys, name,
                                time_poll = NULL, timeout_idle = NULL,
                                queue = NULL,
