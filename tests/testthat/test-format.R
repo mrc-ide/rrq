@@ -56,7 +56,8 @@ test_that("can print worker info", {
   skip_on_os("windows")
 
   obj <- test_rrq()
-  res <- obj$worker_config_save("localhost", heartbeat_period = 3)
+  cfg <- rrq_worker_config(heartbeat_period = 3)
+  res <- obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
   w1 <- test_worker_spawn(obj)
   w2 <- test_worker_spawn(obj)
 

@@ -183,7 +183,8 @@ rrq_controller <- R6::R6Class(
       }
 
       rrq_version_check(self$con, private$keys)
-      self$worker_config_save("localhost", overwrite = FALSE)
+      self$worker_config_save(WORKER_CONFIG_DEFAULT, rrq_worker_config(),
+                              overwrite = FALSE)
 
       private$store <- rrq_object_store(self$con, private$keys)
       private$scripts <- rrq_scripts_load(self$con)
@@ -403,6 +404,7 @@ rrq_controller <- R6::R6Class(
                       depends_on = NULL,
                       timeout_task_wait = NULL, time_poll = 1,
                       progress = NULL, delete = FALSE, error = FALSE) {
+      ## TODO: time_poll -> poll_task
       if (is.null(dots)) {
         dots <- as.list(substitute(list(...)))[-1L]
       }
@@ -1126,57 +1128,18 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param name Name for this configuration
     ##'
-    ##' @param time_poll Poll time.  Longer values here will reduce the
-    ##'   impact on the database but make workers less responsive to being
-    ##'   killed with an interrupt (control-C or Escape).  The default
-    ##'   should be good for most uses, but shorter values are used for
-    ##'   debugging.
-    ##'
-    ##' @param timeout_idle Optional timeout that sets the length of time
-    ##'   after which the worker will exit if it has not processed a task.
-    ##'   This is (roughly) equivalent to issuing a \code{TIMEOUT_SET}
-    ##'   message after initialising the worker, except that it's guaranteed
-    ##'   to be run by all workers.
-    ##'
-    ##' @param queue Optional character vector of queues to listen on
-    ##'   for jobs. There is a default queue which is always listened
-    ##'   on (called 'default'). You can specify additional names here
-    ##'   and jobs put onto these queues with `$enqueue()` will have
-    ##'   *higher* priority than the default. You can explicitly list
-    ##'   the "default" queue (e.g., `queue = c("high", "default",
-    ##'   "low")`) to set the position of the default queue.
-    ##'
-    ##' @param heartbeat_period Optional period for the heartbeat.  If
-    ##'   non-NULL then a heartbeat process will be started (using
-    ##'   [`rrq::rrq_heartbeat`]) which can be used to build fault
-    ##'   tolerant queues. See `vignette("fault-tolerance")` for details.
-    ##'
-    ##' @param verbose Logical, indicating if the worker should print
-    ##'   logging output to the screen.  Logging to screen has a small but
-    ##'   measurable performance cost, and if you will not collect system
-    ##'   logs from the worker then it is wasted time.  Logging to the
-    ##'   redis server is always enabled.
+    ##' @param config A worker configuration, created by
+    ##'   [rrq::rrq_worker_config()]
     ##'
     ##' @param overwrite Logical, indicating if an existing configuration
-    ##'   with this `name` should be overwritten if it exists (if
-    ##'   `overwrite = FALSE` and the configuration exists an error will
-    ##'   be thrown).
+    ##'   with this `name` should be overwritten if it exists. If `FALSE`,
+    ##'   then the configuration is not updated, even if it differs from
+    ##'   the version currently saved.
     ##'
-    ##' @param timeout_poll Optional timeout indicating how long to wait
-    ##'   for a background process to produce stdout or stderr. Only used
-    ##'   for tasks queued with `separate_process` `TRUE`.
-    ##'
-    ##' @param timeout_die Optional timeout indicating how long to wait
-    ##'   wait for the background process to respond to SIGTERM before
-    ##'   we stop the worker. Only used for tasks queued with
-    ##'   `separate_process` `TRUE`.
-    worker_config_save = function(name, time_poll = NULL, timeout_idle = NULL,
-                                  queue = NULL, heartbeat_period = NULL,
-                                  verbose = NULL, overwrite = TRUE,
-                                  timeout_poll = 1, timeout_die = 2) {
-      worker_config_save(self$con, private$keys, name, time_poll, timeout_idle,
-                         queue, heartbeat_period, verbose, overwrite,
-                         timeout_poll, timeout_die)
+    ##' @return Invisibly, a boolean indicating if the configuration was
+    ##'   updated.
+    worker_config_save = function(name, config, overwrite = TRUE) {
+      worker_config_save(self$con, private$keys, name, config, overwrite)
     },
 
     ##' @description Return names of worker configurations saved by

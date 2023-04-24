@@ -51,8 +51,8 @@ worker_run_task_separate_process <- function(task, worker, private) {
   worker_id <- worker$id
   task_id <- task$id
   key_cancel <- keys$task_cancel
-  timeout_poll <- private$timeout_poll
-  timeout_die <- private$timeout_die
+  poll_process <- private$poll_process
+  timeout_process_die <- private$timeout_process_die
 
   worker$log("REMOTE", task_id)
   px <- callr::r_bg(
@@ -73,13 +73,13 @@ worker_run_task_separate_process <- function(task, worker, private) {
   task_terminate <- function(log, status) {
     worker$log(log)
     px$signal(tools::SIGTERM)
-    wait_timeout("Waiting for task to stop", timeout_die, px$is_alive)
+    wait_timeout("Waiting for task to stop", timeout_process_die, px$is_alive)
     list(value = worker_task_failed(status, queue_id, task_id),
          status = status)
   }
 
   repeat {
-    result <- process_poll(px, timeout_poll)
+    result <- process_poll(px, poll_process)
     if (!px$is_alive() && result == "ready") {
       ## The only failure here I have identified is that if the task
       ## dies or is killed then we get an error of class
