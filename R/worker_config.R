@@ -56,6 +56,7 @@
 ##'   input parameters.
 ##'
 ##' @export
+##' @examples
 ##' rrq::rrq_worker_config()
 rrq_worker_config <- function(queue = NULL, verbose = TRUE,
                               poll_queue = NULL, timeout_idle = Inf,
