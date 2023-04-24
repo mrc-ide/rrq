@@ -139,3 +139,13 @@ test_that("timeout_process_die is validated", {
   expect_equal(rrq_worker_config(timeout_process_die = 5)$timeout_process_die,
                5)
 })
+
+
+test_that("can save worker configuration with top-level function", {
+  con <- test_hiredis()
+  name <- sprintf("rrq:%s", ids::random_id())
+  cfg <- rrq_worker_config(timeout_idle = 10, verbose = FALSE)
+  rrq_worker_config_save(name, WORKER_CONFIG_DEFAULT, cfg)
+  obj <- rrq_controller$new(name)
+  expect_equal(obj$worker_config_read(WORKER_CONFIG_DEFAULT), cfg)
+})
