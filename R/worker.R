@@ -73,16 +73,16 @@ rrq_worker <- R6::R6Class(
       private$store <- rrq_object_store(private$con, private$keys)
       private$verbose <- config$verbose
       private$is_child <- is_child
-      private$time_poll <- config$time_poll
-      private$timeout_poll <- config$timeout_poll
-      private$timeout_die <- config$timeout_die
+      private$poll_queue <- config$poll_queue
+      private$poll_process <- config$poll_process
+      private$timeout_process_die <- config$timeout_process_die
 
       if (private$is_child) {
         self$log("CHILD")
         self$load_envir()
       } else {
         withCallingHandlers(
-          worker_initialise(self, private, worker_queue(config$queue),
+          worker_initialise(self, private, config$queue,
                             key_alive, config$timeout_idle,
                             config$heartbeat_period),
           error = worker_catch_error(self, private))
@@ -134,7 +134,7 @@ rrq_worker <- R6::R6Class(
       } else {
         keys <- c(keys$worker_message, private$queue)
       }
-      blpop(private$con, keys, private$time_poll, immediate)
+      blpop(private$con, keys, private$poll_queue, immediate)
     },
 
     ##' @description Take a single "step". This consists of
@@ -169,7 +169,7 @@ rrq_worker <- R6::R6Class(
 
     ##' @description Start the timer
     timer_start = function() {
-      if (is.null(private$timeout_idle)) {
+      if (private$timeout_idle == Inf) {
         private$timer <- NULL
       } else {
         private$timer <- time_checker(private$timeout_idle)
@@ -250,11 +250,11 @@ rrq_worker <- R6::R6Class(
     keys = NULL,
     queue = NULL,
     store = NULL,
-    time_poll = NULL,
+    poll_queue = NULL,
     verbose = NULL,
     is_child = NULL,
-    timeout_poll = NULL,
-    timeout_die = NULL
+    poll_process = NULL,
+    timeout_process_die = NULL
   ))
 
 
@@ -334,7 +334,7 @@ worker_step <- function(worker, private, immediate) {
     }
   }
 
-  if (is.null(task) && !is.null(private$timeout_idle)) {
+  if (is.null(task) && private$timeout_idle < Inf) {
     if (is.null(private$timer)) {
       worker$timer_start()
     }
@@ -438,17 +438,4 @@ worker_log <- function(con, keys, label, value, is_child, verbose) {
     message(res$screen)
   }
   con$RPUSH(keys$worker_log, res$redis)
-}
-
-
-worker_queue <- function(queue) {
-  if (is.null(queue)) {
-    queue <- QUEUE_DEFAULT
-  } else {
-    assert_character(queue)
-    if (!(QUEUE_DEFAULT %in% queue)) {
-      queue <- c(queue, QUEUE_DEFAULT)
-    }
-  }
-  queue
 }

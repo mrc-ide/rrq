@@ -1,9 +1,8 @@
 test_that("heartbeat", {
   obj <- test_rrq()
 
-  res <- obj$worker_config_save("localhost", heartbeat_period = 3,
-                                verbose = FALSE)
-  expect_equal(res$heartbeat_period, 3)
+  cfg <- rrq_worker_config(heartbeat_period = 3, verbose = FALSE)
+  res <- obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
 
   w <- test_worker_blocking(obj)
   dat <- w$info()
@@ -12,12 +11,12 @@ test_that("heartbeat", {
 
   expect_equal(obj$con$EXISTS(dat$heartbeat_key), 1)
   expect_lte(obj$con$PTTL(dat$heartbeat_key),
-             res$heartbeat_period * 3 * 1000)
+             cfg$heartbeat_period * 3 * 1000)
   ## This might be just a bit too strict over slow connections if the
   ## worker is not close to the connection, so I've subtracted .1s off
   ## arbitrarily
   expect_gte(obj$con$PTTL(dat$heartbeat_key),
-             res$heartbeat_period * 2 * 1000 - 100)
+             cfg$heartbeat_period * 2 * 1000 - 100)
 
   w$shutdown()
   expect_equal(obj$con$EXISTS(dat$heartbeat_key), 0)
@@ -51,12 +50,12 @@ test_that("detecting workers with no heartbeat is quiet", {
 test_that("detecting output with clean exit is quiet", {
   obj <- test_rrq("myfuns.R")
 
-  ## We need to set time_poll to be fairly fast because BLPOP is not
+  ## We need to set poll_queue to be fairly fast because BLPOP is not
   ## interruptable; the interrupt will only be handled _after_ R gets
   ## control back.
-  res <- obj$worker_config_save("localhost", time_poll = 1,
-                                heartbeat_period = 1,
-                                verbose = FALSE)
+  cfg <- rrq_worker_config(poll_queue = 1, heartbeat_period = 1,
+                           verbose = FALSE)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
 
   w <- test_worker_spawn(obj)
 
@@ -83,18 +82,18 @@ test_that("detect killed worker (via heartbeat)", {
   skip_on_covr() # possibly causing corrupt covr output
   obj <- test_rrq("myfuns.R", timeout_worker_stop = 0)
 
-  ## We need to set time_poll to be fairly fast because BLPOP is not
+  ## We need to set poll_queue to be fairly fast because BLPOP is not
   ## interruptable; the interrupt will only be handled _after_ R gets
   ## control back.
-  res <- obj$worker_config_save("localhost", time_poll = 1,
-                                heartbeat_period = 1,
-                                verbose = FALSE)
+  cfg <- rrq_worker_config(poll_queue = 1, heartbeat_period = 1,
+                           verbose = FALSE)
+  res <- obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
 
   w <- test_worker_spawn(obj)
 
   key <- rrq_key_worker_heartbeat(obj$queue_id, w$id)
   expect_equal(obj$con$EXISTS(key), 1)
-  expire <- res$heartbeat_period * 3
+  expire <- cfg$heartbeat_period * 3
   expect_equal(obj$con$GET(key), as.character(expire))
   expect_lte(obj$con$TTL(key), expire)
 
@@ -135,8 +134,9 @@ test_that("detect killed worker (via heartbeat)", {
 test_that("detect multiple killed workers", {
   obj <- test_rrq("myfuns.R", timeout_worker_stop = 0)
 
-  res <- obj$worker_config_save("localhost", time_poll = 1,
-                                heartbeat_period = 1, verbose = FALSE)
+  cfg <- rrq_worker_config(poll_queue = 1, heartbeat_period = 1,
+                           verbose = FALSE)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
 
   w <- test_worker_spawn(obj, n = 2)
 
@@ -147,7 +147,7 @@ test_that("detect multiple killed workers", {
 
   w$kill()
 
-  expire <- res$heartbeat_period * 3
+  expire <- cfg$heartbeat_period * 3
   Sys.sleep(expire)
 
   res <- evaluate_promise(obj$worker_detect_exited())

@@ -51,6 +51,7 @@ WORKER_LOST <- "LOST"
 WORKER_PAUSED <- "PAUSED"
 
 QUEUE_DEFAULT <- "default"
+WORKER_CONFIG_DEFAULT <- "localhost"
 ## nolint end
 
 ## This version number needs to point at the last breaking change to

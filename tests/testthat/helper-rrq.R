@@ -107,7 +107,8 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
 
   obj <- rrq_controller$new(name, follow = follow)
 
-  obj$worker_config_save("localhost", time_poll = 1, verbose = verbose)
+  cfg <- rrq_worker_config(poll_queue = 1, verbose = verbose)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
   obj$envir(create)
 
   withr::defer_parent(test_rrq_cleanup(obj, timeout_worker_stop))

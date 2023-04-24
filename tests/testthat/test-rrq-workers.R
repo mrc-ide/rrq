@@ -141,7 +141,8 @@ test_that("kill worker with a signal", {
   skip_on_os("windows")
 
   obj <- test_rrq(timeout_worker_stop = 0)
-  res <- obj$worker_config_save("localhost", heartbeat_period = 3)
+  cfg <- rrq_worker_config(heartbeat_period = 3)
+  res <- obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
   w <- test_worker_spawn(obj)
 
   obj$worker_stop(w$id, "kill")
@@ -188,21 +189,21 @@ test_that("rrq_worker_main_args parse", {
   expect_equal(
     rrq_worker_main_args("name"),
     list(queue_id = "name",
-         config = "localhost",
+         config = WORKER_CONFIG_DEFAULT,
          worker_id = NULL,
          key_alive = NULL))
 
   expect_equal(
     rrq_worker_main_args(c("name", "--worker-id=bob")),
     list(queue_id = "name",
-         config = "localhost",
+         config = WORKER_CONFIG_DEFAULT,
          worker_id = "bob",
          key_alive = NULL))
 
   expect_equal(
     rrq_worker_main_args(c("name", "--key-alive=key")),
     list(queue_id = "name",
-         config = "localhost",
+         config = WORKER_CONFIG_DEFAULT,
          worker_id = NULL,
          key_alive = "key"))
 
@@ -219,7 +220,7 @@ test_that("can pass --key-alive", {
   expect_mapequal(
     rrq_worker_main_args(c("name", "--key-alive=key")),
     list(queue_id = "name",
-         config = "localhost",
+         config = WORKER_CONFIG_DEFAULT,
          worker_id = NULL,
          key_alive = "key"))
 })
@@ -286,7 +287,8 @@ test_that("can get worker info", {
   skip_on_os("windows")
 
   obj <- test_rrq(timeout_worker_stop = 10)
-  res <- obj$worker_config_save("localhost", heartbeat_period = 3)
+  cfg <- rrq_worker_config(heartbeat_period = 3)
+  res <- obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
   w <- test_worker_spawn(obj)
 
   info <- obj$worker_info(w$id)
@@ -304,7 +306,8 @@ test_that("can get worker info", {
 
 test_that("multiple queues format correctly when printing worker", {
   obj <- test_rrq()
-  obj$worker_config_save("localhost", queue = c("a", "b"), verbose = FALSE)
+  cfg <- rrq_worker_config(queue = c("a", "b"), verbose = FALSE)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
   w <- test_worker_blocking(obj)
   format <- worker_format(w)
 
