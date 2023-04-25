@@ -179,7 +179,9 @@ obj$worker_delete_exited()
 To enable the heartbeat, save a worker configuration before starting a worker:
 
 ```{r}
-obj$worker_config_save("localhost", heartbeat_period = 3, overwrite = TRUE)
+obj$worker_config_save(
+  "localhost",
+  rrq::rrq_worker_config(heartbeat_period = 3))
 ```
 
 When you spawn a worker it will pick up this configuration, and we'll be able to detect if it has died.

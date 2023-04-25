@@ -21,31 +21,32 @@ In order to do this, we're going to need a queue and a worker:
 obj <- rrq::rrq_controller$new("rrq:messages")
 logdir <- tempfile()
 w <- rrq::rrq_worker_spawn(obj, logdir = logdir)
-#> Spawning 1 worker with prefix traumatophobic_comet
+#> Spawning 1 worker with prefix tekite_thrip
 worker_id <- w$id
 ```
 
 On startup the worker log contains:
 
 ```plain
-[2023-04-14 16:27:34] ALIVE
-[2023-04-14 16:27:34] ENVIR new
-[2023-04-14 16:27:34] QUEUE default
+[2023-04-25 16:38:07] ALIVE
+[2023-04-25 16:38:07] ENVIR new
+[2023-04-25 16:38:07] QUEUE default
                                  __
                 ______________ _/ /
       ______   / ___/ ___/ __ `/ /_____
      /_____/  / /  / /  / /_/ /_/_____/
  ______      /_/  /_/   \__, (_)   ______
 /_____/                   /_/     /_____/
-    worker:        traumatophobic_comet_1
-    rrq_version:   0.6.20
+    worker:        tekite_thrip_1
+    config:        localhost
+    rrq_version:   0.7.0
     platform:      x86_64-pc-linux-gnu (64-bit)
     running:       Ubuntu 20.04.5 LTS
     hostname:      wpia-dide300
     username:      rfitzjoh
     queue:         rrq:messages:queue:default
     wd:            /home/rfitzjoh/Documents/src/rrq/vignettes_src
-    pid:           3453278
+    pid:           216516
     redis_host:    127.0.0.1
     redis_port:    6379
     heartbeat_key: <not set>
@@ -94,16 +95,16 @@ The message id is going to be useful for getting responses:
 
 ```r
 message_id
-#> [1] "1681486054.728401"
+#> [1] "1682437087.802073"
 ```
 
 (this is derived from the current time, according to Redis which is
 the central reference point of time for the whole system).
 
 ```plain
-[2023-04-14 16:27:34] MESSAGE PING
+[2023-04-25 16:38:07] MESSAGE PING
 PONG
-[2023-04-14 16:27:34] RESPONSE PING
+[2023-04-25 16:38:07] RESPONSE PING
 ```
 
 The logfile prints:
@@ -117,12 +118,12 @@ We can access the same bits of information in the worker log:
 
 ```r
 obj$worker_log_tail(n = Inf)
-#>                worker_id child       time  command message
-#> 1 traumatophobic_comet_1    NA 1681486055    ALIVE
-#> 2 traumatophobic_comet_1    NA 1681486055    ENVIR     new
-#> 3 traumatophobic_comet_1    NA 1681486055    QUEUE default
-#> 4 traumatophobic_comet_1    NA 1681486055  MESSAGE    PING
-#> 5 traumatophobic_comet_1    NA 1681486055 RESPONSE    PING
+#>        worker_id child       time  command message
+#> 1 tekite_thrip_1    NA 1682437088    ALIVE
+#> 2 tekite_thrip_1    NA 1682437088    ENVIR     new
+#> 3 tekite_thrip_1    NA 1682437088    QUEUE default
+#> 4 tekite_thrip_1    NA 1682437088  MESSAGE    PING
+#> 5 tekite_thrip_1    NA 1682437088 RESPONSE    PING
 ```
 
 This includes the `ALIVE` message as the worker comes up.
@@ -135,8 +136,8 @@ We already know that our worker has a response, but we can ask anyway:
 
 ```r
 obj$message_has_response(message_id)
-#> traumatophobic_comet_1
-#>                   TRUE
+#> tekite_thrip_1
+#>           TRUE
 ```
 
 Or inversely we can as what messages a given worker has responses for:
@@ -144,7 +145,7 @@ Or inversely we can as what messages a given worker has responses for:
 
 ```r
 obj$message_response_ids(worker_id)
-#> [1] "1681486054.728401"
+#> [1] "1682437087.802073"
 ```
 
 To fetch the responses from all workers it was sent to (always
@@ -153,7 +154,7 @@ returning a named list):
 
 ```r
 obj$message_get_response(message_id)
-#> $traumatophobic_comet_1
+#> $tekite_thrip_1
 #> [1] "PONG"
 ```
 
@@ -162,7 +163,7 @@ or to fetch the response from a given worker:
 
 ```r
 obj$message_get_response(message_id, worker_id)
-#> $traumatophobic_comet_1
+#> $tekite_thrip_1
 #> [1] "PONG"
 ```
 
@@ -171,7 +172,7 @@ The response can be deleted by passing `delete = TRUE` to this method:
 
 ```r
 obj$message_get_response(message_id, worker_id, delete = TRUE)
-#> $traumatophobic_comet_1
+#> $tekite_thrip_1
 #> [1] "PONG"
 ```
 
@@ -180,7 +181,7 @@ after which recalling the message will throw an error:
 
 ```r
 obj$message_get_response(message_id, worker_id)
-#> Error in message_get_response(self$con, private$keys, message_id, worker_ids, : Response missing for workers: traumatophobic_comet_1
+#> Error in message_get_response(self$con, private$keys, message_id, worker_ids, : Response missing for workers: tekite_thrip_1
 ```
 
 There is also a `timeout` argument that lets you wait until a response is
@@ -189,10 +190,10 @@ ready (as in `$task_wait()`).
 
 ```r
 obj$enqueue(Sys.sleep(2))
-#> [1] "c5795ecd549b4fd3fe3d077a2a483ed1"
+#> [1] "0790bfd861a9f920f06c01c0d768bc91"
 message_id <- obj$message_send("PING")
 obj$message_get_response(message_id, worker_id, delete = TRUE, timeout = 10)
-#> $traumatophobic_comet_1
+#> $tekite_thrip_1
 #> [1] "PONG"
 ```
 
@@ -201,14 +202,14 @@ Looking at the log will show what went on here:
 
 ```r
 obj$worker_log_tail(n = 4)
-#>                worker_id child       time       command
-#> 1 traumatophobic_comet_1    NA 1681486055    TASK_START
-#> 2 traumatophobic_comet_1    NA 1681486057 TASK_COMPLETE
-#> 3 traumatophobic_comet_1    NA 1681486057       MESSAGE
-#> 4 traumatophobic_comet_1    NA 1681486057      RESPONSE
+#>        worker_id child       time       command
+#> 1 tekite_thrip_1    NA 1682437088    TASK_START
+#> 2 tekite_thrip_1    NA 1682437090 TASK_COMPLETE
+#> 3 tekite_thrip_1    NA 1682437090       MESSAGE
+#> 4 tekite_thrip_1    NA 1682437090      RESPONSE
 #>                            message
-#> 1 c5795ecd549b4fd3fe3d077a2a483ed1
-#> 2 c5795ecd549b4fd3fe3d077a2a483ed1
+#> 1 0790bfd861a9f920f06c01c0d768bc91
+#> 2 0790bfd861a9f920f06c01c0d768bc91
 #> 3                             PING
 #> 4                             PING
 ```
@@ -223,11 +224,11 @@ completed, the response takes a while to come back.  Equivalently,
 from the worker log:
 
 ```plain
-[2023-04-14 16:27:35] TASK_START c5795ecd549b4fd3fe3d077a2a483ed1
-[2023-04-14 16:27:37] TASK_COMPLETE c5795ecd549b4fd3fe3d077a2a483ed1
-[2023-04-14 16:27:37] MESSAGE PING
+[2023-04-25 16:38:07] TASK_START 0790bfd861a9f920f06c01c0d768bc91
+[2023-04-25 16:38:09] TASK_COMPLETE 0790bfd861a9f920f06c01c0d768bc91
+[2023-04-25 16:38:09] MESSAGE PING
 PONG
-[2023-04-14 16:27:37] RESPONSE PING
+[2023-04-25 16:38:09] RESPONSE PING
 ```
 
 ## `ECHO`
@@ -240,14 +241,14 @@ response.
 ```r
 message_id <- obj$message_send("ECHO", "hello world!")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $traumatophobic_comet_1
+#> $tekite_thrip_1
 #> [1] "OK"
 ```
 
 ```plain
-[2023-04-14 16:27:37] MESSAGE ECHO
+[2023-04-25 16:38:10] MESSAGE ECHO
 hello world!
-[2023-04-14 16:27:37] RESPONSE ECHO
+[2023-04-25 16:38:10] RESPONSE ECHO
 ```
 
 ## `INFO`
@@ -260,15 +261,16 @@ worker started up:
 ```r
 obj$worker_info()[[worker_id]]
 #>   <rrq_worker_info>
-#>     worker:      traumatophobic_comet_1
-#>     rrq_version: 0.6.20
+#>     worker:      tekite_thrip_1
+#>     config:      localhost
+#>     rrq_version: 0.7.0
 #>     platform:    x86_64-pc-linux-gnu (64-bit)
 #>     running:     Ubuntu 20.04.5 LTS
 #>     hostname:    wpia-dide300
 #>     username:    rfitzjoh
 #>     queue:       rrq:messages:queue:default
 #>     wd:          /home/rfitzjoh/Documents/src/rrq/vignettes_src
-#>     pid:         3453278
+#>     pid:         216516
 #>     redis_host:  127.0.0.1
 #>     redis_port:  6379
 ```
@@ -286,38 +288,41 @@ field:
 
 ```r
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $traumatophobic_comet_1
-#> $traumatophobic_comet_1$worker
-#> [1] "traumatophobic_comet_1"
+#> $tekite_thrip_1
+#> $tekite_thrip_1$worker
+#> [1] "tekite_thrip_1"
 #>
-#> $traumatophobic_comet_1$rrq_version
-#> [1] "0.6.20"
+#> $tekite_thrip_1$config
+#> [1] "localhost"
 #>
-#> $traumatophobic_comet_1$platform
+#> $tekite_thrip_1$rrq_version
+#> [1] "0.7.0"
+#>
+#> $tekite_thrip_1$platform
 #> [1] "x86_64-pc-linux-gnu (64-bit)"
 #>
-#> $traumatophobic_comet_1$running
+#> $tekite_thrip_1$running
 #> [1] "Ubuntu 20.04.5 LTS"
 #>
-#> $traumatophobic_comet_1$hostname
+#> $tekite_thrip_1$hostname
 #> [1] "wpia-dide300"
 #>
-#> $traumatophobic_comet_1$username
+#> $tekite_thrip_1$username
 #> [1] "rfitzjoh"
 #>
-#> $traumatophobic_comet_1$queue
+#> $tekite_thrip_1$queue
 #> [1] "rrq:messages:queue:default"
 #>
-#> $traumatophobic_comet_1$wd
+#> $tekite_thrip_1$wd
 #> [1] "/home/rfitzjoh/Documents/src/rrq/vignettes_src"
 #>
-#> $traumatophobic_comet_1$pid
-#> [1] 3453278
+#> $tekite_thrip_1$pid
+#> [1] 216516
 #>
-#> $traumatophobic_comet_1$redis_host
+#> $tekite_thrip_1$redis_host
 #> [1] "127.0.0.1"
 #>
-#> $traumatophobic_comet_1$redis_port
+#> $tekite_thrip_1$redis_port
 #> [1] 6379
 ```
 
@@ -332,7 +337,7 @@ in which queued code is evaluated in.
 ```r
 message_id <- obj$message_send("EVAL", "1 + 1")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $traumatophobic_comet_1
+#> $tekite_thrip_1
 #> [1] 2
 ```
 
@@ -348,15 +353,15 @@ The `PAUSE` / `RESUME` messages can be used to prevent workers from picking up n
 
 ```r
 obj$worker_status()
-#> traumatophobic_comet_1
-#>                 "IDLE"
+#> tekite_thrip_1
+#>         "IDLE"
 message_id <- obj$message_send("PAUSE")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $traumatophobic_comet_1
+#> $tekite_thrip_1
 #> [1] "OK"
 obj$worker_status()
-#> traumatophobic_comet_1
-#>               "PAUSED"
+#> tekite_thrip_1
+#>       "PAUSED"
 ```
 
 Once paused workers ignore tasks, which stay on the queue:
@@ -365,7 +370,7 @@ Once paused workers ignore tasks, which stay on the queue:
 ```r
 t <- obj$enqueue(runif(5))
 obj$task_status(t)
-#> 3b3ff6daca0e3bf8df847a8bb670e716
+#> ce61c1e9e863feadb616a0783e32cdc1
 #>                        "PENDING"
 ```
 
@@ -375,10 +380,10 @@ Sending a `RESUME` message unpauses the worker:
 ```r
 message_id <- obj$message_send("RESUME")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $traumatophobic_comet_1
+#> $tekite_thrip_1
 #> [1] "OK"
 obj$task_wait(t, 5)
-#> [1] 0.007289642 0.767054967 0.298261103 0.809573230 0.292728378
+#> [1] 0.4973230 0.8467330 0.1887747 0.4457310 0.2073960
 ```
 
 ## `SET_TIMEOUT` / `GET_TIMEOUT`
@@ -388,7 +393,7 @@ Workers will quit after being left idle for more than a certain time; this is th
 
 ```r
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $traumatophobic_comet_1
+#> $tekite_thrip_1
 #> timeout_idle    remaining
 #>          Inf          Inf
 ```
@@ -398,7 +403,7 @@ We can set this to a finite value, in seconds:
 
 ```r
 obj$message_send_and_wait("TIMEOUT_SET", 600, worker_ids = worker_id)
-#> $traumatophobic_comet_1
+#> $tekite_thrip_1
 #> [1] "OK"
 ```
 
@@ -409,14 +414,14 @@ Once set, the `TIMEOUT_GET` returns the length of time remaining before the work
 
 ```r
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $traumatophobic_comet_1
+#> $tekite_thrip_1
 #> timeout_idle    remaining
-#>     600.0000     599.9014
+#>     600.0000     599.9421
 Sys.sleep(5)
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $traumatophobic_comet_1
+#> $tekite_thrip_1
 #> timeout_idle    remaining
-#>     600.0000     594.8317
+#>     600.0000     594.8837
 ```
 
 One useful pattern is to send work to workers, then set the timeout to zero. This means that when work is complete they will exit (almost) immediately:
@@ -429,20 +434,20 @@ grp <- obj$lapply(1:5, function(x) {
 }, timeout_task_wait = 0)
 obj$message_send("TIMEOUT_SET", 0, worker_id)
 obj$tasks_wait(grp$task_ids)
-#> $e22cf0800081c22a8bdb4375fcff05dd
-#> [1] 0.6380563
+#> $`073ed79b2c7405ef71064dc36ab081f4`
+#> [1] 0.308749
 #>
-#> $da25217a08a98e9871f04338d6d2affc
-#> [1] 0.9102414 0.9077643
+#> $`079a61a593174a1f8806f39f349ec3d5`
+#> [1] 0.2918986 0.1310712
 #>
-#> $`7d8f6db4f01b32c5aea54f9c91a682ff`
-#> [1] 0.2258517 0.4301782 0.5665966
+#> $b561a7f1e27e708ea47293d1db83a962
+#> [1] 0.2018187 0.7130648 0.5555343
 #>
-#> $`5565534094373f49f919eb2a7efc9a83`
-#> [1] 0.2032347 0.1702909 0.6889298 0.4325388
+#> $`88bdb7c795740e080dd08fa2c0fa150a`
+#> [1] 0.4359489 0.3617489 0.5916484 0.3225625
 #>
-#> $`136f8664d7d60d5e31a174e5787b68ea`
-#> [1] 0.68573938 0.12746609 0.96403443 0.92756642 0.02308414
+#> $a2521812c43c760727765f9bb5b54455
+#> [1] 0.5333082 0.7488500 0.8659694 0.2208474 0.1043538
 ```
 
 The worker will remain idle for 60s (by default) which is the length of time that one poll for work lasts, then it will exit.
@@ -450,10 +455,10 @@ The worker will remain idle for 60s (by default) which is the length of time tha
 
 ```r
 obj$worker_status(worker_id)
-#> traumatophobic_comet_1
-#>                 "IDLE"
+#> tekite_thrip_1
+#>         "IDLE"
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $traumatophobic_comet_1
+#> $tekite_thrip_1
 #> timeout_idle    remaining
 #>            0            0
 ```
