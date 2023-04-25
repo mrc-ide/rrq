@@ -210,7 +210,8 @@ rrq_worker_manager <- R6::R6Class(
       if (!all(ok)) {
         message(sprintf("%d / %d workers not identified in time",
                         sum(!ok), length(done)))
-        logs <- lapply(self$id[!ok], self$logs)
+        logs <- set_names(lapply(self$id[!ok], self$logs),
+                          self$id[!ok])
         worker_print_failed_logs(logs)
         stop("Not all workers recovered")
       }

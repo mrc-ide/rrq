@@ -149,3 +149,21 @@ test_that("can save worker configuration with top-level function", {
   obj <- rrq_controller$new(name)
   expect_equal(obj$worker_config_read(WORKER_CONFIG_DEFAULT), cfg)
 })
+
+
+test_that("default worker config poll queue depends on interactivity", {
+  expect_equal(
+    rlang::with_interactive(rrq_worker_config()$poll_queue, TRUE),
+    5)
+  expect_equal(
+    rlang::with_interactive(rrq_worker_config()$poll_queue, FALSE),
+    60)
+  expect_equal(
+    rlang::with_interactive(
+      rrq_worker_config(poll_queue = 20)$poll_queue, TRUE),
+    20)
+  expect_equal(
+    rlang::with_interactive(
+      rrq_worker_config(poll_queue = 20)$poll_queue, FALSE),
+    20)
+})

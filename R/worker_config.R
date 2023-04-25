@@ -71,9 +71,10 @@ rrq_worker_config <- function(queue = NULL, verbose = TRUE,
     }
   }
   assert_scalar_logical(verbose)
-  if (!is.null(poll_queue)) {
-    assert_scalar_numeric(poll_queue)
+  if (is.null(poll_queue)) {
+    poll_queue <- if (rlang::is_interactive()) 5 else 60
   }
+  assert_scalar_numeric(poll_queue)
   assert_scalar_numeric(timeout_idle)
   assert_scalar_numeric(poll_process)
   assert_scalar_numeric(timeout_process_die)
