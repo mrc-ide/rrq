@@ -13,11 +13,6 @@
 ##' @param worker_id The id of the worker (if not given a random
 ##'   id is used)
 ##'
-##' @param key_alive Optional key to write to, indicating that the
-##'   worker is alive. This can be passed to
-##'   [`rrq::rrq_expect_worker`] so that a controlling process can
-##'   wait for workers to come up.
-##'
 ##' @param con Redis configuration
 ##'
 ##' @param timeout How long to try and read the worker config for. Will
@@ -30,7 +25,7 @@
 ##'
 ##' @export
 rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
-                                   worker_id = NULL, key_alive = NULL,
+                                   worker_id = NULL,
                                    con = redux::hiredis(), timeout = 5) {
   keys <- rrq_keys(queue_id)
   config_read <- function() {
@@ -39,7 +34,6 @@ rrq_worker_from_config <- function(queue_id, worker_config = "localhost",
   config <- wait_success("config not readable in time", timeout, config_read, 1)
 
   rrq_worker$new(queue_id, con,
-                 key_alive = key_alive,
                  worker_id = worker_id,
                  queue = config$queue,
                  time_poll = config$time_poll,
@@ -70,9 +64,6 @@ rrq_worker <- R6::R6Class(
     ##'   prefix to all the keys in the redis database
     ##'
     ##' @param con A redis connection
-    ##'
-    ##' @param key_alive Optional key that will be written once the
-    ##'   worker is alive.
     ##'
     ##' @param worker_id Optional worker id.  If omitted, a random
     ##'   id will be created.
@@ -116,7 +107,7 @@ rrq_worker <- R6::R6Class(
     ##'   arguments here have no effect (e.g., `queue` all the timeout /
     ##'   idle / polling arguments) as they come from the parent.
     initialize = function(queue_id, con = redux::hiredis(),
-                          key_alive = NULL, worker_id = NULL,
+                          worker_id = NULL,
                           queue = NULL, time_poll = NULL, timeout_idle = NULL,
                           heartbeat_period = NULL, verbose = TRUE,
                           is_child = FALSE, timeout_poll = 1, timeout_die = 2) {
@@ -151,7 +142,7 @@ rrq_worker <- R6::R6Class(
       } else {
         withCallingHandlers(
           worker_initialise(self, private, worker_queue(queue),
-                            key_alive, timeout_idle, heartbeat_period),
+                            timeout_idle, heartbeat_period),
           error = worker_catch_error(self, private))
       }
     },
@@ -343,7 +334,7 @@ worker_info_collect <- function(worker, private) {
 }
 
 
-worker_initialise <- function(worker, private, queue, key_alive, timeout_idle,
+worker_initialise <- function(worker, private, queue, timeout_idle,
                               heartbeat_period) {
   con <- private$con
   keys <- private$keys
@@ -352,12 +343,15 @@ worker_initialise <- function(worker, private, queue, key_alive, timeout_idle,
                                         private$verbose)
   private$queue <- rrq_key_queue(keys$queue_id, queue)
 
-  con$pipeline(
+  res <- con$pipeline(
     redis$SADD(keys$worker_id,     worker$id),
     redis$HSET(keys$worker_status, worker$id, WORKER_IDLE),
     redis$HDEL(keys$worker_task,   worker$id),
     redis$DEL(keys$worker_log),
-    redis$HSET(keys$worker_info,   worker$id, object_to_bin(worker$info())))
+    redis$HSET(keys$worker_info,   worker$id, object_to_bin(worker$info())),
+    redis$HGET(keys$worker_alive, worker$id))
+
+  key_alive <- res[[6]]
 
   if (!is.null(timeout_idle)) {
     run_message_timeout_set(worker, private, timeout_idle)

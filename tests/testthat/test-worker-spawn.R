@@ -74,3 +74,50 @@ test_that("error if we try to interact with non-managed worker", {
     w$logs("fred"),
     "Worker not controlled by this manager: 'fred'")
 })
+
+
+test_that("can wait on manually spawned workers", {
+  obj <- test_rrq("myfuns.R")
+
+  queue_id <- obj$queue_id
+  worker_ids <- sprintf("%s_%d", ids::adjective_animal(), 1:2)
+  key_alive <- rrq::rrq_worker_expect(obj, worker_ids)
+  expect_type(key_alive, "character")
+  expect_length(key_alive, 1)
+  expect_match(key_alive,
+               "^rrq:[[:xdigit:]]{32}:worker:alive:[[:xdigit:]]{32}$")
+
+  bin <- obj$con$HGET(rrq_keys(queue_id)$worker_expect, key_alive)
+  expect_type(bin, "raw")
+  expect_equal(bin_to_object(bin), worker_ids)
+
+  expect_error(
+    suppressMessages(rrq_worker_wait(obj, key_alive, 0, 1, FALSE)),
+    "Not all workers recovered")
+
+  p1 <- callr::r_bg(function(queue_id, worker_id) {
+    rrq::rrq_worker$new(queue_id, worker_id = worker_id)$loop()
+  }, list(queue_id, worker_ids[[1]]), package = TRUE, cleanup = FALSE)
+  p2 <- callr::r_bg(function(queue_id, worker_id) {
+    rrq::rrq_worker$new(queue_id, worker_id = worker_id)$loop()
+  }, list(queue_id, worker_ids[[2]]), package = TRUE, cleanup = FALSE)
+
+  res <- rrq_worker_wait(obj, key_alive, 5, 1, FALSE)
+  expect_s3_class(res, "difftime")
+
+  ## If we're unlucky GC will happen within a loop here, so be kind
+  ## and try a couple of times. Potentially problemetic as part of the
+  ## coverage build, which is very slow.
+  testthat::try_again(
+    5,
+    expect_lt(rrq_worker_wait(obj, key_alive, 5, 1, FALSE), 0.5))
+})
+
+
+test_that("error if no workers expected on key", {
+  obj <- test_rrq("myfuns.R")
+  key_alive <- rrq_key_worker_alive(obj$queue_id)
+  expect_error(
+    rrq_worker_wait(obj, key_alive, 0, 1, FALSE),
+    "No workers expected on that key")
+})

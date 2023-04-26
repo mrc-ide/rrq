@@ -463,6 +463,40 @@ We provide a docker image that you can use (`mrcide/rrq`), though typically you 
 
 We use rrq to orchestrate workers in web applications where a number of workers carry out long running calculations for a HTTP API written using [plumber](https://www.rplumber.io/) and [porcelain](https://reside-ic.github.io/porcelain/).
 
+## Waiting for workers to appear
+
+If you have submitted workers via a task scheduler, you might want to block and wait for them to become available. You can do this using the `rrq::rrq_worker_expect` and `rrq::rrq_worker_wait` functions.
+
+We first create a vector of names for the new workers, and then tell `rrq` that we're going to produce these workers.
+
+```{r}
+worker_ids <- c("cluster_1", "cluster_2")
+key_alive <- rrq::rrq_worker_expect(obj, worker_ids)
+```
+
+It responds with a key that we can use to check if they have appeared:
+
+```{r}
+key_alive
+```
+
+How you then start the workers is up to you; you might start them at the command line with
+
+```{r results = "asis", echo = FALSE}
+writeLines(c(
+  "```",
+  sprintf(rrq_worker --worker-id %s %s", worker_ids, obj$queue_id),
+  "```"))
+```
+
+(into separate terminals). Or you might queue these jobs with a cluster scheduler such as Slurm or PBS (with appropriate care over the working directory).  But you can then immediately, in your R console write:
+
+```r
+rrq::rrq_worker_wait(obj, key_alive)
+```
+
+and your session will block and wait for the workers to appear, erroring if they do not appear in time.
+
 ## Worker heartbeat
 
 If you use many workers, particularly on different machines, you may not notice if some disappear. Possible causes of this include:
