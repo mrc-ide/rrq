@@ -198,7 +198,7 @@ rrq_worker_manager <- R6::R6Class(
             con <- redux::hiredis(config)
             w <- rrq_worker_from_config(
               queue_id, worker_config = worker_config, worker_id = worker_id,
-              key_alive = key_alive, con = con)
+              con = con)
             w$loop()
           },
           args = args_i, package = TRUE, supervise = FALSE, cleanup = FALSE,
@@ -246,8 +246,7 @@ rrq_worker_manager <- R6::R6Class(
         !vlapply(private$process, function(p) p$is_alive())
       }
       worker_wait_alive(private$con, private$keys, private$key_alive,
-                        self$id, is_dead, self$logs,
-                        timeout, poll, progress)
+                        is_dead, self$logs, timeout, poll, progress)
     }
   ))
 
@@ -283,7 +282,7 @@ worker_wait_alive <- function(con, keys, key_alive, is_dead, path_logs,
     message(sprintf("%d / %d workers not identified in time",
                     sum(!ok), length(done)))
     if (!is.null(path_logs)) {
-      logs <- lapply(worker_ids[!ok], path_logs)
+      logs <- set_names(lapply(worker_ids[!ok], path_logs), worker_ids[!ok])
       worker_print_failed_logs(logs)
     }
     stop("Not all workers recovered")

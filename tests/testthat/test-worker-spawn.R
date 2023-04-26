@@ -6,13 +6,13 @@ test_that("Don't wait", {
   expect_type(res$id, "character")
   expect_match(res$id, "_[0-9]+$")
 
-  ans <- withVisible(res$wait_alive(timeout = 10, time_poll = 1))
+  ans <- withVisible(res$wait_alive(timeout = 10, poll = 1))
   expect_false(ans$visible)
   expect_s3_class(ans$value, "difftime")
 
   ## Can call again with no ill effect:
   expect_s3_class(
-    res$wait_alive(timeout = 10, time_poll = 1),
+    res$wait_alive(timeout = 10, poll = 1),
     "difftime")
 })
 
