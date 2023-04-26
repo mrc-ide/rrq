@@ -469,7 +469,8 @@ If you have submitted workers via a task scheduler, you might want to block and 
 
 We first create a vector of names for the new workers, and then tell `rrq` that we're going to produce these workers.
 
-```{r}
+```{r, problem_here}
+obj <- rrq::rrq_controller$new(id)
 worker_ids <- c("cluster_1", "cluster_2")
 key_alive <- rrq::rrq_worker_expect(obj, worker_ids)
 ```
@@ -485,7 +486,7 @@ How you then start the workers is up to you; you might start them at the command
 ```{r results = "asis", echo = FALSE}
 writeLines(c(
   "```",
-  sprintf(rrq_worker --worker-id %s %s", worker_ids, obj$queue_id),
+  sprintf("rrq_worker --worker-id %s %s", worker_ids, obj$queue_id),
   "```"))
 ```
 
@@ -496,6 +497,10 @@ rrq::rrq_worker_wait(obj, key_alive)
 ```
 
 and your session will block and wait for the workers to appear, erroring if they do not appear in time.
+
+```{r, include = FALSE}
+obj$destroy(timeout_worker_stop = 10)
+```
 
 ## Worker heartbeat
 

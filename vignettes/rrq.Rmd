@@ -33,7 +33,7 @@ id <- paste0("rrq:", ids::random_id(bytes = 4))
 obj <- rrq::rrq_controller$new(id)
 ```
 
-This controller uses an "identifier" (here, `id` is `rrq:f57c1947`) which can be anything you want but acts like a folder within the Redis server, distinguishing your queue from any others hosted on the same server.
+This controller uses an "identifier" (here, `id` is `rrq:6d26a57a`) which can be anything you want but acts like a folder within the Redis server, distinguishing your queue from any others hosted on the same server.
 
 Submit a task to the queue with the `$enqueue()` method, returning a key for that task
 
@@ -41,7 +41,7 @@ Submit a task to the queue with the `$enqueue()` method, returning a key for tha
 ```r
 t <- obj$enqueue(1 + 1)
 t
-#> [1] "c56a6acfc34bef75373a33c8708f15ae"
+#> [1] "5f9e7dbcf566c75c92c4951db6b293e9"
 ```
 
 We'll also need some worker processes to carry out our tasks. Here, we'll spawn two for now (see the section below on alternatives to this)
@@ -49,7 +49,7 @@ We'll also need some worker processes to carry out our tasks. Here, we'll spawn 
 
 ```r
 w <- rrq::rrq_worker_spawn(obj, 2)
-#> Spawning 2 workers with prefix abhorrent_groundhog
+#> Spawning 2 workers with prefix brashy_andalusianhorse
 ```
 
 Retrieve the result, polling if needed:
@@ -125,7 +125,7 @@ Initially the task has status `RUNNING` (it will be `PENDING` *very* briefly):
 
 ```r
 obj$task_status(t)
-#> b173dcaf2a0ecf99f30244ef8b780ee6
+#> f061b413987e96869918dd81882be7d3
 #>                        "RUNNING"
 ```
 
@@ -135,7 +135,7 @@ Then after a couple of seconds it will complete (we pad this out here so that it
 ```r
 Sys.sleep(3)
 obj$task_result(t)
-#> [1] 0.8362579
+#> [1] 0.5646074
 ```
 
 The basic task lifecycle is this:
@@ -157,7 +157,7 @@ t <- obj$enqueue({
   runif(1)
 })
 obj$task_wait(t)
-#> [1] 0.4664247
+#> [1] 0.4951533
 ```
 
 The polling interval here is 1 second by default, but if the task completes within that period it will still be returned as soon as it is complete (the interval is just the time between progress bar updates and the period where an interrupt would be caught to cancel the wait).
@@ -167,9 +167,9 @@ Once a task is complete, `$task_wait` and `$task_result` are equivalent
 
 ```r
 obj$task_wait(t)
-#> [1] 0.4664247
+#> [1] 0.4951533
 obj$task_result(t)
-#> [1] 0.4664247
+#> [1] 0.4951533
 ```
 
 ## Configuring the worker environment
@@ -208,15 +208,15 @@ By default, this will notify all running workers to update their environment. No
 
 ```r
 obj$worker_log_tail(n = 4)
-#>               worker_id child       time  command message
-#> 1 abhorrent_groundhog_1    NA 1681486042  MESSAGE REFRESH
-#> 2 abhorrent_groundhog_2    NA 1681486042  MESSAGE REFRESH
-#> 3 abhorrent_groundhog_1    NA 1681486042    ENVIR     new
-#> 4 abhorrent_groundhog_2    NA 1681486042    ENVIR     new
-#> 5 abhorrent_groundhog_1    NA 1681486042    ENVIR  create
-#> 6 abhorrent_groundhog_2    NA 1681486042    ENVIR  create
-#> 7 abhorrent_groundhog_1    NA 1681486042 RESPONSE REFRESH
-#> 8 abhorrent_groundhog_2    NA 1681486042 RESPONSE REFRESH
+#>                  worker_id child       time  command message
+#> 1 brashy_andalusianhorse_1    NA 1682519352  MESSAGE REFRESH
+#> 2 brashy_andalusianhorse_2    NA 1682519352  MESSAGE REFRESH
+#> 3 brashy_andalusianhorse_1    NA 1682519352    ENVIR     new
+#> 4 brashy_andalusianhorse_2    NA 1682519352    ENVIR     new
+#> 5 brashy_andalusianhorse_1    NA 1682519352    ENVIR  create
+#> 6 brashy_andalusianhorse_1    NA 1682519352 RESPONSE REFRESH
+#> 7 brashy_andalusianhorse_2    NA 1682519352    ENVIR  create
+#> 8 brashy_andalusianhorse_2    NA 1682519352 RESPONSE REFRESH
 ```
 
 Now our workers have picked up our functions we can start using them:
@@ -306,7 +306,7 @@ The status of the first task will be `PENDING`, per usual:
 
 ```r
 obj$task_status(id)
-#> 956ef47993448f7d10ff25abc2a433ee
+#> 6a329844cec32abc09f8fa8fc8cbc6aa
 #>                        "PENDING"
 ```
 
@@ -315,14 +315,14 @@ however, the group of tasks submitted as part of the `$lapply` call will be `DEF
 
 ```r
 obj$task_status(id_use$task_ids)
-#> fa18b1b6c7d68e4cdcdc34f092e37844 35d2e5c486fcfe5ec0ab111cad5150d8
+#> 8da02e9ffefc6976e0cb6d2bfd53cc7a 67abf6f250e9c2a7e37d2252c44ab008
 #>                       "DEFERRED"                       "DEFERRED"
-#> 4b4724180663dc38e074e9ad24de7d95 2ae5f0f638ed40eba37b6cf2848cf809
+#> 108ab77583d8450182e50276cd00e230 f2ef0ad24ac95aea5ac990b591b0ad9f
 #>                       "DEFERRED"                       "DEFERRED"
-#> 65e793338c929e3e6fd90cc30a11c0ae
+#> 97b66d41c58fed07b6f0af6deb9782c8
 #>                       "DEFERRED"
 obj$queue_list()
-#> [1] "956ef47993448f7d10ff25abc2a433ee"
+#> [1] "6a329844cec32abc09f8fa8fc8cbc6aa"
 ```
 
 Once the first task is processed by a worker, the status changes:
@@ -332,19 +332,19 @@ Once the first task is processed by a worker, the status changes:
 
 ```r
 obj$task_status(id)
-#> 956ef47993448f7d10ff25abc2a433ee
+#> 6a329844cec32abc09f8fa8fc8cbc6aa
 #>                       "COMPLETE"
 obj$task_status(id_use$task_ids)
-#> fa18b1b6c7d68e4cdcdc34f092e37844 35d2e5c486fcfe5ec0ab111cad5150d8
+#> 8da02e9ffefc6976e0cb6d2bfd53cc7a 67abf6f250e9c2a7e37d2252c44ab008
 #>                        "PENDING"                        "PENDING"
-#> 4b4724180663dc38e074e9ad24de7d95 2ae5f0f638ed40eba37b6cf2848cf809
+#> 108ab77583d8450182e50276cd00e230 f2ef0ad24ac95aea5ac990b591b0ad9f
 #>                        "PENDING"                        "PENDING"
-#> 65e793338c929e3e6fd90cc30a11c0ae
+#> 97b66d41c58fed07b6f0af6deb9782c8
 #>                        "PENDING"
 obj$queue_list()
-#> [1] "65e793338c929e3e6fd90cc30a11c0ae" "35d2e5c486fcfe5ec0ab111cad5150d8"
-#> [3] "4b4724180663dc38e074e9ad24de7d95" "2ae5f0f638ed40eba37b6cf2848cf809"
-#> [5] "fa18b1b6c7d68e4cdcdc34f092e37844"
+#> [1] "97b66d41c58fed07b6f0af6deb9782c8" "67abf6f250e9c2a7e37d2252c44ab008"
+#> [3] "8da02e9ffefc6976e0cb6d2bfd53cc7a" "108ab77583d8450182e50276cd00e230"
+#> [5] "f2ef0ad24ac95aea5ac990b591b0ad9f"
 ```
 
 At this point the tasks will proceed through the queue as usual.
@@ -380,9 +380,9 @@ Above, we create two configurations: "short" which just listens on the queue `sh
 
 ```r
 w_short <- rrq::rrq_worker_spawn(obj, worker_config = "short")
-#> Spawning 1 worker with prefix chargeful_xenopus
+#> Spawning 1 worker with prefix arthrodial_whippet
 w_all <- rrq::rrq_worker_spawn(obj, worker_config = "all")
-#> Spawning 1 worker with prefix exportable_beardeddragon
+#> Spawning 1 worker with prefix shrinkable_whitepelican
 ```
 
 We can then submit a long task to the worker:
@@ -399,8 +399,8 @@ After the workers have had the ability to pick up work, our "short" worker is st
 
 ```r
 obj$worker_status()
-#>        chargeful_xenopus_1 exportable_beardeddragon_1
-#>                     "IDLE"                     "BUSY"
+#>      arthrodial_whippet_1 shrinkable_whitepelican_1
+#>                    "IDLE"                    "BUSY"
 ```
 
 So we can submit tasks to this short queue and have them processed
@@ -409,7 +409,7 @@ So we can submit tasks to this short queue and have them processed
 ```r
 id <- obj$enqueue(runif(1), queue = "short")
 obj$task_wait(id, timeout = 10)
-#> [1] 0.6146942
+#> [1] 0.3516471
 ```
 
 Note that there is no validation to check that any worker is listening on any queue when you submit a task. Indeed there can't be as new workers can be added at any time (so at the point of submission perhaps there were no workers).
@@ -455,7 +455,7 @@ then we create the queue object as normal (and spawn a worker so that we can use
 ```r
 obj <- rrq::rrq_controller$new(id)
 w <- rrq::rrq_worker_spawn(obj, 1)
-#> Spawning 1 worker with prefix sublinear_moray
+#> Spawning 1 worker with prefix nonchalant_narwhale
 ```
 
 It's not hard at all to get to 1KB of data, we can do that by simulating a big pile of random numbers:
@@ -472,7 +472,7 @@ Once the task has finished, data will be stored on disk below the path given abo
 
 ```r
 dir(path)
-#> [1] "3889047bfbd6c2fd8342cb06403e41c8"
+#> [1] "7e27e8c18af698082705267a4716f068"
 ```
 
 
@@ -526,6 +526,42 @@ We provide a docker image that you can use (`mrcide/rrq`), though typically you 
 
 We use rrq to orchestrate workers in web applications where a number of workers carry out long running calculations for a HTTP API written using [plumber](https://www.rplumber.io/) and [porcelain](https://reside-ic.github.io/porcelain/).
 
+## Waiting for workers to appear
+
+If you have submitted workers via a task scheduler, you might want to block and wait for them to become available. You can do this using the `rrq::rrq_worker_expect` and `rrq::rrq_worker_wait` functions.
+
+We first create a vector of names for the new workers, and then tell `rrq` that we're going to produce these workers.
+
+
+```r
+obj <- rrq::rrq_controller$new(id)
+worker_ids <- c("cluster_1", "cluster_2")
+key_alive <- rrq::rrq_worker_expect(obj, worker_ids)
+```
+
+It responds with a key that we can use to check if they have appeared:
+
+
+```r
+key_alive
+#> [1] "rrq:fbc78e7f:worker:alive:e530b6af37bf7fd5e21fe2cd9d4ad7a0"
+```
+
+How you then start the workers is up to you; you might start them at the command line with
+
+```
+rrq_worker --worker-id cluster_1 rrq:fbc78e7f
+rrq_worker --worker-id cluster_2 rrq:fbc78e7f
+```
+
+(into separate terminals). Or you might queue these jobs with a cluster scheduler such as Slurm or PBS (with appropriate care over the working directory).  But you can then immediately, in your R console write:
+
+```r
+rrq::rrq_worker_wait(obj, key_alive)
+```
+
+and your session will block and wait for the workers to appear, erroring if they do not appear in time.
+
 ## Worker heartbeat
 
 If you use many workers, particularly on different machines, you may not notice if some disappear. Possible causes of this include:
@@ -553,36 +589,36 @@ Then, launch a worker
 
 ```r
 w <- rrq::rrq_worker_spawn(obj, 1)
-#> Spawning 1 worker with prefix dumpy_monoclonius
+#> Spawning 1 worker with prefix essential_hochstettersfrog
 ```
 
 Our worker will print information indicating that the heartbeat is enabled (use `obj$worker_process_log()`)
 
 
 ```
-#> [2023-04-14 16:27:26] HEARTBEAT rrq:ba15875e:worker:dumpy_monoclonius_1:heartbeat
-#> [2023-04-14 16:27:26] HEARTBEAT OK
-#> [2023-04-14 16:27:26] ALIVE
-#> [2023-04-14 16:27:26] ENVIR new
-#> [2023-04-14 16:27:26] QUEUE default
+#> [2023-04-26 15:29:16] HEARTBEAT rrq:774aa0f3:worker:essential_hochstettersfrog_1:heartbeat
+#> [2023-04-26 15:29:16] HEARTBEAT OK
+#> [2023-04-26 15:29:16] ALIVE
+#> [2023-04-26 15:29:16] ENVIR new
+#> [2023-04-26 15:29:16] QUEUE default
 #>                                  __
 #>                 ______________ _/ /
 #>       ______   / ___/ ___/ __ `/ /_____
 #>      /_____/  / /  / /  / /_/ /_/_____/
 #>  ______      /_/  /_/   \__, (_)   ______
 #> /_____/                   /_/     /_____/
-#>     worker:        dumpy_monoclonius_1
-#>     rrq_version:   0.6.20
+#>     worker:        essential_hochstettersfrog_1
+#>     rrq_version:   0.6.21
 #>     platform:      x86_64-pc-linux-gnu (64-bit)
 #>     running:       Ubuntu 20.04.5 LTS
 #>     hostname:      wpia-dide300
 #>     username:      rfitzjoh
-#>     queue:         rrq:ba15875e:queue:default
+#>     queue:         rrq:774aa0f3:queue:default
 #>     wd:            /home/rfitzjoh/Documents/src/rrq/vignettes_src
-#>     pid:           3453210
+#>     pid:           358742
 #>     redis_host:    127.0.0.1
 #>     redis_port:    6379
-#>     heartbeat_key: rrq:ba15875e:worker:dumpy_monoclonius_1:heartbeat
+#>     heartbeat_key: rrq:774aa0f3:worker:essential_hochstettersfrog_1:heartbeat
 ```
 
 We also have a heartbeat key here that we can inspect:
@@ -593,7 +629,7 @@ info <- obj$worker_info()[[1]]
 obj$con$EXISTS(info$heartbeat_key)
 #> [1] 1
 obj$con$PTTL(info$heartbeat_key) # in milliseconds
-#> [1] 5803
+#> [1] 5881
 ```
 
 We queue some slow job onto the worker:
@@ -637,7 +673,7 @@ So far as `rrq` is concerned, at this point your task is still running
 
 ```r
 obj$task_status(t)
-#> 819c116168826261ebaab451b9166064
+#> 672fb2452d684f8b00378e5890111aea
 #>                        "RUNNING"
 ```
 
@@ -647,9 +683,9 @@ Handling this situation is still completely manual.  You can detect lost workers
 ```r
 obj$worker_detect_exited()
 #> Lost 1 worker:
-#>   - dumpy_monoclonius_1
+#>   - essential_hochstettersfrog_1
 #> Orphaning 1 task:
-#>   - 819c116168826261ebaab451b9166064
+#>   - 672fb2452d684f8b00378e5890111aea
 ```
 
 this will also "orphan" the task
@@ -657,7 +693,7 @@ this will also "orphan" the task
 
 ```r
 obj$task_status(t)
-#> 819c116168826261ebaab451b9166064
+#> 672fb2452d684f8b00378e5890111aea
 #>                           "DIED"
 ```
 
