@@ -49,9 +49,6 @@
     <loc>/reference/rrq_envir.html</loc>
   </url>
   <url>
-    <loc>/reference/rrq_expect_worker.html</loc>
-  </url>
-  <url>
     <loc>/reference/rrq_heartbeat_kill.html</loc>
   </url>
   <url>
@@ -59,6 +56,9 @@
   </url>
   <url>
     <loc>/reference/rrq_worker.html</loc>
+  </url>
+  <url>
+    <loc>/reference/rrq_worker_expect.html</loc>
   </url>
   <url>
     <loc>/reference/rrq_worker_from_config.html</loc>

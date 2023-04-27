@@ -20,7 +20,7 @@ Details."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/ma
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.20</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.21</span>
       </span>
     </div>
 
@@ -115,7 +115,6 @@ which lets you write:</p>
 <code>[rrq::rrq_worker_from_config()]</code>:</p><ul><li><p><code>queue_id</code> as the sole positional argument</p></li>
 <li><p><code>worker_config</code> as <code>--config</code></p></li>
 <li><p><code>worker_id</code> as <code>--worker-id</code></p></li>
-<li><p><code>key_alive</code> as <code>--key-alive</code></p></li>
 </ul><p>To change the redis connection settings, set the <code>REDIS_URL</code>
 environment variable (see <code><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">redux::hiredis()</a></code> for details).</p>
 <p>For example to create a worker <code>myworker</code> with configuration

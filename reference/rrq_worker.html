@@ -18,7 +18,7 @@ rrq queue worker"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.20</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.21</span>
       </span>
     </div>
 
@@ -109,7 +109,6 @@ but will sit and poll a queue for jobs.</p>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/rrq_worker.html">rrq_worker</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
 <span>  <span class="va">queue_id</span>,</span>
 <span>  con <span class="op">=</span> <span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  key_alive <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  worker_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  queue <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  time_poll <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -131,11 +130,6 @@ prefix to all the keys in the redis database</p></dd>
 
 <dt><code>con</code></dt>
 <dd><p>A redis connection</p></dd>
-
-
-<dt><code>key_alive</code></dt>
-<dd><p>Optional key that will be written once the
-worker is alive.</p></dd>
 
 
 <dt><code>worker_id</code></dt>
