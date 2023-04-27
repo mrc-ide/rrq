@@ -45,7 +45,6 @@ Constructor
 \if{html}{\out{<div class="r">}}\preformatted{rrq_worker$new(
   queue_id,
   con = redux::hiredis(),
-  key_alive = NULL,
   worker_id = NULL,
   queue = NULL,
   time_poll = NULL,
@@ -65,9 +64,6 @@ Constructor
 prefix to all the keys in the redis database}
 
 \item{\code{con}}{A redis connection}
-
-\item{\code{key_alive}}{Optional key that will be written once the
-worker is alive.}
 
 \item{\code{worker_id}}{Optional worker id.  If omitted, a random
 id will be created.}

@@ -8,7 +8,6 @@ rrq_worker_from_config(
   queue_id,
   worker_config = "localhost",
   worker_id = NULL,
-  key_alive = NULL,
   con = redux::hiredis(),
   timeout = 5
 )
@@ -21,11 +20,6 @@ default "localhost" configuration always exists.}
 
 \item{worker_id}{The id of the worker (if not given a random
 id is used)}
-
-\item{key_alive}{Optional key to write to, indicating that the
-worker is alive. This can be passed to
-\code{\link{rrq_expect_worker}} so that a controlling process can
-wait for workers to come up.}
 
 \item{con}{Redis configuration}
 

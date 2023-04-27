@@ -189,39 +189,19 @@ test_that("rrq_worker_main_args parse", {
     rrq_worker_main_args("name"),
     list(queue_id = "name",
          config = "localhost",
-         worker_id = NULL,
-         key_alive = NULL))
+         worker_id = NULL))
 
   expect_equal(
     rrq_worker_main_args(c("name", "--worker-id=bob")),
     list(queue_id = "name",
          config = "localhost",
-         worker_id = "bob",
-         key_alive = NULL))
-
-  expect_equal(
-    rrq_worker_main_args(c("name", "--key-alive=key")),
-    list(queue_id = "name",
-         config = "localhost",
-         worker_id = NULL,
-         key_alive = "key"))
+         worker_id = "bob"))
 
   expect_equal(
     rrq_worker_main_args(c("name", "--config=config")),
     list(queue_id = "name",
          config = "config",
-         worker_id = NULL,
-         key_alive = NULL))
-})
-
-
-test_that("can pass --key-alive", {
-  expect_mapequal(
-    rrq_worker_main_args(c("name", "--key-alive=key")),
-    list(queue_id = "name",
-         config = "localhost",
-         worker_id = NULL,
-         key_alive = "key"))
+         worker_id = NULL))
 })
 
 
@@ -331,7 +311,7 @@ test_that("worker main dispatches correctly", {
 
   mockery::expect_called(mock_rrq_worker_from_config, 1)
   expect_equal(mockery::mock_args(mock_rrq_worker_from_config)[[1]],
-               list("queue_id", "localhost", "worker_id", NULL))
+               list("queue_id", "localhost", "worker_id"))
 
   mockery::expect_called(mock_worker$loop, 1)
   expect_equal(mockery::mock_args(mock_worker$loop)[[1]], list())

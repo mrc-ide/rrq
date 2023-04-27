@@ -238,3 +238,8 @@ first <- function(x) {
 last <- function(x) {
   x[[length(x)]]
 }
+
+
+rep_along <- function(x, y) {
+  rep_len(x, length(y))
+}
