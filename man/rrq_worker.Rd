@@ -48,7 +48,6 @@ Constructor
   queue_id,
   name_config = "localhost",
   worker_id = NULL,
-  key_alive = NULL,
   timeout_config = 0,
   is_child = FALSE,
   con = redux::hiredis()
@@ -67,11 +66,6 @@ configurations using the \verb{$worker_config_save} method on the
 
 \item{\code{worker_id}}{Optional worker id.  If omitted, a random
 id will be created.}
-
-\item{\code{key_alive}}{Optional key that will be written once the
-worker is alive. This can be passed to \code{\link{rrq_expect_worker}}
-so that a controlling process can efficiently wait for workers to
-appear .}
 
 \item{\code{timeout_config}}{How long to try and read the worker
 configuration for. Will attempt to read once a second and throw
