@@ -23,20 +23,19 @@ Invisibly, the path to the script
 }
 \description{
 Write a small script that can be used to launch a rrq worker. The
-resulting script takes the same arguments as
-\code{\link[=rrq_worker_from_config]{rrq_worker_from_config()}}, but from the command line. See
-Details.
+resulting script takes the same arguments as the \link{rrq_worker}
+constructor, but from the command line. See Details.
 }
 \details{
 If you need to launch rrq workers from a script, it's convenient
 not to have to embed R code like:
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{Rscript -e 'rrq::worker_from_config("myqueue")'
+\if{html}{\out{<div class="sourceCode">}}\preformatted{Rscript -e 'rrq::rrq_worker$new("myqueue")'
 }\if{html}{\out{</div>}}
 
-as this is error-prone and unpleasant to read. You can use the
-function \code{rrq_worker_script} to write out a small helper script
-which lets you write:
+as this is error-prone and unpleasant to quote and read. You can
+use the function \code{rrq_worker_script} to write out a small helper
+script which lets you write:
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{./path/rrq_worker myqueue
 }\if{html}{\out{</div>}}
@@ -44,10 +43,10 @@ which lets you write:
 instead.
 
 The helper script supports the same arguments as
-\verb{[rrq::rrq_worker_from_config()]}:
+the \verb{[rrq::rrq_worker]} constructor:
 \itemize{
 \item \code{queue_id} as the sole positional argument
-\item \code{worker_config} as \code{--config}
+\item \code{name_config} as \code{--config}
 \item \code{worker_id} as \code{--worker-id}
 }
 

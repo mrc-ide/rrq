@@ -1,18 +1,17 @@
 ##' Write a small script that can be used to launch a rrq worker. The
-##' resulting script takes the same arguments as
-##' [rrq::rrq_worker_from_config()], but from the command line. See
-##' Details.
+##' resulting script takes the same arguments as the [rrq::rrq_worker]
+##' constructor, but from the command line. See Details.
 ##'
 ##' If you need to launch rrq workers from a script, it's convenient
 ##' not to have to embed R code like:
 ##'
 ##' ```
-##' Rscript -e 'rrq::worker_from_config("myqueue")'
+##' Rscript -e 'rrq::rrq_worker$new("myqueue")'
 ##' ```
 ##'
-##' as this is error-prone and unpleasant to read. You can use the
-##' function `rrq_worker_script` to write out a small helper script
-##' which lets you write:
+##' as this is error-prone and unpleasant to quote and read. You can
+##' use the function `rrq_worker_script` to write out a small helper
+##' script which lets you write:
 ##'
 ##' ```
 ##' ./path/rrq_worker myqueue
@@ -21,10 +20,10 @@
 ##' instead.
 ##'
 ##' The helper script supports the same arguments as
-##' `[rrq::rrq_worker_from_config()]`:
+##' the `[rrq::rrq_worker]` constructor:
 ##'
 ##' * `queue_id` as the sole positional argument
-##' * `worker_config` as `--config`
+##' * `name_config` as `--config`
 ##' * `worker_id` as `--worker-id`
 ##'
 ##' To change the redis connection settings, set the `REDIS_URL`
@@ -73,7 +72,7 @@ rrq_worker_script <- function(path, versioned = FALSE) {
 
 rrq_worker_main <- function(args = commandArgs(TRUE)) {
   dat <- rrq_worker_main_args(args)
-  worker <- rrq_worker_from_config(dat$queue_id, dat$config, dat$worker_id)
+  worker <- rrq_worker$new(dat$queue_id, dat$config, dat$worker_id)
   worker$loop()
   invisible()
 }

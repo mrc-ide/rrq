@@ -116,7 +116,7 @@ test_that("Child workers require a parent", {
   id <- ids::random_id()
   queue_id <- test_name(NULL)
   expect_error(
-    rrq_worker$new(queue_id, con, worker_id = id, is_child = TRUE),
+    rrq_worker$new(queue_id, worker_id = id, is_child = TRUE, con = con),
     "Can't be a child of nonexistant worker")
 })
 
@@ -141,7 +141,8 @@ test_that("kill worker with a signal", {
   skip_on_os("windows")
 
   obj <- test_rrq(timeout_worker_stop = 0)
-  res <- obj$worker_config_save("localhost", heartbeat_period = 3)
+  cfg <- rrq_worker_config(heartbeat_period = 3)
+  res <- obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
   w <- test_worker_spawn(obj)
 
   obj$worker_stop(w$id, "kill")
@@ -188,13 +189,13 @@ test_that("rrq_worker_main_args parse", {
   expect_equal(
     rrq_worker_main_args("name"),
     list(queue_id = "name",
-         config = "localhost",
+         config = WORKER_CONFIG_DEFAULT,
          worker_id = NULL))
 
   expect_equal(
     rrq_worker_main_args(c("name", "--worker-id=bob")),
     list(queue_id = "name",
-         config = "localhost",
+         config = WORKER_CONFIG_DEFAULT,
          worker_id = "bob"))
 
   expect_equal(
@@ -266,7 +267,8 @@ test_that("can get worker info", {
   skip_on_os("windows")
 
   obj <- test_rrq(timeout_worker_stop = 10)
-  res <- obj$worker_config_save("localhost", heartbeat_period = 3)
+  cfg <- rrq_worker_config(heartbeat_period = 3)
+  res <- obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
   w <- test_worker_spawn(obj)
 
   info <- obj$worker_info(w$id)
@@ -274,7 +276,8 @@ test_that("can get worker info", {
   expect_s3_class(info[[1]], "rrq_worker_info")
   expect_equal(names(info), w$id)
   expect_setequal(names(info[[w$id]]),
-                  c("worker", "rrq_version", "platform", "running", "hostname",
+                  c("worker", "config", "rrq_version", "platform", "running",
+                    "hostname",
                     "username", "queue", "wd", "pid", "redis_host",
                     "redis_port", "heartbeat_key"))
   expect_equal(info[[w$id]]$rrq_version, version_info())
@@ -283,7 +286,8 @@ test_that("can get worker info", {
 
 test_that("multiple queues format correctly when printing worker", {
   obj <- test_rrq()
-  obj$worker_config_save("localhost", queue = c("a", "b"), verbose = FALSE)
+  cfg <- rrq_worker_config(queue = c("a", "b"), verbose = FALSE)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
   w <- test_worker_blocking(obj)
   format <- worker_format(w)
 
@@ -297,22 +301,4 @@ test_that("multiple queues format correctly when printing worker", {
   expect_length(unique(loc), 1)
   expect_equal(sub(".+:queue:", "", queue_string_split),
                c("a", "b", "default"))
-})
-
-
-test_that("worker main dispatches correctly", {
-  skip_if_not_installed("mockery")
-  mock_worker <- list(loop = mockery::mock())
-  mock_rrq_worker_from_config <- mockery::mock(mock_worker)
-  mockery::stub(rrq_worker_main, "rrq_worker_from_config",
-                mock_rrq_worker_from_config)
-  res <- rrq_worker_main(c("queue_id", "--worker-id=worker_id"))
-  expect_null(res)
-
-  mockery::expect_called(mock_rrq_worker_from_config, 1)
-  expect_equal(mockery::mock_args(mock_rrq_worker_from_config)[[1]],
-               list("queue_id", "localhost", "worker_id"))
-
-  mockery::expect_called(mock_worker$loop, 1)
-  expect_equal(mockery::mock_args(mock_worker$loop)[[1]], list())
 })

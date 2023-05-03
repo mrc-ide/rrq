@@ -279,7 +279,7 @@ obj$queue_list()
 Once the first task is processed by a worker, the status changes:
 
 ```{r, include = FALSE}
-w <- rrq::rrq_worker_from_config(obj$queue_id)
+w <- rrq::rrq_worker$new(obj$queue_id)
 w$step(TRUE)
 ```
 
@@ -312,16 +312,20 @@ The easiest way to configure this is to save a worker configuration:
 ```{r}
 id <- paste0("rrq:", ids::random_id(bytes = 4))
 obj <- rrq::rrq_controller$new(id)
-obj$worker_config_save("short", queue = "short")
-obj$worker_config_save("all", queue = c("short", "long"))
+obj$worker_config_save(
+  "short",
+  rrq::rrq_worker_config(queue = "short"))
+obj$worker_config_save(
+  "all",
+  rrq::rrq_worker_config(queue = c("short", "long")))
 obj$worker_config_list()
 ```
 
 Above, we create two configurations: "short" which just listens on the queue `short`, and `all` which listens both on the short and long task queues (note that both these workers will also listen on the default queue).
 
 ```{r}
-w_short <- rrq::rrq_worker_spawn(obj, worker_config = "short")
-w_all <- rrq::rrq_worker_spawn(obj, worker_config = "all")
+w_short <- rrq::rrq_worker_spawn(obj, name_config = "short")
+w_all <- rrq::rrq_worker_spawn(obj, name_config = "all")
 ```
 
 We can then submit a long task to the worker:
@@ -520,7 +524,9 @@ To enable the heartbeat, save a worker configuration with the `heartbeat_period`
 ```{r}
 id <- paste0("rrq:", ids::random_id(bytes = 4))
 obj <- rrq::rrq_controller$new(id)
-res <- obj$worker_config_save("localhost", heartbeat_period = 2)
+res <- obj$worker_config_save(
+  "localhost",
+  rrq::rrq_worker_config(heartbeat_period = 2))
 ```
 
 Then, launch a worker

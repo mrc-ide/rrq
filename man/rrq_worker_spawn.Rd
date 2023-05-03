@@ -9,7 +9,7 @@ rrq_worker_spawn(
   n = 1,
   logdir = NULL,
   timeout = 600,
-  worker_config = "localhost",
+  name_config = "localhost",
   worker_id_base = NULL,
   time_poll = 1,
   progress = NULL
@@ -27,7 +27,7 @@ log to, interpreted relative to the current working directory}
 don't wait for workers to appear (you can run the \code{wait_alive}
 method of the returned object to run this test manually)}
 
-\item{worker_config}{Name of the configuration to use.  By default
+\item{name_config}{Name of the configuration to use.  By default
 the \code{"localhost"} configuration is used}
 
 \item{worker_id_base}{Optional base to construct the worker ids

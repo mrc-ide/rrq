@@ -362,7 +362,8 @@ test_that("get task data errors appropriately if task is missing", {
 
 test_that("a worker will pick up tasks from the priority queue", {
   obj <- test_rrq("myfuns.R")
-  obj$worker_config_save("localhost", queue = c("a", "b"), verbose = FALSE)
+  cfg <- rrq_worker_config(queue = c("a", "b"), verbose = FALSE)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
   w <- test_worker_blocking(obj)
 
   t1 <- obj$enqueue(sin(1))
@@ -1107,7 +1108,8 @@ test_that("Can get information about task retries", {
 
 test_that("Can retry tasks that span multiple queues at once", {
   obj <- test_rrq()
-  obj$worker_config_save("localhost", queue = c("a", "b"), verbose = FALSE)
+  cfg <- rrq_worker_config(queue = c("a", "b"), verbose = FALSE)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
   t1 <- c(obj$enqueue(sin(1), queue = "a"),
           obj$enqueue(sin(2), queue = "a"),
           obj$enqueue(sin(3), queue = "b"))

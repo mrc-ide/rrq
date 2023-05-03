@@ -91,7 +91,7 @@ run_message_resume <- function(worker, private) {
 
 run_message_timeout_set <- function(worker, private, args) {
   if (is.numeric(args) || is.null(args)) {
-    private$timeout_idle <- args
+    private$timeout_idle <- args %||% Inf
     worker$timer_start()
     "OK"
   } else {
@@ -100,7 +100,7 @@ run_message_timeout_set <- function(worker, private, args) {
 }
 
 run_message_timeout_get <- function(worker, private) {
-  if (is.null(private$timeout_idle)) {
+  if (!is.finite(private$timeout_idle)) {
     c(timeout_idle = Inf, remaining = Inf)
   } else {
     ## NOTE: This is a slightly odd construction; it arises because

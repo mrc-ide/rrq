@@ -1,7 +1,7 @@
 test_that("lapply simple case", {
   obj <- test_rrq()
-  obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
-                         time_poll = 1, overwrite = TRUE)
+  cfg <- rrq_worker_config(verbose = FALSE, timeout_idle = -1, poll_queue = 1)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg, overwrite = TRUE)
   w <- test_worker_blocking(obj)
 
   grp <- obj$lapply_(1:10, quote(log), dots = list(base = 2),
@@ -28,8 +28,8 @@ test_that("lapply simple case", {
 
 test_that("lapply with anonymous function", {
   obj <- test_rrq()
-  obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
-                         time_poll = 1, overwrite = TRUE)
+  cfg <- rrq_worker_config(verbose = FALSE, timeout_idle = -1, poll_queue = 1)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg, overwrite = TRUE)
   w <- test_worker_blocking(obj)
   grp <- obj$lapply_(1:10, function(x) x + 1, timeout_task_wait = 0)
   w$loop(immediate = TRUE)
@@ -42,8 +42,8 @@ test_that("bulk add with ordinary function", {
   p <- data.frame(a = runif(10), b = runif(10))
   p$b[3] <- NA
   obj <- test_rrq()
-  obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
-                         time_poll = 1, overwrite = TRUE)
+  cfg <- rrq_worker_config(verbose = FALSE, timeout_idle = -1, poll_queue = 1)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg, overwrite = TRUE)
   w <- test_worker_blocking(obj)
   grp <- obj$enqueue_bulk(p, sum, na.rm = TRUE, timeout_task_wait = 0)
   w$loop(immediate = TRUE)
@@ -56,8 +56,8 @@ test_that("bulk add with anonymous functions", {
   p <- data.frame(a = runif(10), b = runif(10))
   p[2] <- NA
   obj <- test_rrq()
-  obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
-                         time_poll = 1, overwrite = TRUE)
+  cfg <- rrq_worker_config(verbose = FALSE, timeout_idle = -1, poll_queue = 1)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg, overwrite = TRUE)
   w <- test_worker_blocking(obj)
   grp <- obj$enqueue_bulk_(p, function(a, b) a + b, timeout_task_wait = 0)
   w$loop(immediate = TRUE)
@@ -68,8 +68,8 @@ test_that("bulk add with anonymous functions", {
 
 test_that("NSE - use namespaced function", {
   obj <- test_rrq()
-  obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
-                         time_poll = 1, overwrite = TRUE)
+  cfg <- rrq_worker_config(verbose = FALSE, timeout_idle = -1, poll_queue = 1)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg, overwrite = TRUE)
   w <- test_worker_blocking(obj)
   grp <- obj$lapply(1:10, ids::adjective_animal, timeout_task_wait = 0)
 
@@ -86,8 +86,8 @@ test_that("NSE - use namespaced function", {
 
 test_that("NSE - use namespaced function with lazy dots", {
   obj <- test_rrq()
-  obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
-                         time_poll = 1, overwrite = TRUE)
+  cfg <- rrq_worker_config(verbose = FALSE, timeout_idle = -1, poll_queue = 1)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg, overwrite = TRUE)
   w <- test_worker_blocking(obj)
   mystyle <- "camel"
   grp <- obj$lapply(1:10, ids::adjective_animal, style = mystyle,
@@ -126,8 +126,9 @@ test_that("enqueue bulk blocking", {
 
 test_that("lapply to alt queue", {
   obj <- test_rrq()
-  obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
-                         time_poll = 1, overwrite = TRUE, queue = "a")
+  cfg <- rrq_worker_config(verbose = FALSE, timeout_idle = -1, poll_queue = 1,
+                           queue = "a")
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg, overwrite = TRUE)
   w <- test_worker_blocking(obj)
 
   grp <- obj$lapply_(1:10, quote(log), dots = list(base = 2),
@@ -241,8 +242,8 @@ test_that("Can offload storage for bulk tasks", {
   path <- tempfile()
 
   obj <- test_rrq(store_max_size = 100, offload_path = path)
-  obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
-                         time_poll = 1, overwrite = TRUE)
+  cfg <- rrq_worker_config(verbose = FALSE, timeout_idle = -1, poll_queue = 1)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg, overwrite = TRUE)
 
   a <- 10
   b <- runif(20)
@@ -260,8 +261,8 @@ test_that("by default, bulk fetch does not throw", {
   e <- new.env()
   sys.source("myfuns.R", e)
   obj <- test_rrq("myfuns.R")
-  obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
-                         time_poll = 1, overwrite = TRUE)
+  cfg <- rrq_worker_config(verbose = FALSE, timeout_idle = -1, poll_queue = 1)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg, overwrite = TRUE)
 
   w <- test_worker_blocking(obj)
   grp <- obj$lapply(seq(-1, 1), only_positive, envir = e, timeout_task_wait = 0)
@@ -280,8 +281,8 @@ test_that("can throw on fetching bulk tasks", {
   e <- new.env()
   sys.source("myfuns.R", e)
   obj <- test_rrq("myfuns.R")
-  obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
-                         time_poll = 1, overwrite = TRUE)
+  cfg <- rrq_worker_config(verbose = FALSE, timeout_idle = -1, poll_queue = 1)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg, overwrite = TRUE)
 
   w <- test_worker_blocking(obj)
   grp <- obj$lapply(seq(-1, 1), only_positive, envir = e, timeout_task_wait = 0)
@@ -310,8 +311,8 @@ test_that("can summarise fetching many failed bulk tasks", {
   e <- new.env()
   sys.source("myfuns.R", e)
   obj <- test_rrq("myfuns.R")
-  obj$worker_config_save("localhost", verbose = FALSE, timeout_idle = -1,
-                         time_poll = 1, overwrite = TRUE)
+  cfg <- rrq_worker_config(verbose = FALSE, timeout_idle = -1, poll_queue = 1)
+  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg, overwrite = TRUE)
 
   w <- test_worker_blocking(obj)
   grp <- obj$lapply(seq(-10, 0), only_positive, envir = e,

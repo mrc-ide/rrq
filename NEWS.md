@@ -1,3 +1,7 @@
+# rrq 0.7.0
+
+* Overhaul worker configuration and creation; now all worker configuration options (except redis and storage control) are set through a named worker configuration; this reduces the number of arguments being passed around and improves documentation (mrc-4068)
+
 # rrq 0.6.16
 
 * Extend fault tolerance support by enabling tasks to be retried; this creates a new task that the old task points at and can be used to seamlessly recover from all sorts of task failure (mrc-2683)

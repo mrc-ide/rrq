@@ -1589,17 +1589,7 @@ Save a worker configuration, which can be used to
 start workers with a set of options with the cli. These
 correspond to arguments to \link{rrq_worker}.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_config_save(
-  name,
-  time_poll = NULL,
-  timeout_idle = NULL,
-  queue = NULL,
-  heartbeat_period = NULL,
-  verbose = NULL,
-  overwrite = TRUE,
-  timeout_poll = 1,
-  timeout_die = 2
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_config_save(name, config, overwrite = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1607,49 +1597,19 @@ correspond to arguments to \link{rrq_worker}.
 \describe{
 \item{\code{name}}{Name for this configuration}
 
-\item{\code{time_poll}}{Poll time.  Longer values here will reduce the
-impact on the database but make workers less responsive to being
-killed with an interrupt.  The default should be good for most
-uses, but shorter values are used for debugging.}
-
-\item{\code{timeout_idle}}{Optional timeout that sets the length of time
-after which the worker will exit if it has not processed a task.
-This is (roughly) equivalent to issuing a \code{TIMEOUT_SET}
-message after initialising the worker, except that it's guaranteed
-to be run by all workers.}
-
-\item{\code{queue}}{Optional character vector of queues to listen on
-for jobs. There is a default queue which is always listened
-on (called 'default'). You can specify additional names here
-and jobs put onto these queues with \verb{$enqueue()} will have
-\emph{higher} priority than the default. You can explicitly list
-the "default" queue (e.g., \code{queue = c("high", "default", "low")}) to set the position of the default queue.}
-
-\item{\code{heartbeat_period}}{Optional period for the heartbeat.  If
-non-NULL then a heartbeat process will be started (using
-\code{\link{rrq_heartbeat}} which can be used to build fault tolerant queues.}
-
-\item{\code{verbose}}{Logical, indicating if the worker should print
-logging output to the screen.  Logging to screen has a small but
-measurable performance cost, and if you will not collect system
-logs from the worker then it is wasted time.  Logging to the
-redis server is always enabled.}
+\item{\code{config}}{A worker configuration, created by
+\code{\link[=rrq_worker_config]{rrq_worker_config()}}}
 
 \item{\code{overwrite}}{Logical, indicating if an existing configuration
-with this \code{name} should be overwritten if it exists (if
-\code{overwrite = FALSE} and the configuration exists an error will
-be thrown).}
-
-\item{\code{timeout_poll}}{Optional timeout indicating how long to wait
-for a background process to produce stdout or stderr. Only used
-for tasks queued with \code{separate_process} \code{TRUE}.}
-
-\item{\code{timeout_die}}{Optional timeout indicating how long to wait
-wait for the background process to respond to SIGTERM before
-we stop the worker. Only used for tasks queued with
-\code{separate_process} \code{TRUE}.}
+with this \code{name} should be overwritten if it exists. If \code{FALSE},
+then the configuration is not updated, even if it differs from
+the version currently saved.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Invisibly, a boolean indicating if the configuration was
+updated.
 }
 }
 \if{html}{\out{<hr>}}

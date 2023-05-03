@@ -15,7 +15,7 @@ test_that("TIMEOUT_SET needs numeric input", {
   w <- test_worker_blocking(obj)
   id <- obj$message_send("TIMEOUT_SET", "soon")
   w$step(TRUE)
-  expect_null(r6_private(w)$timeout_idle)
+  expect_equal(r6_private(w)$timeout_idle, Inf)
   expect_null(r6_private(w)$timer)
   expect_equal(
     obj$message_get_response(id, w$id),
@@ -32,7 +32,7 @@ test_that("TIMEOUT_SET with null clears a timer", {
   expect_is_function(r6_private(w)$timer)
   obj$message_send("TIMEOUT_SET", NULL)
   w$step(TRUE)
-  expect_null(r6_private(w)$timeout_idle)
+  expect_equal(r6_private(w)$timeout_idle, Inf)
   expect_null(r6_private(w)$timer)
 })
 
@@ -360,7 +360,6 @@ test_that("unknown command with complex arguments", {
 test_that("send and wait", {
   obj <- test_rrq()
 
-  obj$worker_config_save("localhost", time_poll = 1)
   w <- test_worker_spawn(obj, 5)
 
   st <- obj$worker_status()

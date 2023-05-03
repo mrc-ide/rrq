@@ -2,10 +2,9 @@ test_that("rrq_default configuration", {
   ## (this is actually the *test* default configuration, which is
   ## possibly not what is wanted)
   obj <- test_rrq()
-  expect_equal(obj$worker_config_list(), "localhost")
-  expect_equal(obj$worker_config_read("localhost"),
-               list(time_poll = 1, verbose = FALSE,
-                    timeout_poll = 1, timeout_die = 2))
+  expect_equal(obj$worker_config_list(), WORKER_CONFIG_DEFAULT)
+  expect_equal(obj$worker_config_read(WORKER_CONFIG_DEFAULT),
+               rrq_worker_config(poll_queue = 1, verbose = FALSE))
 })
 
 
@@ -13,19 +12,19 @@ test_that("create short-lived worker", {
   obj <- test_rrq()
 
   key <- "stop_immediately"
-  obj$worker_config_save(key, timeout_idle = 0, time_poll = 1,
-                         verbose = TRUE)
+  cfg <- rrq_worker_config(timeout_idle = 0, poll_queue = 1, verbose = TRUE)
+  obj$worker_config_save(key, cfg)
 
   ## Local:
   msg1 <- capture_messages(
-    w <- rrq_worker_from_config(obj$queue_id, key))
+    w <- rrq_worker$new(obj$queue_id, key))
   msg2 <- capture_messages(res <- w$loop())
   expect_null(res)
   expect_true(any(grepl("STOP OK (TIMEOUT)", msg2, fixed = TRUE)))
 
   ## Remote:
   logs <- tempfile()
-  w <- test_worker_spawn(obj, worker_config = key, logdir = logs)
+  w <- test_worker_spawn(obj, name_config = key, logdir = logs)
   expect_type(w$id, "character")
   log <- obj$worker_log_tail(w$id, Inf)
   expect_s3_class(log, "data.frame")
@@ -53,10 +52,10 @@ test_that("Sensible error message on missing config", {
   key <- "nonexistant"
 
   msg <- capture_messages(expect_error(
-    rrq_worker_from_config(obj$queue_id, key),
+    rrq_worker$new(obj$queue_id, key),
     "Invalid rrq worker configuration key 'nonexistant'"))
   expect_error(
-    test_worker_spawn(obj, worker_config = key),
+    test_worker_spawn(obj, name_config = key),
     "Invalid rrq worker configuration key 'nonexistant'")
 })
 
@@ -72,8 +71,10 @@ test_that("worker timeout", {
   obj <- test_rrq("myfuns.R")
 
   t <- as.integer(runif(1, min = 100, max = 10000))
-  res <- obj$worker_config_save("localhost", timeout_idle = t, verbose = FALSE)
-  expect_equal(res$timeout_idle, t)
+  cfg <- rrq_worker_config(timeout_idle = t, verbose = FALSE)
+  res <- obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
+  expect_true(res)
+  expect_equal(cfg$timeout_idle, t)
 
   w <- test_worker_blocking(obj)
   expect_equal(r6_private(w)$timeout_idle, t)
@@ -89,11 +90,12 @@ test_that("worker timeout", {
 
 test_that("infinite timeout", {
   obj <- test_rrq("myfuns.R")
-  obj$worker_config_save("infinite", timeout_idle = Inf, verbose = FALSE)
+  cfg <- rrq_worker_config(timeout_idle = Inf, verbose = FALSE)
+  obj$worker_config_save("infinite", cfg)
 
-  w <- test_worker_blocking(obj, worker_config = "infinite")
+  w <- test_worker_blocking(obj, name_config = "infinite")
   expect_equal(r6_private(w)$timeout_idle, Inf)
-  expect_equal(r6_private(w)$timer(), Inf)
+  expect_null(r6_private(w)$timer)
 
   id <- obj$message_send("TIMEOUT_GET")
   w$step(TRUE)
@@ -107,41 +109,61 @@ test_that("rrq_default configuration", {
   ## (this is actually the *test* default configuration, which is
   ## possibly not what is wanted)
   obj <- test_rrq()
-  res1 <- obj$worker_config_save("new", timeout_idle = 1, overwrite = FALSE)
-  expect_equal(res1, list(timeout_idle = 1, verbose = TRUE,
-                          timeout_poll = 1, timeout_die = 2))
-  res2 <- obj$worker_config_save("new", timeout_idle = 2, overwrite = FALSE)
-  expect_null(res2)
-  expect_equal(obj$worker_config_read("new"), res1)
+  cfg1 <- rrq_worker_config(timeout_idle = 1)
+  cfg2 <- rrq_worker_config(timeout_idle = 2)
+  expect_true(obj$worker_config_save("new", cfg1, overwrite = FALSE))
+  expect_equal(obj$worker_config_read("new"), cfg1)
+  expect_false(obj$worker_config_save("new", cfg2, overwrite = FALSE))
+  expect_equal(obj$worker_config_read("new"), cfg1)
 })
 
 
 test_that("verbose is validated", {
-  obj <- test_rrq()
   expect_error(
-    obj$worker_config_save("quiet", verbose = "no thank you"),
+    rrq_worker_config(verbose = "no thank you"),
     "verbose must be logical")
-  obj$worker_config_save("quiet", verbose = FALSE)
-  expect_equal(obj$worker_config_read("quiet"),
-               list(verbose = FALSE, timeout_poll = 1, timeout_die = 2))
+  expect_false(rrq_worker_config(verbose = FALSE)$verbose)
 })
 
-test_that("timeout_poll is validated", {
-  obj <- test_rrq()
+test_that("poll_process is validated", {
   expect_error(
-    obj$worker_config_save("poll", timeout_poll = "5"),
-    "timeout_poll must be integer like")
-  obj$worker_config_save("poll", timeout_poll = 5)
-  expect_equal(obj$worker_config_read("poll"),
-               list(verbose = TRUE, timeout_poll = 5, timeout_die = 2))
+    rrq_worker_config(poll_process = "5"),
+    "'poll_process' must be a numeric")
+  expect_equal(rrq_worker_config(poll_process = 5)$poll_process, 5)
 })
 
-test_that("timeout_die is validated", {
-  obj <- test_rrq()
+test_that("timeout_process_die is validated", {
   expect_error(
-    obj$worker_config_save("die", timeout_die = "5"),
-    "timeout_die must be integer like")
-  obj$worker_config_save("die", timeout_die = 5)
-  expect_equal(obj$worker_config_read("die"),
-               list(verbose = TRUE, timeout_poll = 1, timeout_die = 5))
+    rrq_worker_config(timeout_process_die = "5"),
+    "'timeout_process_die' must be a numeric")
+  expect_equal(rrq_worker_config(timeout_process_die = 5)$timeout_process_die,
+               5)
+})
+
+
+test_that("can save worker configuration with top-level function", {
+  con <- test_hiredis()
+  name <- sprintf("rrq:%s", ids::random_id())
+  cfg <- rrq_worker_config(timeout_idle = 10, verbose = FALSE)
+  rrq_worker_config_save(name, WORKER_CONFIG_DEFAULT, cfg)
+  obj <- rrq_controller$new(name)
+  expect_equal(obj$worker_config_read(WORKER_CONFIG_DEFAULT), cfg)
+})
+
+
+test_that("default worker config poll queue depends on interactivity", {
+  expect_equal(
+    rlang::with_interactive(rrq_worker_config()$poll_queue, TRUE),
+    5)
+  expect_equal(
+    rlang::with_interactive(rrq_worker_config()$poll_queue, FALSE),
+    60)
+  expect_equal(
+    rlang::with_interactive(
+      rrq_worker_config(poll_queue = 20)$poll_queue, TRUE),
+    20)
+  expect_equal(
+    rlang::with_interactive(
+      rrq_worker_config(poll_queue = 20)$poll_queue, FALSE),
+    20)
 })
