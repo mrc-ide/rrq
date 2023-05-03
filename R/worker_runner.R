@@ -25,7 +25,6 @@
 ##' * `queue_id` as the sole positional argument
 ##' * `name_config` as `--config`
 ##' * `worker_id` as `--worker-id`
-##' * `key_alive` as `--key-alive`
 ##'
 ##' To change the redis connection settings, set the `REDIS_URL`
 ##' environment variable (see [redux::hiredis()] for details).
@@ -73,8 +72,7 @@ rrq_worker_script <- function(path, versioned = FALSE) {
 
 rrq_worker_main <- function(args = commandArgs(TRUE)) {
   dat <- rrq_worker_main_args(args)
-  worker <- rrq_worker$new(dat$queue_id, dat$config, dat$worker_id,
-                           dat$key_alive)
+  worker <- rrq_worker$new(dat$queue_id, dat$config, dat$worker_id)
   worker$loop()
   invisible()
 }
@@ -86,14 +84,12 @@ rrq_worker_main_args <- function(args) {
 
 Options:
 --config=NAME    Name of a worker configuration [default: localhost]
---worker-id=ID   Id of the worker (optional)
---key-alive=KEY  Key to write to once alive (optional)"
+--worker-id=ID   Id of the worker (optional)"
   dat <- docopt::docopt(doc, args)
   names(dat) <- gsub("-", "_", names(dat), fixed = TRUE)
   list(queue_id = dat$id,
        config = dat$config,
-       worker_id = dat$worker_id,
-       key_alive = dat[["key_alive"]])
+       worker_id = dat$worker_id)
 }
 
 

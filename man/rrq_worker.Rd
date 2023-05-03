@@ -81,7 +81,10 @@ available. The default (0) is to assume that the configuration
 is immediately available.}
 
 \item{\code{is_child}}{Logical, used to indicate that this is a child of
-the real worker.  Not for general use.}
+the real worker.  If \code{is_child} is \code{TRUE}, then most other
+arguments here have no effect (e.g., \code{queue} all the timeout /
+idle / polling arguments) as they come from the parent.
+Not for general use.}
 
 \item{\code{con}}{A redis connection}
 }

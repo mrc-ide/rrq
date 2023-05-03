@@ -21,23 +21,23 @@ In order to do this, we're going to need a queue and a worker:
 obj <- rrq::rrq_controller$new("rrq:messages")
 logdir <- tempfile()
 w <- rrq::rrq_worker_spawn(obj, logdir = logdir)
-#> Spawning 1 worker with prefix tekite_thrip
+#> Spawning 1 worker with prefix salaried_kite
 worker_id <- w$id
 ```
 
 On startup the worker log contains:
 
 ```plain
-[2023-04-25 16:38:07] ALIVE
-[2023-04-25 16:38:07] ENVIR new
-[2023-04-25 16:38:07] QUEUE default
+[2023-05-03 11:57:37] ALIVE
+[2023-05-03 11:57:37] ENVIR new
+[2023-05-03 11:57:37] QUEUE default
                                  __
                 ______________ _/ /
       ______   / ___/ ___/ __ `/ /_____
      /_____/  / /  / /  / /_/ /_/_____/
  ______      /_/  /_/   \__, (_)   ______
 /_____/                   /_/     /_____/
-    worker:        tekite_thrip_1
+    worker:        salaried_kite_1
     config:        localhost
     rrq_version:   0.7.0
     platform:      x86_64-pc-linux-gnu (64-bit)
@@ -46,7 +46,7 @@ On startup the worker log contains:
     username:      rfitzjoh
     queue:         rrq:messages:queue:default
     wd:            /home/rfitzjoh/Documents/src/rrq/vignettes_src
-    pid:           216516
+    pid:           1040716
     redis_host:    127.0.0.1
     redis_port:    6379
     heartbeat_key: <not set>
@@ -95,16 +95,16 @@ The message id is going to be useful for getting responses:
 
 ```r
 message_id
-#> [1] "1682437087.802073"
+#> [1] "1683111457.996978"
 ```
 
 (this is derived from the current time, according to Redis which is
 the central reference point of time for the whole system).
 
 ```plain
-[2023-04-25 16:38:07] MESSAGE PING
+[2023-05-03 11:57:37] MESSAGE PING
 PONG
-[2023-04-25 16:38:07] RESPONSE PING
+[2023-05-03 11:57:37] RESPONSE PING
 ```
 
 The logfile prints:
@@ -118,12 +118,12 @@ We can access the same bits of information in the worker log:
 
 ```r
 obj$worker_log_tail(n = Inf)
-#>        worker_id child       time  command message
-#> 1 tekite_thrip_1    NA 1682437088    ALIVE
-#> 2 tekite_thrip_1    NA 1682437088    ENVIR     new
-#> 3 tekite_thrip_1    NA 1682437088    QUEUE default
-#> 4 tekite_thrip_1    NA 1682437088  MESSAGE    PING
-#> 5 tekite_thrip_1    NA 1682437088 RESPONSE    PING
+#>         worker_id child       time  command message
+#> 1 salaried_kite_1    NA 1683111458    ALIVE
+#> 2 salaried_kite_1    NA 1683111458    ENVIR     new
+#> 3 salaried_kite_1    NA 1683111458    QUEUE default
+#> 4 salaried_kite_1    NA 1683111458  MESSAGE    PING
+#> 5 salaried_kite_1    NA 1683111458 RESPONSE    PING
 ```
 
 This includes the `ALIVE` message as the worker comes up.
@@ -136,8 +136,8 @@ We already know that our worker has a response, but we can ask anyway:
 
 ```r
 obj$message_has_response(message_id)
-#> tekite_thrip_1
-#>           TRUE
+#> salaried_kite_1
+#>            TRUE
 ```
 
 Or inversely we can as what messages a given worker has responses for:
@@ -145,7 +145,7 @@ Or inversely we can as what messages a given worker has responses for:
 
 ```r
 obj$message_response_ids(worker_id)
-#> [1] "1682437087.802073"
+#> [1] "1683111457.996978"
 ```
 
 To fetch the responses from all workers it was sent to (always
@@ -154,7 +154,7 @@ returning a named list):
 
 ```r
 obj$message_get_response(message_id)
-#> $tekite_thrip_1
+#> $salaried_kite_1
 #> [1] "PONG"
 ```
 
@@ -163,7 +163,7 @@ or to fetch the response from a given worker:
 
 ```r
 obj$message_get_response(message_id, worker_id)
-#> $tekite_thrip_1
+#> $salaried_kite_1
 #> [1] "PONG"
 ```
 
@@ -172,7 +172,7 @@ The response can be deleted by passing `delete = TRUE` to this method:
 
 ```r
 obj$message_get_response(message_id, worker_id, delete = TRUE)
-#> $tekite_thrip_1
+#> $salaried_kite_1
 #> [1] "PONG"
 ```
 
@@ -181,7 +181,7 @@ after which recalling the message will throw an error:
 
 ```r
 obj$message_get_response(message_id, worker_id)
-#> Error in message_get_response(self$con, private$keys, message_id, worker_ids, : Response missing for workers: tekite_thrip_1
+#> Error in message_get_response(self$con, private$keys, message_id, worker_ids, : Response missing for workers: salaried_kite_1
 ```
 
 There is also a `timeout` argument that lets you wait until a response is
@@ -190,10 +190,10 @@ ready (as in `$task_wait()`).
 
 ```r
 obj$enqueue(Sys.sleep(2))
-#> [1] "0790bfd861a9f920f06c01c0d768bc91"
+#> [1] "44001ee8e79917fc8dafdc7c7c18cfc1"
 message_id <- obj$message_send("PING")
 obj$message_get_response(message_id, worker_id, delete = TRUE, timeout = 10)
-#> $tekite_thrip_1
+#> $salaried_kite_1
 #> [1] "PONG"
 ```
 
@@ -202,14 +202,14 @@ Looking at the log will show what went on here:
 
 ```r
 obj$worker_log_tail(n = 4)
-#>        worker_id child       time       command
-#> 1 tekite_thrip_1    NA 1682437088    TASK_START
-#> 2 tekite_thrip_1    NA 1682437090 TASK_COMPLETE
-#> 3 tekite_thrip_1    NA 1682437090       MESSAGE
-#> 4 tekite_thrip_1    NA 1682437090      RESPONSE
+#>         worker_id child       time       command
+#> 1 salaried_kite_1    NA 1683111458    TASK_START
+#> 2 salaried_kite_1    NA 1683111460 TASK_COMPLETE
+#> 3 salaried_kite_1    NA 1683111460       MESSAGE
+#> 4 salaried_kite_1    NA 1683111460      RESPONSE
 #>                            message
-#> 1 0790bfd861a9f920f06c01c0d768bc91
-#> 2 0790bfd861a9f920f06c01c0d768bc91
+#> 1 44001ee8e79917fc8dafdc7c7c18cfc1
+#> 2 44001ee8e79917fc8dafdc7c7c18cfc1
 #> 3                             PING
 #> 4                             PING
 ```
@@ -224,11 +224,11 @@ completed, the response takes a while to come back.  Equivalently,
 from the worker log:
 
 ```plain
-[2023-04-25 16:38:07] TASK_START 0790bfd861a9f920f06c01c0d768bc91
-[2023-04-25 16:38:09] TASK_COMPLETE 0790bfd861a9f920f06c01c0d768bc91
-[2023-04-25 16:38:09] MESSAGE PING
+[2023-05-03 11:57:38] TASK_START 44001ee8e79917fc8dafdc7c7c18cfc1
+[2023-05-03 11:57:40] TASK_COMPLETE 44001ee8e79917fc8dafdc7c7c18cfc1
+[2023-05-03 11:57:40] MESSAGE PING
 PONG
-[2023-04-25 16:38:09] RESPONSE PING
+[2023-05-03 11:57:40] RESPONSE PING
 ```
 
 ## `ECHO`
@@ -241,14 +241,14 @@ response.
 ```r
 message_id <- obj$message_send("ECHO", "hello world!")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $tekite_thrip_1
+#> $salaried_kite_1
 #> [1] "OK"
 ```
 
 ```plain
-[2023-04-25 16:38:10] MESSAGE ECHO
+[2023-05-03 11:57:40] MESSAGE ECHO
 hello world!
-[2023-04-25 16:38:10] RESPONSE ECHO
+[2023-05-03 11:57:40] RESPONSE ECHO
 ```
 
 ## `INFO`
@@ -261,7 +261,7 @@ worker started up:
 ```r
 obj$worker_info()[[worker_id]]
 #>   <rrq_worker_info>
-#>     worker:      tekite_thrip_1
+#>     worker:      salaried_kite_1
 #>     config:      localhost
 #>     rrq_version: 0.7.0
 #>     platform:    x86_64-pc-linux-gnu (64-bit)
@@ -270,7 +270,7 @@ obj$worker_info()[[worker_id]]
 #>     username:    rfitzjoh
 #>     queue:       rrq:messages:queue:default
 #>     wd:          /home/rfitzjoh/Documents/src/rrq/vignettes_src
-#>     pid:         216516
+#>     pid:         1040716
 #>     redis_host:  127.0.0.1
 #>     redis_port:  6379
 ```
@@ -288,41 +288,41 @@ field:
 
 ```r
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $tekite_thrip_1
-#> $tekite_thrip_1$worker
-#> [1] "tekite_thrip_1"
+#> $salaried_kite_1
+#> $salaried_kite_1$worker
+#> [1] "salaried_kite_1"
 #>
-#> $tekite_thrip_1$config
+#> $salaried_kite_1$config
 #> [1] "localhost"
 #>
-#> $tekite_thrip_1$rrq_version
+#> $salaried_kite_1$rrq_version
 #> [1] "0.7.0"
 #>
-#> $tekite_thrip_1$platform
+#> $salaried_kite_1$platform
 #> [1] "x86_64-pc-linux-gnu (64-bit)"
 #>
-#> $tekite_thrip_1$running
+#> $salaried_kite_1$running
 #> [1] "Ubuntu 20.04.5 LTS"
 #>
-#> $tekite_thrip_1$hostname
+#> $salaried_kite_1$hostname
 #> [1] "wpia-dide300"
 #>
-#> $tekite_thrip_1$username
+#> $salaried_kite_1$username
 #> [1] "rfitzjoh"
 #>
-#> $tekite_thrip_1$queue
+#> $salaried_kite_1$queue
 #> [1] "rrq:messages:queue:default"
 #>
-#> $tekite_thrip_1$wd
+#> $salaried_kite_1$wd
 #> [1] "/home/rfitzjoh/Documents/src/rrq/vignettes_src"
 #>
-#> $tekite_thrip_1$pid
-#> [1] 216516
+#> $salaried_kite_1$pid
+#> [1] 1040716
 #>
-#> $tekite_thrip_1$redis_host
+#> $salaried_kite_1$redis_host
 #> [1] "127.0.0.1"
 #>
-#> $tekite_thrip_1$redis_port
+#> $salaried_kite_1$redis_port
 #> [1] 6379
 ```
 
@@ -337,7 +337,7 @@ in which queued code is evaluated in.
 ```r
 message_id <- obj$message_send("EVAL", "1 + 1")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $tekite_thrip_1
+#> $salaried_kite_1
 #> [1] 2
 ```
 
@@ -353,15 +353,15 @@ The `PAUSE` / `RESUME` messages can be used to prevent workers from picking up n
 
 ```r
 obj$worker_status()
-#> tekite_thrip_1
-#>         "IDLE"
+#> salaried_kite_1
+#>          "IDLE"
 message_id <- obj$message_send("PAUSE")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $tekite_thrip_1
+#> $salaried_kite_1
 #> [1] "OK"
 obj$worker_status()
-#> tekite_thrip_1
-#>       "PAUSED"
+#> salaried_kite_1
+#>        "PAUSED"
 ```
 
 Once paused workers ignore tasks, which stay on the queue:
@@ -370,7 +370,7 @@ Once paused workers ignore tasks, which stay on the queue:
 ```r
 t <- obj$enqueue(runif(5))
 obj$task_status(t)
-#> ce61c1e9e863feadb616a0783e32cdc1
+#> 64e789d929053f536d025674f32a9210
 #>                        "PENDING"
 ```
 
@@ -380,10 +380,10 @@ Sending a `RESUME` message unpauses the worker:
 ```r
 message_id <- obj$message_send("RESUME")
 obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $tekite_thrip_1
+#> $salaried_kite_1
 #> [1] "OK"
 obj$task_wait(t, 5)
-#> [1] 0.4973230 0.8467330 0.1887747 0.4457310 0.2073960
+#> [1] 0.903223432 0.082105777 0.683756358 0.636414855 0.003699163
 ```
 
 ## `SET_TIMEOUT` / `GET_TIMEOUT`
@@ -393,7 +393,7 @@ Workers will quit after being left idle for more than a certain time; this is th
 
 ```r
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $tekite_thrip_1
+#> $salaried_kite_1
 #> timeout_idle    remaining
 #>          Inf          Inf
 ```
@@ -403,7 +403,7 @@ We can set this to a finite value, in seconds:
 
 ```r
 obj$message_send_and_wait("TIMEOUT_SET", 600, worker_ids = worker_id)
-#> $tekite_thrip_1
+#> $salaried_kite_1
 #> [1] "OK"
 ```
 
@@ -414,14 +414,14 @@ Once set, the `TIMEOUT_GET` returns the length of time remaining before the work
 
 ```r
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $tekite_thrip_1
+#> $salaried_kite_1
 #> timeout_idle    remaining
-#>     600.0000     599.9421
+#>     600.0000     599.9429
 Sys.sleep(5)
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $tekite_thrip_1
+#> $salaried_kite_1
 #> timeout_idle    remaining
-#>     600.0000     594.8837
+#>      600.000      594.886
 ```
 
 One useful pattern is to send work to workers, then set the timeout to zero. This means that when work is complete they will exit (almost) immediately:
@@ -434,20 +434,20 @@ grp <- obj$lapply(1:5, function(x) {
 }, timeout_task_wait = 0)
 obj$message_send("TIMEOUT_SET", 0, worker_id)
 obj$tasks_wait(grp$task_ids)
-#> $`073ed79b2c7405ef71064dc36ab081f4`
-#> [1] 0.308749
+#> $`22a6af800da166fe1b41969e4037e5f7`
+#> [1] 0.5124512
 #>
-#> $`079a61a593174a1f8806f39f349ec3d5`
-#> [1] 0.2918986 0.1310712
+#> $`38fa8aa6ee28a243c7157d8f1aebc59f`
+#> [1] 0.6227799 0.1765862
 #>
-#> $b561a7f1e27e708ea47293d1db83a962
-#> [1] 0.2018187 0.7130648 0.5555343
+#> $`749f356a3c23e91eba04f22dfa3bda21`
+#> [1] 0.7466381 0.3805679 0.2578736
 #>
-#> $`88bdb7c795740e080dd08fa2c0fa150a`
-#> [1] 0.4359489 0.3617489 0.5916484 0.3225625
+#> $aacbd45276715c5a66185aee3342e16c
+#> [1] 0.5686461 0.7394387 0.7312080 0.5955060
 #>
-#> $a2521812c43c760727765f9bb5b54455
-#> [1] 0.5333082 0.7488500 0.8659694 0.2208474 0.1043538
+#> $ebea0c34dc45e32232e3a418c98d4125
+#> [1] 0.009762116 0.265471032 0.780959455 0.230073945 0.128220401
 ```
 
 The worker will remain idle for 60s (by default) which is the length of time that one poll for work lasts, then it will exit.
@@ -455,10 +455,10 @@ The worker will remain idle for 60s (by default) which is the length of time tha
 
 ```r
 obj$worker_status(worker_id)
-#> tekite_thrip_1
-#>         "IDLE"
+#> salaried_kite_1
+#>          "IDLE"
 obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $tekite_thrip_1
+#> $salaried_kite_1
 #> timeout_idle    remaining
 #>            0            0
 ```

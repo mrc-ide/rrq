@@ -64,16 +64,70 @@ rrq_worker_spawn <- function(obj, n = 1, logdir = NULL,
 ##' Register that workers are expected.  This generates a key that one
 ##' or more workers will write to when they start up (as used by
 ##' \code{rrq_worker_spawn}).
+##'
+##' The general pattern here is that the process that submits the
+##' worker (so the parent process, or the user submitting a cluster
+##' job) would run this function to register that some number of
+##' workers will be started at some point in the future.  In the case
+##' of starting workers by submitting them to a cluster, this could
+##' take a long time as the job queues, or if starting by running
+##' another process it could be very quick.  Information about the
+##' workers that are expected and where to find them is stored against
+##' a key, which is returned by `rrq_worker_expect`.
+##'
+##' Then, to wait on a set of workers, you run `rrq_worker_wait`
+##'
 ##' @title Register expected workers
+##'
 ##' @param obj A rrq_controller object
-##' @param ids Ids of expected workers
+##'
+##' @param worker_ids Ids of expected workers
+##'
+##' @return
+##'
+##' * For `rrq_worker_expect`: A string, which can be passed through
+##'   as the second argument to `rrq_worker_wait` in order to block
+##'   until workers are available.
+##'
+##' * For `rrq_worker_wait`: Invisibly a difftime object with the time
+##'   spent waiting.
+##'
 ##' @export
-rrq_expect_worker <- function(obj, ids) {
+rrq_worker_expect <- function(obj, worker_ids) {
   assert_is(obj, "rrq_controller")
-  key_alive <- rrq_key_worker_alive(obj$queue_id)
+  con <- obj$con
   keys <- rrq_keys(obj$queue_id)
-  obj$con$HSET(keys$worker_expect, key_alive, object_to_bin(ids))
+
+  key_alive <- rrq_key_worker_alive(obj$queue_id)
+  obj$con$HMSET(keys$worker_alive, worker_ids, rep_along(key_alive, worker_ids))
+  obj$con$HSET(keys$worker_expect, key_alive, object_to_bin(worker_ids))
+
   key_alive
+}
+
+
+##' @param key_alive A key as returned by `rrq_worker_expect`
+##'
+##' @param timeout Number of seconds to wait for workers to appear. If
+##'   they have not appeared by this time, we throw an error.
+##'
+##' @param poll Poll interval, in seconds. Must be an integer
+##'
+##' @param progress Optional logical indicating if a progress bar
+##'   should be displayed. If `NULL` we fall back on the value of the
+##'   global option `rrq.progress`, and if that is unset display a
+##'   progress bar if in an interactive session.
+##'
+##' @rdname rrq_worker_expect
+##' @export
+rrq_worker_wait <- function(obj, key_alive, timeout = Inf, poll = 1,
+                            progress = NULL) {
+  assert_is(obj, "rrq_controller")
+  keys <- rrq_keys(obj$queue_id)
+  is_dead <- function() FALSE
+  path_logs <- NULL
+  worker_wait_alive(obj$con, keys, key_alive, is_dead, path_logs,
+                    timeout, poll, progress)
 }
 
 
@@ -118,7 +172,7 @@ rrq_worker_manager <- R6::R6Class(
       }
       worker_id_base <- worker_id_base %||% ids::adjective_animal()
       worker_ids <- sprintf("%s_%d", worker_id_base, seq_len(n))
-      key_alive <- rrq_expect_worker(obj, worker_ids)
+      key_alive <- rrq_worker_expect(obj, worker_ids)
       logdir <- logdir %||% tempfile()
       dir.create(logdir, FALSE, TRUE)
       con <- obj$con
@@ -144,7 +198,7 @@ rrq_worker_manager <- R6::R6Class(
             con <- redux::hiredis(config)
             w <- rrq_worker$new(
               queue_id, name_config = name_config, worker_id = worker_id,
-              key_alive = key_alive, con = con)
+              con = con)
             w$loop()
           },
           args = args_i, package = TRUE, supervise = FALSE, cleanup = FALSE,
@@ -186,39 +240,56 @@ rrq_worker_manager <- R6::R6Class(
               function(p) p$is_alive())
     },
 
-    wait_alive = function(timeout, time_poll = 1, progress = NULL) {
+    wait_alive = function(timeout, poll = 1, progress = NULL) {
       con <- private$con
-
-      worker_done <- function() {
-        self$id %in% list_to_character(con$SMEMBERS(private$keys$worker_id)) |
-          !vlapply(private$process, function(p) p$is_alive())
+      is_dead <- function() {
+        !vlapply(private$process, function(p) p$is_alive())
       }
-
-      fetch <- function() {
-        con$BLPOP(private$key_alive, time_poll)
-        worker_done()
-      }
-
-      t0 <- Sys.time()
-      done <- worker_done()
-      if (!all(done)) {
-        done <- general_poll(fetch, 0, timeout, "workers", FALSE, progress)
-      }
-
-      is_alive <- vlapply(private$process, function(p) p$is_alive())
-      ok <- done & is_alive
-      if (!all(ok)) {
-        message(sprintf("%d / %d workers not identified in time",
-                        sum(!ok), length(done)))
-        logs <- set_names(lapply(self$id[!ok], self$logs),
-                          self$id[!ok])
-        worker_print_failed_logs(logs)
-        stop("Not all workers recovered")
-      }
-
-      invisible(Sys.time() - t0)
+      worker_wait_alive(private$con, private$keys, private$key_alive,
+                        is_dead, self$logs, timeout, poll, progress)
     }
   ))
+
+
+worker_wait_alive <- function(con, keys, key_alive, is_dead, path_logs,
+                              timeout, poll, progress) {
+  assert_scalar_numeric(timeout)
+  assert_scalar_integer_like(poll)
+
+  bin <- con$HGET(keys$worker_expect, key_alive)
+  if (is.null(bin)) {
+    stop("No workers expected on that key")
+  }
+  worker_ids <- bin_to_object(bin)
+
+  worker_done <- function() {
+    worker_ids %in% list_to_character(con$SMEMBERS(keys$worker_id)) | is_dead()
+  }
+
+  fetch <- function() {
+    con$BLPOP(key_alive, poll)
+    worker_done()
+  }
+
+  t0 <- Sys.time()
+  done <- worker_done()
+  if (!all(done)) {
+    done <- general_poll(fetch, 0, timeout, "workers", FALSE, progress)
+  }
+
+  ok <- done & !is_dead()
+  if (!all(ok)) {
+    message(sprintf("%d / %d workers not identified in time",
+                    sum(!ok), length(done)))
+    if (!is.null(path_logs)) {
+      logs <- set_names(lapply(worker_ids[!ok], path_logs), worker_ids[!ok])
+      worker_print_failed_logs(logs)
+    }
+    stop("Not all workers recovered")
+  }
+
+  invisible(Sys.time() - t0)
+}
 
 
 worker_print_failed_logs <- function(logs) {

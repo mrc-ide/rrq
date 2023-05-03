@@ -48,7 +48,6 @@ the \verb{[rrq::rrq_worker]} constructor:
 \item \code{queue_id} as the sole positional argument
 \item \code{name_config} as \code{--config}
 \item \code{worker_id} as \code{--worker-id}
-\item \code{key_alive} as \code{--key-alive}
 }
 
 To change the redis connection settings, set the \code{REDIS_URL}

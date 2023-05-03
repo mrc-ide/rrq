@@ -39,7 +39,10 @@ rrq_worker <- R6::R6Class(
     ##'   is immediately available.
     ##'
     ##' @param is_child Logical, used to indicate that this is a child of
-    ##'   the real worker.  Not for general use.
+    ##'   the real worker.  If `is_child` is `TRUE`, then most other
+    ##'   arguments here have no effect (e.g., `queue` all the timeout /
+    ##'   idle / polling arguments) as they come from the parent.
+    ##'   Not for general use.
     ##'
     ##' @param con A redis connection
     initialize = function(queue_id, name_config = "localhost",
@@ -80,7 +83,7 @@ rrq_worker <- R6::R6Class(
       } else {
         withCallingHandlers(
           worker_initialise(self, private, config$queue,
-                            key_alive, config$timeout_idle,
+                            config$timeout_idle,
                             config$heartbeat_period),
           error = worker_catch_error(self, private))
       }
@@ -277,7 +280,7 @@ worker_info_collect <- function(worker, private) {
 }
 
 
-worker_initialise <- function(worker, private, queue, key_alive, timeout_idle,
+worker_initialise <- function(worker, private, queue, timeout_idle,
                               heartbeat_period) {
   con <- private$con
   keys <- private$keys
@@ -286,12 +289,15 @@ worker_initialise <- function(worker, private, queue, key_alive, timeout_idle,
                                         private$verbose)
   private$queue <- rrq_key_queue(keys$queue_id, queue)
 
-  con$pipeline(
+  res <- con$pipeline(
     redis$SADD(keys$worker_id,     worker$id),
     redis$HSET(keys$worker_status, worker$id, WORKER_IDLE),
     redis$HDEL(keys$worker_task,   worker$id),
     redis$DEL(keys$worker_log),
-    redis$HSET(keys$worker_info,   worker$id, object_to_bin(worker$info())))
+    redis$HSET(keys$worker_info,   worker$id, object_to_bin(worker$info())),
+    redis$HGET(keys$worker_alive, worker$id))
+
+  key_alive <- res[[6]]
 
   if (!is.null(timeout_idle)) {
     run_message_timeout_set(worker, private, timeout_idle)
