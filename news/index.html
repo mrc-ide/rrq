@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.21</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.0</span>
       </span>
     </div>
 
@@ -63,6 +63,10 @@
       <small>Source: <a href="https://github.com/mrc-ide/rrq/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="0.7.0" id="rrq-070">rrq 0.7.0<a class="anchor" aria-label="anchor" href="#rrq-070"></a></h2>
+<ul><li>Overhaul worker configuration and creation; now all worker configuration options (except redis and storage control) are set through a named worker configuration; this reduces the number of arguments being passed around and improves documentation (mrc-4068)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.6.16" id="rrq-0616">rrq 0.6.16<a class="anchor" aria-label="anchor" href="#rrq-0616"></a></h2>
 <ul><li>Extend fault tolerance support by enabling tasks to be retried; this creates a new task that the old task points at and can be used to seamlessly recover from all sorts of task failure (mrc-2683)</li>
@@ -128,7 +132,7 @@
 </ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.4.1" id="rrq-041">rrq 0.4.1<a class="anchor" aria-label="anchor" href="#rrq-041"></a></h2>
-<ul><li>Expose <code><a href="../reference/rrq_worker_from_config.html">rrq::rrq_worker_from_config</a></code>, which is a simpler way of constructing worker objects. The worker object itself (<code><a href="../reference/rrq_worker.html">rrq::rrq_worker</a></code>) loses its helper constructor function and is documented (mrc-2297)</li>
+<ul><li>Expose <code>rrq::rrq_worker_from_config</code>, which is a simpler way of constructing worker objects. The worker object itself (<code><a href="../reference/rrq_worker.html">rrq::rrq_worker</a></code>) loses its helper constructor function and is documented (mrc-2297)</li>
 </ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.3.2" id="rrq-032">rrq 0.3.2<a class="anchor" aria-label="anchor" href="#rrq-032"></a></h2>

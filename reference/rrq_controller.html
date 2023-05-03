@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.21</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.0</span>
       </span>
     </div>
 
@@ -1801,17 +1801,7 @@ care otherwise.</p><div class="section">
 start workers with a set of options with the cli. These
 correspond to arguments to <a href="rrq_worker.html">rrq_worker</a>.</p><div class="section">
 <h4 id="usage-42">Usage<a class="anchor" aria-label="anchor" href="#usage-42"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">worker_config_save</span><span class="op">(</span></span>
-<span>  <span class="va">name</span>,</span>
-<span>  time_poll <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  timeout_idle <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  queue <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  heartbeat_period <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  overwrite <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  timeout_poll <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  timeout_die <span class="op">=</span> <span class="fl">2</span></span>
-<span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">worker_config_save</span><span class="op">(</span><span class="va">name</span>, <span class="va">config</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -1820,65 +1810,24 @@ correspond to arguments to <a href="rrq_worker.html">rrq_worker</a>.</p><div cla
 <dd><p>Name for this configuration</p></dd>
 
 
-<dt><code>time_poll</code></dt>
-<dd><p>Poll time.  Longer values here will reduce the
-impact on the database but make workers less responsive to being
-killed with an interrupt.  The default should be good for most
-uses, but shorter values are used for debugging.</p></dd>
-
-
-<dt><code>timeout_idle</code></dt>
-<dd><p>Optional timeout that sets the length of time
-after which the worker will exit if it has not processed a task.
-This is (roughly) equivalent to issuing a <code>TIMEOUT_SET</code>
-message after initialising the worker, except that it's guaranteed
-to be run by all workers.</p></dd>
-
-
-<dt><code>queue</code></dt>
-<dd><p>Optional character vector of queues to listen on
-for jobs. There is a default queue which is always listened
-on (called 'default'). You can specify additional names here
-and jobs put onto these queues with <code>$enqueue()</code> will have
-<em>higher</em> priority than the default. You can explicitly list
-the "default" queue (e.g., <code>queue = c("high", "default", "low")</code>) to set the position of the default queue.</p></dd>
-
-
-<dt><code>heartbeat_period</code></dt>
-<dd><p>Optional period for the heartbeat.  If
-non-NULL then a heartbeat process will be started (using
-<code><a href="heartbeat.html">rrq_heartbeat</a></code> which can be used to build fault tolerant queues.</p></dd>
-
-
-<dt><code>verbose</code></dt>
-<dd><p>Logical, indicating if the worker should print
-logging output to the screen.  Logging to screen has a small but
-measurable performance cost, and if you will not collect system
-logs from the worker then it is wasted time.  Logging to the
-redis server is always enabled.</p></dd>
+<dt><code>config</code></dt>
+<dd><p>A worker configuration, created by
+<code><a href="rrq_worker_config.html">rrq_worker_config()</a></code></p></dd>
 
 
 <dt><code>overwrite</code></dt>
 <dd><p>Logical, indicating if an existing configuration
-with this <code>name</code> should be overwritten if it exists (if
-<code>overwrite = FALSE</code> and the configuration exists an error will
-be thrown).</p></dd>
-
-
-<dt><code>timeout_poll</code></dt>
-<dd><p>Optional timeout indicating how long to wait
-for a background process to produce stdout or stderr. Only used
-for tasks queued with <code>separate_process</code> <code>TRUE</code>.</p></dd>
-
-
-<dt><code>timeout_die</code></dt>
-<dd><p>Optional timeout indicating how long to wait
-wait for the background process to respond to SIGTERM before
-we stop the worker. Only used for tasks queued with
-<code>separate_process</code> <code>TRUE</code>.</p></dd>
+with this <code>name</code> should be overwritten if it exists. If <code>FALSE</code>,
+then the configuration is not updated, even if it differs from
+the version currently saved.</p></dd>
 
 
 </dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-1">Returns<a class="anchor" aria-label="anchor" href="#returns-1"></a></h4>
+<p>Invisibly, a boolean indicating if the configuration was
+updated.</p>
 </div>
 
 </div><p></p><hr><a id="method-rrq_controller-worker_config_list"></a><div class="section">

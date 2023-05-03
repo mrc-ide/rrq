@@ -18,7 +18,7 @@ rrq queue worker"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.21</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.0</span>
       </span>
     </div>
 
@@ -82,6 +82,10 @@ but will sit and poll a queue for jobs.</p>
 <dd><p>The id of the worker</p></dd>
 
 
+<dt><code>config</code></dt>
+<dd><p>The name of the configuration used by this worker</p></dd>
+
+
 </dl><p></p></div>
     </div>
     <div id="methods">
@@ -108,28 +112,25 @@ but will sit and poll a queue for jobs.</p>
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/rrq_worker.html">rrq_worker</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
 <span>  <span class="va">queue_id</span>,</span>
-<span>  con <span class="op">=</span> <span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  name_config <span class="op">=</span> <span class="st">"localhost"</span>,</span>
 <span>  worker_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  queue <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  time_poll <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  timeout_idle <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  heartbeat_period <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  timeout_config <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  is_child <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  timeout_poll <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  timeout_die <span class="op">=</span> <span class="fl">2</span></span>
+<span>  con <span class="op">=</span> <span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
 <h4 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>queue_id</code></dt>
-<dd><p>Name of the queue to connect to.  This will be the
-prefix to all the keys in the redis database</p></dd>
+<dd><p>The queue id</p></dd>
 
 
-<dt><code>con</code></dt>
-<dd><p>A redis connection</p></dd>
+<dt><code>name_config</code></dt>
+<dd><p>Optional name of the configuration. The
+default "localhost" configuration always exists. Create new
+configurations using the <code>$worker_config_save</code> method on the
+<code><a href="rrq_controller.html">rrq_controller</a></code> object.</p></dd>
 
 
 <dt><code>worker_id</code></dt>
@@ -137,59 +138,25 @@ prefix to all the keys in the redis database</p></dd>
 id will be created.</p></dd>
 
 
-<dt><code>queue</code></dt>
-<dd><p>Queues to listen on, listed in decreasing order of
-priority. If not given, we listen on the "default" queue.</p></dd>
-
-
-<dt><code>time_poll</code></dt>
-<dd><p>Poll time.  Longer values here will reduce the
-impact on the database but make workers less responsive to being
-killed with an interrupt (control-C or Escape).  The default
-should be good for most uses, but shorter values are used for
-debugging.</p></dd>
-
-
-<dt><code>timeout_idle</code></dt>
-<dd><p>Optional timeout to set for the worker.  This is
-(roughly) equivalent to issuing a <code>TIMEOUT_SET</code> message
-after initialising the worker, except that it's guaranteed to be
-run by all workers.</p></dd>
-
-
-<dt><code>heartbeat_period</code></dt>
-<dd><p>Optional period for the heartbeat.  If
-non-NULL then a heartbeat process will be started (using
-<code><a href="heartbeat.html">rrq_heartbeat</a></code>) which can be used to build fault
-tolerant queues.</p></dd>
-
-
-<dt><code>verbose</code></dt>
-<dd><p>Logical, indicating if the worker should print
-logging output to the screen.  Logging to screen has a small but
-measurable performance cost, and if you will not collect system
-logs from the worker then it is wasted time.  Logging to the
-redis server is always enabled.</p></dd>
+<dt><code>timeout_config</code></dt>
+<dd><p>How long to try and read the worker
+configuration for. Will attempt to read once a second and throw
+an error if config cannot be located after <code>timeout</code> seconds.
+Use this to create workers before their configurations are
+available. The default (0) is to assume that the configuration
+is immediately available.</p></dd>
 
 
 <dt><code>is_child</code></dt>
 <dd><p>Logical, used to indicate that this is a child of
 the real worker.  If <code>is_child</code> is <code>TRUE</code>, then most other
 arguments here have no effect (e.g., <code>queue</code> all the timeout /
-idle / polling arguments) as they come from the parent.</p></dd>
+idle / polling arguments) as they come from the parent.
+Not for general use.</p></dd>
 
 
-<dt><code>timeout_poll</code></dt>
-<dd><p>Optional timeout indicating how long to wait
-for a background process to produce stdout or stderr. Only used
-for tasks queued with <code>separate_process</code> <code>TRUE</code>.</p></dd>
-
-
-<dt><code>timeout_die</code></dt>
-<dd><p>Optional timeout indicating how long to wait
-wait for the background process to respond to SIGTERM before
-we stop the worker. Only used for tasks queued with
-<code>separate_process</code> <code>TRUE</code>.</p></dd>
+<dt><code>con</code></dt>
+<dd><p>A redis connection</p></dd>
 
 
 </dl><p></p></div>

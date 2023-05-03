@@ -58,10 +58,13 @@
     <loc>/reference/rrq_worker.html</loc>
   </url>
   <url>
-    <loc>/reference/rrq_worker_expect.html</loc>
+    <loc>/reference/rrq_worker_config.html</loc>
   </url>
   <url>
-    <loc>/reference/rrq_worker_from_config.html</loc>
+    <loc>/reference/rrq_worker_config_save.html</loc>
+  </url>
+  <url>
+    <loc>/reference/rrq_worker_expect.html</loc>
   </url>
   <url>
     <loc>/reference/rrq_worker_script.html</loc>
