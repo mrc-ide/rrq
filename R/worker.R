@@ -49,14 +49,11 @@ rrq_worker <- R6::R6Class(
       assert_scalar_character(queue_id)
       assert_is(con, "redis_api")
 
-      ## TODO: default config name should be "default", not localhost
-
       self$id <- worker_id %||% ids::adjective_animal()
       self$config <- name_config
       private$con <- con
       private$keys <- rrq_keys(queue_id, self$id)
 
-      ## Check to see if this is a reasonable thing to be doing:
       rrq_version_check(private$con, private$keys)
       worker_exists <- con$SISMEMBER(private$keys$worker_id, self$id) == 1L
       if (is_child != worker_exists) {
@@ -261,7 +258,7 @@ rrq_worker <- R6::R6Class(
 worker_info_collect <- function(worker, private) {
   sys <- sessionInfo()
   redis_config <- private$con$config()
-  dat <- list(worker = worker$id, # TODO: rename worker -> id
+  dat <- list(worker = worker$id,
               config = worker$config,
               rrq_version = version_info(),
               platform = sys$platform,

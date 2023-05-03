@@ -404,7 +404,6 @@ rrq_controller <- R6::R6Class(
                       depends_on = NULL,
                       timeout_task_wait = NULL, time_poll = 1,
                       progress = NULL, delete = FALSE, error = FALSE) {
-      ## TODO: rename time_poll -> poll_task
       if (is.null(dots)) {
         dots <- as.list(substitute(list(...)))[-1L]
       }
