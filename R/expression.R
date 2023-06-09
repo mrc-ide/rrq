@@ -130,5 +130,10 @@ expression_restore_locals <- function(dat, parent, store) {
   if (length(objects) > 0L) {
     list2env(set_names(store$mget(objects), names(objects)), e)
   }
+  reset_environment <- !is.null(dat$function_hash) &&
+    identical(environment(e[[dat$function_hash]]), .GlobalEnv)
+  if (reset_environment) {
+    environment(e[[dat$function_hash]]) <- e
+  }
   e
 }
