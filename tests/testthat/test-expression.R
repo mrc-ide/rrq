@@ -139,7 +139,8 @@ test_that("can store special function values", {
   res <- expression_prepare(quote(.(a, b)), e, store, tag,
                             function_value = f)
   expect_match(res$function_hash, "^[[:xdigit:]]+$")
-  e2 <- expression_restore_locals(res, emptyenv(), store)
+  env <- new.env(parent = baseenv())
+  e2 <- expression_restore_locals(res, env, store)
   expect_equal(sort(names(e2)), sort(c("a", "b", res$function_hash)))
   expect_equal(e2[[res$function_hash]](1, 2), 3)
   expect_equal(e2$a, 1)
@@ -158,7 +159,8 @@ test_that("can restore function even with no variables", {
   res <- expression_prepare(quote(.(1, 2)), e, store, tag,
                             function_value = f)
   expect_match(res$function_hash, "^[[:xdigit:]]+$")
-  e2 <- expression_restore_locals(res, emptyenv(), store)
+  env <- new.env(parent = baseenv())
+  e2 <- expression_restore_locals(res, env, store)
   expect_equal(names(e2), res$function_hash)
   expect_equal(e2[[res$function_hash]](1, 2), 3)
   expect_equal(deparse(res$expr[[1]]), res$function_hash)
