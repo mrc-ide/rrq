@@ -355,7 +355,8 @@ test_that("allow referring to locals in bulk", {
   obj <- test_rrq("funs-bulk.R")
   obj$envir(rrq::rrq_envir(sources = c("funs-bulk.R")))
 
-  ## We can't easily the previous error with a blocking worker because:
+  ## We can't easily recreate the previous error (#98, #99) with a
+  ## blocking worker because:
   ##
   ## * if sourcing functions into an environment we *do* capture the
   ##   enclosing environment and the underlying variable so the

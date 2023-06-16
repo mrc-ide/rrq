@@ -124,16 +124,20 @@ expression_find_symbols <- function(expr) {
 expression_restore_locals <- function(dat, parent, store) {
   e <- new.env(parent = parent)
   objects <- dat$objects
-  if (!is.null(dat$function_hash)) {
+  is_anonymous_function <- !is.null(dat$function_hash)
+  if (is_anonymous_function) {
     objects <- c(objects, set_names(dat$function_hash, dat$function_hash))
   }
   if (length(objects) > 0L) {
     list2env(set_names(store$mget(objects), names(objects)), e)
   }
-  reset_environment <- !is.null(dat$function_hash) &&
+  ## If our anonymous function has the global environment set, it's
+  ## unlikely to work in the worker, so point that to the worker
+  ## environment (see #98 and #99)
+  reset_environment <- is_anonymous_function &&
     identical(environment(e[[dat$function_hash]]), .GlobalEnv)
   if (reset_environment) {
-    environment(e[[dat$function_hash]]) <- e
+    environment(e[[dat$function_hash]]) <- parent
   }
   e
 }
