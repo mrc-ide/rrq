@@ -349,3 +349,32 @@ test_that("Set completion keys", {
                       function(k) list_to_character(obj$con$LRANGE(k, 0, -1))),
                as.list(grp$task_ids))
 })
+
+
+test_that("allow referring to locals in bulk", {
+  obj <- test_rrq("funs-bulk.R")
+  obj$envir(rrq::rrq_envir(sources = c("funs-bulk.R")))
+
+  ## We can't easily recreate the previous error (#98, #99) with a
+  ## blocking worker because:
+  ##
+  ## * if sourcing functions into an environment we *do* capture the
+  ##   enclosing environment and the underlying variable so the
+  ##   restored functions are just fine
+  ## * if sourcing into the global environment, then the worker can
+  ##   see everything and the restored function works fine.
+  ##
+  ## However, if we delete the objects from the global environment
+  ## just before running we get it to fail nicely:
+  env <- globalenv()
+  sys.source("funs-bulk.R", env)
+  g <- obj$lapply(1, f, timeout_task_wait = 0, envir = env)
+  rm("f", "a", envir = env)
+
+  w <- test_worker_blocking(obj)
+  w$step(TRUE)
+
+  id <- g$task_ids
+  expect_equal(unname(obj$task_status(id)), TASK_COMPLETE)
+  expect_equal(obj$task_result(id), 11)
+})
