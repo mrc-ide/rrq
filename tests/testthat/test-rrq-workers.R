@@ -276,7 +276,7 @@ test_that("can get worker info", {
   expect_s3_class(info[[1]], "rrq_worker_info")
   expect_equal(names(info), w$id)
   expect_setequal(names(info[[w$id]]),
-                  c("worker", "config", "rrq_version", "platform", "running",
+                  c("id", "config", "rrq_version", "platform", "running",
                     "hostname",
                     "username", "queue", "wd", "pid", "redis_host",
                     "redis_port", "heartbeat_key"))

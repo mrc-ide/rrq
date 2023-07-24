@@ -192,7 +192,7 @@ test_that("INFO", {
 
   res <- obj$message_get_response(id, w$id, timeout = 1)[[1]]
   expect_identical(res, w$info())
-  expect_equal(res$worker, w$id)
+  expect_equal(res$id, w$id)
   expect_equal(res$hostname, hostname())
 })
 
