@@ -199,7 +199,8 @@ object_store <- R6::R6Class(
         data <- lapply(value, object_to_bin)
       } else {
         if (!all(vlapply(value, is_serialized_object))) {
-          stop("All values must be raw vectors (i.e., serialised R objects)")
+          cli::cli_abort(
+            "All values must be raw vectors (i.e., serialised R objects)")
         }
         data <- value
       }
@@ -247,7 +248,7 @@ object_store <- R6::R6Class(
       msg <- vlapply(loc, is.null)
       if (any(msg)) {
         if (error) {
-          stop("Some hashes were not found!")
+          cli::cli_abort("Some hashes were not found!")
         }
         loc[msg] <- NA_character_
       }
@@ -427,6 +428,6 @@ object_store_offload_null <- R6::R6Class(
 
   private = list(
     fail = function() {
-      stop("offload is not supported")
+      cli::cli_abort("offload is not supported")
     }
   ))

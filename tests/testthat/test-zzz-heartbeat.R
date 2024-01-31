@@ -161,9 +161,9 @@ test_that("invalid times", {
   key <- sprintf("rrq:heartbeat:confail:%s", ids::random_id())
   period <- 10
   expect_error(rrq_heartbeat$new(key, period, expire = period),
-               "expire must be longer than period")
+               "'expire' must be longer than 'period'")
   expect_error(rrq_heartbeat$new(key, period, expire = period - 1),
-               "expire must be longer than period")
+               "'expire' must be longer than 'period'")
 })
 
 

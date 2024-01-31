@@ -55,9 +55,13 @@ rrq_worker <- R6::R6Class(
       worker_exists <- con$SISMEMBER(private$keys$worker_id, self$id) == 1L
       if (is_child != worker_exists) {
         if (is_child) {
-          stop("Can't be a child of nonexistant worker...")
+          cli::cli_abort(
+            c("Can't be a child of nonexistant worker",
+              i = "Worker '{worker_id} does not exist for queue '{queue_id}'"))
         } else {
-          stop("Looks like this worker exists already...")
+          cli::cli_abort(
+            c("Looks like this worker exists already",
+              i = "Worker '{worker_id} already exists for queue '{queue_id}'"))
         }
       }
 
@@ -189,7 +193,7 @@ rrq_worker <- R6::R6Class(
       task_id <- private$active_task_id
       if (is.null(task_id)) {
         if (error) {
-          stop("rrq_task_progress_update called with no active task")
+          cli::cli_abort("rrq_task_progress_update called with no active task")
         } else {
           return(invisible())
         }

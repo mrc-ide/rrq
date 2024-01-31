@@ -138,7 +138,7 @@ worker_config_read <- function(con, keys, name, timeout) {
   read <- function() {
     config <- con$HGET(keys$worker_config, name)
     if (is.null(config)) {
-      stop(sprintf("Invalid rrq worker configuration key '%s'", name))
+      cli::cli_abort("Invalid rrq worker configuration key '{name}'")
     }
     bin_to_object(config)
   }

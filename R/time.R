@@ -74,5 +74,5 @@ wait_status_change <- function(con, keys, task_id, status,
     }
     Sys.sleep(time_poll)
   }
-  stop(sprintf("Did not change status from '%s' in time", status))
+  cli::cli_abort("Did not change status from '{status}' in time")
 }

@@ -91,8 +91,9 @@ sys_sleep <- function(n) {
 general_poll <- function(fetch, time_poll, timeout, name, error, progress) {
   done <- fetch()
 
+  n_total <- length(done)
   if (timeout > 0) {
-    p <- progress_timeout(length(done), progress, name, timeout)
+    p <- progress_timeout(n_total, progress, name, timeout)
     tot <- sum(done)
     p$tick(tot)
 
@@ -111,8 +112,9 @@ general_poll <- function(fetch, time_poll, timeout, name, error, progress) {
   }
 
   if (error && !all(done)) {
-    stop(sprintf("Exceeded maximum time (%d / %d %s pending)",
-                 sum(!done), length(done), name))
+    remaining <- sum(!done)
+    cli::cli_abort(
+      "Exceeded maximum time ({remaining} / {n_total} {name}{?s} pending)")
   }
 
   done
