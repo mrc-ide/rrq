@@ -1,112 +1,113 @@
-## Type
-assert_is <- function(x, what, name = deparse(substitute(x))) {
+assert_is <- function(x, what, name = deparse(substitute(x)), arg = name,
+                      call = NULL) {
   if (!inherits(x, what)) {
-    stop(sprintf("%s must inherit from %s", name,
-                 paste(what, collapse = " / ")), call. = FALSE)
+    expected <- paste(what, collapse = " / ")
+    found <- paste(class(x), collapse = " / ")
+    cli::cli_abort(
+      c("'{name}' must be a '{expected}'",
+        i = "'{name}' was a '{found}'"),
+      call = call, arg = arg)
   }
 }
 
-assert_character <- function(x, name = deparse(substitute(x))) {
+assert_character <- function(x, name = deparse(substitute(x)), call = NULL) {
   if (!is.character(x)) {
-    stop(sprintf("%s must be character", name), call. = FALSE)
+    cli::cli_abort("'{name}' must be a character", arg = name, call = call)
   }
 }
 
-assert_logical <- function(x, name = deparse(substitute(x))) {
+assert_logical <- function(x, name = deparse(substitute(x)), call = NULL) {
   if (!is.logical(x)) {
-    stop(sprintf("%s must be logical", name), call. = FALSE)
+    cli::cli_abort("'{name}' must be a logical", arg = name, call = call)
   }
 }
 
-assert_numeric <- function(x, name = deparse(substitute(x))) {
+assert_numeric <- function(x, name = deparse(substitute(x)), call = NULL) {
   if (!is.numeric(x)) {
-    stop(sprintf("'%s' must be a numeric", name), call. = FALSE)
+    cli::cli_abort("'{name}' must be a numeric", arg = name, call = call)
   }
 }
 
-assert_character_or_null <- function(x, name = deparse(substitute(x))) {
-  if (!is.null(x)) {
-    assert_character(x, name)
-  }
-}
-
-assert_nonmissing <- function(x, name = deparse(substitute(x))) {
+assert_nonmissing <- function(x, name = deparse(substitute(x)), call = NULL) {
   if (any(is.na(x))) {
-    stop(sprintf("'%s' must not be NA", name), call. = FALSE)
+    cli::cli_abort("'{name}' must not be NA", arg = name, call = call)
   }
 }
 
 ## Length
-assert_scalar <- function(x, name = deparse(substitute(x))) {
+assert_scalar <- function(x, name = deparse(substitute(x)), call = NULL) {
   if (length(x) != 1) {
-    stop(sprintf("%s must be a scalar", name), call. = FALSE)
-  }
-}
-
-assert_length <- function(x, n, name = deparse(substitute(x))) {
-  if (length(x) != n) {
-    stop(sprintf("%s must be length %d", name, n), call. = FALSE)
+    cli::cli_abort("'{name}' must be a scalar", arg = name, call = call)
   }
 }
 
 ## Compound:
-assert_scalar_character <- function(x, name = deparse(substitute(x))) {
-  assert_scalar(x, name)
-  assert_character(x, name)
-  assert_nonmissing(x, name)
+assert_scalar_character <- function(x, name = deparse(substitute(x),
+                                                      call = NULL)) {
+  assert_scalar(x, name, call)
+  assert_character(x, name, call)
+  assert_nonmissing(x, name, call)
 }
 
-assert_scalar_logical <- function(x, name = deparse(substitute(x))) {
-  assert_scalar(x, name)
-  assert_logical(x, name)
-  assert_nonmissing(x, name)
+assert_scalar_logical <- function(x, name = deparse(substitute(x)),
+                                  call = NULL) {
+  assert_scalar(x, name, call)
+  assert_logical(x, name, call)
+  assert_nonmissing(x, name, call)
 }
 
-assert_scalar_numeric <- function(x, name = deparse(substitute(x))) {
-  assert_scalar(x, name)
-  assert_numeric(x, name)
-  assert_nonmissing(x, name)
+assert_scalar_numeric <- function(x, name = deparse(substitute(x)),
+                                  call = NULL) {
+  assert_scalar(x, name, call)
+  assert_numeric(x, name, call)
+  assert_nonmissing(x, name, call)
 }
 
-assert_integer_like <- function(x, name = deparse(substitute(x))) {
-  if (!isTRUE(all.equal(as.integer(x), x))) {
-    stop(sprintf("%s must be integer like", name))
+assert_integer_like <- function(x, name = deparse(substitute(x)), call = NULL) {
+  if (!rlang::is_integerish(x)) {
+    cli::cli_abort("'{name}' must be integer-like", arg = name, call = call)
   }
 }
 
-assert_scalar_integer_like <- function(x, name = deparse(substitute(x))) {
-  assert_scalar(x, name)
-  assert_integer_like(x, name)
+assert_scalar_integer_like <- function(x, name = deparse(substitute(x)),
+                                       call = NLL) {
+  assert_scalar(x, name, call)
+  assert_integer_like(x, name, call)
 }
 
 assert_scalar_positive_integer <- function(x, zero_ok = FALSE,
-                                           name = deparse(substitute(x))) {
-  assert_scalar(x, name)
-  assert_nonmissing(x, name)
-  assert_integer_like(x, name)
+                                           name = deparse(substitute(x)),
+                                           call = NULL) {
+  assert_scalar(x, name, call)
+  assert_nonmissing(x, name, call)
+  assert_integer_like(x, name, call)
   if (x < if (zero_ok) 0 else 1) {
-    stop(sprintf("'%s' must be a positive integer", name), call. = FALSE)
+    cli::cli_abort("'{name}' must be a positive integer", arg = name,
+                   call = call)
   }
 }
 
-assert_valid_timeout <- function(x, name = deparse(substitute(x))) {
-  assert_scalar_numeric(x, name)
+assert_valid_timeout <- function(x, name = deparse(substitute(x)),
+                                 call = NULL) {
+  assert_scalar_numeric(x, name, call)
   if (x < 0) {
-    stop(sprintf("'%s' must be positive", name))
+    cli::cli_abort("{name}' must be positive", arg = name, call = call)
   }
 }
 
 
-assert_named <- function(x, unique = FALSE, name = deparse(substitute(x))) {
+assert_named <- function(x, unique = FALSE, name = deparse(substitute(x)),
+                         call = NULL) {
   if (is.null(names(x))) {
-    stop(sprintf("'%s' must be named", name), call. = FALSE)
+    cli::cli_abort("'{name}' must be named", arg = name, call = call)
   }
   if (unique && any(duplicated(names(x)))) {
-    stop(sprintf("'%s' must have unique names", name), call. = FALSE)
+    cli::cli_abort("'{name}' must have unique names", arg = name, call = call)
   }
 }
 
 
+## This really is a different issue, and should be moved into the real code
 assert_file_exists <- function(x, name = "File") {
   err <- !file.exists(x)
   if (any(err)) {

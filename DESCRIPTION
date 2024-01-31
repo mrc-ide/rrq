@@ -1,6 +1,6 @@
 Package: rrq
 Title: Simple Redis Queue
-Version: 0.7.1
+Version: 0.7.2
 Authors@R: c(person("Rich", "FitzJohn", role = c("aut", "cre"),
                     email = "rich.fitzjohn@gmail.com"),
              person("Robert", "Ashton", role = "aut"),
@@ -14,6 +14,7 @@ BugReports: https://github.com/mrc-ide/rrq/issues
 Imports:
     R6,
     callr (>= 3.7.0),
+    cli,
     docopt,
     ids,
     progress,

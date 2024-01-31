@@ -11,13 +11,9 @@ test_that("assertions", {
   expect_error(assert_scalar(1:2), "must be a scalar")
   expect_error(assert_scalar(character(0)), "must be a scalar")
 
-  expect_error(assert_character(1L), "must be character")
-  expect_error(assert_character(pi), "must be character")
+  expect_error(assert_character(1L), "must be a character")
+  expect_error(assert_character(pi), "must be a character")
   expect_silent(assert_character("a"))
-
-  expect_error(assert_character_or_null(1L), "must be character")
-  expect_error(assert_character_or_null(pi), "must be character")
-  expect_silent(assert_character_or_null(NULL))
 
   expect_error(assert_numeric("a"), "must be a numeric")
   expect_error(assert_numeric(TRUE), "must be a numeric")
@@ -25,9 +21,7 @@ test_that("assertions", {
   expect_error(assert_nonmissing(NA), "must not be NA")
   expect_error(assert_nonmissing(NA_integer_), "must not be NA")
 
-  expect_error(assert_length(1:3, 2), "must be length 2")
-
-  expect_error(assert_integer_like(pi), "must be integer like")
+  expect_error(assert_integer_like(pi), "must be integer-like")
 
   expect_error(assert_scalar_positive_integer(-1), "must be a positive integer")
   expect_error(assert_scalar_positive_integer(0), "must be a positive integer")
@@ -36,7 +30,7 @@ test_that("assertions", {
   expect_error(assert_valid_timeout(-1), "must be positive")
   expect_silent(assert_valid_timeout(1))
 
-  expect_error(assert_is(1, "R6"), "must inherit from R6")
+  expect_error(assert_is(1, "R6"), "must be a 'R6'")
 
   expect_silent(assert_named(list(a = 1)))
   expect_error(assert_named(list(a = 1, a = 2), TRUE),
@@ -47,7 +41,7 @@ test_that("assertions", {
 
 
 test_that("assert_scalar_logical", {
-  expect_error(assert_scalar_logical(1), "must be logical")
+  expect_error(assert_scalar_logical(1), "must be a logical")
   expect_error(assert_scalar_logical(c(TRUE, FALSE)), "must be a scalar")
   expect_silent(assert_scalar_logical(TRUE))
 })
@@ -59,15 +53,6 @@ test_that("bin_to_object_safe", {
   expect_equal(bin_to_object_safe(x), d)
 
   expect_null(bin_to_object_safe(NULL))
-})
-
-
-test_that("Sys_getenv", {
-  key <- sprintf("RRQ_%s", ids::random_id())
-  do.call("Sys.setenv", set_names(list("true"), key))
-  expect_equal(sys_getenv(key), "true")
-  Sys.unsetenv(key)
-  expect_error(sys_getenv(key), "Environment variable 'RRQ_.*' not set")
 })
 
 
@@ -137,6 +122,7 @@ test_that("wait success returns result", {
   expect_true(msg$result)
 })
 
+
 test_that("wait success returns error message", {
   timeout <- if (interactive()) 0.1 else 1
   poll <- timeout / 2
@@ -144,7 +130,8 @@ test_that("wait success returns error message", {
   msg <- evaluate_promise(expect_error(
     wait_success("my explanation", timeout, callback, poll)))
   expect_equal(msg$messages, c("Failure\n", "Failure\n"))
-  expect_equal(msg$result$message, "Timeout: my explanation\nFailure")
+  expect_equal(msg$result$message, "Timeout: my explanation")
+  expect_equal(msg$result$parent$message, "Failure")
 })
 
 

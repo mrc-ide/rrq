@@ -29,6 +29,6 @@ test_that("rrq_envir accepts packages", {
 
 
 test_that("validate sources exist", {
-  expect_error(rrq_envir(sources = 1), "sources must be character")
+  expect_error(rrq_envir(sources = 1), "'sources' must be a character")
   expect_error(rrq_envir(sources = "myfun.R"), "File does not exist: 'myfun.R'")
 })
