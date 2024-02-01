@@ -698,9 +698,7 @@ rrq_controller <- R6::R6Class(
     ##'   rrq controller
     ##' @param task_ids Character vector of task ids to check for existence.
     task_exists = function(task_ids = NULL) {
-      exists <- !vlapply(self$con$HMGET(private$keys$task_expr, task_ids),
-                         is.null)
-      setNames(exists, task_ids)
+      rrq_task_exists(task_ids, self)
     },
 
     ##' @description Return a character vector of task statuses. The name
@@ -711,7 +709,7 @@ rrq_controller <- R6::R6Class(
     ##' would like statuses. If not given (or `NULL`) then the status of
     ##' all task ids known to this rrq controller is returned.
     task_status = function(task_ids = NULL, follow = NULL) {
-      task_status(self$con, private$keys, task_ids, follow %||% private$follow)
+      rrq_task_status(task_ids, follow, self)
     },
 
     ##' @description Retrieve task progress, if set. This will be `NULL`
@@ -720,7 +718,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param task_id A single task id for which the progress is wanted.
     task_progress = function(task_id) {
-      task_progress(self$con, private$keys, task_id)
+      rrq_task_progress(task_id, self)
     },
 
     ##' @description Provide a high level overview of task statuses
@@ -731,7 +729,7 @@ rrq_controller <- R6::R6Class(
     ##' would like the overview. If not given (or `NULL`) then the status of
     ##' all task ids known to this rrq controller is used.
     task_overview = function(task_ids = NULL) {
-      task_overview(self$con, private$keys, task_ids)
+      rrq_task_overview(task_ids, self)
     },
 
     ##' @description Find the position of one or more tasks in the queue.
@@ -747,8 +745,7 @@ rrq_controller <- R6::R6Class(
     ##'   "default" queue).
     task_position = function(task_ids, missing = 0L, queue = NULL,
                              follow = NULL) {
-      task_position(self$con, private$keys, task_ids, missing, queue,
-                    follow %||% private$follow)
+      rrq_task_position(task_ids, missing, queue, follow, self)
     },
 
     ##' @description List the tasks in front of `task_id` in the queue.
@@ -761,8 +758,7 @@ rrq_controller <- R6::R6Class(
     ##' @param queue The name of the queue to query (defaults to the
     ##'   "default" queue).
     task_preceeding = function(task_id, queue = NULL, follow = NULL) {
-      task_preceeding(self$con, private$keys, task_id, queue,
-                      follow = follow %||% private$follow)
+      rrq_task_preceeding(task_id, queue, follow, self)
     },
 
     ##' @description Get the result for a single task (see `$tasks_result`
@@ -779,9 +775,7 @@ rrq_controller <- R6::R6Class(
     ##'   about the error. Passing `error = TRUE` simply calls `stop()`
     ##'   on this error if it is returned.
     task_result = function(task_id, error = FALSE, follow = NULL) {
-      assert_scalar_character(task_id)
-      tasks_result(self$con, private$keys, private$store, task_id,
-                   error, follow %||% private$follow, TRUE)
+      rrq_task_result(task_id, error, follow, self)
     },
 
     ##' @description Get the results of a group of tasks, returning them as a
@@ -793,8 +787,7 @@ rrq_controller <- R6::R6Class(
     ##' @param error Logical, indicating if we should throw an error if
     ##'   the task was not successful. See `$task_result()` for details.
     tasks_result = function(task_ids, error = FALSE, follow = NULL) {
-      tasks_result(self$con, private$keys, private$store, task_ids,
-                   error, follow %||% private$follow, FALSE)
+      rrq_task_results(task_ids, error, follow, self)
     },
 
     ##' @description Poll for a task to complete, returning the result
@@ -828,11 +821,7 @@ rrq_controller <- R6::R6Class(
     ##'   in time.
     task_wait = function(task_id, timeout = NULL, time_poll = 1,
                          progress = NULL, error = FALSE, follow = NULL) {
-      assert_scalar_character(task_id)
-      timeout <- timeout %||% private$timeout_task_wait
-      follow <- follow %||% private$follow
-      tasks_wait(self$con, private$keys, private$store, task_id,
-                 timeout, time_poll, progress, NULL, error, follow, TRUE)
+      rrq_task_wait(task_id, timeout, time_poll, progress, error, follow, self)
     },
 
     ##' @description Poll for a group of tasks to complete, returning the
@@ -859,10 +848,8 @@ rrq_controller <- R6::R6Class(
     ##'   in time.
     tasks_wait = function(task_ids, timeout = NULL, time_poll = 1,
                           progress = NULL, error = FALSE, follow = NULL) {
-      timeout <- timeout %||% private$timeout_task_wait
-      follow <- follow %||% private$follow
-      tasks_wait(self$con, private$keys, private$store, task_ids,
-                 timeout, time_poll, NULL, progress, error, follow, FALSE)
+      rrq_tasks_wait(task_ids, timeout, time_poll, progress, error, follow,
+                     self)
     },
 
     ##' @description Delete one or more tasks
@@ -873,7 +860,7 @@ rrq_controller <- R6::R6Class(
     ##'   are not running. Deleting running tasks is unlikely to result in
     ##'   desirable behaviour.
     task_delete = function(task_ids, check = TRUE) {
-      task_delete(self$con, private$keys, private$store, task_ids, check)
+      rrq_task_delete(task_ids, check, self)
     },
 
     ##' @description Cancel a single task. If the task is `PENDING` it
@@ -892,8 +879,7 @@ rrq_controller <- R6::R6Class(
     ##' @return Nothing if successfully cancelled, otherwise throws an
     ##' error with task_id and status e.g. Task 123 is not running (MISSING)
     task_cancel = function(task_id, wait = TRUE, timeout_wait = 10) {
-      task_cancel(self$con, private$keys, private$store, private$scripts,
-                  task_id, wait, timeout_wait)
+      rrq_task_cancel(task_id, wait, timeout_wait, self)
     },
 
     ##' @description Fetch internal data about a task from Redis
@@ -901,7 +887,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param task_id The id of the task
     task_data = function(task_id) {
-      task_data(self$con, private$keys, private$store, task_id)
+      rrq_task_data(task_id, self)
     },
 
     ##' @description Return information about a task. This currently
@@ -914,7 +900,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param task_id The id of the task to fetch information about
     task_info = function(task_id) {
-      task_info(self$con, private$keys, task_id)
+      rrq_task_info(task_id, self)
     },
 
     ##' @description Fetch times for tasks at points in their life cycle.
@@ -928,23 +914,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param task_ids Task ids to fetch times for.
     task_times = function(task_ids, follow = NULL) {
-      if (follow %||% private$follow) {
-        task_ids_from <- task_follow(self$con, private$keys, task_ids)
-      } else {
-        task_ids_from <- task_ids
-      }
-      read_time_with_default <- function(key) {
-        time <- self$con$HMGET(key, task_ids_from)
-        time[vlapply(time, is.null)] <- NA_character_
-        as.numeric(list_to_character(time))
-      }
-      ret <- cbind(
-        submit = read_time_with_default(private$keys$task_time_submit),
-        start = read_time_with_default(private$keys$task_time_start),
-        complete = read_time_with_default(private$keys$task_time_complete),
-        moved = read_time_with_default(private$keys$task_time_moved))
-      rownames(ret) <- task_ids
-      ret
+      rrq_task_times(task_ids, folllow, self)
     },
 
     ##' @description Retry a task (or set of tasks). Typically this
@@ -957,7 +927,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param task_ids Task ids to retry.
     task_retry = function(task_ids) {
-      task_retry(self$con, private$keys, task_ids)
+      rrq_task_retry(task_ids, self)
     },
 
     ##' @description Returns the number of tasks in the queue (waiting for
@@ -1299,203 +1269,12 @@ rrq_controller <- R6::R6Class(
     store = NULL
   ))
 
-task_status <- function(con, keys, task_ids, follow) {
-  status <- from_redis_hash(con, keys$task_status, task_ids,
-                            missing = TASK_MISSING)
-  if (follow && any(is_moved <- status == TASK_MOVED)) {
-    task_ids_moved <- task_follow(con, keys, task_ids[is_moved])
-    status[is_moved] <- task_status(con, keys, task_ids_moved, TRUE)
-  }
-  status
-}
 
-
-task_progress <- function(con, keys, task_id) {
-  assert_scalar_character(task_id)
-  ret <- con$HGET(keys$task_progress, task_id)
-  if (!is.null(ret)) {
-    ret <- bin_to_object(ret)
-  }
-  ret
-}
-
-
-task_overview <- function(con, keys, task_ids) {
-  status <- task_status(con, keys, task_ids, FALSE)
-  lvls <- c(TASK$all, setdiff(unique(status), TASK$all))
-  as.list(table(factor(status, lvls)))
-}
-
-## NOTE: This is not crazy efficient; we pull the entire list down
-## which is not ideal.  However, in practice it seems fairly fast.
-## But one should be careful to adjust the polling interval of
-## something usnig this not to flood the server with excessive load.
-##
-## A better way would possibly be to use a LUA script; especially for
-## the case where there is a single job that'd be fairly easy to do.
-task_position <- function(con, keys, task_ids, missing, queue, follow) {
-  key_queue <- rrq_key_queue(keys$queue_id, queue)
-  queue_contents <- vcapply(con$LRANGE(key_queue, 0, -1L), identity)
-  if (follow && length(queue_contents) > 0L) {
-    ## In some ways following is the only thing that makes sense here,
-    ## as only the last id in the chain can possibly be queued.
-    task_ids <- task_follow(con, keys, task_ids)
-  }
-  match(task_ids, queue_contents, missing)
-}
-
-task_preceeding <- function(con, keys, task_id, queue, follow) {
-  key_queue <- rrq_key_queue(keys$queue_id, queue)
-  queue_contents <- vcapply(con$LRANGE(key_queue, 0, -1L), identity)
-  if (follow && length(queue_contents) > 0L) {
-    ## In some ways following is the only thing that makes sense here,
-    ## as only the last id in the chain can possibly be queued.
-    task_id <- task_follow(con, keys, task_id)
-  }
-  task_position <- match(task_id, queue_contents)
-  if (is.na(task_position)) {
-    return(NULL)
-  }
-  queue_contents[seq_len(task_position - 1)]
-}
 
 task_submit <- function(con, keys, store, task_id, dat, queue,
                         separate_process, timeout, depends_on = NULL) {
   task_submit_n(con, keys, store, task_id, list(object_to_bin(dat)), NULL,
                 queue, separate_process, timeout, depends_on)
-}
-
-task_delete <- function(con, keys, store, task_ids, check) {
-  task_chain <- task_follow_chain(con, keys, task_ids)
-  task_ids_root <- vcapply(task_chain, first, USE.NAMES = FALSE)
-  task_ids_all <- unlist(task_chain)
-
-  if (check) {
-    st <- from_redis_hash(con, keys$task_status, task_ids_all,
-                          missing = TASK_MISSING)
-    if (any(st == TASK_RUNNING)) {
-      ## This already is not a great error, but will be even harder to
-      ## understand if the user is deleting a task that has been
-      ## retried.
-      stop("Can't delete running tasks")
-    }
-  }
-
-  depends_up_original_keys <- rrq_key_task_depends_up_original(
-    keys$queue_id, task_ids_all)
-  depends_up_keys <- rrq_key_task_depends_up(keys$queue_id, task_ids_all)
-  depends_down_keys <- rrq_key_task_depends_down(keys$queue_id, task_ids_all)
-  res <- con$pipeline(
-    .commands = c(
-      lapply(depends_down_keys, redis$SCARD),
-      list(
-        redis$HMGET(keys$task_status,  task_ids_all),
-        redis$HDEL(keys$task_expr,     task_ids_all),
-        redis$HDEL(keys$task_status,   task_ids_all),
-        redis$HDEL(keys$task_result,   task_ids_all),
-        redis$HDEL(keys$task_complete, task_ids_all),
-        redis$HDEL(keys$task_progress, task_ids_all),
-        redis$HDEL(keys$task_worker,   task_ids_all),
-        redis$HDEL(keys$task_local,    task_ids_all),
-        redis$DEL(depends_up_original_keys),
-        redis$DEL(depends_up_keys))))
-
-  queue <- list_to_character(con$HMGET(keys$task_queue, task_ids_root))
-  queue_remove(con, keys, task_ids_all, queue)
-
-  store$drop(task_ids_all)
-
-  ## We only want to cancel dependencies i.e. set status to IMPOSSIBLE when
-  ## A. They are dependents of a task which is PENDING or DEFERRED AND
-  ## B. Their dependencies have not already been deleted or set to ERRORED, etc.
-  ## i.e. their dependencies are also DEFERRED
-  n <- length(task_ids_all)
-  check_dependencies <-
-    (list_to_numeric(res[seq_len(n)]) > 0) &
-    vlapply(res[[n + 1]], function(x) !is.null(x) && x %in% TASK$unstarted)
-  if (any(check_dependencies)) {
-    ids_all_deps <- unlist(
-      task_depends_down(con, keys, task_ids_all[check_dependencies]),
-      FALSE, FALSE)
-    ids_deps <- setdiff(ids_all_deps, task_ids_all)
-    status_deps <- task_status(con, keys, ids_deps, follow = FALSE)
-    ids_impossible <- ids_deps[status_deps == TASK_DEFERRED]
-    if (length(ids_impossible) > 0) {
-      run_task_cleanup_failure(con, keys, store, ids_impossible,
-                               TASK_IMPOSSIBLE, NULL)
-    }
-  }
-
-  con$DEL(depends_down_keys)
-
-  invisible()
-}
-
-task_cancel <- function(con, keys, store, scripts, task_id, wait,
-                        timeout_wait) {
-  assert_scalar_character(task_id)
-  assert_scalar_logical(wait)
-  assert_valid_timeout(timeout_wait)
-
-  ## There are several steps here, which will all be executed in one
-  ## block which removes the possibility of race conditions:
-  ##
-  ## * Remove the task_id from its queue (whichever it is in) so that
-  ##   it cannot be picked up by any worker (prevents status moving
-  ##   from PENDING -> RUNNING)
-  ##
-  ## * Mark the job as cancelled so that if it is running on a
-  ##   separate process it will be eligible to be stopped as soon as
-  ##   possible.
-  ##
-  ## * Determine if it is a local or a separate process task so we
-  ## * know if it will be cancelled if it was running.
-  ##
-  ## * Retrieve the status so that we know the task status before any
-  ##   change can happen.
-  ##
-  ## Unfortunately it's not possible to also cancel dependencies in a
-  ## race-free way and we'll tidy that up later.
-  key_queue <- rrq_key_queue(keys$queue_id, con$HGET(keys$task_queue, task_id))
-
-  dat <- con$pipeline(
-    dropped = redis$LREM(key_queue, 1, task_id),
-    cancel = redis$HSET(keys$task_cancel, task_id, "TRUE"),
-    status = redis$HGET(keys$task_status, task_id),
-    local = redis$HGET(keys$task_local, task_id))
-
-  task_status <- dat$status %||% TASK_MISSING
-  if (!(task_status %in% TASK$unfinished)) {
-    stop(sprintf("Task %s is not cancelable (%s)", task_id, task_status))
-  }
-
-  if (task_status == TASK_RUNNING) {
-    if (dat$local != "FALSE") {
-      stop(sprintf(
-        "Can't cancel running task '%s' as not in separate process", task_id))
-    }
-    if (wait) {
-      wait_status_change(con, keys, task_id, TASK_RUNNING, timeout_wait)
-    }
-  } else {
-    run_task_cleanup_failure(con, keys, store, task_id, TASK_CANCELLED, NULL)
-  }
-
-  invisible(NULL)
-}
-
-
-task_data <- function(con, keys, store, task_id) {
-  expr <- con$HGET(keys$task_expr, task_id)
-  if (is.null(expr)) {
-    stop(sprintf("Task '%s' not found", task_id))
-  } else if (is_task_redirect(expr)) {
-    return(task_data(con, keys, store, expr))
-  }
-  task <- bin_to_object(expr)
-  data <- as.list(expression_restore_locals(task, emptyenv(), store))
-  task$objects <- data[names(task$objects)]
-  task
 }
 
 
@@ -1575,39 +1354,6 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
   }
 
   task_ids
-}
-
-
-tasks_result <- function(con, keys, store, task_ids, error, follow, single) {
-  if (follow) {
-    task_ids_from <- task_follow(con, keys, task_ids)
-  } else {
-    task_ids_from <- task_ids
-  }
-  hash <- from_redis_hash(con, keys$task_result, task_ids_from)
-  is_missing <- is.na(hash)
-  ## TODO - for discussion/implementation elsewhere: should these be
-  ## another error type? What other errors like this are floating
-  ## around? Should it be a rrq_task_error subtype?  It sort of is
-  ## with status TASK_MISSING? Also, note that we error here on fetch
-  ## while for everything else we are fine with it, unless error i
-  ## TRUE - does that need changing?
-  if (any(is_missing)) {
-    if (single) {
-      stop(sprintf("Missing result for task: '%s'", task_ids),
-           call. = FALSE)
-    } else {
-      stop(sprintf("Missing result for task:\n%s",
-                   paste(sprintf("  - %s", task_ids[is_missing]),
-                         collapse = "\n")),
-           call. = FALSE)
-    }
-  }
-  res <- store$mget(hash)
-  if (error) {
-    throw_task_errors(res, single)
-  }
-  if (single) res[[1]] else set_names(res, task_ids)
 }
 
 worker_len <- function(con, keys) {
@@ -1873,54 +1619,13 @@ tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
     general_poll(fetch, 0, timeout, "tasks", TRUE, progress)
   }
 
-  ret <- tasks_result(con, keys, store, task_ids_from, error, FALSE, single)
-  if (follow && !single) {
-    names(ret) <- task_ids
+  ## A bit inefficient, but we won't do it this way for long:
+  controller <- rrq_controller2(keys$queue_id, con)
+  if (single) {
+    rrq_task_result(task_ids_from, error = error, controller = controller)
+  } else {
+    rrq_task_results(task_ids_from, error = error, controller = controller)
   }
-  ret
-}
-
-
-task_info <- function(con, keys, task_id) {
-  assert_scalar_character(task_id)
-  dat <- con$pipeline(
-    status = redis$HGET(keys$task_status, task_id),
-    queue = redis$HGET(keys$task_queue, task_id),
-    local = redis$HGET(keys$task_local, task_id),
-    timeout = redis$HGET(keys$task_timeout, task_id),
-    worker = redis$HGET(keys$task_worker, task_id),
-    root = redis$HGET(keys$task_moved_root, task_id),
-    pid = redis$HGET(keys$task_pid, task_id))
-
-  moved <- list(up = NULL, down = NULL)
-
-  if (dat$status == TASK_MOVED && is.null(dat$root)) {
-    dat$root <- task_id
-  }
-  if (!is.null(dat$root)) {
-    chain <- task_follow_chain(con, keys, dat$root)[[1L]]
-    pos <- which(chain == task_id)
-    if (pos > 1) {
-      moved$up <- chain[seq_len(pos - 1)]
-    }
-    if (pos < length(chain)) {
-      moved$down <- chain[seq.int(pos + 1, length(chain))]
-    }
-  }
-
-  depends <- list(up = task_depends_up(con, keys, task_id),
-                  down = task_depends_down(con, keys, task_id))
-
-  list(
-    id = task_id,
-    status = dat$status,
-    queue = dat$queue,
-    separate_process = dat$local == "FALSE",
-    timeout = dat$timeout %&&% as.numeric(dat$timeout),
-    worker = dat$worker,
-    pid = dat$pid %&&% as.integer(dat$pid),
-    depends = depends,
-    moved = moved)
 }
 
 
@@ -1986,78 +1691,6 @@ throw_task_errors <- function(res, single) {
   }
 }
 
-task_retry <- function(con, keys, task_ids) {
-  if (anyDuplicated(task_ids) > 0) {
-    stop(sprintf(
-      "task_ids must not contain duplicates:\n%s",
-      paste(sprintf("  - %s", unique(task_ids[duplicated(task_ids)])),
-            collapse = "\n")))
-  }
-
-  chain <- task_follow_chain(con, keys, task_ids)
-  task_ids_leaf <- vcapply(chain, last, USE.NAMES = FALSE)
-  task_ids_root <- vcapply(chain, first, USE.NAMES = FALSE)
-
-  if (anyDuplicated(task_ids_leaf)) {
-    dup <- task_ids[duplicated(task_ids_leaf)]
-    i <- task_ids_leaf %in% dup
-    err <- vcapply(split(task_ids[i], factor(task_ids_leaf[i], dup)),
-                   function(x) paste(sprintf("    - %s", x), collapse = "\n"))
-    stop(sprintf(
-      "task_ids must point to distinct tasks:\n%s",
-      paste(sprintf("  - %s\n%s", names(err), err), collapse = "\n")))
-  }
-
-  status <- task_status(con, keys, task_ids_leaf, follow = FALSE)
-
-  not_retriable <- !(status %in% TASK$retriable)
-  if (any(not_retriable)) {
-    stop(sprintf(
-      "Can't retry tasks that are in state: %s:\n%s",
-      paste(squote(unique(status[not_retriable])), collapse = ", "),
-      paste(sprintf("  - %s", task_ids[not_retriable]), collapse = "\n")),
-      call. = FALSE)
-  }
-
-  n <- length(task_ids)
-  time <- timestamp()
-  task_ids_new <- ids::random_id(n)
-
-  key_queue <- rrq_key_queue(
-    keys$queue_id,
-    list_to_character(con$HMGET(keys$task_queue, task_ids_root)))
-  if (all(key_queue == key_queue[[1]])) {
-    queue_push <- list(redis$RPUSH(key_queue[[1]], task_ids_new))
-  } else {
-    key_queue_split <- split(task_ids_new, key_queue)
-    queue_push <-
-      unname(Map(redis$RPUSH, names(key_queue_split), key_queue_split))
-  }
-
-  key_complete <- con$HMGET(keys$task_complete, task_ids_root)
-  i <- !vlapply(key_complete, is.null)
-  if (any(i)) {
-    set_key_complete <- list(
-      redis$HMSET(keys$task_complete, task_ids_new[i], key_complete[i]))
-  } else {
-    set_key_complete <- NULL
-  }
-
-  con$pipeline(
-    .commands = c(list(
-      redis$HMSET(keys$task_status,      task_ids_leaf, rep(TASK_MOVED, n)),
-      redis$HMSET(keys$task_status,      task_ids_new,  rep(TASK_PENDING, n)),
-      redis$HMSET(keys$task_time_moved,  task_ids_leaf, rep_len(time, n)),
-      redis$HMSET(keys$task_time_submit, task_ids_new,  rep_len(time, n)),
-      redis$HMSET(keys$task_moved_to,    task_ids_leaf, task_ids_new),
-      redis$HMSET(keys$task_moved_root,  task_ids_new,  task_ids_root),
-      redis$HMSET(keys$task_expr,        task_ids_new,  task_ids_root)),
-      set_key_complete,
-      queue_push))
-
-  task_ids_new
-}
-
 
 ## This is probably worth doing in lua, because we're going to hit
 ## this really very often.
@@ -2120,4 +1753,16 @@ task_depends_walk <- function(con, key, task_ids) {
     task_ids <- unique(unlist(deps[i]))
   }
   if (length(ret) == 0) NULL else ret
+}
+
+
+## Still used above.
+task_status <- function(con, keys, task_ids, follow) {
+  status <- from_redis_hash(con, keys$task_status, task_ids,
+                            missing = TASK_MISSING)
+  if (follow && any(is_moved <- status == TASK_MOVED)) {
+    task_ids_moved <- task_follow(con, keys, task_ids[is_moved])
+    status[is_moved] <- task_status(con, keys, task_ids_moved, TRUE)
+  }
+  status
 }
