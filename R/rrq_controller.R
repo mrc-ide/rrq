@@ -1156,7 +1156,7 @@ rrq_controller <- R6::R6Class(
     ##' @param worker_ids Optional vector of worker ids to send the message
     ##'   to. If `NULL` then the message will be sent to all active workers.
     message_send = function(command, args = NULL, worker_ids = NULL) {
-      message_send(self$con, private$keys, command, args, worker_ids)
+      rrq_message_send(command, args, worker_ids, self)
     },
 
     ##' @description Detect if a response is available for a message
@@ -1170,8 +1170,7 @@ rrq_controller <- R6::R6Class(
     ##' @param named Logical, indicating if the return vector should be named
     message_has_response = function(message_id, worker_ids = NULL,
                                     named = TRUE) {
-      message_has_response(self$con, private$keys, message_id, worker_ids,
-                           named)
+      rrq_message_has_response(message_id, worker_ids, named, self)
     },
 
     ##' @description Get response to messages, waiting until the
@@ -1214,7 +1213,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param worker_id The worker id
     message_response_ids = function(worker_id) {
-      message_response_ids(self$con, private$keys, worker_id)
+      rrq_message_response_ids(worker_id, self)
     },
 
     ##' @description Send a message and wait for responses.
@@ -1250,6 +1249,9 @@ rrq_controller <- R6::R6Class(
     message_send_and_wait = function(command, args = NULL, worker_ids = NULL,
                                      named = TRUE, delete = TRUE, timeout = 600,
                                      time_poll = 0.05, progress = NULL) {
+      rrq_message_send_and_wait(command, args, worker_ids,
+                                named, delete, timeout,
+                                time_poll, progress, self)
       message_send_and_wait(self$con, private$keys, command, args, worker_ids,
                             named, delete, timeout, time_poll, progress)
     }
