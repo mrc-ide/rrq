@@ -119,5 +119,5 @@ test_that("error if no workers expected on key", {
   key_alive <- rrq_key_worker_alive(obj$queue_id)
   expect_error(
     rrq_worker_wait(obj, key_alive, 0, 1, FALSE),
-    "No workers expected on that key")
+    "No workers expected on this key")
 })
