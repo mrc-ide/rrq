@@ -836,7 +836,7 @@ List ids of all tasks known to this rrq controller
 Test if task with id \code{task_ids} is known to this
 rrq controller
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_exists(task_ids = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_exists(task_ids)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

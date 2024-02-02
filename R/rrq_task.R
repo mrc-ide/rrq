@@ -28,7 +28,7 @@ rrq_task_list <- function(controller = NULL) {
 ##' would like the overview. If not given (or `NULL`) then the status of
 ##' all task ids known to this rrq controller is used.
 ##'
-##' @inheritParams task_list
+##' @inheritParams rrq_task_list
 ##'
 ##' @return A list with names corresponding to possible task status
 ##'   levels and values being the number of tasks in that state.
@@ -49,7 +49,7 @@ rrq_task_overview <- function(task_ids = NULL, controller = NULL) {
 ##'
 ##' @param task_ids Vector of task ids to check
 ##'
-##' @inheritParams task_list
+##' @inheritParams rrq_task_list
 ##'
 ##' @return A logical vector the same length as task_ids; `TRUE` where
 ##'   the task exists, `FALSE` otherwise.
@@ -243,7 +243,7 @@ rrq_task_result <- function(task_id, error = FALSE, follow = NULL,
   task_id_from <- if (follow) task_follow(con, keys, task_id) else task_id
 
   hash <- con$HGET(keys$task_result, task_id_from)
-  if (is.na(hash)) {
+  if (is.null(hash)) {
     stop(sprintf("Missing result for task: '%s'", task_id),
          call. = FALSE)
   }
@@ -608,10 +608,12 @@ rrq_task_cancel <- function(task_id, wait = TRUE, timeout_wait = 10,
 }
 
 
-##' @description Poll for a task to complete, returning the result
+##' Poll for a task to complete, returning the result
 ##' when completed. If the task has already completed this is
 ##' roughly equivalent to `task_result`. See `$tasks_wait` for an
 ##' efficient way of doing this for a group of tasks.
+##'
+##' @title Wait for task to complete
 ##'
 ##' @param task_id The single id that we will wait for
 ##'
@@ -661,9 +663,11 @@ rrq_task_wait <- function(task_id, timeout = NULL, time_poll = 1,
 }
 
 
-##' @description Poll for a group of tasks to complete, returning the
+##' Poll for a group of tasks to complete, returning the
 ##' result as list when completed. If the tasks have already completed
 ##' this is roughly equivalent to `tasks_result`.
+##'
+##' @title Wait for group of tasks
 ##'
 ##' @param task_ids A vector of task ids to poll for
 ##'
