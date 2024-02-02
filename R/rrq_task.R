@@ -60,8 +60,9 @@ rrq_task_exists <- function(task_ids, controller = NULL) {
   con <- controller$con
   keys <- controller$keys
   assert_character(task_ids, call = rlang::current_env())
-  !vlapply(controller$con$HMGET(controller$keys$task_expr, task_ids),
-           is.null)
+  exists <- !vlapply(controller$con$HMGET(controller$keys$task_expr, task_ids),
+                     is.null)
+  set_names(exists, task_ids) # For now
 }
 
 
@@ -149,7 +150,7 @@ rrq_task_data <- function(task_id, controller = NULL) {
   if (is.null(expr)) {
     stop(sprintf("Task '%s' not found", task_id))
   } else if (is_task_redirect(expr)) {
-    return(task_data(con, keys, store, expr))
+    return(rrq_task_data(expr, controller))
   }
   task <- bin_to_object(expr)
   data <- as.list(expression_restore_locals(task, emptyenv(), store))
@@ -557,6 +558,7 @@ rrq_task_cancel <- function(task_id, wait = TRUE, timeout_wait = 10,
   assert_valid_timeout(timeout_wait)
   con <- controller$con
   keys <- controller$keys
+  store <- controller$store
 
   ## There are several steps here, which will all be executed in one
   ## block which removes the possibility of race conditions:

@@ -697,7 +697,7 @@ rrq_controller <- R6::R6Class(
     ##' @description Test if task with id `task_ids` is known to this
     ##'   rrq controller
     ##' @param task_ids Character vector of task ids to check for existence.
-    task_exists = function(task_ids = NULL) {
+    task_exists = function(task_ids) {
       rrq_task_exists(task_ids, self)
     },
 
@@ -914,7 +914,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param task_ids Task ids to fetch times for.
     task_times = function(task_ids, follow = NULL) {
-      rrq_task_times(task_ids, folllow, self)
+      rrq_task_times(task_ids, follow, self)
     },
 
     ##' @description Retry a task (or set of tasks). Typically this
