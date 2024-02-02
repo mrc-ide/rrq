@@ -973,17 +973,17 @@ rrq_controller <- R6::R6Class(
 
     ##' @description Returns the number of active workers
     worker_len = function() {
-      worker_len(self$con, private$keys)
+      rrq_worker_len(self)
     },
 
     ##' @description Returns the ids of active workers
     worker_list = function() {
-      worker_list(self$con, private$keys)
+      rrq_worker_list(self)
     },
 
     ##' @description Returns the ids of workers known to have exited
     worker_list_exited = function() {
-      worker_list_exited(self$con, private$keys)
+      rrq_worker_list_exited(self)
     },
 
     ##' @description Returns a list of information about active
@@ -992,7 +992,7 @@ rrq_controller <- R6::R6Class(
     ##' @param worker_ids Optional vector of worker ids. If `NULL` then
     ##' all active workers are used.
     worker_info = function(worker_ids = NULL) {
-      worker_info(self$con, private$keys, worker_ids)
+      rrq_worker_info(worker_ids, self)
     },
 
     ##' @description Returns a character vector of current worker statuses
@@ -1000,7 +1000,7 @@ rrq_controller <- R6::R6Class(
     ##' @param worker_ids Optional vector of worker ids. If `NULL` then
     ##' all active workers are used.
     worker_status = function(worker_ids = NULL) {
-      worker_status(self$con, private$keys, worker_ids)
+      rrq_worker_status(worker_ids, self)
     },
 
     ##' @description Returns the last (few) elements in the worker
@@ -1018,7 +1018,7 @@ rrq_controller <- R6::R6Class(
     ##' @param n Number of elements to select, the default being the single
     ##' last entry. Use `Inf` or `0` to indicate that you want all log entries
     worker_log_tail = function(worker_ids = NULL, n = 1) {
-      worker_log_tail(self$con, private$keys, worker_ids, n)
+      rrq_worker_log_tail(worker_ids, n, self)
     },
 
     ##' @description Returns the task id that each worker is working on,
@@ -1027,7 +1027,7 @@ rrq_controller <- R6::R6Class(
     ##' @param worker_ids Optional vector of worker ids. If `NULL` then
     ##' all active workers are used.
     worker_task_id = function(worker_ids = NULL) {
-      worker_task_id(self$con, private$keys, worker_ids)
+      rrq_worker_task_id(worker_ids, self)
     },
 
     ##' @description Cleans up workers known to have exited
@@ -1035,7 +1035,7 @@ rrq_controller <- R6::R6Class(
     ##' @param worker_ids Optional vector of worker ids. If `NULL` then
     ##' rrq looks for exited workers.
     worker_delete_exited = function(worker_ids = NULL) {
-      worker_delete_exited(self$con, private$keys, worker_ids)
+      rrq_worker_delete_exited(worker_ids, self)
     },
 
     ##' @description Stop workers.
@@ -1080,13 +1080,12 @@ rrq_controller <- R6::R6Class(
     ##'    machine as the controller.
     worker_stop = function(worker_ids = NULL, type = "message",
                            timeout = 0, time_poll = 0.05, progress = NULL) {
-      worker_stop(self$con, private$keys, worker_ids, type,
-                  timeout, time_poll, progress)
+      rrq_worker_stop(worker_ids, type, timeout, time_poll, progress, self)
     },
 
     ##' @description Detects exited workers through a lapsed heartbeat
     worker_detect_exited = function() {
-      worker_detect_exited(self$con, private$keys, private$store)
+      rrq_worker_detect_exited(self)
     },
 
     ##' @description Return the contents of a worker's process log, if
@@ -1097,12 +1096,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param worker_id The worker for which the log is required
     worker_process_log = function(worker_id) {
-      assert_scalar(worker_id)
-      path <- self$con$HGET(private$keys$worker_process, worker_id)
-      if (is.null(path)) {
-        stop("Process log not enabled for this worker")
-      }
-      readLines(path)
+      rrq_worker_process_log(worker_id, self)
     },
 
     ##' @description Save a worker configuration, which can be used to
@@ -1122,13 +1116,13 @@ rrq_controller <- R6::R6Class(
     ##' @return Invisibly, a boolean indicating if the configuration was
     ##'   updated.
     worker_config_save = function(name, config, overwrite = TRUE) {
-      worker_config_save(self$con, private$keys, name, config, overwrite)
+      rrq_worker_config_save(name, config, overwrite, self)
     },
 
     ##' @description Return names of worker configurations saved by
     ##' `$worker_config_save`
     worker_config_list = function() {
-      list_to_character(self$con$HKEYS(private$keys$worker_config))
+      rrq_worker_config_list(self)
     },
 
     ##' @description Return the value of a of worker configuration saved by
@@ -1136,7 +1130,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param name Name of the configuration
     worker_config_read = function(name) {
-      worker_config_read(self$con, private$keys, name, 0)
+      rrq_worker_config_read(name, 0, self)
     },
 
     ##' Report on worker "load" (the number of workers being used over
@@ -1147,7 +1141,7 @@ rrq_controller <- R6::R6Class(
     ##' @param worker_ids Optional vector of worker ids. If `NULL` then
     ##'   all active workers are used.
     worker_load = function(worker_ids = NULL) {
-      worker_load(self$con, private$keys, worker_ids)
+      rrq_worker_load(worker_ids, self)
     },
 
     ##' @description Send a message to workers. Sending a message returns
@@ -1521,57 +1515,6 @@ worker_naturalsort <- function(x) {
   idx <- numeric(length(x))
   idx[i] <- as.integer(sub(re, "\\2", x[i]))
   x[order(root, idx)]
-}
-
-## This is very much a beginning here; it might be nicer to be able to
-## do this for a given time interval as well as computing a rolling
-## average (to plot, for example).  But the concept is here now and we
-## can build off of it.
-worker_load <- function(con, keys, worker_ids) {
-  logs <- worker_log_tail(con, keys, worker_ids, Inf)
-  logs <- logs[order(logs$time), ]
-
-  keep <- c("ALIVE", "STOP", "TASK_START", "TASK_COMPLETE")
-  logs <- logs[logs$command %in% keep & is.na(logs$child), ]
-
-  logs$worker <- 0
-  logs$worker[logs$command == "ALIVE"] <- 1
-  logs$worker[logs$command == "STOP"] <- -1
-  logs$worker_cum <- cumsum(logs$worker)
-
-  logs$task <- 0
-  logs$task[logs$command == "TASK_START"] <- 1
-  logs$task[logs$command == "TASK_COMPLETE"] <- -1
-  logs$task_cum <- cumsum(logs$task)
-
-  logs$dt <- c(diff(logs$time), 0)
-  logs$ago <- logs$time[nrow(logs)] - logs$time
-
-  class(logs) <- c("worker_load", class(logs))
-  logs
-}
-
-##' @export
-mean.worker_load <- function(x, time = c(1, 5, 15, Inf), ...) {
-  ## make this slightly nicer to work with:
-  x$dt <- x$dt * 1000
-  x$ago <- x$ago * 1000
-
-  f <- function(t) {
-    i <- which(x$ago < t)[[1L]] - 1L
-    y <- x[i:nrow(x), ]
-    if (i > 0) {
-      dt <- y$ago[[1L]] - t
-      y$dt[[1L]] <- y$dt[[1L]] - dt
-      y$time[[1L]] <- y$time[[1L]] - dt
-      y$ago[[1L]] <- t
-    }
-    c(used = sum(y$task_cum * y$dt) / y$ago[[1L]],
-      available = sum(y$worker_cum * y$dt) / y$ago[[1L]])
-  }
-  res <- vapply(time, f, numeric(2))
-  colnames(res) <- as.character(time)
-  res
 }
 
 

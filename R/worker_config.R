@@ -119,34 +119,6 @@ rrq_worker_config <- function(queue = NULL, verbose = TRUE,
 ##' @export
 rrq_worker_config_save <- function(queue_id, name, config, overwrite = TRUE,
                                    con = redux::hiredis()) {
-  keys <- rrq_keys(queue_id)
-  worker_config_save(con, keys, name, config, overwrite)
-}
-
-
-worker_config_save <- function(con, keys, name, config, overwrite) {
-  assert_is(config, "rrq_worker_config")
-  write <- overwrite || con$HEXISTS(keys$worker_config, name) == 0
-  if (write) {
-    con$HSET(keys$worker_config, name, object_to_bin(config))
-  }
-  invisible(write)
-}
-
-
-worker_config_read <- function(con, keys, name, timeout) {
-  read <- function() {
-    config <- con$HGET(keys$worker_config, name)
-    if (is.null(config)) {
-      cli::cli_abort("Invalid rrq worker configuration key '{name}'")
-    }
-    bin_to_object(config)
-  }
-
-  if (timeout > 0) {
-    time_poll <- 1
-    wait_success("config not readable in time", timeout, read, time_poll)
-  } else {
-    read()
-  }
+  controller <- rrq_controller2(queue_id, con)
+  rrq_worker_config_save2(name, config, overwrite, controller)
 }
