@@ -117,6 +117,11 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
 }
 
 
+test_rrq2 <- function(...) {
+  test_rrq(...)$to_v2()
+}
+
+
 test_rrq_cleanup <- function(obj, timeout_worker_stop) {
   if (is.null(timeout_worker_stop)) {
     worker_pid <- vnapply(obj$worker_info(), "[[", "pid")
