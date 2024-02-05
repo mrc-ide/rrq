@@ -30,7 +30,7 @@ test_that("can print a controller", {
 test_that("can get a controller or throw", {
   rrq_default_controller_clear()
   on.exit(rrq_default_controller_clear())
-  
+
   r1 <- test_rrq()
   r2 <- test_rrq2()
   r3 <- test_rrq2()
