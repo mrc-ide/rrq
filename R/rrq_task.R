@@ -5,7 +5,7 @@
 ##'
 ##' @param controller The controller to use.  If not given (or `NULL`)
 ##'   we'll use the controller registered with
-##'   [rrq_register_default_controller]
+##'   [rrq_default_controller_set()].
 ##'
 ##' @return A character vector
 ##'

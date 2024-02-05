@@ -70,7 +70,7 @@ assert_integer_like <- function(x, name = deparse(substitute(x)), call = NULL) {
 }
 
 assert_scalar_integer_like <- function(x, name = deparse(substitute(x)),
-                                       call = NLL) {
+                                       call = NULL) {
   assert_scalar(x, name, call)
   assert_integer_like(x, name, call)
 }

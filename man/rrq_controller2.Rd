@@ -21,7 +21,7 @@ connection using default ports, or environment variables set as in
 \code{\link[redux:hiredis]{redux::hiredis()}}}
 
 \item{timeout_task_wait}{An optional default timeout to use when
-waiting for tasks (e.g., with \link{rrq_task_wait}, \link{rrq_tasks_wait},
+waiting for tasks (e.g., with \code{rrq_task_wait}, \code{rrq_tasks_wait},
 etc). If not given, then we fall back on the global option
 \code{rrq.timeout_task_wait}, and if that is not set, we wait forever
 (i.e., \code{timeout_task_wait = Inf}).}
@@ -32,7 +32,7 @@ on the global option \code{rrq.follow}, and if that is not set then
 \code{TRUE} (i.e., we do follow). The value \code{follow = TRUE} is
 potentially slower than \code{follow = FALSE} for some operations
 because we need to dereference every task id. If you never use
-\link{rrq_task_retry} then this dereference never has an effect and we
+\code{rrq_task_retry} then this dereference never has an effect and we
 can skip it. See \code{vignette("fault-tolerance")} for more
 information.}
 }

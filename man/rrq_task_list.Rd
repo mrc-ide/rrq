@@ -9,7 +9,7 @@ rrq_task_list(controller = NULL)
 \arguments{
 \item{controller}{The controller to use.  If not given (or \code{NULL})
 we'll use the controller registered with
-\link{rrq_register_default_controller}}
+\code{\link[=rrq_default_controller_set]{rrq_default_controller_set()}}.}
 }
 \value{
 A character vector

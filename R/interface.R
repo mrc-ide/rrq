@@ -13,7 +13,7 @@
 ##'   [redux::hiredis()]
 ##'
 ##' @param timeout_task_wait An optional default timeout to use when
-##'   waiting for tasks (e.g., with [rrq_task_wait], [rrq_tasks_wait],
+##'   waiting for tasks (e.g., with `rrq_task_wait`, `rrq_tasks_wait`,
 ##'   etc). If not given, then we fall back on the global option
 ##'   `rrq.timeout_task_wait`, and if that is not set, we wait forever
 ##'   (i.e., `timeout_task_wait = Inf`).
@@ -24,7 +24,7 @@
 ##'   `TRUE` (i.e., we do follow). The value `follow = TRUE` is
 ##'   potentially slower than `follow = FALSE` for some operations
 ##'   because we need to dereference every task id. If you never use
-##'   [rrq_task_retry] then this dereference never has an effect and we
+##'   `rrq_task_retry` then this dereference never has an effect and we
 ##'   can skip it. See `vignette("fault-tolerance")` for more
 ##'   information.
 ##'
@@ -75,7 +75,7 @@ get_controller <- function(controller, call = NULL) {
   if (is.null(res)) {
     cli::cli_abort(c(
       "Default controller not set",
-      i = "Use 'rrq_register_default_controller()', or pass one explicitly"),
+      i = "Use 'rrq_default_controller_set()', or pass one explicitly"),
       call = call, arg = "controller")
   }
   res
