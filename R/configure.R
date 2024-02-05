@@ -60,7 +60,9 @@
 rrq_configure <- function(queue_id, con = redux::hiredis(), ...,
                           store_max_size = Inf, offload_path = NULL) {
   if (length(list(...)) > 0) {
-    stop("Unconsumed dot arguments")
+    ## Could use rlang::check_dot_used here, but that errors at exit,
+    ## which is slightly different.
+    cli::cli_abort("Unconsumed dot arguments")
   }
   keys <- rrq_keys_common(queue_id)
 
@@ -76,9 +78,8 @@ rrq_configure <- function(queue_id, con = redux::hiredis(), ...,
   if (is.null(prev)) {
     con$SET(keys$configuration, object_to_bin(config))
   } else if (!identical(unserialize(prev), config)) {
-    stop(sprintf(
-      "Can't set configuration for queue '%s' as it already exists",
-      queue_id))
+    cli::cli_abort(
+      "Can't set configuration for queue '{queue_id}' as it already exists")
   }
 
   invisible(config)

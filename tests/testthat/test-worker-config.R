@@ -121,7 +121,7 @@ test_that("rrq_default configuration", {
 test_that("verbose is validated", {
   expect_error(
     rrq_worker_config(verbose = "no thank you"),
-    "verbose must be logical")
+    "'verbose' must be a logical")
   expect_false(rrq_worker_config(verbose = FALSE)$verbose)
 })
 

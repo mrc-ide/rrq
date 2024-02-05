@@ -106,7 +106,7 @@ test_that("worker ids can't be duplicated", {
   expect_equal(w$id, id)
   expect_error(
     test_worker_blocking(obj, worker_id = id),
-    "Looks like this worker exists already...",
+    "Looks like this worker exists already",
     fixed = TRUE)
 })
 

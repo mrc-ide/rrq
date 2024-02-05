@@ -151,10 +151,10 @@ rrq_worker_manager <- R6::R6Class(
         worker_id <- sprintf("%s_%d", private$worker_id_base, worker_id)
       }
       assert_character(worker_id)
-      err <- !(worker_id %in% self$id)
-      if (any(err)) {
-        stop(sprintf("Worker not controlled by this manager: %s",
-                     paste(squote(worker_id), collapse = ", ")))
+      err <- setdiff(worker_id, self$id)
+      if (length(err) > 0) {
+        cli::cli_abort(
+          "Worker{?s} not controlled by this manager: {squote(err)}")
       }
       worker_id
     }
@@ -167,8 +167,7 @@ rrq_worker_manager <- R6::R6Class(
                           worker_id_base = NULL) {
       assert_is(obj, "rrq_controller")
       if (!(name_config %in% obj$worker_config_list())) {
-        stop(sprintf("Invalid rrq worker configuration key '%s'",
-                     name_config))
+        cli::cli_abort("Invalid rrq worker configuration key '{name_config}'")
       }
       worker_id_base <- worker_id_base %||% ids::adjective_animal()
       worker_ids <- sprintf("%s_%d", worker_id_base, seq_len(n))
@@ -258,7 +257,7 @@ worker_wait_alive <- function(con, keys, key_alive, is_dead, path_logs,
 
   bin <- con$HGET(keys$worker_expect, key_alive)
   if (is.null(bin)) {
-    stop("No workers expected on that key")
+    cli::cli_abort("No workers expected on this key")
   }
   worker_ids <- bin_to_object(bin)
 
@@ -285,7 +284,7 @@ worker_wait_alive <- function(con, keys, key_alive, is_dead, path_logs,
       logs <- set_names(lapply(worker_ids[!ok], path_logs), worker_ids[!ok])
       worker_print_failed_logs(logs)
     }
-    stop("Not all workers recovered")
+    cli::cli_abort("Not all workers recovered")
   }
 
   invisible(Sys.time() - t0)

@@ -1,9 +1,11 @@
 hostname <- function() {
   Sys.info()[["nodename"]]
 }
+
 process_id <- function() {
   Sys.getpid()
 }
+
 username <- function() {
   Sys.getenv("LOGNAME",
              Sys.getenv("USER",
@@ -28,11 +30,6 @@ vlapply <- function(X, FUN, ...) { # nolint
 }
 
 
-## TODO: After requiring 3.3.0, this can be dropped.
-strrep <- function(x, times) {
-  paste(rep(x, times), collapse = "")
-}
-
 blank <- function(n) {
   strrep(" ", n)
 }
@@ -43,15 +40,6 @@ blank <- function(n) {
 
 `%&&%` <- function(a, b) { # nolint
   if (is.null(a)) a else b
-}
-
-
-sys_getenv <- function(x) {
-  ret <- Sys.getenv(x)
-  if (!nzchar(ret)) {
-    stop(sprintf("Environment variable '%s' not set", x))
-  }
-  ret
 }
 
 lstrip <- function(x) {
@@ -103,8 +91,9 @@ sys_sleep <- function(n) {
 general_poll <- function(fetch, time_poll, timeout, name, error, progress) {
   done <- fetch()
 
+  n_total <- length(done)
   if (timeout > 0) {
-    p <- progress_timeout(length(done), progress, name, timeout)
+    p <- progress_timeout(n_total, progress, name, timeout)
     tot <- sum(done)
     p$tick(tot)
 
@@ -123,8 +112,9 @@ general_poll <- function(fetch, time_poll, timeout, name, error, progress) {
   }
 
   if (error && !all(done)) {
-    stop(sprintf("Exceeded maximum time (%d / %d %s pending)",
-                 sum(!done), length(done), name))
+    remaining <- sum(!done)
+    cli::cli_abort(
+      "Exceeded maximum time ({remaining} / {n_total} {name}{?s} pending)")
   }
 
   done
@@ -162,18 +152,18 @@ df_to_list <- function(x) {
 
 
 wait_timeout <- function(explanation, timeout, keep_going,
-                         poll = timeout / 100) {
+                         poll = timeout / 100, call = NULL) {
   t_end <- Sys.time() + timeout
   while (keep_going()) {
     if (Sys.time() > t_end) {
-      stop("Timeout: ", explanation)
+      cli::cli_abort("Timeout: {explanation}", call = call)
     }
     Sys.sleep(poll)
   }
 }
 
 wait_success <- function(explanation, timeout, keep_going,
-                         poll = timeout / 5) {
+                         poll = timeout / 5, call = NULL) {
   t_end <- Sys.time() + timeout
   out <- NULL
   while (is.null(out)) {
@@ -181,9 +171,8 @@ wait_success <- function(explanation, timeout, keep_going,
       keep_going(),
       error = function(e) {
         if (Sys.time() > t_end) {
-          e$message <- sprintf("Timeout: %s\n%s", explanation,
-                               e$message)
-          stop(e)
+          cli::cli_abort("Timeout: {explanation}",
+                         parent = e, call = call)
         } else {
           message(e$message)
           Sys.sleep(poll)

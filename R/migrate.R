@@ -14,16 +14,16 @@ rrq_version_check <- function(con, keys, version = rrq_schema_version) {
     ## This can't happen until we have a breaking change in the
     ## schema, but will work even if the user uses an old version of
     ## rrq.
-    stop(sprintf(
-      "rrq schema version is '%s' but you are using '%s'; please upgrade",
-      version_saved, version))
+    cli::cli_abort(paste(
+      "rrq schema version is '{version_saved}' but you are using",
+      "'{version}'; please upgrade"))
   } else {
     ## This can't happen until we have a breaking change in the
     ## schema, and of course migration is not possible (there is no
     ## migration function). But the version that introduces the
     ## breaking change will add that support.
-    stop(sprintf(
-      "rrq schema version is '%s' but you are using '%s'; please migrate",
-      version_saved, version))
+    cli::cli_abort(paste(
+      "rrq schema version is '{version_saved}' but you are using",
+      "'{version}'; please migrate"))
   }
 }

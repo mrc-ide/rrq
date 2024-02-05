@@ -79,7 +79,7 @@ rrq_heartbeat <- R6::R6Class(
       assert_valid_timeout(timeout)
 
       if (expire <= period) {
-        stop("expire must be longer than period")
+        cli::cli_abort("'expire' must be longer than 'period'")
       }
 
       private$config <- redux::redis_config(config = config)
@@ -112,7 +112,7 @@ rrq_heartbeat <- R6::R6Class(
     ##' if it is already running.
     start = function() {
       if (self$is_running()) {
-        stop(sprintf("Already running on key '%s'", private$key))
+        cli::cli_abort("Already running on key '{private$key}'")
       }
 
       private$process <- heartbeat_process(
@@ -138,7 +138,7 @@ rrq_heartbeat <- R6::R6Class(
     stop = function(wait = TRUE) {
       assert_scalar_logical(wait)
       if (!self$is_running()) {
-        stop(sprintf("Heartbeat not running on key '%s'", private$key))
+        cli::cli_abort("Heartbeat not running on key '{private$key}'")
       }
 
       con <- redux::hiredis(private$config)

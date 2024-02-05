@@ -1816,14 +1816,15 @@ mean.worker_load <- function(x, time = c(1, 5, 15, Inf), ...) {
 
 
 tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
-                       progress, key_complete, error, follow, single) {
+                       progress, key_complete, error, follow, single,
+                       call = NULL) {
   ## This can be relaxed in recent Redis >= 6.0.0 as we then interpret
   ## time_poll as a double. To do this efficiently we'll want to get
   ## the version information stored into the redux client, which is
   ## not hard as we already do some negotiation
   assert_integer_like(time_poll)
   if (time_poll < 1L) {
-    stop("time_poll cannot be less than 1")
+    cli::cli_abort("'time_poll' cannot be less than 1", call = call)
   }
   if (follow) {
     task_ids_from <- task_follow(con, keys, task_ids)
