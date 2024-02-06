@@ -194,6 +194,20 @@ rrq_controller <- R6::R6Class(
       lockBinding("queue_id", self)
     },
 
+    ##' @description Convert controller to the new-style object.
+    ##'   Please don't use this in packages directly
+    to_v2 = function() {
+      ret <- list(queue_id = self$queue_id,
+                  con = self$con,
+                  keys = private$keys,
+                  timeout_task_wait = private$timeout_task_wait,
+                  follow = private$follow,
+                  scripts = private$scripts,
+                  store = private$store)
+      class(ret) <- "rrq_controller2"
+      ret
+    },
+
     ##' @description Entirely destroy a queue, by deleting all keys
     ##' associated with it from the Redis database. This is a very
     ##' destructive action and cannot be undone.
@@ -677,7 +691,7 @@ rrq_controller <- R6::R6Class(
 
     ##' @description List ids of all tasks known to this rrq controller
     task_list = function() {
-      as.character(self$con$HKEYS(private$keys$task_expr))
+      rrq_task_list(self)
     },
 
     ##' @description Test if task with id `task_ids` is known to this

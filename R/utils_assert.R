@@ -42,8 +42,8 @@ assert_scalar <- function(x, name = deparse(substitute(x)), call = NULL) {
 }
 
 ## Compound:
-assert_scalar_character <- function(x, name = deparse(substitute(x),
-                                                      call = NULL)) {
+assert_scalar_character <- function(x, name = deparse(substitute(x)),
+                                    call = NULL) {
   assert_scalar(x, name, call)
   assert_character(x, name, call)
   assert_nonmissing(x, name, call)
@@ -70,7 +70,7 @@ assert_integer_like <- function(x, name = deparse(substitute(x)), call = NULL) {
 }
 
 assert_scalar_integer_like <- function(x, name = deparse(substitute(x)),
-                                       call = NLL) {
+                                       call = NULL) {
   assert_scalar(x, name, call)
   assert_integer_like(x, name, call)
 }

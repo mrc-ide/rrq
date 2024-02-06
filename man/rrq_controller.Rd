@@ -130,6 +130,7 @@ after creation.}
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-rrq_controller-new}{\code{rrq_controller$new()}}
+\item \href{#method-rrq_controller-to_v2}{\code{rrq_controller$to_v2()}}
 \item \href{#method-rrq_controller-destroy}{\code{rrq_controller$destroy()}}
 \item \href{#method-rrq_controller-envir}{\code{rrq_controller$envir()}}
 \item \href{#method-rrq_controller-enqueue}{\code{rrq_controller$enqueue()}}
@@ -224,6 +225,17 @@ information.}
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-rrq_controller-to_v2"></a>}}
+\if{latex}{\out{\hypertarget{method-rrq_controller-to_v2}{}}}
+\subsection{Method \code{to_v2()}}{
+Convert controller to the new-style object.
+Please don't use this in packages directly
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$to_v2()}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-rrq_controller-destroy"></a>}}
