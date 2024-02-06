@@ -128,7 +128,6 @@ rrq_worker_log_tail <- function(worker_ids = NULL, n = 1, controller = NULL) {
   if (identical(n, Inf)) {
     n <- 0
   }
-  # asset_scalar_positive_integer(n)
   if (is.null(worker_ids)) {
     worker_ids <- worker_list(con, keys)
   } else {
