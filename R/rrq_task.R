@@ -495,7 +495,7 @@ rrq_task_delete <- function(task_ids, check = TRUE, controller = NULL) {
         redis$DEL(depends_up_keys))))
 
   queue <- list_to_character(con$HMGET(keys$task_queue, task_ids_root))
-  queue_remove(con, keys, task_ids_all, queue)
+  rrq_queue_remove(task_ids_all, queue, controller)
 
   store$drop(task_ids_all)
 

@@ -231,6 +231,7 @@ rrq_worker_manager <- R6::R6Class(
 
     stop = function(worker_id = NULL, ...) {
       worker_id <- private$check_worker_id(worker_id)
+      ## TODO: rework
       worker_stop(private$con, private$keys, worker_id, ...)
     },
 
