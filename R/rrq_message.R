@@ -115,9 +115,9 @@ rrq_message_send_and_wait <- function(command, args = NULL, worker_ids = NULL,
   if (is.null(worker_ids)) {
     worker_ids <- worker_list(con, keys)
   }
-  message_id <- message_send(con, keys, command, args, worker_ids)
-  ret <- message_get_response(message_id, worker_ids, named, delete,
-                              timeout, time_poll, progress, controller)
+  message_id <- rrq_message_send(command, args, worker_ids, controller)
+  ret <- rrq_message_get_response(message_id, worker_ids, named, delete,
+                                  timeout, time_poll, progress, controller)
   ## TODO: I forget what the logic is here?
   if (!delete) {
     attr(ret, "message_id") <- message_id

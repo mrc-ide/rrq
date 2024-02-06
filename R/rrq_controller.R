@@ -159,8 +159,11 @@ rrq_controller <- R6::R6Class(
     ##'   `$task_retry` then this dereference never has an effect and we
     ##'   can skip it. See `vignette("fault-tolerance")` for more
     ##'   information.
+    ##'
+    ##' @param check_version Check that the schema version is correct
     initialize = function(queue_id, con = redux::hiredis(),
-                          timeout_task_wait = NULL, follow = NULL) {
+                          timeout_task_wait = NULL, follow = NULL,
+                          check_version = TRUE) {
       assert_scalar_character(queue_id)
       assert_is(con, "redis_api")
 
@@ -182,7 +185,9 @@ rrq_controller <- R6::R6Class(
         private$follow <- follow
       }
 
-      rrq_version_check(self$con, private$keys)
+      if (check_version) {
+        rrq_version_check(self$con, private$keys)
+      }
       self$worker_config_save(WORKER_CONFIG_DEFAULT, rrq_worker_config(),
                               overwrite = FALSE)
 
@@ -1106,7 +1111,7 @@ rrq_controller <- R6::R6Class(
     ##' @return Invisibly, a boolean indicating if the configuration was
     ##'   updated.
     worker_config_save = function(name, config, overwrite = TRUE) {
-      rrq_worker_config_save(name, config, overwrite, self)
+      rrq_worker_config_save2(name, config, overwrite, self)
     },
 
     ##' @description Return names of worker configurations saved by
@@ -1195,7 +1200,7 @@ rrq_controller <- R6::R6Class(
                                     delete = FALSE, timeout = 0,
                                     time_poll = 0.05, progress = NULL) {
       rrq_message_get_response(message_id, worker_ids, named, delete, timeout,
-                               time_poll, progress, controller)
+                               time_poll, progress, self)
     },
 
     ##' @description Return ids for messages with responses for a
@@ -1449,7 +1454,10 @@ worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
   }
 
   if (type == "message") {
-    message_id <- message_send(con, keys, "STOP", worker_ids = worker_ids)
+    ## TODO:
+    controller <- rrq_controller2(keys$queue_id, con)
+    message_id <- rrq_message_send("STOP", worker_ids = worker_ids,
+                                   controller = controller)
     if (timeout > 0L) {
       ## either sort out a controller here or change this function to
       ## use the new controller

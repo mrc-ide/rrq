@@ -28,13 +28,20 @@
 ##'   can skip it. See `vignette("fault-tolerance")` for more
 ##'   information.
 ##'
+##' @param check_version Logical, indicating if we should check the
+##'   schema version.  You can pass `FALSE` here to continue even
+##'   where the schema version is incompatible, though any subsequent
+##'   actions may lead to corruption.
+##'
 ##' @return An `rrq_controller2` object, which is opaque.
 ##' @export
 rrq_controller2 <- function(queue_id, con = redux::hiredis,
-                            timeout_task_wait = NULL, follow = NULL) {
+                            timeout_task_wait = NULL, follow = NULL,
+                            check_version = TRUE) {
   ## We'll move the construction code here shortly, but this way makes
   ## the migration a little easier.
-  rrq_controller$new(queue_id, con, timeout_task_wait, follow)$to_v2()
+  rrq_controller$new(queue_id, con, timeout_task_wait, follow,
+                     check_version)$to_v2()
 }
 
 

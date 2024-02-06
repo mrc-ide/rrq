@@ -129,50 +129,10 @@ run_message_unknown <- function(cmd, args) {
 message_prepare <- function(id, command, args) {
   object_to_bin(list(id = id, command = command, args = args))
 }
+
 response_prepare <- function(id, command, result) {
   object_to_bin(list(id = id, command = command, result = result))
 }
-
-
-message_get_response <- function(con, keys, message_id, worker_ids = NULL,
-                                 named = TRUE, delete = FALSE,
-                                 timeout = 0, time_poll = 0.05,
-                                 progress = NULL) {
-  ## NOTE: this won't work well if the message was sent only to a
-  ## single worker, or a worker who was not yet started.
-  if (is.null(worker_ids)) {
-    worker_ids <- worker_list(con, keys)
-  }
-
-  response_keys <- rrq_key_worker_response(keys$queue_id, worker_ids)
-
-  done <- rep(FALSE, length(response_keys))
-  fetch <- function() {
-    done[!done] <<- hash_exists(con, response_keys[!done], message_id)
-    done
-  }
-  done <- general_poll(fetch, time_poll, timeout, "responses", FALSE, progress)
-  if (!all(done)) {
-    stop(paste0("Response missing for workers: ",
-                paste(worker_ids[!done], collapse = ", ")))
-  }
-
-  res <- lapply(response_keys, function(k) {
-    bin_to_object(con$HGET(k, message_id))$result
-  })
-
-  if (delete) {
-    for (k in response_keys) {
-      con$HDEL(k, message_id)
-    }
-  }
-
-  if (named) {
-    names(res) <- worker_ids
-  }
-  res
-}
-
 
 message_respond <- function(worker, private, message_id, cmd, result) {
   worker$log("RESPONSE", cmd)

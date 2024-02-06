@@ -8,7 +8,8 @@ rrq_controller2(
   queue_id,
   con = redux::hiredis,
   timeout_task_wait = NULL,
-  follow = NULL
+  follow = NULL,
+  check_version = TRUE
 )
 }
 \arguments{
@@ -35,6 +36,11 @@ because we need to dereference every task id. If you never use
 \link{rrq_task_retry} then this dereference never has an effect and we
 can skip it. See \code{vignette("fault-tolerance")} for more
 information.}
+
+\item{check_version}{Logical, indicating if we should check the
+schema version.  You can pass \code{FALSE} here to continue even
+where the schema version is incompatible, though any subsequent
+actions may lead to corruption.}
 }
 \value{
 An \code{rrq_controller2} object, which is opaque.

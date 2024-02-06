@@ -4,7 +4,14 @@
 \alias{rrq_worker_stop}
 \title{Stop workers}
 \usage{
-rrq_worker_stop(worker, message)
+rrq_worker_stop(
+  worker_ids = NULL,
+  type = "message",
+  timeout = 0,
+  time_poll = 0.1,
+  progress = NULL,
+  controller = NULL
+)
 }
 \arguments{
 \item{worker_ids}{Optional vector of worker ids. If \code{NULL} then
@@ -30,6 +37,10 @@ to interrupt the process.}
 should be displayed. If \code{NULL} we fall back on the value of the
 global option \code{rrq.progress}, and if that is unset display a
 progress bar if in an interactive session.}
+
+\item{controller}{The controller to use.  If not given (or \code{NULL})
+we'll use the controller registered with
+\code{\link[=rrq_default_controller_set]{rrq_default_controller_set()}}.}
 }
 \value{
 The names of the stopped workers, invisibly.

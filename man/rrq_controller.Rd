@@ -193,7 +193,8 @@ Constructor
   queue_id,
   con = redux::hiredis(),
   timeout_task_wait = NULL,
-  follow = NULL
+  follow = NULL,
+  check_version = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -222,6 +223,8 @@ because we need to dereference every task id. If you never use
 \verb{$task_retry} then this dereference never has an effect and we
 can skip it. See \code{vignette("fault-tolerance")} for more
 information.}
+
+\item{\code{check_version}}{Check that the schema version is correct}
 }
 \if{html}{\out{</div>}}
 }

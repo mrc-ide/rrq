@@ -1,6 +1,5 @@
 rrq_version_check <- function(con, keys, version = rrq_schema_version) {
   version_saved <- con$GET(keys$version)
-
   if (is.null(version_saved)) {
     ## Set rrq's version number against the data so that we know
     ## what version of the data we're talking. Later we may need to
@@ -16,7 +15,8 @@ rrq_version_check <- function(con, keys, version = rrq_schema_version) {
     ## rrq.
     cli::cli_abort(paste(
       "rrq schema version is '{version_saved}' but you are using",
-      "'{version}'; please upgrade"))
+      "'{version}'; please upgrade"),
+      call = NULL)
   } else {
     ## This can't happen until we have a breaking change in the
     ## schema, and of course migration is not possible (there is no
@@ -24,6 +24,7 @@ rrq_version_check <- function(con, keys, version = rrq_schema_version) {
     ## breaking change will add that support.
     cli::cli_abort(paste(
       "rrq schema version is '{version_saved}' but you are using",
-      "'{version}'; please migrate"))
+      "'{version}'; please migrate"),
+      call = NULL)
   }
 }

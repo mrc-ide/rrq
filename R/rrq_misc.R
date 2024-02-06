@@ -27,6 +27,9 @@ rrq_destroy <- function(delete = TRUE, worker_stop_type = "message",
   controller <- get_controller(controller)
   con <- controller$con
   keys <- controller$keys
+  queue_id <- keys$queue_id
+  ## TODO: this can be made a bit less weird once we complete the
+  ## refactor, as soon we'll have access to the controller everywhere.
   rrq_clean(con, queue_id, delete, worker_stop_type, timeout_worker_stop)
 }
 

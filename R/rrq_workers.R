@@ -279,7 +279,8 @@ rrq_worker_stop <- function(worker_ids = NULL, type = "message",
   }
 
   if (type == "message") {
-    message_id <- message_send(con, keys, "STOP", worker_ids = worker_ids)
+    message_id <- rrq_message_send("STOP", worker_ids = worker_ids,
+                                   controller = controller)
     if (timeout > 0L) {
       rrq_message_get_response(message_id, worker_ids, delete = FALSE,
                                timeout = timeout, time_poll = time_poll,
@@ -335,7 +336,7 @@ rrq_worker_detect_exited <- function(controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
-  store <- controler$store
+  store <- controller$store
 
   time <- heartbeat_time_remaining(con, keys)
   cleanup_orphans(con, keys, store, time)
@@ -384,7 +385,7 @@ rrq_worker_envir_set <- function(create, notify = TRUE, controller = NULL) {
     con$SET(keys$envir, object_to_bin(create))
   }
   if (notify) {
-    rrq_message_send("REFRESH")
+    rrq_message_send("REFRESH", controller = controller)
   }
 }
 
@@ -488,7 +489,7 @@ rrq_worker_load <- function(worker_ids = NULL, controller = NULL) {
   ## to do this for a given time interval as well as computing a
   ## rolling average (to plot, for example).  But the concept is here
   ## now and we can build off of it.
-  logs <- rrq_worker_log_tail(controller, worker_ids, Inf)
+  logs <- rrq_worker_log_tail(worker_ids, Inf, controller)
   logs <- logs[order(logs$time), ]
 
   keep <- c("ALIVE", "STOP", "TASK_START", "TASK_COMPLETE")
