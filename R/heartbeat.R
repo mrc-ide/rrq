@@ -11,12 +11,6 @@ worker_heartbeat <- function(con, keys, period, verbose) {
 }
 
 
-worker_detect_exited <- function(con, keys, store) {
-  time <- heartbeat_time_remaining(con, keys)
-  cleanup_orphans(con, keys, store, time)
-}
-
-
 heartbeat_time_remaining <- function(con, keys) {
   worker_ids <- worker_list(con, keys)
   info <- worker_info(con, keys, worker_ids)

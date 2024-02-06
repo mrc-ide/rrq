@@ -31,40 +31,6 @@ rrq_destroy <- function(delete = TRUE, worker_stop_type = "message",
 }
 
 
-##' Register a function to create an environment when creating a
-##'   worker. When a worker starts, they will run this function.
-##'
-##' @title Set worker environment
-##'
-##' @param create A function that will create an environment. It will
-##'   be called with one parameter (an environment), in a fresh R
-##'   session. The function [rrq::rrq_envir()] can be used to
-##'   create a suitable function for the most common case (loading
-##'   packages and sourcing scripts).
-##'
-##' @param notify Boolean, indicating if we should send a `REFRESH`
-##'   message to all workers to update their environment.
-##'
-##' @inheritParams rrq_task_list
-##'
-##' @export
-rrq_worker_envir_set <- function(create, notify = TRUE, controller = NULL) {
-  controller <- get_controller(controller)
-  con <- controller$con
-  keys <- controller$keys
-
-  if (is.null(create)) {
-    con$DEL(keys$envir)
-  } else {
-    assert_is(create, "function")
-    con$SET(keys$envir, object_to_bin(create))
-  }
-  if (notify) {
-    rrq_message_send("REFRESH")
-  }
-}
-
-
 ##' Returns the keys in the task queue.
 ##'
 ##' @title List queue contents

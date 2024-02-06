@@ -1239,9 +1239,8 @@ rrq_controller <- R6::R6Class(
     message_send_and_wait = function(command, args = NULL, worker_ids = NULL,
                                      named = TRUE, delete = TRUE, timeout = 600,
                                      time_poll = 0.05, progress = NULL) {
-      rrq_message_send_and_wait(command, args, worker_ids,
-                                named, delete, timeout,
-                                time_poll, progress, self)
+      rrq_message_send_and_wait(command, args, worker_ids, named, delete,
+                                timeout, time_poll, progress, self)
     }
   ),
 
