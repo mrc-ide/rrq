@@ -66,7 +66,7 @@ test_that("worker catch graceful stop", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
 
-  worker_catch_stop(w, r6_private(w))(rrq_worker_stop(w, "message"))
+  worker_catch_stop(w, r6_private(w))(rrq_worker_stop_condition(w, "message"))
 
   expect_false(r6_private(w)$loop_continue)
   log <- obj$worker_log_tail(w$id)

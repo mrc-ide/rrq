@@ -55,7 +55,7 @@ run_message_stop <- function(worker, private, message_id, args) {
   if (is.null(args)) {
     args <- "BYE"
   }
-  stop(rrq_worker_stop(worker, args))
+  stop(rrq_worker_stop_condition(worker, args))
 }
 
 run_message_info <- function(worker, private) {
