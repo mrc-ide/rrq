@@ -1344,49 +1344,6 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
   task_ids
 }
 
-worker_len <- function(con, keys) {
-  con$SCARD(keys$worker_id)
-}
-worker_list <- function(con, keys) {
-  worker_naturalsort(as.character(con$SMEMBERS(keys$worker_id)))
-}
-
-worker_list_exited <- function(con, keys) {
-  setdiff(as.character(con$HKEYS(keys$worker_info)), worker_list(con, keys))
-}
-
-worker_status <- function(con, keys, worker_ids = NULL) {
-  from_redis_hash(con, keys$worker_status, worker_ids)
-}
-
-worker_info <- function(con, keys, worker_ids = NULL) {
-  ret <- from_redis_hash(con, keys$worker_info, worker_ids,
-                         f = Vectorize(bin_to_object_safe, SIMPLIFY = FALSE))
-  lapply(ret, function(x) {
-    class(x) <- "rrq_worker_info"
-    x
-  })
-}
-
-worker_log_tail <- function(con, keys, worker_ids = NULL, n = 1) {
-  if (is.null(worker_ids)) {
-    worker_ids <- worker_list(con, keys)
-  }
-  tmp <- lapply(worker_ids, function(i) worker_log_tail_1(con, keys, i, n))
-  if (length(tmp) > 0L) {
-    n <- viapply(tmp, nrow)
-    ret <- do.call("rbind", tmp, quote = TRUE)
-    ret <- ret[order(ret$time, ret$worker_id), ]
-    rownames(ret) <- NULL
-    ret
-  } else {
-    data_frame(worker_id = character(0),
-               child = integer(0),
-               time = numeric(0),
-               command = character(0),
-               message = character(0))
-  }
-}
 
 worker_log_tail_1 <- function(con, keys, worker_id, n = 1) {
   ## More intuitive `n` behaviour for "print all entries"; n of Inf
@@ -1409,95 +1366,6 @@ worker_log_parse <- function(log, worker_id) {
   command <- sub(re, "\\3", log)
   message <- lstrip(sub(re, "\\4", log))
   data_frame(worker_id, child, time, command, message)
-}
-
-
-worker_task_id <- function(con, keys, worker_id) {
-  from_redis_hash(con, keys$worker_task, worker_id)
-}
-
-worker_delete_exited <- function(con, keys, worker_ids = NULL) {
-  ## This only includes things that have been processed and had task
-  ## orphaning completed.
-  exited <- worker_list_exited(con, keys)
-  if (is.null(worker_ids)) {
-    worker_ids <- exited
-  }
-  extra <- setdiff(worker_ids, exited)
-  if (length(extra)) {
-    ## TODO: this whole thing can be improved because we might want to
-    ## inform the user if the workers are not known.
-    stop(sprintf("Workers %s may not have exited or may not exist",
-                 paste(extra, collapse = ", ")))
-  }
-
-  if (length(worker_ids) > 0L) {
-    con$SREM(keys$worker_id,     worker_ids)
-    con$HDEL(keys$worker_status, worker_ids)
-    con$HDEL(keys$worker_task,   worker_ids)
-    con$HDEL(keys$worker_info,   worker_ids)
-    con$DEL(c(rrq_key_worker_log(keys$queue_id, worker_ids),
-              rrq_key_worker_message(keys$queue_id, worker_ids),
-              rrq_key_worker_response(keys$queue_id, worker_ids)))
-  }
-  worker_ids
-}
-
-worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
-                        timeout = 0, time_poll = 0.1, progress = NULL) {
-  type <- match.arg(type, c("message", "kill", "kill_local"))
-  if (is.null(worker_ids)) {
-    worker_ids <- worker_list(con, keys)
-  }
-  if (length(worker_ids) == 0L) {
-    return(invisible(worker_ids))
-  }
-
-  if (type == "message") {
-    ## TODO:
-    controller <- rrq_controller2(keys$queue_id, con)
-    message_id <- rrq_message_send("STOP", worker_ids = worker_ids,
-                                   controller = controller)
-    if (timeout > 0L) {
-      ## either sort out a controller here or change this function to
-      ## use the new controller
-      rrq_message_get_response(message_id, worker_ids,
-                               delete = FALSE, timeout = timeout,
-                               time_poll = time_poll,
-                               progress = progress,
-                               controller = controller)
-      key_status <- keys$worker_status
-      when <- function() {
-        any(list_to_character(con$HMGET(key_status, worker_ids)) != "EXITED")
-      }
-      wait_timeout("Worker did not exit in time", timeout, when, time_poll)
-    }
-  } else if (type == "kill") {
-    info <- worker_info(con, keys, worker_ids)
-    heartbeat_key <- vcapply(info, function(x) {
-      x$heartbeat_key %||% NA_character_
-    })
-    if (any(is.na(heartbeat_key))) {
-      stop("Worker does not support heatbeat - can't kill with signal: ",
-           paste(worker_ids[is.na(heartbeat_key)], collapse = ", "))
-    }
-    for (key in heartbeat_key) {
-      rrq_heartbeat_kill(con, key, tools::SIGTERM)
-    }
-  } else { # kill_local
-    info <- worker_info(con, keys, worker_ids)
-    is_local <- vcapply(info, "[[", "hostname") == hostname()
-    if (!all(is_local)) {
-      stop("Not all workers are local: ",
-           paste(worker_ids[!is_local], collapse = ", "))
-    }
-    ## It might be possible to check to see if the process is alive -
-    ## that's easiest done with the ps package perhaps, but I think
-    ## there's a (somewhat portable) way of doing it with base R.
-    tools::pskill(vnapply(info, "[[", "pid"), tools::SIGTERM)
-  }
-
-  invisible(worker_ids)
 }
 
 
@@ -1675,16 +1543,4 @@ task_depends_walk <- function(con, key, task_ids) {
     task_ids <- unique(unlist(deps[i]))
   }
   if (length(ret) == 0) NULL else ret
-}
-
-
-## Still used above.
-task_status <- function(con, keys, task_ids, follow) {
-  status <- from_redis_hash(con, keys$task_status, task_ids,
-                            missing = TASK_MISSING)
-  if (follow && any(is_moved <- status == TASK_MOVED)) {
-    task_ids_moved <- task_follow(con, keys, task_ids[is_moved])
-    status[is_moved] <- task_status(con, keys, task_ids_moved, TRUE)
-  }
-  status
 }

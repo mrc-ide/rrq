@@ -104,10 +104,11 @@ test_that("progress - timeout", {
 
 test_that("status change timeout", {
   obj <- test_rrq()
+  obj2 <- obj$to_v2()
   t <- obj$enqueue(identity(1))
   expect_error(
-    wait_status_change(obj$con, queue_keys(obj), t, TASK_PENDING, 0.01, 0.005),
+    wait_status_change(obj2, t, TASK_PENDING, 0.01, 0.005),
     "Did not change status from 'PENDING' in time")
   expect_silent(
-    wait_status_change(obj$con, queue_keys(obj), t, TASK_RUNNING, 0.01, 0.005))
+    wait_status_change(obj2, t, TASK_RUNNING, 0.01, 0.005))
 })

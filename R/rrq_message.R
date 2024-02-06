@@ -23,7 +23,7 @@ rrq_message_send <- function(command, args = NULL, worker_ids = NULL,
   con <- controller$con
   keys <- controller$keys
   if (is.null(worker_ids)) {
-    worker_ids <- worker_list(con, keys)
+    worker_ids <- rrq_worker_list(controller)
   }
   key <- rrq_key_worker_message(keys$queue_id, worker_ids)
   message_id <- redis_time(con)
@@ -61,7 +61,7 @@ rrq_message_has_response <- function(message_id, worker_ids = NULL,
   keys <- controller$keys
 
   if (is.null(worker_ids)) {
-    worker_ids <- worker_list(con, keys)
+    worker_ids <- rrq_worker_list(controller)
   }
   res <- vnapply(rrq_key_worker_response(keys$queue_id, worker_ids),
                  con$HEXISTS, message_id, USE.NAMES = FALSE)
@@ -113,7 +113,7 @@ rrq_message_send_and_wait <- function(command, args = NULL, worker_ids = NULL,
   keys <- controller$keys
 
   if (is.null(worker_ids)) {
-    worker_ids <- worker_list(con, keys)
+    worker_ids <- rrq_worker_list(controller)
   }
   message_id <- rrq_message_send(command, args, worker_ids, controller)
   ret <- rrq_message_get_response(message_id, worker_ids, named, delete,
@@ -171,7 +171,7 @@ rrq_message_get_response <- function(message_id, worker_ids = NULL,
   ## NOTE: this won't work well if the message was sent only to a
   ## single worker, or a worker who was not yet started.
   if (is.null(worker_ids)) {
-    worker_ids <- worker_list(con, keys)
+    worker_ids <- rrq_worker_list(controller)
   }
 
   response_keys <- rrq_key_worker_response(keys$queue_id, worker_ids)

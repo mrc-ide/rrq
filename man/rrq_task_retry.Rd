@@ -19,9 +19,6 @@ New task ids
 \description{
 Retry a task (or set of tasks). Typically this is after failure
 (e.g., \code{ERROR}, \code{DIED} or similar) but you can retry even
-successfully completed tasks. Once retried, methods that retrieve
-information about a task (e.g., \verb{$task_status()},
-\verb{$task_result()}) will behave differently depending on the value
-of their \code{follow} argument. See \code{vignette("fault-tolerance")} for
-more details.
+successfully completed tasks. Once retried, functions that
+retrieve information about a task (e.g., \code{\link[=rrq_task_status]{rrq_task_status()}}\verb{, [rrq_task_result()]) will behave differently depending on the value of their }follow\verb{argument. See}vignette("fault-tolerance")` for more details.
 }

@@ -17,12 +17,13 @@ rrq_tasks_wait(
 \arguments{
 \item{task_ids}{A vector of task ids to poll for}
 
-\item{timeout}{Optional timeout, in seconds, after which an
-error will be thrown if the task has not completed. If not given,
-falls back on the controller's \code{timeout_task_wait} (see \verb{$new()})}
+\item{timeout}{Optional timeout, in seconds, after which an error
+will be thrown if the task has not completed. If not given,
+falls back on the controller's \code{timeout_task_wait} (see
+\link{rrq_controller2})}
 
-\item{time_poll}{Optional time with which to "poll" for
-completion (default is 1s, see \verb{$task_wait()} for details)}
+\item{time_poll}{Optional time with which to "poll" for completion
+(default is 1s, see \code{\link[=rrq_task_wait]{rrq_task_wait()}} for details)}
 
 \item{progress}{Optional logical indicating if a progress bar
 should be displayed. If \code{NULL} we fall back on the value of the
@@ -30,9 +31,9 @@ global option \code{rrq.progress}, and if that is unset display a
 progress bar if in an interactive session.}
 
 \item{error}{Logical, indicating if we should throw an error if
-the task was not successful. See \verb{$task_result()} for details.
-Note that an error is always thrown if not all tasks are fetched
-in time.}
+the task was not successful. See \code{\link[=rrq_task_result]{rrq_task_result()}} for
+details.  Note that an error is always thrown if not all tasks
+are fetched in time.}
 
 \item{follow}{Optional logical, indicating if we should follow any
 redirects set up by doing \link{rrq_task_retry}. If not given, falls

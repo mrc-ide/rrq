@@ -325,7 +325,8 @@ rrq_task_status <- function(task_ids, follow = NULL, controller = NULL) {
                             missing = TASK_MISSING)
   if (follow && any(is_moved <- status == TASK_MOVED)) {
     task_ids_moved <- task_follow(con, keys, task_ids[is_moved])
-    status[is_moved] <- task_status(con, keys, task_ids_moved, TRUE)
+    status[is_moved] <- rrq_task_status(task_ids_moved, follow = TRUE,
+                                        controller = controller)
   }
   status
 }
@@ -512,7 +513,8 @@ rrq_task_delete <- function(task_ids, check = TRUE, controller = NULL) {
       task_depends_down(con, keys, task_ids_all[check_dependencies]),
       FALSE, FALSE)
     ids_deps <- setdiff(ids_all_deps, task_ids_all)
-    status_deps <- task_status(con, keys, ids_deps, follow = FALSE)
+    status_deps <- rrq_task_status(ids_deps, follow = FALSE,
+                                   controller = controller)
     ids_impossible <- ids_deps[status_deps == TASK_DEFERRED]
     if (length(ids_impossible) > 0) {
       run_task_cleanup_failure(con, keys, store, ids_impossible,
@@ -598,7 +600,7 @@ rrq_task_cancel <- function(task_id, wait = TRUE, timeout_wait = 10,
         "Can't cancel running task '%s' as not in separate process", task_id))
     }
     if (wait) {
-      wait_status_change(con, keys, task_id, TASK_RUNNING, timeout_wait)
+      wait_status_change(controller, task_id, TASK_RUNNING, timeout_wait)
     }
   } else {
     run_task_cleanup_failure(con, keys, store, task_id, TASK_CANCELLED, NULL)
@@ -608,18 +610,19 @@ rrq_task_cancel <- function(task_id, wait = TRUE, timeout_wait = 10,
 }
 
 
-##' Poll for a task to complete, returning the result
-##' when completed. If the task has already completed this is
-##' roughly equivalent to `task_result`. See `$tasks_wait` for an
+##' Poll for a task to complete, returning the result when
+##' completed. If the task has already completed this is roughly
+##' equivalent to [rrq_task_result()]. See [rrq_tasks_wait()] for an
 ##' efficient way of doing this for a group of tasks.
 ##'
 ##' @title Wait for task to complete
 ##'
 ##' @param task_id The single id that we will wait for
 ##'
-##' @param timeout Optional timeout, in seconds, after which an
-##'   error will be thrown if the task has not completed. If not given,
-##'   falls back on the controller's `timeout_task_wait` (see `$new()`)
+##' @param timeout Optional timeout, in seconds, after which an error
+##'   will be thrown if the task has not completed. If not given,
+##'   falls back on the controller's `timeout_task_wait` (see
+##'   [rrq_controller2()])
 ##'
 ##' @param time_poll Optional time with which to "poll" for completion.
 ##'   By default this will be 1 second; this is the time that each
@@ -636,9 +639,9 @@ rrq_task_cancel <- function(task_id, wait = TRUE, timeout_wait = 10,
 ##'   progress bar if in an interactive session.
 ##'
 ##' @param error Logical, indicating if we should throw an error if
-##'   the task was not successful. See `$task_result()` for details.
-##'   Note that an error is always thrown if not all tasks are fetched
-##'   in time.
+##'   the task was not successful. See [rrq_task_result()] for
+##'   details.  Note that an error is always thrown if not all tasks
+##'   are fetched in time.
 ##'
 ##' @inheritParams rrq_task_times
 ##'
@@ -671,12 +674,13 @@ rrq_task_wait <- function(task_id, timeout = NULL, time_poll = 1,
 ##'
 ##' @param task_ids A vector of task ids to poll for
 ##'
-##' @param timeout Optional timeout, in seconds, after which an
-##'   error will be thrown if the task has not completed. If not given,
-##'   falls back on the controller's `timeout_task_wait` (see `$new()`)
+##' @param timeout Optional timeout, in seconds, after which an error
+##'   will be thrown if the task has not completed. If not given,
+##'   falls back on the controller's `timeout_task_wait` (see
+##'   [rrq_controller2])
 ##'
-##' @param time_poll Optional time with which to "poll" for
-##'   completion (default is 1s, see `$task_wait()` for details)
+##' @param time_poll Optional time with which to "poll" for completion
+##'   (default is 1s, see [rrq_task_wait()] for details)
 ##'
 ##' @param progress Optional logical indicating if a progress bar
 ##'   should be displayed. If `NULL` we fall back on the value of the
@@ -684,9 +688,9 @@ rrq_task_wait <- function(task_id, timeout = NULL, time_poll = 1,
 ##'   progress bar if in an interactive session.
 ##'
 ##' @param error Logical, indicating if we should throw an error if
-##'   the task was not successful. See `$task_result()` for details.
-##'   Note that an error is always thrown if not all tasks are fetched
-##'   in time.
+##'   the task was not successful. See [rrq_task_result()] for
+##'   details.  Note that an error is always thrown if not all tasks
+##'   are fetched in time.
 ##'
 ##' @inheritParams rrq_task_times
 ##'
@@ -709,11 +713,11 @@ rrq_tasks_wait <- function(task_ids, timeout = NULL, time_poll = 1,
 
 ##' Retry a task (or set of tasks). Typically this is after failure
 ##' (e.g., `ERROR`, `DIED` or similar) but you can retry even
-##' successfully completed tasks. Once retried, methods that retrieve
-##' information about a task (e.g., `$task_status()`,
-##' `$task_result()`) will behave differently depending on the value
-##' of their `follow` argument. See `vignette("fault-tolerance")` for
-##' more details.
+##' successfully completed tasks. Once retried, functions that
+##' retrieve information about a task (e.g., [rrq_task_status()]`,
+##' [rrq_task_result()]) will behave differently depending on the
+##' value of their `follow` argument. See
+##' `vignette("fault-tolerance")` for more details.
 ##'
 ##' @title Retry tasks
 ##'
@@ -750,7 +754,8 @@ rrq_task_retry <- function(task_ids, controller = NULL) {
       paste(sprintf("  - %s\n%s", names(err), err), collapse = "\n")))
   }
 
-  status <- task_status(con, keys, task_ids_leaf, follow = FALSE)
+  status <- rrq_task_status(task_ids_leaf, follow = FALSE,
+                            controller = controller)
 
   not_retriable <- !(status %in% TASK$retriable)
   if (any(not_retriable)) {

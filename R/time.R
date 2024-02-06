@@ -65,11 +65,11 @@ show_progress <- function(show) {
 }
 
 
-wait_status_change <- function(con, keys, task_id, status,
+wait_status_change <- function(controller, task_id, status,
                                timeout = 2, time_poll = 0.05) {
   remaining <- time_checker(timeout)
   while (remaining() > 0) {
-    if (all(task_status(con, keys, task_id, FALSE) != status)) {
+    if (all(rrq_task_status(task_id, FALSE, controller) != status)) {
       return()
     }
     Sys.sleep(time_poll)

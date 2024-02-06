@@ -129,7 +129,7 @@ rrq_worker_log_tail <- function(worker_ids = NULL, n = 1, controller = NULL) {
     n <- 0
   }
   if (is.null(worker_ids)) {
-    worker_ids <- worker_list(con, keys)
+    worker_ids <- rrq_worker_list(controller)
   } else {
     assert_character(worker_ids)
   }
@@ -272,7 +272,7 @@ rrq_worker_stop <- function(worker_ids = NULL, type = "message",
 
   type <- match.arg(type, c("message", "kill", "kill_local"))
   if (is.null(worker_ids)) {
-    worker_ids <- worker_list(con, keys)
+    worker_ids <- rrq_worker_list(controller)
   }
   if (length(worker_ids) == 0L) {
     return(invisible(worker_ids))
@@ -292,7 +292,7 @@ rrq_worker_stop <- function(worker_ids = NULL, type = "message",
       wait_timeout("Worker did not exit in time", timeout, when, time_poll)
     }
   } else if (type == "kill") {
-    info <- worker_info(con, keys, worker_ids)
+    info <- rrq_worker_info(worker_ids, controller = controller)
     heartbeat_key <- vcapply(info, function(x) {
       x$heartbeat_key %||% NA_character_
     })
@@ -304,7 +304,7 @@ rrq_worker_stop <- function(worker_ids = NULL, type = "message",
       rrq_heartbeat_kill(con, key, tools::SIGTERM)
     }
   } else { # kill_local
-    info <- worker_info(con, keys, worker_ids)
+    info <- rrq_worker_info(worker_ids, controller = controller)
     is_local <- vcapply(info, "[[", "hostname") == hostname()
     if (!all(is_local)) {
       stop("Not all workers are local: ",
@@ -338,8 +338,8 @@ rrq_worker_detect_exited <- function(controller = NULL) {
   keys <- controller$keys
   store <- controller$store
 
-  time <- heartbeat_time_remaining(con, keys)
-  cleanup_orphans(con, keys, store, time)
+  time <- heartbeat_time_remaining(controller)
+  cleanup_orphans(controller, time)
 }
 
 

@@ -10,12 +10,12 @@
 ##'   deletion by "expiring" after this many seconds, using Redis'
 ##'   `EXPIRE` command.
 ##'
-##' @param worker_stop_type Passed to `$worker_stop`; Can be one of
-##'   "message", "kill" or "kill_local". The "kill" method requires that
-##'   the workers are using a heartbeat, and "kill_local" requires that
-##'   the workers are on the same machine as the controller. However,
-##'   these may be faster to stop workers than "message", which will
-##'   wait until any task is finished.
+##' @param worker_stop_type Passed to [rrq_worker_stop()]; Can be one
+##'   of "message", "kill" or "kill_local". The "kill" method requires
+##'   that the workers are using a heartbeat, and "kill_local"
+##'   requires that the workers are on the same machine as the
+##'   controller. However, these may be faster to stop workers than
+##'   "message", which will wait until any task is finished.
 ##'
 ##' @param timeout_worker_stop A timeout to pass to the worker to
 ##'   respond the request to stop. See `worker_stop`'s `timeout`
