@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.4</span>
       </span>
     </div>
 
@@ -122,7 +122,7 @@ a “controller” object which you can use for queuing tasks.</p>
 <code class="sourceCode R"><span><span class="va">id</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"rrq:"</span>, <span class="fu">ids</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ids/man/random_id.html" class="external-link">random_id</a></span><span class="op">(</span>bytes <span class="op">=</span> <span class="fl">4</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="va"><a href="../reference/rrq_controller.html">rrq_controller</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">id</span><span class="op">)</span></span></code></pre></div>
 <p>This controller uses an “identifier” (here, <code>id</code> is
-<code>rrq:9ba450ba</code>) which can be anything you want but acts like
+<code>rrq:2e011b84</code>) which can be anything you want but acts like
 a folder within the Redis server, distinguishing your queue from any
 others hosted on the same server.</p>
 <p>Submit a task to the queue with the <code>$enqueue()</code> method,
@@ -130,13 +130,13 @@ returning a key for that task</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fl">1</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">t</span></span>
-<span><span class="co">#&gt; [1] "eadbb647b3296c8a2507a4d3d639d95c"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "3954fce6468172fae15e66e389f0620c"</span></span></code></pre></div>
 <p>We’ll also need some worker processes to carry out our tasks. Here,
 we’ll spawn two for now (see the section below on alternatives to
 this)</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">w</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/rrq_worker_spawn.html">rrq_worker_spawn</a></span><span class="op">(</span><span class="va">obj</span>, <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Spawning 2 workers with prefix cubistic_sloth</span></span></code></pre></div>
+<span><span class="co">#&gt; Spawning 2 workers with prefix psychopathologic_neonredguppy</span></span></code></pre></div>
 <p>Retrieve the result, polling if needed:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_wait</span><span class="op">(</span><span class="va">t</span>, progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
@@ -239,14 +239,14 @@ random number</p>
 <code>PENDING</code> <em>very</em> briefly):</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 5afab89ba4f673160ada4cc03f7e6ae8 </span></span>
+<span><span class="co">#&gt; 51ee75762a5f574c36fc9925a23ffb9c </span></span>
 <span><span class="co">#&gt;                        "RUNNING"</span></span></code></pre></div>
 <p>Then after a couple of seconds it will complete (we pad this out here
 so that it will complete even on slow systems)</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">task_result</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.3373013</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.3985417</span></span></code></pre></div>
 <p>The basic task lifecycle is this:</p>
 <ul>
 <li>when created/submitted a task becomes <code>PENDING</code>
@@ -279,7 +279,7 @@ wait until a task finishes, then returns the result.</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">task_wait</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.5392691</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.03231442</span></span></code></pre></div>
 <p>The polling interval here is 1 second by default, but if the task
 completes within that period it will still be returned as soon as it is
 complete (the interval is just the time between progress bar updates and
@@ -288,9 +288,9 @@ the period where an interrupt would be caught to cancel the wait).</p>
 <code>$task_result</code> are equivalent</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_wait</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.5392691</span></span>
+<span><span class="co">#&gt; [1] 0.03231442</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">task_result</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.5392691</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.03231442</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="configuring-the-worker-environment">Configuring the worker environment<a class="anchor" aria-label="anchor" href="#configuring-the-worker-environment"></a>
@@ -323,15 +323,15 @@ environment. Note that if your function errors in any way, your workers
 will exit!</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_log_tail</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
-<span><span class="co">#&gt;          worker_id child       time  command message</span></span>
-<span><span class="co">#&gt; 1 cubistic_sloth_1    NA 1707124732  MESSAGE REFRESH</span></span>
-<span><span class="co">#&gt; 2 cubistic_sloth_2    NA 1707124732  MESSAGE REFRESH</span></span>
-<span><span class="co">#&gt; 3 cubistic_sloth_1    NA 1707124732    ENVIR     new</span></span>
-<span><span class="co">#&gt; 4 cubistic_sloth_2    NA 1707124732    ENVIR     new</span></span>
-<span><span class="co">#&gt; 5 cubistic_sloth_2    NA 1707124732    ENVIR  create</span></span>
-<span><span class="co">#&gt; 6 cubistic_sloth_1    NA 1707124732    ENVIR  create</span></span>
-<span><span class="co">#&gt; 7 cubistic_sloth_2    NA 1707124732 RESPONSE REFRESH</span></span>
-<span><span class="co">#&gt; 8 cubistic_sloth_1    NA 1707124732 RESPONSE REFRESH</span></span></code></pre></div>
+<span><span class="co">#&gt;                         worker_id child       time  command message</span></span>
+<span><span class="co">#&gt; 1 psychopathologic_neonredguppy_1    NA 1707233491  MESSAGE REFRESH</span></span>
+<span><span class="co">#&gt; 2 psychopathologic_neonredguppy_2    NA 1707233491  MESSAGE REFRESH</span></span>
+<span><span class="co">#&gt; 3 psychopathologic_neonredguppy_2    NA 1707233491    ENVIR     new</span></span>
+<span><span class="co">#&gt; 4 psychopathologic_neonredguppy_1    NA 1707233491    ENVIR     new</span></span>
+<span><span class="co">#&gt; 5 psychopathologic_neonredguppy_2    NA 1707233491    ENVIR  create</span></span>
+<span><span class="co">#&gt; 6 psychopathologic_neonredguppy_1    NA 1707233491    ENVIR  create</span></span>
+<span><span class="co">#&gt; 7 psychopathologic_neonredguppy_2    NA 1707233491 RESPONSE REFRESH</span></span>
+<span><span class="co">#&gt; 8 psychopathologic_neonredguppy_1    NA 1707233491 RESPONSE REFRESH</span></span></code></pre></div>
 <p>Now our workers have picked up our functions we can start using
 them:</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
@@ -423,37 +423,37 @@ definitions</p>
 usual:</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 8ff755c4f81538cf4d81f450c5528a00 </span></span>
+<span><span class="co">#&gt; d9ce47a6f8220006863c24af88ebe820 </span></span>
 <span><span class="co">#&gt;                        "PENDING"</span></span></code></pre></div>
 <p>however, the group of tasks submitted as part of the
 <code>$lapply</code> call will be <code>DEFERRED</code> because they’re
 not yet in the queue:</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">id_use</span><span class="op">$</span><span class="va">task_ids</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 66d565c9511fc14a087dc6ea421afc33 927b0da65b86b7b07dbef50dfcd5030f </span></span>
+<span><span class="co">#&gt; 3fd28158aada1ed6c03049f4bc22da2e 5c0ad9e70fd9714b83fdbca403f5c3fc </span></span>
 <span><span class="co">#&gt;                       "DEFERRED"                       "DEFERRED" </span></span>
-<span><span class="co">#&gt; 5a62830fc253df71ed86a22fda6ab2dc 63fb5add4af52d54de7b9e8193c43298 </span></span>
+<span><span class="co">#&gt; 9939ca185f1a99a8d38b7861b61fc3d2 49e364331cd4fc91f525175f47df39e7 </span></span>
 <span><span class="co">#&gt;                       "DEFERRED"                       "DEFERRED" </span></span>
-<span><span class="co">#&gt; 52e6eff4a7db0f728b8886f9f2cd126e </span></span>
+<span><span class="co">#&gt; f46cc537895d62078fe6d9d7683d01d0 </span></span>
 <span><span class="co">#&gt;                       "DEFERRED"</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">queue_list</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "8ff755c4f81538cf4d81f450c5528a00"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "d9ce47a6f8220006863c24af88ebe820"</span></span></code></pre></div>
 <p>Once the first task is processed by a worker, the status changes:</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 8ff755c4f81538cf4d81f450c5528a00 </span></span>
+<span><span class="co">#&gt; d9ce47a6f8220006863c24af88ebe820 </span></span>
 <span><span class="co">#&gt;                       "COMPLETE"</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">id_use</span><span class="op">$</span><span class="va">task_ids</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 66d565c9511fc14a087dc6ea421afc33 927b0da65b86b7b07dbef50dfcd5030f </span></span>
+<span><span class="co">#&gt; 3fd28158aada1ed6c03049f4bc22da2e 5c0ad9e70fd9714b83fdbca403f5c3fc </span></span>
 <span><span class="co">#&gt;                        "PENDING"                        "PENDING" </span></span>
-<span><span class="co">#&gt; 5a62830fc253df71ed86a22fda6ab2dc 63fb5add4af52d54de7b9e8193c43298 </span></span>
+<span><span class="co">#&gt; 9939ca185f1a99a8d38b7861b61fc3d2 49e364331cd4fc91f525175f47df39e7 </span></span>
 <span><span class="co">#&gt;                        "PENDING"                        "PENDING" </span></span>
-<span><span class="co">#&gt; 52e6eff4a7db0f728b8886f9f2cd126e </span></span>
+<span><span class="co">#&gt; f46cc537895d62078fe6d9d7683d01d0 </span></span>
 <span><span class="co">#&gt;                        "PENDING"</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">queue_list</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "52e6eff4a7db0f728b8886f9f2cd126e" "927b0da65b86b7b07dbef50dfcd5030f"</span></span>
-<span><span class="co">#&gt; [3] "63fb5add4af52d54de7b9e8193c43298" "66d565c9511fc14a087dc6ea421afc33"</span></span>
-<span><span class="co">#&gt; [5] "5a62830fc253df71ed86a22fda6ab2dc"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "f46cc537895d62078fe6d9d7683d01d0" "9939ca185f1a99a8d38b7861b61fc3d2"</span></span>
+<span><span class="co">#&gt; [3] "49e364331cd4fc91f525175f47df39e7" "3fd28158aada1ed6c03049f4bc22da2e"</span></span>
+<span><span class="co">#&gt; [5] "5c0ad9e70fd9714b83fdbca403f5c3fc"</span></span></code></pre></div>
 <p>At this point the tasks will proceed through the queue as usual.</p>
 <p>Points to note here:</p>
 <ul>
@@ -489,16 +489,16 @@ configuration:</p>
 <span>  <span class="st">"all"</span>,</span>
 <span>  <span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/rrq_worker_config.html">rrq_worker_config</a></span><span class="op">(</span>queue <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"short"</span>, <span class="st">"long"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_config_list</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "localhost" "all"       "short"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "localhost" "short"     "all"</span></span></code></pre></div>
 <p>Above, we create two configurations: “short” which just listens on
 the queue <code>short</code>, and <code>all</code> which listens both on
 the short and long task queues (note that both these workers will also
 listen on the default queue).</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">w_short</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/rrq_worker_spawn.html">rrq_worker_spawn</a></span><span class="op">(</span><span class="va">obj</span>, name_config <span class="op">=</span> <span class="st">"short"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Spawning 1 worker with prefix unexplainable_goat</span></span>
+<span><span class="co">#&gt; Spawning 1 worker with prefix camlet_crane</span></span>
 <span><span class="va">w_all</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/rrq_worker_spawn.html">rrq_worker_spawn</a></span><span class="op">(</span><span class="va">obj</span>, name_config <span class="op">=</span> <span class="st">"all"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Spawning 1 worker with prefix literate_paintedladybutterfly</span></span></code></pre></div>
+<span><span class="co">#&gt; Spawning 1 worker with prefix central_archerfish</span></span></code></pre></div>
 <p>We can then submit a long task to the worker:</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">id_long1</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">3600</span><span class="op">)</span>, queue <span class="op">=</span> <span class="st">"long"</span><span class="op">)</span></span>
@@ -507,14 +507,14 @@ listen on the default queue).</p>
 worker is still available:</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_status</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt;            unexplainable_goat_1 literate_paintedladybutterfly_1 </span></span>
-<span><span class="co">#&gt;                          "IDLE"                          "BUSY"</span></span></code></pre></div>
+<span><span class="co">#&gt;       camlet_crane_1 central_archerfish_1 </span></span>
+<span><span class="co">#&gt;               "IDLE"               "BUSY"</span></span></code></pre></div>
 <p>So we can submit tasks to this short queue and have them
 processed</p>
 <div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">id</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>, queue <span class="op">=</span> <span class="st">"short"</span><span class="op">)</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="fu">task_wait</span><span class="op">(</span><span class="va">id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.2880746</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.4823636</span></span></code></pre></div>
 <p>Note that there is no validation to check that any worker is
 listening on any queue when you submit a task. Indeed there can’t be as
 new workers can be added at any time (so at the point of submission
@@ -584,7 +584,7 @@ we can use it)</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="va"><a href="../reference/rrq_controller.html">rrq_controller</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">id</span><span class="op">)</span></span>
 <span><span class="va">w</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/rrq_worker_spawn.html">rrq_worker_spawn</a></span><span class="op">(</span><span class="va">obj</span>, <span class="fl">1</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Spawning 1 worker with prefix starspangled_arkshell</span></span></code></pre></div>
+<span><span class="co">#&gt; Spawning 1 worker with prefix clean_glowworm</span></span></code></pre></div>
 <p>It’s not hard at all to get to 1KB of data, we can do that by
 simulating a big pile of random numbers:</p>
 <div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
@@ -593,7 +593,7 @@ simulating a big pile of random numbers:</p>
 path given above:</p>
 <div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">dir</a></span><span class="op">(</span><span class="va">path</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "de7c636f9a989806b5191a72e4d3f64a"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "14630b786accacb62d61a5bc034afa0e"</span></span></code></pre></div>
 <p>This keeps the larger objects out of the database.</p>
 </div>
 <div class="section level2">
@@ -688,11 +688,11 @@ block and wait for them to become available. You can do this using the
 appeared:</p>
 <div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">key_alive</span></span>
-<span><span class="co">#&gt; [1] "rrq:f9ab447c:worker:alive:bec599c8f031558aa9e4008dc26b7385"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "rrq:8e22e4b1:worker:alive:e6baa98c2c5329b673a9deaee9ef4320"</span></span></code></pre></div>
 <p>How you then start the workers is up to you; you might start them at
 the command line with</p>
-<pre><code>rrq_worker --worker-id cluster_1 rrq:f9ab447c
-rrq_worker --worker-id cluster_2 rrq:f9ab447c</code></pre>
+<pre><code>rrq_worker --worker-id cluster_1 rrq:8e22e4b1
+rrq_worker --worker-id cluster_2 rrq:8e22e4b1</code></pre>
 <p>(into separate terminals). Or you might queue these jobs with a
 cluster scheduler such as Slurm or PBS (with appropriate care over the
 working directory). But you can then immediately, in your R console
@@ -739,40 +739,40 @@ server.</p>
 <p>Then, launch a worker</p>
 <div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">w</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/rrq_worker_spawn.html">rrq_worker_spawn</a></span><span class="op">(</span><span class="va">obj</span>, <span class="fl">1</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Spawning 1 worker with prefix nostalgic_spider</span></span></code></pre></div>
+<span><span class="co">#&gt; Spawning 1 worker with prefix discontented_jumpingbean</span></span></code></pre></div>
 <p>Our worker will print information indicating that the heartbeat is
 enabled (use <code>obj$worker_process_log()</code>)</p>
-<pre><code><span><span class="co">#&gt; [2024-02-05 09:18:58.489531] HEARTBEAT rrq:2628ff59:worker:nostalgic_spider_1:heartbeat</span></span>
-<span><span class="co">#&gt; [2024-02-05 09:18:58.838431] HEARTBEAT OK</span></span>
-<span><span class="co">#&gt; [2024-02-05 09:18:58.847789] ALIVE</span></span>
-<span><span class="co">#&gt; [2024-02-05 09:18:58.848135] ENVIR new</span></span>
-<span><span class="co">#&gt; [2024-02-05 09:18:58.848484] QUEUE default</span></span>
+<pre><code><span><span class="co">#&gt; [2024-02-06 15:31:37.933092] HEARTBEAT rrq:efce8586:worker:discontented_jumpingbean_1:heartbeat</span></span>
+<span><span class="co">#&gt; [2024-02-06 15:31:38.274534] HEARTBEAT OK</span></span>
+<span><span class="co">#&gt; [2024-02-06 15:31:38.283676] ALIVE</span></span>
+<span><span class="co">#&gt; [2024-02-06 15:31:38.283999] ENVIR new</span></span>
+<span><span class="co">#&gt; [2024-02-06 15:31:38.284351] QUEUE default</span></span>
 <span><span class="co">#&gt;                                  __</span></span>
 <span><span class="co">#&gt;                 ______________ _/ /</span></span>
 <span><span class="co">#&gt;       ______   / ___/ ___/ __ `/ /_____</span></span>
 <span><span class="co">#&gt;      /_____/  / /  / /  / /_/ /_/_____/</span></span>
 <span><span class="co">#&gt;  ______      /_/  /_/   \__, (_)   ______</span></span>
 <span><span class="co">#&gt; /_____/                   /_/     /_____/</span></span>
-<span><span class="co">#&gt;     worker:        nostalgic_spider_1</span></span>
+<span><span class="co">#&gt;     worker:        discontented_jumpingbean_1</span></span>
 <span><span class="co">#&gt;     config:        localhost</span></span>
-<span><span class="co">#&gt;     rrq_version:   0.7.3</span></span>
+<span><span class="co">#&gt;     rrq_version:   0.7.4</span></span>
 <span><span class="co">#&gt;     platform:      x86_64-pc-linux-gnu (64-bit)</span></span>
 <span><span class="co">#&gt;     running:       Ubuntu 22.04.3 LTS</span></span>
-<span><span class="co">#&gt;     hostname:      fv-az1019-864</span></span>
+<span><span class="co">#&gt;     hostname:      fv-az1530-330</span></span>
 <span><span class="co">#&gt;     username:      runner</span></span>
-<span><span class="co">#&gt;     queue:         rrq:2628ff59:queue:default</span></span>
+<span><span class="co">#&gt;     queue:         rrq:efce8586:queue:default</span></span>
 <span><span class="co">#&gt;     wd:            /home/runner/work/rrq/rrq/vignettes</span></span>
-<span><span class="co">#&gt;     pid:           6996</span></span>
+<span><span class="co">#&gt;     pid:           6886</span></span>
 <span><span class="co">#&gt;     redis_host:    127.0.0.1</span></span>
 <span><span class="co">#&gt;     redis_port:    6379</span></span>
-<span><span class="co">#&gt;     heartbeat_key: rrq:2628ff59:worker:nostalgic_spider_1:heartbeat</span></span></code></pre>
+<span><span class="co">#&gt;     heartbeat_key: rrq:efce8586:worker:discontented_jumpingbean_1:heartbeat</span></span></code></pre>
 <p>We also have a heartbeat key here that we can inspect:</p>
 <div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">info</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">worker_info</span><span class="op">(</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="va">con</span><span class="op">$</span><span class="fu">EXISTS</span><span class="op">(</span><span class="va">info</span><span class="op">$</span><span class="va">heartbeat_key</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1</span></span>
 <span><span class="va">obj</span><span class="op">$</span><span class="va">con</span><span class="op">$</span><span class="fu">PTTL</span><span class="op">(</span><span class="va">info</span><span class="op">$</span><span class="va">heartbeat_key</span><span class="op">)</span> <span class="co"># in milliseconds</span></span>
-<span><span class="co">#&gt; [1] 5845</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 5842</span></span></code></pre></div>
 <p>We queue some slow job onto the worker:</p>
 <div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="op">{</span></span>
@@ -795,20 +795,20 @@ enabled (use <code>obj$worker_process_log()</code>)</p>
 still running</p>
 <div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 48e34cdbe330facf8927e5e78ba86363 </span></span>
+<span><span class="co">#&gt; 7755f63445a882c406574e339eacd72f </span></span>
 <span><span class="co">#&gt;                        "RUNNING"</span></span></code></pre></div>
 <p>Handling this situation is still completely manual. You can detect
 lost workers jobs with:</p>
 <div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_detect_exited</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Lost 1 worker:</span></span>
-<span><span class="co">#&gt;   - nostalgic_spider_1</span></span>
+<span><span class="co">#&gt;   - discontented_jumpingbean_1</span></span>
 <span><span class="co">#&gt; Orphaning 1 task:</span></span>
-<span><span class="co">#&gt;   - 48e34cdbe330facf8927e5e78ba86363</span></span></code></pre></div>
+<span><span class="co">#&gt;   - 7755f63445a882c406574e339eacd72f</span></span></code></pre></div>
 <p>this will also “orphan” the task</p>
 <div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 48e34cdbe330facf8927e5e78ba86363 </span></span>
+<span><span class="co">#&gt; 7755f63445a882c406574e339eacd72f </span></span>
 <span><span class="co">#&gt;                           "DIED"</span></span></code></pre></div>
 <p>Any tasks that were dependent on this task will now be marked as
 <code>IMPOSSIBLE</code>.</p>

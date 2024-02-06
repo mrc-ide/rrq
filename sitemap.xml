@@ -46,10 +46,19 @@
     <loc>/reference/rrq_controller.html</loc>
   </url>
   <url>
+    <loc>/reference/rrq_controller2.html</loc>
+  </url>
+  <url>
+    <loc>/reference/rrq_default_controller_set.html</loc>
+  </url>
+  <url>
     <loc>/reference/rrq_envir.html</loc>
   </url>
   <url>
     <loc>/reference/rrq_heartbeat_kill.html</loc>
+  </url>
+  <url>
+    <loc>/reference/rrq_task_list.html</loc>
   </url>
   <url>
     <loc>/reference/rrq_task_progress_update.html</loc>
