@@ -133,10 +133,9 @@ rrq_worker_stop <- function(worker_ids = NULL, type = "message",
   if (type == "message") {
     message_id <- message_send(con, keys, "STOP", worker_ids = worker_ids)
     if (timeout > 0L) {
-      message_get_response(con, keys, message_id, worker_ids,
-                           delete = FALSE, timeout = timeout,
-                           time_poll = time_poll,
-                           progress = progress)
+      rrq_message_get_response(message_id, worker_ids, delete = FALSE,
+                               timeout = timeout, time_poll = time_poll,
+                               progress = progress, controller = controller)
       key_status <- keys$worker_status
       when <- function() {
         any(list_to_character(con$HMGET(key_status, worker_ids)) != "EXITED")

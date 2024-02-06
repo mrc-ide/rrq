@@ -231,8 +231,7 @@ rrq_controller <- R6::R6Class(
     destroy = function(delete = TRUE, worker_stop_type = "message",
                        timeout_worker_stop = 0) {
       if (!is.null(self$con)) {
-        rrq_clean(self$con, self$queue_id, delete, worker_stop_type,
-                  timeout_worker_stop)
+        rrq_destroy(delete, worker_stop_type, timeout_worker_stop, self)
         ## render the controller useless:
         self$con <- NULL
         private$keys <- NULL
@@ -252,15 +251,7 @@ rrq_controller <- R6::R6Class(
     ##' @param notify Boolean, indicating if we should send a `REFRESH`
     ##'   message to all workers to update their environment.
     envir = function(create, notify = TRUE) {
-      if (is.null(create)) {
-        self$con$DEL(private$keys$envir)
-      } else {
-        assert_is(create, "function")
-        self$con$SET(private$keys$envir, object_to_bin(create))
-      }
-      if (notify) {
-        self$message_send("REFRESH")
-      }
+      rrq_worker_envir_set(create, notify, self)
     },
 
     ##' @description Queue an expression
@@ -944,8 +935,7 @@ rrq_controller <- R6::R6Class(
     ##' @param queue The name of the queue to query (defaults to the
     ##'   "default" queue).
     queue_list = function(queue = NULL) {
-      key_queue <- rrq_key_queue(private$keys$queue_id, queue)
-      list_to_character(self$con$LRANGE(key_queue, 0, -1))
+      rrq_queue_list(queue, self)
     },
 
     ##' @description Remove task ids from a queue.
@@ -961,14 +951,14 @@ rrq_controller <- R6::R6Class(
       ## between the DEL and the RPUSH the newly submitted job gets
       ## bounced ahead in the queue, which seems tolerable but might not
       ## always be ideal.  To solve this we should use a lua script.
-      queue_remove(self$con, private$keys, task_ids, queue %||% QUEUE_DEFAULT)
+      rrq_queue_remove(task_ids, queue, self)
     },
 
     ##' @description Return deferred tasks and what they are waiting on.
     ##'   Note this is in an arbitrary order, tasks will be added to the
     ##'   queue as their dependencies are satisfied.
     deferred_list = function() {
-      deferred_list(self$con, private$keys)
+      rrq_deferred_list(self)
     },
 
     ##' @description Returns the number of active workers
@@ -1204,8 +1194,8 @@ rrq_controller <- R6::R6Class(
     message_get_response = function(message_id, worker_ids = NULL, named = TRUE,
                                     delete = FALSE, timeout = 0,
                                     time_poll = 0.05, progress = NULL) {
-      message_get_response(self$con, private$keys, message_id, worker_ids,
-                           named, delete, timeout, time_poll, progress)
+      rrq_message_get_response(message_id, worker_ids, named, delete, timeout,
+                               time_poll, progress, controller)
     },
 
     ##' @description Return ids for messages with responses for a
@@ -1252,8 +1242,6 @@ rrq_controller <- R6::R6Class(
       rrq_message_send_and_wait(command, args, worker_ids,
                                 named, delete, timeout,
                                 time_poll, progress, self)
-      message_send_and_wait(self$con, private$keys, command, args, worker_ids,
-                            named, delete, timeout, time_poll, progress)
     }
   ),
 
@@ -1464,10 +1452,13 @@ worker_stop <- function(con, keys, worker_ids = NULL, type = "message",
   if (type == "message") {
     message_id <- message_send(con, keys, "STOP", worker_ids = worker_ids)
     if (timeout > 0L) {
-      message_get_response(con, keys, message_id, worker_ids,
-                           delete = FALSE, timeout = timeout,
-                           time_poll = time_poll,
-                           progress = progress)
+      ## either sort out a controller here or change this function to
+      ## use the new controller
+      rrq_message_get_response(message_id, worker_ids,
+                               delete = FALSE, timeout = timeout,
+                               time_poll = time_poll,
+                               progress = progress,
+                               controller = controller)
       key_status <- keys$worker_status
       when <- function() {
         any(list_to_character(con$HMGET(key_status, worker_ids)) != "EXITED")
@@ -1585,27 +1576,6 @@ rrq_object_store <- function(con, keys) {
                    config$store_max_size, offload)
 }
 
-
-queue_remove <- function(con, keys, task_ids, queue) {
-  if (length(task_ids) == 0) {
-    return(invisible(logical(0)))
-  }
-  if (length(queue) > 1) {
-    tmp <- split(task_ids, queue)
-    res <- Map(function(i, q) i[queue_remove(con, keys, i, q)], tmp, names(tmp))
-    return(invisible(task_ids %in% unlist(res)))
-  }
-  key_queue <- rrq_key_queue(keys$queue_id, queue)
-  res <- con$pipeline(
-    redux::redis$LRANGE(key_queue, 0, -1),
-    redux::redis$DEL(key_queue))
-  ids <- list_to_character(res[[1L]])
-  keep <- !(ids %in% task_ids)
-  if (any(keep)) {
-    con$RPUSH(key_queue, ids[keep])
-  }
-  invisible(task_ids %in% ids)
-}
 
 verify_dependencies_exist <- function(controller, depends_on) {
   if (!is.null(depends_on)) {
