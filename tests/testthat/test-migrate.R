@@ -13,7 +13,7 @@ test_that("Error if schema version incompatible", {
   keys <- rrq_keys(sprintf("rrq:%s", ids::random_id()))
   on.exit(rrq_clean(con, keys$queue_id))
   con$SET(keys$version, "0.1.0")
-  err <- expect_error(
+  expect_error(
     rrq_version_check(con, keys),
     "rrq schema version is '0.1.0' but you are using '0.4.0'; please migrate")
   con$SET(keys$version, "0.9.0")

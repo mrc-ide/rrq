@@ -11,6 +11,10 @@ rrq_queue_remove(task_ids, queue = NULL, controller = NULL)
 
 \item{queue}{The name of the queue to query (defaults to the
 "default" queue).}
+
+\item{controller}{The controller to use.  If not given (or \code{NULL})
+we'll use the controller registered with
+\code{\link[=rrq_default_controller_set]{rrq_default_controller_set()}}.}
 }
 \description{
 Remove task ids from a queue.

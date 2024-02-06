@@ -687,6 +687,11 @@ rrq_task_wait <- function(task_id, timeout = NULL, time_poll = 1,
 ##'   the task was not successful. See `$task_result()` for details.
 ##'   Note that an error is always thrown if not all tasks are fetched
 ##'   in time.
+##'
+##' @inheritParams rrq_task_times
+##'
+##' @return A list with task values, but we will change this soon
+##' @export
 rrq_tasks_wait <- function(task_ids, timeout = NULL, time_poll = 1,
                            progress = NULL, error = FALSE, follow = NULL,
                            controller = NULL) {

@@ -33,6 +33,20 @@ progress bar if in an interactive session.}
 the task was not successful. See \verb{$task_result()} for details.
 Note that an error is always thrown if not all tasks are fetched
 in time.}
+
+\item{follow}{Optional logical, indicating if we should follow any
+redirects set up by doing \link{rrq_task_retry}. If not given, falls
+back on the value passed into the controller, the global option
+\code{rrq.follow}, and finally \code{TRUE}. Set to \code{FALSE} if you want to
+return information about the original task, even if it has been
+subsequently retried.}
+
+\item{controller}{The controller to use.  If not given (or \code{NULL})
+we'll use the controller registered with
+\code{\link[=rrq_default_controller_set]{rrq_default_controller_set()}}.}
+}
+\value{
+A list with task values, but we will change this soon
 }
 \description{
 Poll for a group of tasks to complete, returning the

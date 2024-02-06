@@ -79,6 +79,8 @@ rrq_worker_status <- function(worker_ids = NULL, controller = NULL) {
 ##' @param worker_ids Optional vector of worker ids. If `NULL` then
 ##' all active workers are used.
 ##'
+##' @inheritParams rrq_task_list
+##'
 ##' @return A list of `worker_info` objects
 ##'
 ##' @export
@@ -167,9 +169,8 @@ rrq_worker_task_id <- function(worker_ids = NULL, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
-  from_redis_hash(con, keys$worker_task, worker_id)
+  from_redis_hash(con, keys$worker_task, worker_ids)
 }
-
 
 
 ##' Cleans up workers known to have exited

@@ -62,6 +62,8 @@ rrq_queue_list <- function(queue = NULL, controller = NULL) {
 ##' @param queue The name of the queue to query (defaults to the
 ##'   "default" queue).
 ##'
+##' @inheritParams rrq_task_times
+##'
 ##' @export
 rrq_queue_remove <- function(task_ids, queue = NULL, controller = NULL) {
   ## NOTE: uses a pipeline to avoid a race condition - nothing may
