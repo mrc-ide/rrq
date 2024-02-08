@@ -11,15 +11,10 @@ worker_heartbeat <- function(con, keys, period, verbose) {
 }
 
 
-worker_detect_exited <- function(con, keys, store) {
-  time <- heartbeat_time_remaining(con, keys)
-  cleanup_orphans(con, keys, store, time)
-}
-
-
-heartbeat_time_remaining <- function(con, keys) {
-  worker_ids <- worker_list(con, keys)
-  info <- worker_info(con, keys, worker_ids)
+heartbeat_time_remaining <- function(controller) {
+  con <- controller$con
+  worker_ids <- rrq_worker_list(controller = controller)
+  info <- rrq_worker_info(worker_ids, controller = controller)
   ttl <- function(key) {
     if (is.null(key)) Inf else con$PTTL(key)
   }
@@ -27,19 +22,23 @@ heartbeat_time_remaining <- function(con, keys) {
 }
 
 
-cleanup_orphans <- function(con, keys, store, time) {
+cleanup_orphans <- function(controller, time) {
   worker_id <- names(time)[time < 0]
 
   if (length(worker_id) == 0L) {
     return(invisible(NULL))
   }
 
+  con <- controller$con
+  keys <- controller$keys
+  store <- controller$store
+
   message(sprintf(
     "Lost %s %s:\n%s",
     length(worker_id), ngettext(length(worker_id), "worker", "workers"),
     paste0("  - ", worker_id, collapse = "\n")))
 
-  task_ids <- worker_task_id(con, keys, worker_id)
+  task_ids <- rrq_worker_task_id(worker_id, controller = controller)
   i <- !is.na(task_ids)
 
   if (sum(i) > 0) {

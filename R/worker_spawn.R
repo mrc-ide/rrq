@@ -135,6 +135,7 @@ rrq_worker_manager <- R6::R6Class(
   "rrq_worker_manager",
 
   private = list(
+    controller = NULL,
     con = NULL,
     keys = NULL,
     process = NULL,
@@ -166,6 +167,7 @@ rrq_worker_manager <- R6::R6Class(
     initialize = function(obj, n, logdir = NULL, name_config = "localhost",
                           worker_id_base = NULL) {
       assert_is(obj, "rrq_controller")
+      private$controller <- obj$to_v2()
       if (!(name_config %in% obj$worker_config_list())) {
         cli::cli_abort("Invalid rrq worker configuration key '{name_config}'")
       }
@@ -231,7 +233,8 @@ rrq_worker_manager <- R6::R6Class(
 
     stop = function(worker_id = NULL, ...) {
       worker_id <- private$check_worker_id(worker_id)
-      worker_stop(private$con, private$keys, worker_id, ...)
+      rrq_worker_stop(worker_ids = worker_id, ...,
+                      controller = private$controller)
     },
 
     is_alive = function(worker_id = NULL) {

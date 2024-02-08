@@ -314,7 +314,7 @@ worker_initialise <- function(worker, private, queue, timeout_idle,
 
 
 ## Controlled stop:
-rrq_worker_stop <- function(worker, message) {
+rrq_worker_stop_condition <- function(worker, message) {
   structure(list(worker = worker, message = message),
             class = c("rrq_worker_stop", "error", "condition"))
 }
@@ -340,7 +340,7 @@ worker_step <- function(worker, private, immediate) {
       worker$timer_start()
     }
     if (private$timer() <= 0L) {
-      stop(rrq_worker_stop(worker, "TIMEOUT"))
+      stop(rrq_worker_stop_condition(worker, "TIMEOUT"))
     }
   }
 }

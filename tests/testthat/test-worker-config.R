@@ -167,3 +167,20 @@ test_that("default worker config poll queue depends on interactivity", {
       rrq_worker_config(poll_queue = 20)$poll_queue, FALSE),
     20)
 })
+
+
+test_that("can timeout while reading a configuration", {
+  skip_if_not_installed("mockery")
+  obj <- test_rrq()
+  keys <- obj$to_v2()$keys
+  cfg <- obj$worker_config_read(WORKER_CONFIG_DEFAULT)
+  mock_wait <- mockery::mock(cfg)
+  mockery::stub(worker_config_read, "wait_success", mock_wait)
+  res <- worker_config_read(obj$con, keys, WORKER_CONFIG_DEFAULT, 30)
+  expect_equal(res, cfg)
+  mockery::expect_called(mock_wait, 1)
+  args <- mockery::mock_args(mock_wait)[[1]]
+  expect_equal(args[[2]], 30)
+  expect_equal(args[[4]], 1)
+  expect_equal(args[[3]](), cfg)
+})

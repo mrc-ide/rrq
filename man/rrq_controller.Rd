@@ -167,7 +167,6 @@ after creation.}
 \item \href{#method-rrq_controller-worker_info}{\code{rrq_controller$worker_info()}}
 \item \href{#method-rrq_controller-worker_status}{\code{rrq_controller$worker_status()}}
 \item \href{#method-rrq_controller-worker_log_tail}{\code{rrq_controller$worker_log_tail()}}
-\item \href{#method-rrq_controller-worker_task_id}{\code{rrq_controller$worker_task_id()}}
 \item \href{#method-rrq_controller-worker_delete_exited}{\code{rrq_controller$worker_delete_exited()}}
 \item \href{#method-rrq_controller-worker_stop}{\code{rrq_controller$worker_stop()}}
 \item \href{#method-rrq_controller-worker_detect_exited}{\code{rrq_controller$worker_detect_exited()}}
@@ -193,7 +192,8 @@ Constructor
   queue_id,
   con = redux::hiredis(),
   timeout_task_wait = NULL,
-  follow = NULL
+  follow = NULL,
+  check_version = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -222,6 +222,8 @@ because we need to dereference every task id. If you never use
 \verb{$task_retry} then this dereference never has an effect and we
 can skip it. See \code{vignette("fault-tolerance")} for more
 information.}
+
+\item{\code{check_version}}{Check that the schema version is correct}
 }
 \if{html}{\out{</div>}}
 }
@@ -836,7 +838,7 @@ List ids of all tasks known to this rrq controller
 Test if task with id \code{task_ids} is known to this
 rrq controller
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_exists(task_ids = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$task_exists(task_ids)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1458,25 +1460,6 @@ all active workers are used.}
 
 \item{\code{n}}{Number of elements to select, the default being the single
 last entry. Use \code{Inf} or \code{0} to indicate that you want all log entries}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-rrq_controller-worker_task_id"></a>}}
-\if{latex}{\out{\hypertarget{method-rrq_controller-worker_task_id}{}}}
-\subsection{Method \code{worker_task_id()}}{
-Returns the task id that each worker is working on,
-if any.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_task_id(worker_ids = NULL)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{worker_ids}}{Optional vector of worker ids. If \code{NULL} then
-all active workers are used.}
 }
 \if{html}{\out{</div>}}
 }

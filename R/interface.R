@@ -13,7 +13,7 @@
 ##'   [redux::hiredis()]
 ##'
 ##' @param timeout_task_wait An optional default timeout to use when
-##'   waiting for tasks (e.g., with `rrq_task_wait`, `rrq_tasks_wait`,
+##'   waiting for tasks (e.g., with [rrq_task_wait], [rrq_tasks_wait],
 ##'   etc). If not given, then we fall back on the global option
 ##'   `rrq.timeout_task_wait`, and if that is not set, we wait forever
 ##'   (i.e., `timeout_task_wait = Inf`).
@@ -24,17 +24,24 @@
 ##'   `TRUE` (i.e., we do follow). The value `follow = TRUE` is
 ##'   potentially slower than `follow = FALSE` for some operations
 ##'   because we need to dereference every task id. If you never use
-##'   `rrq_task_retry` then this dereference never has an effect and we
+##'   [rrq_task_retry] then this dereference never has an effect and we
 ##'   can skip it. See `vignette("fault-tolerance")` for more
 ##'   information.
+##'
+##' @param check_version Logical, indicating if we should check the
+##'   schema version.  You can pass `FALSE` here to continue even
+##'   where the schema version is incompatible, though any subsequent
+##'   actions may lead to corruption.
 ##'
 ##' @return An `rrq_controller2` object, which is opaque.
 ##' @export
 rrq_controller2 <- function(queue_id, con = redux::hiredis,
-                            timeout_task_wait = NULL, follow = NULL) {
+                            timeout_task_wait = NULL, follow = NULL,
+                            check_version = TRUE) {
   ## We'll move the construction code here shortly, but this way makes
   ## the migration a little easier.
-  rrq_controller$new(queue_id, con, timeout_task_wait, follow)$to_v2()
+  rrq_controller$new(queue_id, con, timeout_task_wait, follow,
+                     check_version)$to_v2()
 }
 
 

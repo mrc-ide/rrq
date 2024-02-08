@@ -55,7 +55,7 @@ run_message_stop <- function(worker, private, message_id, args) {
   if (is.null(args)) {
     args <- "BYE"
   }
-  stop(rrq_worker_stop(worker, args))
+  stop(rrq_worker_stop_condition(worker, args))
 }
 
 run_message_info <- function(worker, private) {
@@ -129,98 +129,10 @@ run_message_unknown <- function(cmd, args) {
 message_prepare <- function(id, command, args) {
   object_to_bin(list(id = id, command = command, args = args))
 }
+
 response_prepare <- function(id, command, result) {
   object_to_bin(list(id = id, command = command, result = result))
 }
-
-message_send <- function(con, keys, command, args = NULL, worker_ids = NULL) {
-  if (is.null(worker_ids)) {
-    worker_ids <- worker_list(con, keys)
-  }
-  key <- rrq_key_worker_message(keys$queue_id, worker_ids)
-  message_id <- redis_time(con)
-  content <- message_prepare(message_id, command, args)
-  for (k in key) {
-    con$RPUSH(k, content)
-  }
-  invisible(message_id)
-}
-
-message_send_and_wait <- function(con, keys, command,
-                                  args = NULL, worker_ids = NULL, named = TRUE,
-                                  delete = TRUE, timeout = 600,
-                                  time_poll = 0.05, progress = NULL) {
-  if (is.null(worker_ids)) {
-    worker_ids <- worker_list(con, keys)
-  }
-  message_id <- message_send(con, keys, command, args, worker_ids)
-  ret <- message_get_response(con, keys, message_id, worker_ids, named, delete,
-                              timeout, time_poll, progress)
-  if (!delete) {
-    attr(ret, "message_id") <- message_id
-  }
-  ret
-}
-
-message_has_response <- function(con, keys, message_id, worker_ids, named) {
-  if (is.null(worker_ids)) {
-    worker_ids <- worker_list(con, keys)
-  }
-  res <- vnapply(rrq_key_worker_response(keys$queue_id, worker_ids),
-                 con$HEXISTS, message_id, USE.NAMES = FALSE)
-  res <- as.logical(res)
-  if (named) {
-    names(res) <- worker_ids
-  }
-  res
-}
-
-message_get_response <- function(con, keys, message_id, worker_ids = NULL,
-                                 named = TRUE, delete = FALSE,
-                                 timeout = 0, time_poll = 0.05,
-                                 progress = NULL) {
-  ## NOTE: this won't work well if the message was sent only to a
-  ## single worker, or a worker who was not yet started.
-  if (is.null(worker_ids)) {
-    worker_ids <- worker_list(con, keys)
-  }
-
-  response_keys <- rrq_key_worker_response(keys$queue_id, worker_ids)
-
-  done <- rep(FALSE, length(response_keys))
-  fetch <- function() {
-    done[!done] <<- hash_exists(con, response_keys[!done], message_id)
-    done
-  }
-  done <- general_poll(fetch, time_poll, timeout, "responses", FALSE, progress)
-  if (!all(done)) {
-    stop(paste0("Response missing for workers: ",
-                paste(worker_ids[!done], collapse = ", ")))
-  }
-
-  res <- lapply(response_keys, function(k) {
-    bin_to_object(con$HGET(k, message_id))$result
-  })
-
-  if (delete) {
-    for (k in response_keys) {
-      con$HDEL(k, message_id)
-    }
-  }
-
-  if (named) {
-    names(res) <- worker_ids
-  }
-  res
-}
-
-
-message_response_ids <- function(con, keys, worker_id) {
-  response_keys <- rrq_key_worker_response(keys$queue_id, worker_id)
-  ids <- as.character(con$HKEYS(response_keys))
-  ids[order(as.numeric(ids))]
-}
-
 
 message_respond <- function(worker, private, message_id, cmd, result) {
   worker$log("RESPONSE", cmd)
