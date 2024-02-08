@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.5</span>
       </span>
     </div>
 
@@ -220,7 +220,6 @@ after creation.</p></dd>
 <li><p><a href="#method-rrq_controller-worker_info"><code>rrq_controller$worker_info()</code></a></p></li>
 <li><p><a href="#method-rrq_controller-worker_status"><code>rrq_controller$worker_status()</code></a></p></li>
 <li><p><a href="#method-rrq_controller-worker_log_tail"><code>rrq_controller$worker_log_tail()</code></a></p></li>
-<li><p><a href="#method-rrq_controller-worker_task_id"><code>rrq_controller$worker_task_id()</code></a></p></li>
 <li><p><a href="#method-rrq_controller-worker_delete_exited"><code>rrq_controller$worker_delete_exited()</code></a></p></li>
 <li><p><a href="#method-rrq_controller-worker_stop"><code>rrq_controller$worker_stop()</code></a></p></li>
 <li><p><a href="#method-rrq_controller-worker_detect_exited"><code>rrq_controller$worker_detect_exited()</code></a></p></li>
@@ -242,7 +241,8 @@ after creation.</p></dd>
 <span>  <span class="va">queue_id</span>,</span>
 <span>  con <span class="op">=</span> <span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  timeout_task_wait <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  follow <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  follow <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  check_version <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -277,6 +277,10 @@ because we need to dereference every task id. If you never use
 <code>$task_retry</code> then this dereference never has an effect and we
 can skip it. See <code><a href="../articles/fault-tolerance.html">vignette("fault-tolerance")</a></code> for more
 information.</p></dd>
+
+
+<dt><code>check_version</code></dt>
+<dd><p>Check that the schema version is correct</p></dd>
 
 
 </dl><p></p></div>
@@ -1023,7 +1027,7 @@ subsequently retried.</p></dd>
 <p>Test if task with id <code>task_ids</code> is known to this
 rrq controller</p><div class="section">
 <h4 id="usage-12">Usage<a class="anchor" aria-label="anchor" href="#usage-12"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">task_exists</span><span class="op">(</span>task_ids <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">task_exists</span><span class="op">(</span><span class="va">task_ids</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -1674,33 +1678,15 @@ last entry. Use <code>Inf</code> or <code>0</code> to indicate that you want all
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-rrq_controller-worker_task_id"></a><div class="section">
-<h3 id="method-worker-task-id-">Method <code>worker_task_id()</code><a class="anchor" aria-label="anchor" href="#method-worker-task-id-"></a></h3>
-<p>Returns the task id that each worker is working on,
-if any.</p><div class="section">
-<h4 id="usage-38">Usage<a class="anchor" aria-label="anchor" href="#usage-38"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">worker_task_id</span><span class="op">(</span>worker_ids <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
-<h4 id="arguments-32">Arguments<a class="anchor" aria-label="anchor" href="#arguments-32"></a></h4>
-<p></p><div class="arguments"><dl><dt><code>worker_ids</code></dt>
-<dd><p>Optional vector of worker ids. If <code>NULL</code> then
-all active workers are used.</p></dd>
-
-
-</dl><p></p></div>
-</div>
-
 </div><p></p><hr><a id="method-rrq_controller-worker_delete_exited"></a><div class="section">
 <h3 id="method-worker-delete-exited-">Method <code>worker_delete_exited()</code><a class="anchor" aria-label="anchor" href="#method-worker-delete-exited-"></a></h3>
 <p>Cleans up workers known to have exited</p><div class="section">
-<h4 id="usage-39">Usage<a class="anchor" aria-label="anchor" href="#usage-39"></a></h4>
+<h4 id="usage-38">Usage<a class="anchor" aria-label="anchor" href="#usage-38"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">worker_delete_exited</span><span class="op">(</span>worker_ids <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-33">Arguments<a class="anchor" aria-label="anchor" href="#arguments-33"></a></h4>
+<h4 id="arguments-32">Arguments<a class="anchor" aria-label="anchor" href="#arguments-32"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>worker_ids</code></dt>
 <dd><p>Optional vector of worker ids. If <code>NULL</code> then
 rrq looks for exited workers.</p></dd>
@@ -1712,7 +1698,7 @@ rrq looks for exited workers.</p></dd>
 </div><p></p><hr><a id="method-rrq_controller-worker_stop"></a><div class="section">
 <h3 id="method-worker-stop-">Method <code>worker_stop()</code><a class="anchor" aria-label="anchor" href="#method-worker-stop-"></a></h3>
 <p>Stop workers.</p><div class="section">
-<h4 id="usage-40">Usage<a class="anchor" aria-label="anchor" href="#usage-40"></a></h4>
+<h4 id="usage-39">Usage<a class="anchor" aria-label="anchor" href="#usage-39"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">worker_stop</span><span class="op">(</span></span>
 <span>  worker_ids <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  type <span class="op">=</span> <span class="st">"message"</span>,</span>
@@ -1723,7 +1709,7 @@ rrq looks for exited workers.</p></dd>
 </div>
 
 <div class="section">
-<h4 id="arguments-34">Arguments<a class="anchor" aria-label="anchor" href="#arguments-34"></a></h4>
+<h4 id="arguments-33">Arguments<a class="anchor" aria-label="anchor" href="#arguments-33"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>worker_ids</code></dt>
 <dd><p>Optional vector of worker ids. If <code>NULL</code> then
 all active workers will be stopped.</p></dd>
@@ -1780,7 +1766,7 @@ machine as the controller.</p></li>
 </div><p></p><hr><a id="method-rrq_controller-worker_detect_exited"></a><div class="section">
 <h3 id="method-worker-detect-exited-">Method <code>worker_detect_exited()</code><a class="anchor" aria-label="anchor" href="#method-worker-detect-exited-"></a></h3>
 <p>Detects exited workers through a lapsed heartbeat</p><div class="section">
-<h4 id="usage-41">Usage<a class="anchor" aria-label="anchor" href="#usage-41"></a></h4>
+<h4 id="usage-40">Usage<a class="anchor" aria-label="anchor" href="#usage-40"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">worker_detect_exited</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -1792,12 +1778,12 @@ it is located on the same physical storage (including network
 storage) as the controller. This will generally behave for
 workers started with <a href="rrq_worker_spawn.html">rrq_worker_spawn</a> but may require significant
 care otherwise.</p><div class="section">
-<h4 id="usage-42">Usage<a class="anchor" aria-label="anchor" href="#usage-42"></a></h4>
+<h4 id="usage-41">Usage<a class="anchor" aria-label="anchor" href="#usage-41"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">worker_process_log</span><span class="op">(</span><span class="va">worker_id</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-35">Arguments<a class="anchor" aria-label="anchor" href="#arguments-35"></a></h4>
+<h4 id="arguments-34">Arguments<a class="anchor" aria-label="anchor" href="#arguments-34"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>worker_id</code></dt>
 <dd><p>The worker for which the log is required</p></dd>
 
@@ -1810,12 +1796,12 @@ care otherwise.</p><div class="section">
 <p>Save a worker configuration, which can be used to
 start workers with a set of options with the cli. These
 correspond to arguments to <a href="rrq_worker.html">rrq_worker</a>.</p><div class="section">
-<h4 id="usage-43">Usage<a class="anchor" aria-label="anchor" href="#usage-43"></a></h4>
+<h4 id="usage-42">Usage<a class="anchor" aria-label="anchor" href="#usage-42"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">worker_config_save</span><span class="op">(</span><span class="va">name</span>, <span class="va">config</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-36">Arguments<a class="anchor" aria-label="anchor" href="#arguments-36"></a></h4>
+<h4 id="arguments-35">Arguments<a class="anchor" aria-label="anchor" href="#arguments-35"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>name</code></dt>
 <dd><p>Name for this configuration</p></dd>
 
@@ -1844,7 +1830,7 @@ updated.</p>
 <h3 id="method-worker-config-list-">Method <code>worker_config_list()</code><a class="anchor" aria-label="anchor" href="#method-worker-config-list-"></a></h3>
 <p>Return names of worker configurations saved by
 <code>$worker_config_save</code></p><div class="section">
-<h4 id="usage-44">Usage<a class="anchor" aria-label="anchor" href="#usage-44"></a></h4>
+<h4 id="usage-43">Usage<a class="anchor" aria-label="anchor" href="#usage-43"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">worker_config_list</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -1853,12 +1839,12 @@ updated.</p>
 <h3 id="method-worker-config-read-">Method <code>worker_config_read()</code><a class="anchor" aria-label="anchor" href="#method-worker-config-read-"></a></h3>
 <p>Return the value of a of worker configuration saved by
 <code>$worker_config_save</code></p><div class="section">
-<h4 id="usage-45">Usage<a class="anchor" aria-label="anchor" href="#usage-45"></a></h4>
+<h4 id="usage-44">Usage<a class="anchor" aria-label="anchor" href="#usage-44"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">worker_config_read</span><span class="op">(</span><span class="va">name</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-37">Arguments<a class="anchor" aria-label="anchor" href="#arguments-37"></a></h4>
+<h4 id="arguments-36">Arguments<a class="anchor" aria-label="anchor" href="#arguments-36"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>name</code></dt>
 <dd><p>Name of the configuration
 Report on worker "load" (the number of workers being used over
@@ -1874,12 +1860,12 @@ interface may change).</p></dd>
 <h3 id="method-worker-load-">Method <code>worker_load()</code><a class="anchor" aria-label="anchor" href="#method-worker-load-"></a></h3>
 
 <div class="section">
-<h4 id="usage-46">Usage<a class="anchor" aria-label="anchor" href="#usage-46"></a></h4>
+<h4 id="usage-45">Usage<a class="anchor" aria-label="anchor" href="#usage-45"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">worker_load</span><span class="op">(</span>worker_ids <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-38">Arguments<a class="anchor" aria-label="anchor" href="#arguments-38"></a></h4>
+<h4 id="arguments-37">Arguments<a class="anchor" aria-label="anchor" href="#arguments-37"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>worker_ids</code></dt>
 <dd><p>Optional vector of worker ids. If <code>NULL</code> then
 all active workers are used.</p></dd>
@@ -1893,12 +1879,12 @@ all active workers are used.</p></dd>
 <p>Send a message to workers. Sending a message returns
 a message id, which can be used to poll for a response with the
 other <code>message_*</code> methods.</p><div class="section">
-<h4 id="usage-47">Usage<a class="anchor" aria-label="anchor" href="#usage-47"></a></h4>
+<h4 id="usage-46">Usage<a class="anchor" aria-label="anchor" href="#usage-46"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">message_send</span><span class="op">(</span><span class="va">command</span>, args <span class="op">=</span> <span class="cn">NULL</span>, worker_ids <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-39">Arguments<a class="anchor" aria-label="anchor" href="#arguments-39"></a></h4>
+<h4 id="arguments-38">Arguments<a class="anchor" aria-label="anchor" href="#arguments-38"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>command</code></dt>
 <dd><p>A command, such as <code>PING</code>, <code>PAUSE</code>; see the Messages
 section of the Details for al messages.</p></dd>
@@ -1919,7 +1905,7 @@ to. If <code>NULL</code> then the message will be sent to all active workers.</p
 </div><p></p><hr><a id="method-rrq_controller-message_has_response"></a><div class="section">
 <h3 id="method-message-has-response-">Method <code>message_has_response()</code><a class="anchor" aria-label="anchor" href="#method-message-has-response-"></a></h3>
 <p>Detect if a response is available for a message</p><div class="section">
-<h4 id="usage-48">Usage<a class="anchor" aria-label="anchor" href="#usage-48"></a></h4>
+<h4 id="usage-47">Usage<a class="anchor" aria-label="anchor" href="#usage-47"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">message_has_response</span><span class="op">(</span></span>
 <span>  <span class="va">message_id</span>,</span>
 <span>  worker_ids <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -1928,7 +1914,7 @@ to. If <code>NULL</code> then the message will be sent to all active workers.</p
 </div>
 
 <div class="section">
-<h4 id="arguments-40">Arguments<a class="anchor" aria-label="anchor" href="#arguments-40"></a></h4>
+<h4 id="arguments-39">Arguments<a class="anchor" aria-label="anchor" href="#arguments-39"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>message_id</code></dt>
 <dd><p>The message id</p></dd>
 
@@ -1950,7 +1936,7 @@ of workers that the message was sent to!)</p></dd>
 <h3 id="method-message-get-response-">Method <code>message_get_response()</code><a class="anchor" aria-label="anchor" href="#method-message-get-response-"></a></h3>
 <p>Get response to messages, waiting until the
 message has been responded to.</p><div class="section">
-<h4 id="usage-49">Usage<a class="anchor" aria-label="anchor" href="#usage-49"></a></h4>
+<h4 id="usage-48">Usage<a class="anchor" aria-label="anchor" href="#usage-48"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">message_get_response</span><span class="op">(</span></span>
 <span>  <span class="va">message_id</span>,</span>
 <span>  worker_ids <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -1963,7 +1949,7 @@ message has been responded to.</p><div class="section">
 </div>
 
 <div class="section">
-<h4 id="arguments-41">Arguments<a class="anchor" aria-label="anchor" href="#arguments-41"></a></h4>
+<h4 id="arguments-40">Arguments<a class="anchor" aria-label="anchor" href="#arguments-40"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>message_id</code></dt>
 <dd><p>The message id</p></dd>
 
@@ -2011,12 +1997,12 @@ progress bar if in an interactive session.</p></dd>
 <h3 id="method-message-response-ids-">Method <code>message_response_ids()</code><a class="anchor" aria-label="anchor" href="#method-message-response-ids-"></a></h3>
 <p>Return ids for messages with responses for a
 particular worker.</p><div class="section">
-<h4 id="usage-50">Usage<a class="anchor" aria-label="anchor" href="#usage-50"></a></h4>
+<h4 id="usage-49">Usage<a class="anchor" aria-label="anchor" href="#usage-49"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">message_response_ids</span><span class="op">(</span><span class="va">worker_id</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-42">Arguments<a class="anchor" aria-label="anchor" href="#arguments-42"></a></h4>
+<h4 id="arguments-41">Arguments<a class="anchor" aria-label="anchor" href="#arguments-41"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>worker_id</code></dt>
 <dd><p>The worker id</p></dd>
 
@@ -2029,7 +2015,7 @@ particular worker.</p><div class="section">
 <p>Send a message and wait for responses.
 This is a helper function around <code>message_send</code> and
 <code>message_get_response</code>.</p><div class="section">
-<h4 id="usage-51">Usage<a class="anchor" aria-label="anchor" href="#usage-51"></a></h4>
+<h4 id="usage-50">Usage<a class="anchor" aria-label="anchor" href="#usage-50"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_controller</span><span class="op">$</span><span class="fu">message_send_and_wait</span><span class="op">(</span></span>
 <span>  <span class="va">command</span>,</span>
 <span>  args <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -2043,7 +2029,7 @@ This is a helper function around <code>message_send</code> and
 </div>
 
 <div class="section">
-<h4 id="arguments-43">Arguments<a class="anchor" aria-label="anchor" href="#arguments-43"></a></h4>
+<h4 id="arguments-42">Arguments<a class="anchor" aria-label="anchor" href="#arguments-42"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>command</code></dt>
 <dd><p>A command, such as <code>PING</code>, <code>PAUSE</code>; see the Messages
 section of the Details for al messages.</p></dd>

@@ -19,7 +19,7 @@ to rrq_controller."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.5</span>
       </span>
     </div>
 
@@ -77,7 +77,8 @@ to <code>rrq_controller</code>.</p>
 <span>  <span class="va">queue_id</span>,</span>
 <span>  con <span class="op">=</span> <span class="fu">redux</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span>,</span>
 <span>  timeout_task_wait <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  follow <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  follow <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  check_version <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -97,7 +98,7 @@ connection using default ports, or environment variables set as in
 
 <dt>timeout_task_wait</dt>
 <dd><p>An optional default timeout to use when
-waiting for tasks (e.g., with <code>rrq_task_wait</code>, <code>rrq_tasks_wait</code>,
+waiting for tasks (e.g., with <a href="rrq_task_wait.html">rrq_task_wait</a>, <a href="rrq_tasks_wait.html">rrq_tasks_wait</a>,
 etc). If not given, then we fall back on the global option
 <code>rrq.timeout_task_wait</code>, and if that is not set, we wait forever
 (i.e., <code>timeout_task_wait = Inf</code>).</p></dd>
@@ -110,9 +111,16 @@ on the global option <code>rrq.follow</code>, and if that is not set then
 <code>TRUE</code> (i.e., we do follow). The value <code>follow = TRUE</code> is
 potentially slower than <code>follow = FALSE</code> for some operations
 because we need to dereference every task id. If you never use
-<code>rrq_task_retry</code> then this dereference never has an effect and we
+<a href="rrq_task_retry.html">rrq_task_retry</a> then this dereference never has an effect and we
 can skip it. See <code><a href="../articles/fault-tolerance.html">vignette("fault-tolerance")</a></code> for more
 information.</p></dd>
+
+
+<dt>check_version</dt>
+<dd><p>Logical, indicating if we should check the
+schema version.  You can pass <code>FALSE</code> here to continue even
+where the schema version is incompatible, though any subsequent
+actions may lead to corruption.</p></dd>
 
 </dl></div>
     <div id="value">

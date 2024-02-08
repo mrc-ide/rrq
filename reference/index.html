@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.5</span>
       </span>
     </div>
 
@@ -95,6 +95,14 @@
         </td>
         <td><p>Register default controller</p></td>
       </tr><tr><td>
+          <p><code><a href="rrq_deferred_list.html">rrq_deferred_list()</a></code> </p>
+        </td>
+        <td><p>List deferred tasks</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_destroy.html">rrq_destroy()</a></code> </p>
+        </td>
+        <td><p>Destroy queue</p></td>
+      </tr><tr><td>
           <p><code><a href="rrq_envir.html">rrq_envir()</a></code> </p>
         </td>
         <td><p>Create simple worker environments</p></td>
@@ -103,13 +111,106 @@
         </td>
         <td><p>Kill a process running a heartbeat</p></td>
       </tr><tr><td>
+          <p><code><a href="rrq_message_get_response.html">rrq_message_get_response()</a></code> </p>
+        </td>
+        <td><p>Get message response</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_message_has_response.html">rrq_message_has_response()</a></code> </p>
+        </td>
+        <td><p>Detect if message has response</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_message_response_ids.html">rrq_message_response_ids()</a></code> </p>
+        </td>
+        <td><p>Return ids for messages with responses for a particular worker.</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_message_send.html">rrq_message_send()</a></code> </p>
+        </td>
+        <td><p>Send message to workers</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_message_send_and_wait.html">rrq_message_send_and_wait()</a></code> </p>
+        </td>
+        <td><p>Send a message and wait for response</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_queue_list.html">rrq_queue_list()</a></code> </p>
+        </td>
+        <td><p>List queue contents</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_queue_remove.html">rrq_queue_remove()</a></code> </p>
+        </td>
+        <td><p>Remove task ids from a queue</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_task_cancel.html">rrq_task_cancel()</a></code> </p>
+        </td>
+        <td><p>Cancel a task</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_task_data.html">rrq_task_data()</a></code> </p>
+        </td>
+        <td><p>Fetch internal task data</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_task_delete.html">rrq_task_delete()</a></code> </p>
+        </td>
+        <td><p>Delete tasks</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_task_exists.html">rrq_task_exists()</a></code> </p>
+        </td>
+        <td><p>Test if tasks exist</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_task_info.html">rrq_task_info()</a></code> </p>
+        </td>
+        <td><p>Fetch task information</p></td>
+      </tr><tr><td>
           <p><code><a href="rrq_task_list.html">rrq_task_list()</a></code> </p>
         </td>
         <td><p>List all tasks</p></td>
       </tr><tr><td>
+          <p><code><a href="rrq_task_overview.html">rrq_task_overview()</a></code> </p>
+        </td>
+        <td><p>High level task overciew</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_task_position.html">rrq_task_position()</a></code> </p>
+        </td>
+        <td><p>Find task position in queue</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_task_preceeding.html">rrq_task_preceeding()</a></code> </p>
+        </td>
+        <td><p>List tasks ahead of a task</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_task_progress.html">rrq_task_progress()</a></code> </p>
+        </td>
+        <td><p>Fetch task progress information</p></td>
+      </tr><tr><td>
           <p><code><a href="rrq_task_progress_update.html">rrq_task_progress_update()</a></code> </p>
         </td>
         <td><p>Post task update</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_task_result.html">rrq_task_result()</a></code> </p>
+        </td>
+        <td><p>Fetch single task result</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_task_results.html">rrq_task_results()</a></code> </p>
+        </td>
+        <td><p>Get the results of a group of tasks, returning them as a list.
+See rrq_task_result for getting the result of a single task.</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_task_retry.html">rrq_task_retry()</a></code> </p>
+        </td>
+        <td><p>Retry tasks</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_task_status.html">rrq_task_status()</a></code> </p>
+        </td>
+        <td><p>Fetch task statuses</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_task_times.html">rrq_task_times()</a></code> </p>
+        </td>
+        <td><p>Fetch task times</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_task_wait.html">rrq_task_wait()</a></code> </p>
+        </td>
+        <td><p>Wait for task to complete</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_tasks_wait.html">rrq_tasks_wait()</a></code> </p>
+        </td>
+        <td><p>Wait for group of tasks</p></td>
       </tr><tr><td>
           <p><code><a href="rrq_worker.html">rrq_worker</a></code> </p>
         </td>
@@ -119,13 +220,62 @@
         </td>
         <td><p>Create worker configuration</p></td>
       </tr><tr><td>
+          <p><code><a href="rrq_worker_config_list.html">rrq_worker_config_list()</a></code> </p>
+        </td>
+        <td><p>List worker configurations</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_worker_config_read.html">rrq_worker_config_read()</a></code> </p>
+        </td>
+        <td><p>Read worker configuration</p></td>
+      </tr><tr><td>
           <p><code><a href="rrq_worker_config_save.html">rrq_worker_config_save()</a></code> </p>
         </td>
         <td><p>Save a worker configuration</p></td>
       </tr><tr><td>
+          <p><code><a href="rrq_worker_config_save2.html">rrq_worker_config_save2()</a></code> </p>
+        </td>
+        <td><p>Save worker configuration</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_worker_delete_exited.html">rrq_worker_delete_exited()</a></code> </p>
+        </td>
+        <td><p>Clean up exited workers</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_worker_detect_exited.html">rrq_worker_detect_exited()</a></code> </p>
+        </td>
+        <td><p>Detect exited workers</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_worker_envir_set.html">rrq_worker_envir_set()</a></code> </p>
+        </td>
+        <td><p>Set worker environment</p></td>
+      </tr><tr><td>
           <p><code><a href="rrq_worker_expect.html">rrq_worker_expect()</a></code> <code><a href="rrq_worker_expect.html">rrq_worker_wait()</a></code> </p>
         </td>
         <td><p>Register expected workers</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_worker_info.html">rrq_worker_info()</a></code> </p>
+        </td>
+        <td><p>Worker information</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_worker_len.html">rrq_worker_len()</a></code> </p>
+        </td>
+        <td><p>Number of active workers</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_worker_list.html">rrq_worker_list()</a></code> </p>
+        </td>
+        <td><p>List active workers</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_worker_list_exited.html">rrq_worker_list_exited()</a></code> </p>
+        </td>
+        <td><p>List exited workers</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_worker_load.html">rrq_worker_load()</a></code> </p>
+        </td>
+        <td><p>Report on worker load</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_worker_log_tail.html">rrq_worker_log_tail()</a></code> </p>
+        </td>
+        <td><p>Returns the last (few) elements in the worker log, in a
+programmatically useful format (see Value).</p></td>
       </tr><tr><td>
           <p><code><a href="rrq_worker_script.html">rrq_worker_script()</a></code> </p>
         </td>
@@ -134,6 +284,18 @@
           <p><code><a href="rrq_worker_spawn.html">rrq_worker_spawn()</a></code> </p>
         </td>
         <td><p>Spawn a worker</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_worker_status.html">rrq_worker_status()</a></code> </p>
+        </td>
+        <td><p>Worker statuses</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_worker_stop.html">rrq_worker_stop()</a></code> </p>
+        </td>
+        <td><p>Stop workers</p></td>
+      </tr><tr><td>
+          <p><code><a href="rrq_worker_task_id.html">rrq_worker_task_id()</a></code> </p>
+        </td>
+        <td><p>Current task id for workers</p></td>
       </tr></tbody></table></div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
