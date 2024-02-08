@@ -126,8 +126,7 @@ t <- obj$enqueue(Sys.sleep(3600), separate_process = TRUE)
 ```{r, include = FALSE}
 # small sleep here needed so that the pid is actually available;
 # two small conditions to pass.
-rrq:::wait_status_change(obj$con, rrq:::rrq_keys(obj$queue_id), t,
-                         rrq:::TASK_PENDING)
+rrq:::wait_status_change(obj, t, rrq:::TASK_PENDING)
 rrq:::wait_timeout("pid not available in time", 10,
                    function() is.null(obj$task_info(t)$pid))
 ```
@@ -140,8 +139,7 @@ tools::pskill(info$pid)
 ```
 
 ```{r, include = FALSE}
-rrq:::wait_status_change(obj$con, rrq:::rrq_keys(obj$queue_id), t,
-                         rrq:::TASK_RUNNING)
+rrq:::wait_status_change(obj, t, rrq:::TASK_RUNNING)
 ```
 
 Because the task was run in a separate process, our worker could detect that the task has died unexpectedly:
@@ -199,8 +197,7 @@ t <- obj$enqueue(Sys.sleep(3600))
 ```
 
 ```{r, include = FALSE}
-rrq:::wait_status_change(obj$con, rrq:::rrq_keys(obj$queue_id), t,
-                         rrq:::TASK_PENDING)
+rrq:::wait_status_change(obj, t, rrq:::TASK_PENDING)
 ```
 
 The worker wil pick the task up fairly quickly, and the status will change to `RUNNING`:
