@@ -28,6 +28,15 @@ worker_run_task <- function(worker, private, task_id) {
 
 
 worker_run_task_local <- function(task, worker, private) {
+  if (is.null(task$type)) {
+    worker_run_task_local_old(task, worker, private)
+  } else {
+    worker_run_task_local_new(task, worker, private)
+  }
+}
+
+
+worker_run_task_local_old <- function(task, worker, private) {
   e <- expression_restore_locals(task, private$envir, private$store)
   result <- withCallingHandlers(
     expression_eval_safely(task$expr, e),
@@ -37,6 +46,63 @@ worker_run_task_local <- function(task, worker, private) {
          status = TASK_COMPLETE)
   } else {
     list(value = rrq_task_error(result$value, TASK_ERROR,
+                                private$keys$queue_id, task$id),
+         status = TASK_ERROR)
+  }
+}
+
+worker_run_task_local_new <- function(task, worker, private) {
+  envir <- private$envir
+  store <- private$store
+
+  top <- rlang::current_env() # not quite right, but better than nothing
+  local <- new.env(parent = emptyenv())
+  local$warnings <- collector(list())
+
+  result <- rlang::try_fetch({
+    ## Soon, we'll allow a change of directory here too with this:
+    ## > withr::local_dir(file.path(root$path$root, task$path))
+    if (task$type == "expr") {
+      if (!is.null(task$variables)) {
+        locals <- set_names(store$mget(task$variables), names(task$variables))
+        rlang::env_bind(envir, !!!locals)
+      }
+      eval(task$expr, envir)
+    } else { # task$type is call
+      fn <- store$get(task$fn)
+      args <- set_names(store$mget(task$args), names(task$args))
+      if (is.null(fn$name)) {
+        call <- rlang::call2(fn$value, !!!args)
+      } else if (is.null(fn$namespace)) {
+        envir[[fn$name]] <- fn$value
+        call <- rlang::call2(fn$name, !!!args)
+      } else {
+        call <- rlang::call2(fn$name, !!!args, .ns = fn$namespace)
+      }
+      eval(call, envir)
+    }
+  },
+  warning = function(e) {
+    local$warnings$add(list(e))
+    tryInvokeRestart("muffleWarning")
+  },
+  error = function(e) {
+    if (is.null(e$trace)) {
+      e$trace <- rlang::trace_back(top)
+    }
+    local$error <- e
+    NULL
+  })
+
+  if (is.null(local$error)) {
+    list(value = result, status = TASK_COMPLETE)
+  } else {
+    result <- local$error
+    warnings <- local$warnings$get()
+    if (length(warnings) > 0) {
+      result$warnings <- local$warnings$get()
+    }
+    list(value = rrq_task_error(result, TASK_ERROR,
                                 private$keys$queue_id, task$id),
          status = TASK_ERROR)
   }
