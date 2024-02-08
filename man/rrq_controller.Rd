@@ -167,7 +167,6 @@ after creation.}
 \item \href{#method-rrq_controller-worker_info}{\code{rrq_controller$worker_info()}}
 \item \href{#method-rrq_controller-worker_status}{\code{rrq_controller$worker_status()}}
 \item \href{#method-rrq_controller-worker_log_tail}{\code{rrq_controller$worker_log_tail()}}
-\item \href{#method-rrq_controller-worker_task_id}{\code{rrq_controller$worker_task_id()}}
 \item \href{#method-rrq_controller-worker_delete_exited}{\code{rrq_controller$worker_delete_exited()}}
 \item \href{#method-rrq_controller-worker_stop}{\code{rrq_controller$worker_stop()}}
 \item \href{#method-rrq_controller-worker_detect_exited}{\code{rrq_controller$worker_detect_exited()}}
@@ -1461,25 +1460,6 @@ all active workers are used.}
 
 \item{\code{n}}{Number of elements to select, the default being the single
 last entry. Use \code{Inf} or \code{0} to indicate that you want all log entries}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-rrq_controller-worker_task_id"></a>}}
-\if{latex}{\out{\hypertarget{method-rrq_controller-worker_task_id}{}}}
-\subsection{Method \code{worker_task_id()}}{
-Returns the task id that each worker is working on,
-if any.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_task_id(worker_ids = NULL)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{worker_ids}}{Optional vector of worker ids. If \code{NULL} then
-all active workers are used.}
 }
 \if{html}{\out{</div>}}
 }

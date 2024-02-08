@@ -1016,15 +1016,6 @@ rrq_controller <- R6::R6Class(
       rrq_worker_log_tail(worker_ids, n, self)
     },
 
-    ##' @description Returns the task id that each worker is working on,
-    ##' if any.
-    ##'
-    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
-    ##' all active workers are used.
-    worker_task_id = function(worker_ids = NULL) {
-      rrq_worker_task_id(worker_ids, self)
-    },
-
     ##' @description Cleans up workers known to have exited
     ##'
     ##' @param worker_ids Optional vector of worker ids. If `NULL` then
