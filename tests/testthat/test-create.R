@@ -44,6 +44,24 @@ test_that("can create a call task from a namespaced function", {
 })
 
 
+test_that("can create a call task from a non-exported function", {
+  obj <- test_rrq()
+  id <- rrq_task_create_call(ids:::toupper_initial, list("foo"),
+                             controller = obj)
+
+  d <- rrq_task_data(id, controller = obj)
+  expect_equal(d$type, "call")
+  expect_equal(d$fn, list(name = NULL,
+                          namespace = NULL,
+                          value = quote(ids:::toupper_initial)))
+  expect_equal(d$args, list("foo"))
+
+  w <- test_worker_blocking(obj)
+  w$step(TRUE)
+  expect_equal(rrq_task_result(id, controller = obj), "Foo")
+})
+
+
 test_that("can run a task using a function by name", {
   obj <- test_rrq()
   myfn <- sqrt

@@ -217,6 +217,10 @@ check_function <- function(quo, call = NULL) {
     value <- NULL
     name <- as.character(expr[[3]])
     namespace <- as.character(expr[[2]])
+  } else if (rlang::is_call(expr, ":::")) {
+    value <- expr
+    name <- NULL
+    namespace <- NULL
   } else if (rlang::is_symbol(expr)) {
     envir <- rlang::quo_get_env(quo)
     name <- as.character(expr)
