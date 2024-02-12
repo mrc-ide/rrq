@@ -153,8 +153,21 @@ rrq_task_data <- function(task_id, controller = NULL) {
     return(rrq_task_data(expr, controller))
   }
   task <- bin_to_object(expr)
-  data <- as.list(expression_restore_locals(task, emptyenv(), store))
-  task$objects <- data[names(task$objects)]
+  if (is.null(task$type)) {
+    task$type <- "legacy"
+    data <- as.list(expression_restore_locals(task, emptyenv(), store))
+    task$objects <- data[names(task$objects)]
+  } else {
+    if (task$type == "expr") {
+      if (!is.null(task$variables)) {
+        task$variables <- set_names(store$mget(task$variables),
+                                    names(task$variables))
+      }
+    } else {
+      task$fn <- store$get(task$fn)
+      task$args <- set_names(store$mget(task$args), names(task$args))
+    }
+  }
   task
 }
 
