@@ -13,10 +13,10 @@
 ##'   [redux::hiredis()]
 ##'
 ##' @param timeout_task_wait An optional default timeout to use when
-##'   waiting for tasks (e.g., with [rrq_task_wait], [rrq_tasks_wait],
-##'   etc). If not given, then we fall back on the global option
-##'   `rrq.timeout_task_wait`, and if that is not set, we wait forever
-##'   (i.e., `timeout_task_wait = Inf`).
+##'   waiting for tasks with [rrq_task_wait]. If not given, then we
+##'   fall back on the global option `rrq.timeout_task_wait`, and if
+##'   that is not set, we wait forever (i.e., `timeout_task_wait =
+##'   Inf`).
 ##'
 ##' @param follow An optional default logical to use for tasks
 ##'   that may (or may not) be retried. If not given we fall back
@@ -35,7 +35,7 @@
 ##'
 ##' @return An `rrq_controller2` object, which is opaque.
 ##' @export
-rrq_controller2 <- function(queue_id, con = redux::hiredis,
+rrq_controller2 <- function(queue_id, con = redux::hiredis(),
                             timeout_task_wait = NULL, follow = NULL,
                             check_version = TRUE) {
   ## We'll move the construction code here shortly, but this way makes

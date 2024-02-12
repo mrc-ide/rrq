@@ -623,104 +623,104 @@ rrq_task_cancel <- function(task_id, wait = TRUE, timeout_wait = 10,
 }
 
 
-##' Poll for a task to complete, returning the result when
-##' completed. If the task has already completed this is roughly
-##' equivalent to [rrq_task_result()]. See [rrq_tasks_wait()] for an
-##' efficient way of doing this for a group of tasks.
-##'
-##' @title Wait for task to complete
-##'
-##' @param task_id The single id that we will wait for
-##'
-##' @param timeout Optional timeout, in seconds, after which an error
-##'   will be thrown if the task has not completed. If not given,
-##'   falls back on the controller's `timeout_task_wait` (see
-##'   [rrq_controller2()])
-##'
-##' @param time_poll Optional time with which to "poll" for completion.
-##'   By default this will be 1 second; this is the time that each
-##'   request for a completed task may block for (however, if the task
-##'   is finished before this, the actual time waited for will be less).
-##'   Increasing this will reduce the responsiveness of your R session
-##'   to interrupting, but will cause slightly less network load.
-##'   Values less than 1s are not currently supported as this requires
-##'   a very recent Redis server.
-##'
-##' @param progress Optional logical indicating if a progress bar
-##'   should be displayed. If `NULL` we fall back on the value of the
-##'   global option `rrq.progress`, and if that is unset display a
-##'   progress bar if in an interactive session.
-##'
-##' @param error Logical, indicating if we should throw an error if
-##'   the task was not successful. See [rrq_task_result()] for
-##'   details.  Note that an error is always thrown if not all tasks
-##'   are fetched in time.
-##'
-##' @inheritParams rrq_task_times
-##'
-##' @return The task value, but we will change this soon
-##' @export
-rrq_task_wait <- function(task_id, timeout = NULL, time_poll = 1,
-                          progress = NULL, error = FALSE, follow = NULL,
-                          controller = NULL) {
-  controller <- get_controller(controller, call = rlang::current_env())
-  assert_scalar_character(task_id)
-  con <- controller$con
-  keys <- controller$keys
-  store <- controller$store
-  timeout <- timeout %||% controller$timeout_task_wait
-  follow <- follow %||% controller$follow
-  ## This is going to be refactored soon, to match the semantics in
-  ## hipercow and possibly use logwatch for the blocking wait.
-  ## Because we will then just return a logical vector, we can
-  ## collapse this and the next function.
-  tasks_wait(con, keys, store, task_id,
-             timeout, time_poll, progress, NULL, error, follow, TRUE)
-}
-
-
-##' Poll for a group of tasks to complete, returning the
-##' result as list when completed. If the tasks have already completed
-##' this is roughly equivalent to `tasks_result`.
+##' Wait for a task, or set of tasks, to complete.  If you have used
+##' `rrq` prior to version 0.8.0, you might expect this function to
+##' return the result, but we now return a logical value which
+##' indicates success or not.  You can fetch the task result with
+##' [rrq_task_result].
 ##'
 ##' @title Wait for group of tasks
 ##'
-##' @param task_ids A vector of task ids to poll for
+##' @param task_id A vector of task ids to poll for (can be one task
+##'   or many)
 ##'
 ##' @param timeout Optional timeout, in seconds, after which an error
 ##'   will be thrown if the task has not completed. If not given,
 ##'   falls back on the controller's `timeout_task_wait` (see
 ##'   [rrq_controller2])
 ##'
-##' @param time_poll Optional time with which to "poll" for completion
-##'   (default is 1s, see [rrq_task_wait()] for details)
+##' @param time_poll Optional time with which to "poll" for
+##'   completion.  By default this will be 1 second; this is the time
+##'   that each request for a completed task may block for (however,
+##'   if the task is finished before this, the actual time waited for
+##'   will be less).  Increasing this will reduce the responsiveness
+##'   of your R session to interrupting, but will cause slightly less
+##'   network load.  Values less than 1s are only suppored with Redis
+##'   server version 6.0.0 or greater (released September 2020).
 ##'
 ##' @param progress Optional logical indicating if a progress bar
 ##'   should be displayed. If `NULL` we fall back on the value of the
 ##'   global option `rrq.progress`, and if that is unset display a
 ##'   progress bar if in an interactive session.
 ##'
-##' @param error Logical, indicating if we should throw an error if
-##'   the task was not successful. See [rrq_task_result()] for
-##'   details.  Note that an error is always thrown if not all tasks
-##'   are fetched in time.
-##'
 ##' @inheritParams rrq_task_times
 ##'
-##' @return A list with task values, but we will change this soon
+##' @return A scalar logical value; `TRUE` if _all_ tasks complete
+##'   successfully and `FALSE` otherwise
 ##' @export
-rrq_tasks_wait <- function(task_ids, timeout = NULL, time_poll = 1,
-                           progress = NULL, error = FALSE, follow = NULL,
-                           controller = NULL) {
+rrq_task_wait <- function(task_id, timeout = NULL, time_poll = 1,
+                          progress = NULL, follow = NULL,
+                          controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
-  assert_character(task_ids)
+  assert_character(task_id)
   con <- controller$con
   keys <- controller$keys
   store <- controller$store
   timeout <- timeout %||% controller$timeout_task_wait
   follow <- follow %||% controller$follow
-  tasks_wait(con, keys, store, task_ids,
-             timeout, time_poll, progress, NULL, error, follow, FALSE)
+  time_poll <- validate_time_poll(con, time_poll, rlang::current_env())
+
+  if (length(task_id) == 0) {
+    cli::cli_abort("Can't wait on no tasks")
+  }
+
+  task_id_from <- if (follow) task_follow(con, keys, task_id) else task_id
+  status <- hash_result_to_character(con$HMGET(keys$task_status, task_id_from),
+                                     TASK_MISSING)
+  if (any(status == TASK_MISSING)) {
+    cli::cli_abort("Can't wait on missing tasks")
+  }
+  if (any(status == TASK_IMPOSSIBLE)) {
+    cli::cli_abort("Can't wait on impossible tasks")
+  }
+
+  key_complete <- rrq_key_task_complete(keys$queue_id, task_id_from)
+  incomplete <- c(TASK_PENDING, TASK_DEFERRED, TASK_RUNNING)
+
+  get_status <- function() {
+    waiting <- status %in% incomplete
+    if (any(waiting)) {
+      res <- con$pipeline(
+        redis$BLPOP(key_complete[waiting], time_poll),
+        redis$HMGET(keys$task_status, task_id_from[waiting]))
+      status[waiting] <<- hash_result_to_character(res[[2]], TASK_MISSING)
+    }
+    status
+  }
+
+  if (any(status %in% incomplete)) {
+    multiple <- length(task_id) > 1
+    name <- if (multiple) "tasks" else "task"
+    res <- logwatch::logwatch(
+      name,
+      get_status = get_status,
+      get_log = NULL,
+      show_log = FALSE,
+      multiple = multiple,
+      show_spinner = show_progress(progress),
+      poll = 0,
+      timeout = timeout,
+      status_waiting = c(TASK_PENDING, TASK_DEFERRED),
+      status_running = TASK_RUNNING,
+      status_timeout = "wait:timeout",
+      status_interrupt = "wait:interrupt")
+    if (any(res$status %in% c("wait:timeout", "wait:interrupt"))) {
+      cli::cli_abort("{name} did not complete in time")
+    }
+    status <- res$status
+  }
+  con$DEL(key_complete)
+  all(status == TASK_COMPLETE)
 }
 
 

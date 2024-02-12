@@ -817,7 +817,8 @@ rrq_controller <- R6::R6Class(
     ##'   in time.
     task_wait = function(task_id, timeout = NULL, time_poll = 1,
                          progress = NULL, error = FALSE, follow = NULL) {
-      rrq_task_wait(task_id, timeout, time_poll, progress, error, follow, self)
+      rrq_task_wait(task_id, timeout, time_poll, progress, follow, self)
+      self$task_result(task_ids, error = error, follow = follow)
     },
 
     ##' @description Poll for a group of tasks to complete, returning the
@@ -844,8 +845,8 @@ rrq_controller <- R6::R6Class(
     ##'   in time.
     tasks_wait = function(task_ids, timeout = NULL, time_poll = 1,
                           progress = NULL, error = FALSE, follow = NULL) {
-      rrq_tasks_wait(task_ids, timeout, time_poll, progress, error, follow,
-                     self)
+      rrq_task_wait(task_ids, timeout, time_poll, progress, follow, self)
+      self$tasks_result(task_ids, error = error, follow = follow)
     },
 
     ##' @description Delete one or more tasks
@@ -1445,7 +1446,7 @@ rrq_object_store <- function(con, keys) {
 
 verify_dependencies_exist <- function(controller, depends_on) {
   if (!is.null(depends_on)) {
-    dependencies_exist <- controller$task_exists(depends_on)
+    dependencies_exist <- rrq_task_exists(depends_on, controller = controller)
     if (!all(dependencies_exist)) {
       missing <- names(dependencies_exist[!dependencies_exist])
       error_msg <- ngettext(

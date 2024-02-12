@@ -2,44 +2,39 @@
 % Please edit documentation in R/rrq_task.R
 \name{rrq_task_wait}
 \alias{rrq_task_wait}
-\title{Wait for task to complete}
+\title{Wait for group of tasks}
 \usage{
 rrq_task_wait(
   task_id,
   timeout = NULL,
   time_poll = 1,
   progress = NULL,
-  error = FALSE,
   follow = NULL,
   controller = NULL
 )
 }
 \arguments{
-\item{task_id}{The single id that we will wait for}
+\item{task_id}{A vector of task ids to poll for (can be one task
+or many)}
 
 \item{timeout}{Optional timeout, in seconds, after which an error
 will be thrown if the task has not completed. If not given,
 falls back on the controller's \code{timeout_task_wait} (see
-\code{\link[=rrq_controller2]{rrq_controller2()}})}
+\link{rrq_controller2})}
 
-\item{time_poll}{Optional time with which to "poll" for completion.
-By default this will be 1 second; this is the time that each
-request for a completed task may block for (however, if the task
-is finished before this, the actual time waited for will be less).
-Increasing this will reduce the responsiveness of your R session
-to interrupting, but will cause slightly less network load.
-Values less than 1s are not currently supported as this requires
-a very recent Redis server.}
+\item{time_poll}{Optional time with which to "poll" for
+completion.  By default this will be 1 second; this is the time
+that each request for a completed task may block for (however,
+if the task is finished before this, the actual time waited for
+will be less).  Increasing this will reduce the responsiveness
+of your R session to interrupting, but will cause slightly less
+network load.  Values less than 1s are only suppored with Redis
+server version 6.0.0 or greater (released September 2020).}
 
 \item{progress}{Optional logical indicating if a progress bar
 should be displayed. If \code{NULL} we fall back on the value of the
 global option \code{rrq.progress}, and if that is unset display a
 progress bar if in an interactive session.}
-
-\item{error}{Logical, indicating if we should throw an error if
-the task was not successful. See \code{\link[=rrq_task_result]{rrq_task_result()}} for
-details.  Note that an error is always thrown if not all tasks
-are fetched in time.}
 
 \item{follow}{Optional logical, indicating if we should follow any
 redirects set up by doing \link{rrq_task_retry}. If not given, falls
@@ -53,11 +48,13 @@ we'll use the controller registered with
 \code{\link[=rrq_default_controller_set]{rrq_default_controller_set()}}.}
 }
 \value{
-The task value, but we will change this soon
+A scalar logical value; \code{TRUE} if \emph{all} tasks complete
+successfully and \code{FALSE} otherwise
 }
 \description{
-Poll for a task to complete, returning the result when
-completed. If the task has already completed this is roughly
-equivalent to \code{\link[=rrq_task_result]{rrq_task_result()}}. See \code{\link[=rrq_tasks_wait]{rrq_tasks_wait()}} for an
-efficient way of doing this for a group of tasks.
+Wait for a task, or set of tasks, to complete.  If you have used
+\code{rrq} prior to version 0.8.0, you might expect this function to
+return the result, but we now return a logical value which
+indicates success or not.  You can fetch the task result with
+\link{rrq_task_result}.
 }
