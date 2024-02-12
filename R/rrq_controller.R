@@ -818,7 +818,7 @@ rrq_controller <- R6::R6Class(
     task_wait = function(task_id, timeout = NULL, time_poll = 1,
                          progress = NULL, error = FALSE, follow = NULL) {
       rrq_task_wait(task_id, timeout, time_poll, progress, follow, self)
-      self$task_result(task_ids, error = error, follow = follow)
+      self$task_result(task_id, error = error, follow = follow)
     },
 
     ##' @description Poll for a group of tasks to complete, returning the
