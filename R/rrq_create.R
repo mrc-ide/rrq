@@ -124,7 +124,7 @@ rrq_task_create_expr <- function(expr, queue = NULL,
 ##'
 ##' @param fn The function to call
 ##'
-##' @param call A list of arguments to pass to the function
+##' @param args A list of arguments to pass to the function
 ##'
 ##' @inheritParams rrq_task_create_expr
 ##'

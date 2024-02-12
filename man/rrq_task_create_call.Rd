@@ -17,6 +17,8 @@ rrq_task_create_call(
 \arguments{
 \item{fn}{The function to call}
 
+\item{args}{A list of arguments to pass to the function}
+
 \item{queue}{The queue to add the task to; if not specified the
 "default" queue (which all workers listen to) will be used. If
 you have configured workers to listen to more than one queue you
@@ -39,8 +41,6 @@ removed from the queue.}
 \item{controller}{The controller to use.  If not given (or \code{NULL})
 we'll use the controller registered with
 \code{\link[=rrq_default_controller_set]{rrq_default_controller_set()}}.}
-
-\item{call}{A list of arguments to pass to the function}
 }
 \value{
 A task identifier (a 32 character hex string) that you can
