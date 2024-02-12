@@ -157,6 +157,14 @@ test_that("can use escape hatch", {
 })
 
 
+test_that("An expression must be a call", {
+  obj <- test_rrq()
+  expect_error(
+    rrq_task_create_expr(TRUE, controller = obj),
+    "Expected 'expr' to be a function call")
+})
+
+
 test_that("pulling from a symbol must still be a call", {
   obj <- test_rrq()
   myexpr <- quote(sqrt)
