@@ -14,7 +14,6 @@ test_that("can wait on a completed task", {
 
 
 test_that("can error if tasks don't complete on time", {
-  options(error=recover)
   obj <- test_rrq()
   t <- rrq_task_create_expr(sqrt(2), controller = obj)
   new_redis <- obj$to_v2()$con$version() >= numeric_version("6.0.0")

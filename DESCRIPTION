@@ -35,3 +35,5 @@ Roxygen: list(markdown = TRUE, r6 = TRUE)
 Language: en-GB
 Config/testthat/edition: 3
 VignetteBuilder: knitr
+Remotes:
+    reside-ic/logwatch
