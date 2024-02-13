@@ -26,6 +26,10 @@ rrq_worker_wait2(
 
 \item{worker_ids}{Ids of expected workers}
 
+\item{controller}{The controller to use.  If not given (or \code{NULL})
+we'll use the controller registered with
+\code{\link[=rrq_default_controller_set]{rrq_default_controller_set()}}.}
+
 \item{key_alive}{A key as returned by \code{rrq_worker_expect}}
 
 \item{timeout}{Number of seconds to wait for workers to appear. If

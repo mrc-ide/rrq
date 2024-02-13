@@ -100,6 +100,9 @@ rrq_worker_expect <- function(obj, worker_ids) {
 
 
 ##' @rdname rrq_worker_expect
+##' @param controller The controller to use.  If not given (or `NULL`)
+##'   we'll use the controller registered with
+##'   [rrq_default_controller_set()].
 ##' @export
 rrq_worker_expect2 <- function(worker_ids, controller = NULL) {
   controller <- get_controller(controller)
