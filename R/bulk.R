@@ -132,14 +132,14 @@ rrq_bulk_wait <- function(con, keys, store, dat, timeout, time_poll, progress,
   assert_is(dat, "rrq_bulk")
   ret <- tasks_wait(con, keys, store, dat$task_ids, timeout,
                     time_poll, progress, dat$key_complete,
-                    error = FALSE, follow = follow, single = FALSE)
+                    error = FALSE, follow = follow)
   if (delete) {
     ## TODO: not ideal really
     controller <- rrq_controller2(keys$queue_id, con)
     rrq_task_delete(dat$task_ids, check = FALSE, controller)
   }
   if (error) {
-    throw_task_errors(ret, single = FALSE)
+    throw_task_errors(ret)
   }
   set_names(ret, dat$names)
 }
