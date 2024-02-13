@@ -680,9 +680,6 @@ rrq_task_wait <- function(task_id, timeout = NULL, time_poll = 1,
   if (any(status == TASK_MISSING)) {
     cli::cli_abort("Can't wait on missing tasks")
   }
-  if (any(status == TASK_IMPOSSIBLE)) {
-    cli::cli_abort("Can't wait on impossible tasks")
-  }
 
   key_complete <- rrq_key_task_complete(keys$queue_id, task_id_from)
   incomplete <- c(TASK_PENDING, TASK_DEFERRED, TASK_RUNNING)

@@ -70,13 +70,6 @@ test_that("fail early if we can't wait", {
                "Can't wait on missing tasks")
   expect_error(rrq_task_wait(c(t, ids::random_id(2)), controller = obj),
                "Can't wait on missing tasks")
-
-  t2 <- rrq_task_create_expr(sqrt(3), controller = obj, depends_on = t)
-  rrq_task_cancel(t[[1]], controller = obj)
-  expect_error(rrq_task_wait(t2, controller = obj),
-               "Can't wait on impossible tasks")
-  expect_error(rrq_task_wait(c(t2, t), controller = obj),
-               "Can't wait on impossible tasks")
 })
 
 
