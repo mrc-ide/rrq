@@ -409,5 +409,5 @@ test_that("bulk expr requires a data.frame", {
   obj <- test_rrq()
   expect_error(
     rrq_task_create_bulk_expr(identity(x), 1:5, controller = obj),
-    "'data' must have at least one row")
+    "Expected 'data' to be a data.frame")
 })

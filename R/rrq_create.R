@@ -284,7 +284,7 @@ rrq_task_create_bulk_call <- function(fn, data, args = NULL,
   } else {
     nc <- 1
     nr <- length(data)
-    data <- as.list(data)
+    data <- lapply(data, function(x) list(x))
   }
   if (nr == 0) {
     cli::cli_abort(
