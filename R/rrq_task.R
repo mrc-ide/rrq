@@ -158,15 +158,7 @@ rrq_task_data <- function(task_id, controller = NULL) {
     data <- as.list(expression_restore_locals(task, emptyenv(), store))
     task$objects <- data[names(task$objects)]
   } else {
-    if (task$type == "expr") {
-      if (!is.null(task$variables)) {
-        task$variables <- set_names(store$mget(task$variables),
-                                    names(task$variables))
-      }
-    } else {
-      task$fn <- store$get(task$fn)
-      task$args <- set_names(store$mget(task$args), names(task$args))
-    }
+    task <- task_load_from_store(task, store)
   }
   task
 }
@@ -813,4 +805,27 @@ rrq_task_retry <- function(task_ids, controller = NULL) {
       queue_push))
 
   task_ids_new
+}
+
+
+task_load_from_store <- function(task, store) {
+  if (task$type == "expr") {
+    if (!is.null(task$variables)) {
+      if (is.null(task$variable_in_store)) {
+        task$variables <- set_names(store$mget(task$variables),
+                                    names(task$variables))
+      } else if (any(task$variable_in_store)) {
+        task$variables[task$variable_in_store] <-
+          store$mget(task$variables[task$variable_in_store])
+      }
+    }
+  } else {
+    task$fn <- store$get(task$fn)
+    if (is.null(task$arg_in_store)) {
+      task$args <- set_names(store$mget(task$args), names(task$args))
+    } else if (any(task$arg_in_store)) {
+      task$args[task$arg_in_store] <- store$mget(task$args[task$arg_in_store])
+    }
+  }
+  task
 }

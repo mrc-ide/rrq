@@ -232,3 +232,15 @@ last <- function(x) {
 rep_along <- function(x, y) {
   rep_len(x, length(y))
 }
+
+
+df_rows <- function(d) {
+  i <- vlapply(d, function(x) is.list(x) && inherits(x, "AsIs"))
+  ret <- lapply(seq_len(nrow(d)), function(j) as.list(d[j, ]))
+  if (any(i)) {
+    for (j in seq_along(ret)) {
+      ret[[j]][i] <- lapply(ret[[j]][i], function(x) x[[1]])
+    }
+  }
+  ret
+}
