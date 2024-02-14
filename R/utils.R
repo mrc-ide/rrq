@@ -235,7 +235,7 @@ rep_along <- function(x, y) {
 
 
 df_rows <- function(d) {
-  i <- vlapply(d, function(x) is.list(x) && inherits(x, "AsIs"))
+  i <- vlapply(d, is.list)
   ret <- lapply(seq_len(nrow(d)), function(j) as.list(d[j, ]))
   if (any(i)) {
     for (j in seq_along(ret)) {
