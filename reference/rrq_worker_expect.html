@@ -19,7 +19,7 @@ rrq_worker_spawn)."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.6</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.7</span>
       </span>
     </div>
 
@@ -75,7 +75,17 @@ or more workers will write to when they start up (as used by
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rrq_worker_expect</span><span class="op">(</span><span class="va">obj</span>, <span class="va">worker_ids</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">rrq_worker_wait</span><span class="op">(</span><span class="va">obj</span>, <span class="va">key_alive</span>, timeout <span class="op">=</span> <span class="cn">Inf</span>, poll <span class="op">=</span> <span class="fl">1</span>, progress <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">rrq_worker_expect2</span><span class="op">(</span><span class="va">worker_ids</span>, controller <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">rrq_worker_wait</span><span class="op">(</span><span class="va">obj</span>, <span class="va">key_alive</span>, timeout <span class="op">=</span> <span class="cn">Inf</span>, poll <span class="op">=</span> <span class="fl">1</span>, progress <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">rrq_worker_wait2</span><span class="op">(</span></span>
+<span>  <span class="va">key_alive</span>,</span>
+<span>  timeout <span class="op">=</span> <span class="cn">Inf</span>,</span>
+<span>  poll <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  progress <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  controller <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -86,6 +96,12 @@ or more workers will write to when they start up (as used by
 
 <dt>worker_ids</dt>
 <dd><p>Ids of expected workers</p></dd>
+
+
+<dt>controller</dt>
+<dd><p>The controller to use.  If not given (or <code>NULL</code>)
+we'll use the controller registered with
+<code><a href="rrq_default_controller_set.html">rrq_default_controller_set()</a></code>.</p></dd>
 
 
 <dt>key_alive</dt>

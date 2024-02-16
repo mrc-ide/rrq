@@ -19,7 +19,7 @@ to rrq_controller."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.6</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.7</span>
       </span>
     </div>
 
@@ -75,7 +75,7 @@ to <code>rrq_controller</code>.</p>
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rrq_controller2</span><span class="op">(</span></span>
 <span>  <span class="va">queue_id</span>,</span>
-<span>  con <span class="op">=</span> <span class="fu">redux</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span>,</span>
+<span>  con <span class="op">=</span> <span class="fu">redux</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/redux/man/hiredis.html" class="external-link">hiredis</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  timeout_task_wait <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  follow <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  check_version <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -98,10 +98,9 @@ connection using default ports, or environment variables set as in
 
 <dt>timeout_task_wait</dt>
 <dd><p>An optional default timeout to use when
-waiting for tasks (e.g., with <a href="rrq_task_wait.html">rrq_task_wait</a>, <a href="rrq_tasks_wait.html">rrq_tasks_wait</a>,
-etc). If not given, then we fall back on the global option
-<code>rrq.timeout_task_wait</code>, and if that is not set, we wait forever
-(i.e., <code>timeout_task_wait = Inf</code>).</p></dd>
+waiting for tasks with <a href="rrq_task_wait.html">rrq_task_wait</a>. If not given, then we
+fall back on the global option <code>rrq.timeout_task_wait</code>, and if
+that is not set, we wait forever (i.e., <code>timeout_task_wait = Inf</code>).</p></dd>
 
 
 <dt>follow</dt>
