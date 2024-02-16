@@ -6,7 +6,7 @@
 \usage{
 rrq_controller2(
   queue_id,
-  con = redux::hiredis,
+  con = redux::hiredis(),
   timeout_task_wait = NULL,
   follow = NULL,
   check_version = TRUE
@@ -22,10 +22,9 @@ connection using default ports, or environment variables set as in
 \code{\link[redux:hiredis]{redux::hiredis()}}}
 
 \item{timeout_task_wait}{An optional default timeout to use when
-waiting for tasks (e.g., with \link{rrq_task_wait}, \link{rrq_tasks_wait},
-etc). If not given, then we fall back on the global option
-\code{rrq.timeout_task_wait}, and if that is not set, we wait forever
-(i.e., \code{timeout_task_wait = Inf}).}
+waiting for tasks with \link{rrq_task_wait}. If not given, then we
+fall back on the global option \code{rrq.timeout_task_wait}, and if
+that is not set, we wait forever (i.e., \code{timeout_task_wait = Inf}).}
 
 \item{follow}{An optional default logical to use for tasks
 that may (or may not) be retried. If not given we fall back

@@ -95,12 +95,23 @@ rrq_worker_spawn <- function(obj, n = 1, logdir = NULL,
 ##' @export
 rrq_worker_expect <- function(obj, worker_ids) {
   assert_is(obj, "rrq_controller")
-  con <- obj$con
-  keys <- rrq_keys(obj$queue_id)
+  rrq_worker_expect2(worker_ids, obj)
+}
 
-  key_alive <- rrq_key_worker_alive(obj$queue_id)
-  obj$con$HMSET(keys$worker_alive, worker_ids, rep_along(key_alive, worker_ids))
-  obj$con$HSET(keys$worker_expect, key_alive, object_to_bin(worker_ids))
+
+##' @rdname rrq_worker_expect
+##' @param controller The controller to use.  If not given (or `NULL`)
+##'   we'll use the controller registered with
+##'   [rrq_default_controller_set()].
+##' @export
+rrq_worker_expect2 <- function(worker_ids, controller = NULL) {
+  controller <- get_controller(controller)
+  con <- controller$con
+  keys <- controller$keys
+
+  key_alive <- rrq_key_worker_alive(controller$queue_id)
+  con$HMSET(keys$worker_alive, worker_ids, rep_along(key_alive, worker_ids))
+  con$HSET(keys$worker_expect, key_alive, object_to_bin(worker_ids))
 
   key_alive
 }
@@ -123,10 +134,20 @@ rrq_worker_expect <- function(obj, worker_ids) {
 rrq_worker_wait <- function(obj, key_alive, timeout = Inf, poll = 1,
                             progress = NULL) {
   assert_is(obj, "rrq_controller")
-  keys <- rrq_keys(obj$queue_id)
+  rrq_worker_wait2(key_alive, timeout, poll, progress, obj)
+}
+
+
+##' @rdname rrq_worker_expect
+##' @export
+rrq_worker_wait2 <- function(key_alive, timeout = Inf, poll = 1,
+                             progress = NULL, controller = NULL) {
+  controller <- get_controller(controller)
+  con <- controller$con
+  keys <- controller$keys
   is_dead <- function() FALSE
   path_logs <- NULL
-  worker_wait_alive(obj$con, keys, key_alive, is_dead, path_logs,
+  worker_wait_alive(con, keys, key_alive, is_dead, path_logs,
                     timeout, poll, progress)
 }
 

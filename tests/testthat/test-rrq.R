@@ -169,11 +169,8 @@ test_that("wait for tasks", {
   expect_equal(res, set_names(list(0.2, 0.2), c(t3, t4)))
 
   expect_error(
-    obj$tasks_wait(c(t1, t2), time_poll = 0.1),
-    "'time_poll' must be integer-like")
-  expect_error(
     obj$tasks_wait(c(t1, t2), time_poll = -1),
-    "'time_poll' cannot be less than 1")
+    "'time_poll' cannot be less than 0")
 })
 
 

@@ -817,7 +817,8 @@ rrq_controller <- R6::R6Class(
     ##'   in time.
     task_wait = function(task_id, timeout = NULL, time_poll = 1,
                          progress = NULL, error = FALSE, follow = NULL) {
-      rrq_task_wait(task_id, timeout, time_poll, progress, error, follow, self)
+      rrq_task_wait(task_id, timeout, time_poll, progress, follow, self)
+      self$task_result(task_id, error = error, follow = follow)
     },
 
     ##' @description Poll for a group of tasks to complete, returning the
@@ -844,8 +845,8 @@ rrq_controller <- R6::R6Class(
     ##'   in time.
     tasks_wait = function(task_ids, timeout = NULL, time_poll = 1,
                           progress = NULL, error = FALSE, follow = NULL) {
-      rrq_tasks_wait(task_ids, timeout, time_poll, progress, error, follow,
-                     self)
+      rrq_task_wait(task_ids, timeout, time_poll, progress, follow, self)
+      self$tasks_result(task_ids, error = error, follow = follow)
     },
 
     ##' @description Delete one or more tasks
@@ -1336,30 +1337,6 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
 }
 
 
-worker_log_tail_1 <- function(con, keys, worker_id, n = 1) {
-  ## More intuitive `n` behaviour for "print all entries"; n of Inf
-  if (identical(n, Inf)) {
-    n <- 0
-  }
-  log_key <- rrq_key_worker_log(keys$queue_id, worker_id)
-  log <- as.character(con$LRANGE(log_key, -n, -1))
-  worker_log_parse(log, worker_id)
-}
-
-
-worker_log_parse <- function(log, worker_id) {
-  re <- "^([0-9.]+)(/[0-9]+)? ([^ ]+) ?(.*)$"
-  if (!all(grepl(re, log))) {
-    stop("Corrupt log")
-  }
-  time <- as.numeric(sub(re, "\\1", log))
-  child <- as.integer(sub("/", "", sub(re, "\\2", log)))
-  command <- sub(re, "\\3", log)
-  message <- lstrip(sub(re, "\\4", log))
-  data_frame(worker_id, child, time, command, message)
-}
-
-
 controller_info <- function() {
   list(hostname = hostname(),
        pid = process_id(),
@@ -1378,16 +1355,13 @@ worker_naturalsort <- function(x) {
 
 
 tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
-                       progress, key_complete, error, follow, single,
+                       progress, key_complete, error, follow,
                        call = NULL) {
   ## This can be relaxed in recent Redis >= 6.0.0 as we then interpret
   ## time_poll as a double. To do this efficiently we'll want to get
   ## the version information stored into the redux client, which is
   ## not hard as we already do some negotiation
-  assert_integer_like(time_poll)
-  if (time_poll < 1L) {
-    cli::cli_abort("'time_poll' cannot be less than 1", call = call)
-  }
+  time_poll <- validate_time_poll(con, time_poll, call)
   if (follow) {
     task_ids_from <- task_follow(con, keys, task_ids)
   } else {
@@ -1398,23 +1372,12 @@ tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
     hash_exists(con, keys$task_result, task_ids_from, TRUE),
     task_ids_from)
 
-  if (is.null(key_complete)) {
-    key_complete <- rrq_key_task_complete(keys$queue_id, task_ids_from)
-    fetch <- function() {
-      tmp <- con$BLPOP(key_complete[!done], time_poll)
-      if (!is.null(tmp)) {
-        done[[tmp[[2L]]]] <<- TRUE
-      }
-      done
+  fetch <- function() {
+    tmp <- con$BLPOP(key_complete, time_poll)
+    if (!is.null(tmp)) {
+      done[[tmp[[2L]]]] <<- TRUE
     }
-  } else {
-    fetch <- function() {
-      tmp <- con$BLPOP(key_complete, time_poll)
-      if (!is.null(tmp)) {
-        done[[tmp[[2L]]]] <<- TRUE
-      }
-      done
-    }
+    done
   }
 
   if (!all(done)) {
@@ -1423,11 +1386,7 @@ tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
 
   ## A bit inefficient, but we won't do it this way for long:
   controller <- rrq_controller2(keys$queue_id, con)
-  if (single) {
-    rrq_task_result(task_ids_from, error = error, controller = controller)
-  } else {
-    rrq_task_results(task_ids_from, error = error, controller = controller)
-  }
+  rrq_task_results(task_ids_from, error = error, controller = controller)
 }
 
 
@@ -1445,7 +1404,7 @@ rrq_object_store <- function(con, keys) {
 
 verify_dependencies_exist <- function(controller, depends_on) {
   if (!is.null(depends_on)) {
-    dependencies_exist <- controller$task_exists(depends_on)
+    dependencies_exist <- rrq_task_exists(depends_on, controller = controller)
     if (!all(dependencies_exist)) {
       missing <- names(dependencies_exist[!dependencies_exist])
       error_msg <- ngettext(
@@ -1458,17 +1417,10 @@ verify_dependencies_exist <- function(controller, depends_on) {
   invisible(TRUE)
 }
 
-throw_task_errors <- function(res, single) {
-  if (single) {
-    stopifnot(length(res) == 1)
-    if (inherits(res[[1]], "rrq_task_error")) {
-      stop(res[[1]])
-    }
-  } else {
-    is_error <- vlapply(res, inherits, "rrq_task_error")
-    if (any(is_error)) {
-      stop(rrq_task_error_group(unname(res[is_error]), length(res)))
-    }
+throw_task_errors <- function(res) {
+  is_error <- vlapply(res, inherits, "rrq_task_error")
+  if (any(is_error)) {
+    stop(rrq_task_error_group(unname(res[is_error]), length(res)))
   }
 }
 

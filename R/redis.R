@@ -61,3 +61,24 @@ hash_exists <- function(con, key, field, over_fields = FALSE) {
     as.logical(viapply(key, con$HEXISTS, field))
   }
 }
+
+
+validate_time_poll <- function(con, time_poll, call = NULL) {
+  assert_scalar_numeric(time_poll, name = "time_poll", call = call)
+  if (con$version() < numeric_version("6.0.0")) {
+    assert_integer_like(time_poll)
+  }
+  if (time_poll < 0L) {
+    cli::cli_abort("'time_poll' cannot be less than 0", call = call)
+  }
+  time_poll
+}
+
+
+hash_result_to_character <- function(x, missing = NA_character_) {
+  i <- vlapply(x, is.null)
+  if (any(i) && !is.null(missing)) {
+    x[vlapply(x, is.null)] <- missing
+  }
+  list_to_character(x)
+}

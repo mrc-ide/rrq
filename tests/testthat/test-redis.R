@@ -109,3 +109,24 @@ test_that("hash_exists", {
   expect_equal(hash_exists(con, key, field[[2]]),
                c(TRUE, FALSE, FALSE))
 })
+
+
+test_that("validate poll time", {
+  con_old <- list(version = function() numeric_version("5.0.0"))
+  con_new <- list(version = function() numeric_version("6.0.0"))
+
+  expect_equal(validate_time_poll(con_old, 1), 1)
+  expect_equal(validate_time_poll(con_new, 1), 1)
+
+  expect_error(validate_time_poll(con_old, 0.1),
+               "'time_poll' must be integer-like")
+  expect_equal(validate_time_poll(con_new, 0.1), 0.1)
+})
+
+
+test_that("convert hash result to character", {
+  expect_equal(hash_result_to_character(list()), character())
+  expect_equal(hash_result_to_character(list("a")), c("a"))
+  expect_equal(hash_result_to_character(list("a", NULL)), c("a", NA))
+  expect_equal(hash_result_to_character(list("a", NULL), "x"), c("a", "x"))
+})

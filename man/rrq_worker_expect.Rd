@@ -2,17 +2,33 @@
 % Please edit documentation in R/worker_spawn.R
 \name{rrq_worker_expect}
 \alias{rrq_worker_expect}
+\alias{rrq_worker_expect2}
 \alias{rrq_worker_wait}
+\alias{rrq_worker_wait2}
 \title{Register expected workers}
 \usage{
 rrq_worker_expect(obj, worker_ids)
 
+rrq_worker_expect2(worker_ids, controller = NULL)
+
 rrq_worker_wait(obj, key_alive, timeout = Inf, poll = 1, progress = NULL)
+
+rrq_worker_wait2(
+  key_alive,
+  timeout = Inf,
+  poll = 1,
+  progress = NULL,
+  controller = NULL
+)
 }
 \arguments{
 \item{obj}{A rrq_controller object}
 
 \item{worker_ids}{Ids of expected workers}
+
+\item{controller}{The controller to use.  If not given (or \code{NULL})
+we'll use the controller registered with
+\code{\link[=rrq_default_controller_set]{rrq_default_controller_set()}}.}
 
 \item{key_alive}{A key as returned by \code{rrq_worker_expect}}
 

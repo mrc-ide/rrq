@@ -8,6 +8,6 @@ test_that("use task wait timeout when waiting for tasks", {
 
   t <- obj$enqueue(slowdouble(5))
   err <- expect_error(obj$task_wait(t),
-                      "Exceeded maximum time")
+                      "task did not complete in time")
   expect_equal(obj$task_wait(t, timeout = 10), 10)
 })
