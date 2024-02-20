@@ -88,6 +88,12 @@
     <loc>/reference/rrq_task_cancel.html</loc>
   </url>
   <url>
+    <loc>/reference/rrq_task_create_bulk_call.html</loc>
+  </url>
+  <url>
+    <loc>/reference/rrq_task_create_bulk_expr.html</loc>
+  </url>
+  <url>
     <loc>/reference/rrq_task_create_call.html</loc>
   </url>
   <url>
