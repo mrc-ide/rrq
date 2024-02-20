@@ -157,3 +157,24 @@ test_that("Detect serialised objects", {
   expect_false(is_serialized_object(as.raw(integer(0))))
   expect_false(is_serialized_object(as.raw(as.raw(c(0x42, 0x0a, 0:10)))))
 })
+
+
+test_that("can break a df into rows", {
+  d <- data.frame(x = 1:3, y = c("a", "b", "c"))
+  expect_equal(df_rows(d), list(list(x = 1, y = "a"),
+                                list(x = 2, y = "b"),
+                                list(x = 3, y = "c")))
+  expect_equal(df_rows(d[1]), list(list(x = 1),
+                                   list(x = 2),
+                                   list(x = 3)))
+})
+
+
+test_that("can break a df with list columns into rows", {
+  d <- data.frame(x = 1:3,
+                  y = c("a", "b", "c"),
+                  z = I(lapply(1:3, seq_len)))
+  expect_equal(df_rows(d), list(list(x = 1, y = "a", z = seq_len(1)),
+                                list(x = 2, y = "b", z = seq_len(2)),
+                                list(x = 3, y = "c", z = seq_len(3))))
+})

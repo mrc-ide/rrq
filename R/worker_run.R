@@ -62,15 +62,15 @@ worker_run_task_local_new <- function(task, worker, private) {
   result <- rlang::try_fetch({
     ## Soon, we'll allow a change of directory here too with this:
     ## > withr::local_dir(file.path(root$path$root, task$path))
+    task <- task_load_from_store(task, store)
     if (task$type == "expr") {
       if (!is.null(task$variables)) {
-        locals <- set_names(store$mget(task$variables), names(task$variables))
-        rlang::env_bind(envir, !!!locals)
+        rlang::env_bind(envir, !!!task$variables)
       }
       eval(task$expr, envir)
     } else { # task$type is call
-      fn <- store$get(task$fn)
-      args <- set_names(store$mget(task$args), names(task$args))
+      fn <- task$fn
+      args <- task$args
       if (is.null(fn$name)) {
         call <- rlang::call2(fn$value, !!!args)
       } else if (is.null(fn$namespace)) {

@@ -157,6 +157,166 @@ rrq_task_create_call <- function(fn, args, queue = NULL,
 }
 
 
+##' Create a bulk set of tasks. Variables in `data` take precedence
+##' over variables in the environment in which `expr` was
+##' created. There is no "pronoun" support yet (see rlang docs).  Use
+##' `!!` to pull a variable from the environment if you need to, but
+##' be careful not to inject something really large (e.g., any vector
+##' really) or you'll end up with a revolting expression and poor
+##' backtraces.
+##'
+##' @title Create bulk tasks from an expression
+##'
+##' @param expr An expression, as for [rrq_task_create_expr]
+##'
+##' @param data Data that you wish to inject _row-wise_ into the expression
+##'
+##' @inheritParams rrq_task_create_expr
+##'
+##' @return A character vector with task identifiers; this will have a
+##'   length equal to the number of row in `data`
+##'
+##' @export
+rrq_task_create_bulk_expr <- function(expr, data, queue = NULL,
+                                      separate_process = FALSE,
+                                      timeout_task_run = NULL,
+                                      depends_on = NULL,
+                                      controller = NULL) {
+  controller <- get_controller(controller)
+  verify_dependencies_exist(controller, depends_on)
+  if (!inherits(data, "data.frame")) {
+    cli::cli_abort("Expected 'data' to be a data.frame (or tbl, etc)",
+                   arg = "data")
+  }
+  nr <- nrow(data)
+  nc <- ncol(data)
+  if (nr == 0) {
+    cli::cli_abort("'data' must have at least one row", arg = "data")
+  }
+
+  ## This will allow `!!x` to reference a value in the enclosing
+  ## environment and we'll splice it into the expression. This will
+  ## work pretty well for simple things and _terribly_ for large
+  ## objects, which would be better pulled in by name if possible.
+  ##
+  ## We could do this using "eval_tidy" and use "pronouns" but that
+  ## will require a little more setup; probably worth considering
+  ## though.  For now this is fine, but we can improve this by:
+  ##
+  ## * Not doing the injection until later
+  ## * Setting up the bits for eval_tidy and exporting them
+  ## * Analysing the expression before injection and making sure
+  ##   that anything injected is small
+  expr <- check_expression(rlang::inject(rlang::enquo(expr)))
+
+  task_ids <- ids::random_id(nr)
+
+  extra <- setdiff(find_vars(expr$value), names(data))
+  variables <- task_variables(extra, expr$envir)
+  if (length(variables) > 0) {
+    variables_hash <- controller$store$mset(variables, task_ids)
+  } else {
+    variables_hash <- NULL
+  }
+
+  variable_in_store <- rep(c(TRUE, FALSE), c(length(variables_hash), nc))
+
+  data <- df_rows(data)
+  dat <- lapply(seq_len(nr), function(i) {
+    variables_i <- c(variables_hash, data[[i]])
+    dat <- list(type = "expr", expr = expr$value, variables = variables_i,
+                variable_in_store = variable_in_store)
+    object_to_bin(dat)
+  })
+
+  task_submit2(controller, task_ids, dat, queue, separate_process,
+               timeout_task_run, depends_on)
+}
+
+
+##' Create a bulk set of tasks based on applying a function over a
+##' vector or [data.frame].  This is the bulk equivalent of
+##' [rrq_task_create_call], in the same way that
+##' [rrq_task_create_bulk_expr] is a bulk version of
+##' [rrq_task_create_expr].
+##'
+##' @title Create bulk tasks from a call
+##'
+##' @param fn The function to call
+##'
+##' @param data The data to apply the function over.  This can be a
+##'   vector or list, in which case we act like `lapply` and apply
+##'   `fn` to each element in turn.  Alternatively, this can be a
+##'   [data.frame], in which case each row is taken as a set of
+##'   arguments to `fn`.  Note that if `data` is a `data.frame` then
+##'   all arguments to `fn` are named.
+##'
+##' @param args Additional arguments to `fn`, shared across all calls.
+##'   These must be named.  If you are using a `data.frame` for
+##'   `data`, you'd probably be better off adding additional columns
+##'   that don't vary across rows, but the end result is the same.
+##'
+##' @inheritParams rrq_task_create_call
+##'
+##' @return A vector of task identfiers; this will have the length as
+##'   `data` has rows if it is a `data.frame`, otherwise it has the
+##'   same length as `data`
+##'
+##' @export
+rrq_task_create_bulk_call <- function(fn, data, args = NULL,
+                                      queue = NULL,
+                                      separate_process = FALSE,
+                                      timeout_task_run = NULL,
+                                      depends_on = NULL,
+                                      controller = NULL) {
+  controller <- get_controller(controller)
+  verify_dependencies_exist(controller, depends_on)
+  fn <- check_function(rlang::enquo(fn), rlang::current_env())
+  if (!is.null(args)) {
+    args <- check_args(args)
+  }
+
+  is_data_frame <- inherits(data, "data.frame")
+  if (is_data_frame) {
+    nc <- ncol(data)
+    nr <- nrow(data)
+    data <- df_rows(data)
+  } else {
+    nc <- 1
+    nr <- length(data)
+    data <- lapply(data, function(x) list(x))
+  }
+  if (nr == 0) {
+    cli::cli_abort(
+      "'data' must have at least one {if (is_data_frame) 'row' else 'element'}",
+      arg = "data")
+  }
+
+  store <- controller$store
+  task_ids <- ids::random_id(nr)
+
+  ## Using suppressWarnings here to avoid a namespace warning that the
+  ## user cannot do anything about.
+  fn_hash <- suppressWarnings(store$set(fn, task_ids))
+  if (is.null(args)) {
+    args_hash <- NULL
+  } else {
+    args_hash <- set_names(store$mset(args, task_ids), names(args))
+  }
+  arg_in_store <- rep(c(FALSE, TRUE), c(nc, length(args)))
+
+  dat <- lapply(seq_len(nr), function(i) {
+    args_i <- c(data[[i]], args_hash)
+    dat <- list(type = "call", fn = fn_hash, args = args_i,
+                arg_in_store = arg_in_store)
+    object_to_bin(dat)
+  })
+
+  task_submit2(controller, task_ids, dat, queue, separate_process,
+               timeout_task_run, depends_on)
+}
+
+
 task_submit2 <- function(controller, task_ids, dat, queue, separate_process,
                          timeout_task_run, depends_on) {
   con <- controller$con
