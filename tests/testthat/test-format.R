@@ -67,8 +67,8 @@ test_that("can print worker info", {
   expect_equal(sum(text == "  <rrq_worker_info>"), 2)
   expect_true(any(text == paste0("$", w1$id)))
   expect_true(any(text == paste0("$", w2$id)))
-  expect_true(any(grepl(paste0("    worker: \\s*", w1$id), text)))
-  expect_true(any(grepl(paste0("    worker: \\s*", w2$id), text)))
+  expect_true(any(grepl(paste0("    id: \\s*", w1$id), text)))
+  expect_true(any(grepl(paste0("    id: \\s*", w2$id), text)))
   for (name in names(info[[1]])) {
     expect_true(any(grepl(name, text)))
   }

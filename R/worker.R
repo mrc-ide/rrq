@@ -259,7 +259,7 @@ rrq_worker <- R6::R6Class(
 worker_info_collect <- function(worker, private) {
   sys <- sessionInfo()
   redis_config <- private$con$config()
-  dat <- list(worker = worker$id,
+  dat <- list(id = worker$id,
               config = worker$config,
               rrq_version = version_info(),
               platform = sys$platform,
