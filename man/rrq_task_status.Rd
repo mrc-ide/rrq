@@ -4,11 +4,15 @@
 \alias{rrq_task_status}
 \title{Fetch task statuses}
 \usage{
-rrq_task_status(task_ids, follow = NULL, controller = NULL)
+rrq_task_status(task_ids, named = FALSE, follow = NULL, controller = NULL)
 }
 \arguments{
 \item{task_ids}{Optional character vector of task ids for which you
 would like statuses.}
+
+\item{named}{Logical, indicating if the return value should be
+named with the task ids; as these are quite long this can make
+the value a little awkward to work with.}
 
 \item{follow}{Optional logical, indicating if we should follow any
 redirects set up by doing \link{rrq_task_retry}. If not given, falls

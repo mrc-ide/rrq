@@ -4,10 +4,14 @@
 \alias{rrq_task_exists}
 \title{Test if tasks exist}
 \usage{
-rrq_task_exists(task_ids, controller = NULL)
+rrq_task_exists(task_ids, named = FALSE, controller = NULL)
 }
 \arguments{
 \item{task_ids}{Vector of task ids to check}
+
+\item{named}{Logical, indicating if the return value should be
+named with the task ids; as these are quite long this can make
+the value a little awkward to work with.}
 
 \item{controller}{The controller to use.  If not given (or \code{NULL})
 we'll use the controller registered with
