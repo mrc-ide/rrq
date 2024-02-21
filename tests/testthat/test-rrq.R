@@ -548,21 +548,23 @@ test_that("queueing with depends_on errored task fails", {
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
 
-  t <- obj$enqueue(only_positive(-1))
+  t1 <- obj$enqueue(only_positive(-1))
   w$step(TRUE)
-  res <- obj$task_result(t)
+  res <- obj$task_result(t1)
   expect_s3_class(res, "rrq_task_error")
 
-  expect_error(obj$enqueue(sin(0), depends_on = t),
+  expect_error(obj$enqueue(sin(0), depends_on = t1),
                paste0("Failed to queue as dependent tasks failed:\n",
-                      t, ": ERROR"),
+                      t1, ": ERROR"),
                fixed = TRUE)
 
+  ids <- obj$task_list()
+  expect_length(ids, 2)
+  t2 <- setdiff(ids, t1)
+
   ## Task is set to impossible
-  status <- obj$task_status()
-  expect_length(status, 2)
-  expect_true(TASK_IMPOSSIBLE %in% status)
-  expect_true(TASK_ERROR %in% status)
+  expect_equal(obj$task_status(t1), set_names(TASK_ERROR, t1))
+  expect_equal(obj$task_status(t2), set_names(TASK_IMPOSSIBLE, t2))
 })
 
 

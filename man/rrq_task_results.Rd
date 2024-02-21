@@ -5,7 +5,13 @@
 \title{Get the results of a group of tasks, returning them as a list.
 See \link{rrq_task_result} for getting the result of a single task.}
 \usage{
-rrq_task_results(task_ids, error = FALSE, follow = NULL, controller = NULL)
+rrq_task_results(
+  task_ids,
+  error = FALSE,
+  named = FALSE,
+  follow = NULL,
+  controller = NULL
+)
 }
 \arguments{
 \item{task_ids}{A vector of task ids for which the task result
@@ -13,6 +19,10 @@ is wanted.}
 
 \item{error}{Logical, indicating if we should throw an error if
 the task was not successful. See \code{\link[=rrq_task_result]{rrq_task_result()}} for details.}
+
+\item{named}{Logical, indicating if the return value should be
+named with the task ids; as these are quite long this can make
+the value a little awkward to work with.}
 
 \item{follow}{Optional logical, indicating if we should follow any
 redirects set up by doing \link{rrq_task_retry}. If not given, falls

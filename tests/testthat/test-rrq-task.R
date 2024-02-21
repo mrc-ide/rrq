@@ -114,3 +114,68 @@ test_that("can wait for tasks", {
     mockery::mock_args(mock_pipeline)[[5]],
     list(redis$BLPOP(key_complete[1], 1), redis$HMGET(key_status, t[1])))
 })
+
+
+test_that("can optionally name status elements", {
+  obj <- test_rrq()
+  t <- rrq_task_create_expr(sqrt(2), controller = obj)
+  expect_equal(
+    rrq_task_status(t, controller = obj), TASK_PENDING)
+  expect_equal(
+    rrq_task_status(t, named = TRUE, controller = obj),
+    set_names(TASK_PENDING, t))
+})
+
+
+test_that("can get status of no tasks", {
+  obj <- test_rrq()
+  expect_equal(rrq_task_status(character(), controller = obj),
+               character())
+  expect_equal(rrq_task_status(character(), named = TRUE, controller = obj),
+               set_names(character(), character()))
+})
+
+
+test_that("can test existance of no tasks", {
+  obj <- test_rrq()
+  expect_equal(rrq_task_exists(character(), controller = obj),
+               logical())
+  expect_equal(rrq_task_exists(character(), named = TRUE, controller = obj),
+               set_names(logical(), character()))
+})
+
+
+test_that("can get times of no tasks", {
+  obj <- test_rrq()
+  expect_equal(rrq_task_times(character(), controller = obj),
+               matrix(numeric(), 0, 4, FALSE,
+                      list(NULL, c("submit", "start", "complete", "moved"))))
+})
+
+
+test_that("Can get results from no tasks", {
+  obj <- test_rrq()
+  expect_equal(rrq_task_results(character(), controller = obj),
+               list())
+  expect_equal(rrq_task_results(character(), named = TRUE, controller = obj),
+               set_names(list(), character()))
+})
+
+
+test_that("overview can filter by tasks", {
+  obj <- test_rrq()
+  id <- rrq::rrq_task_create_bulk_call(sqrt, 1:10, controller = obj)
+  empty <- rrq_task_overview(character(), controller = obj)
+  expect_equal(
+    empty,
+    set_names(as.list(rep(0, length(TASK$all))), TASK$all))
+  expect_equal(
+    rrq_task_overview(controller = obj),
+    modifyList(empty, list(PENDING = 10)))
+  expect_equal(
+    rrq_task_overview(NULL, controller = obj),
+    modifyList(empty, list(PENDING = 10)))
+  expect_equal(
+    rrq_task_overview(id[1:3], controller = obj),
+    modifyList(empty, list(PENDING = 3)))
+})

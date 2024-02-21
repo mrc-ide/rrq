@@ -69,7 +69,10 @@ wait_status_change <- function(controller, task_id, status,
                                timeout = 2, time_poll = 0.05) {
   remaining <- time_checker(timeout)
   while (remaining() > 0) {
-    if (all(rrq_task_status(task_id, FALSE, controller) != status)) {
+    done <- rrq_task_status(task_id,
+                            follow = FALSE,
+                            controller = controller) != status
+    if (all(done)) {
       return()
     }
     Sys.sleep(time_poll)

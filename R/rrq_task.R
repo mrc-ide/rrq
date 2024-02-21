@@ -24,9 +24,10 @@ rrq_task_list <- function(controller = NULL) {
 ##'
 ##' @title High level task overciew
 ##'
-##' @param task_ids Optional character vector of task ids for which you
-##' would like the overview. If not given (or `NULL`) then the status of
-##' all task ids known to this rrq controller is used.
+##' @param task_ids Optional character vector of task ids for which
+##'   you would like the overview. If not given (or `NULL`) then the
+##'   status of all task ids known to this rrq controller is used
+##'   (this might be fairly costly).
 ##'
 ##' @inheritParams rrq_task_list
 ##'
@@ -35,7 +36,12 @@ rrq_task_list <- function(controller = NULL) {
 ##'
 ##' @export
 rrq_task_overview <- function(task_ids = NULL, controller = NULL) {
-  status <- rrq_task_status(task_ids, controller = controller)
+  controller <- get_controller(controller, call = rlang::current_env())
+  if (is.null(task_ids)) {
+    status <- from_redis_hash(controller$con, controller$keys$task_status)
+  } else {
+    status <- rrq_task_status(task_ids, controller = controller)
+  }
   lvls <- c(TASK$all, setdiff(unique(status), TASK$all))
   as.list(table(factor(status, lvls)))
 }
@@ -49,20 +55,28 @@ rrq_task_overview <- function(task_ids = NULL, controller = NULL) {
 ##'
 ##' @param task_ids Vector of task ids to check
 ##'
+##' @param named Logical, indicating if the return value should be
+##'   named with the task ids; as these are quite long this can make
+##'   the value a little awkward to work with.
+##'
 ##' @inheritParams rrq_task_list
 ##'
 ##' @return A logical vector the same length as task_ids; `TRUE` where
 ##'   the task exists, `FALSE` otherwise.
 ##'
 ##' @export
-rrq_task_exists <- function(task_ids, controller = NULL) {
+rrq_task_exists <- function(task_ids, named = FALSE, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
   assert_character(task_ids, call = rlang::current_env())
-  exists <- !vlapply(controller$con$HMGET(controller$keys$task_expr, task_ids),
-                     is.null)
-  set_names(exists, task_ids) # For now
+  if (length(task_ids) == 0) {
+    exists <- logical(0)
+  } else {
+    expr <- controller$con$HMGET(controller$keys$task_expr, task_ids)
+    exists <- !vlapply(expr, is.null)
+  }
+  if (named) set_names(exists, task_ids) else exists
 }
 
 
@@ -200,6 +214,9 @@ rrq_task_times <- function(task_ids, follow = NULL, controller = NULL) {
     task_ids_from <- task_ids
   }
   read_time_with_default <- function(key) {
+    if (length(task_ids) == 0) {
+      return(numeric(0))
+    }
     time <- controller$con$HMGET(key, task_ids_from)
     time[vlapply(time, is.null)] <- NA_character_
     as.numeric(list_to_character(time))
@@ -270,13 +287,14 @@ rrq_task_result <- function(task_id, error = FALSE, follow = NULL,
 ##'   the task was not successful. See [rrq_task_result()] for details.
 ##'
 ##' @inheritParams rrq_task_times
+##' @inheritParams rrq_task_exists
 ##'
 ##' @return An unnamed list, one entry per result.  This function
 ##'   errors if any task is not available.
 ##'
 ##' @export
-rrq_task_results <- function(task_ids, error = FALSE, follow = NULL,
-                             controller = NULL) {
+rrq_task_results <- function(task_ids, error = FALSE, named = FALSE,
+                             follow = NULL, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   assert_character(task_ids, rlang::current_env())
   con <- controller$con
@@ -300,7 +318,7 @@ rrq_task_results <- function(task_ids, error = FALSE, follow = NULL,
       stop(rrq_task_error_group(unname(res[is_error]), length(res)))
     }
   }
-  set_names(res, task_ids) # temporarily
+  if (named) set_names(res, task_ids) else res
 }
 
 
@@ -314,26 +332,31 @@ rrq_task_results <- function(task_ids, error = FALSE, follow = NULL,
 ##' would like statuses.
 ##'
 ##' @inheritParams rrq_task_times
+##' @inheritParams rrq_task_exists
 ##'
 ##' @return A character vector the same length as `task_ids`
 ##' @export
-rrq_task_status <- function(task_ids, follow = NULL, controller = NULL) {
+rrq_task_status <- function(task_ids, named = FALSE, follow = NULL,
+                            controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
-  if (!is.null(task_ids)) {
-    assert_character(task_ids, rlang::current_env())
-  }
+  assert_character(task_ids, rlang::current_env())
   con <- controller$con
   keys <- controller$keys
   follow <- follow %||% controller$follow
 
-  status <- from_redis_hash(con, keys$task_status, task_ids,
-                            missing = TASK_MISSING)
+  if (length(task_ids) == 0) {
+    status <- character()
+  } else {
+    status <- hash_result_to_character(
+      con$HMGET(keys$task_status, task_ids),
+      missing = TASK_MISSING)
+  }
   if (follow && any(is_moved <- status == TASK_MOVED)) {
     task_ids_moved <- task_follow(con, keys, task_ids[is_moved])
-    status[is_moved] <- rrq_task_status(task_ids_moved, follow = TRUE,
+    status[is_moved] <- rrq_task_status(task_ids_moved, follow = FALSE,
                                         controller = controller)
   }
-  status
+  if (named) set_names(status, task_ids) else status
 }
 
 

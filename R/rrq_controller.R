@@ -694,7 +694,8 @@ rrq_controller <- R6::R6Class(
     ##'   rrq controller
     ##' @param task_ids Character vector of task ids to check for existence.
     task_exists = function(task_ids) {
-      rrq_task_exists(task_ids, self)
+      named <- TRUE
+      rrq_task_exists(task_ids, named, self)
     },
 
     ##' @description Return a character vector of task statuses. The name
@@ -705,7 +706,8 @@ rrq_controller <- R6::R6Class(
     ##' would like statuses. If not given (or `NULL`) then the status of
     ##' all task ids known to this rrq controller is returned.
     task_status = function(task_ids = NULL, follow = NULL) {
-      rrq_task_status(task_ids, follow, self)
+      named <- TRUE
+      rrq_task_status(task_ids %||% self$task_list(), named, follow, self)
     },
 
     ##' @description Retrieve task progress, if set. This will be `NULL`
@@ -783,7 +785,8 @@ rrq_controller <- R6::R6Class(
     ##' @param error Logical, indicating if we should throw an error if
     ##'   the task was not successful. See `$task_result()` for details.
     tasks_result = function(task_ids, error = FALSE, follow = NULL) {
-      rrq_task_results(task_ids, error, follow, self)
+      named <- TRUE
+      rrq_task_results(task_ids, error, named, follow, self)
     },
 
     ##' @description Poll for a task to complete, returning the result
@@ -1404,7 +1407,8 @@ rrq_object_store <- function(con, keys) {
 
 verify_dependencies_exist <- function(controller, depends_on) {
   if (!is.null(depends_on)) {
-    dependencies_exist <- rrq_task_exists(depends_on, controller = controller)
+    dependencies_exist <- rrq_task_exists(depends_on, named = TRUE,
+                                          controller = controller)
     if (!all(dependencies_exist)) {
       missing <- names(dependencies_exist[!dependencies_exist])
       error_msg <- ngettext(
