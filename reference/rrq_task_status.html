@@ -19,7 +19,7 @@ possible statuses ("PENDING", "COMPLETE", etc).'><!-- mathjax --><script src="ht
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rrq</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.8</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.9</span>
       </span>
     </div>
 
@@ -73,7 +73,7 @@ possible statuses ("PENDING", "COMPLETE", etc).</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rrq_task_status</span><span class="op">(</span><span class="va">task_ids</span>, follow <span class="op">=</span> <span class="cn">NULL</span>, controller <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rrq_task_status</span><span class="op">(</span><span class="va">task_ids</span>, named <span class="op">=</span> <span class="cn">FALSE</span>, follow <span class="op">=</span> <span class="cn">NULL</span>, controller <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -81,6 +81,12 @@ possible statuses ("PENDING", "COMPLETE", etc).</p>
     <dl><dt>task_ids</dt>
 <dd><p>Optional character vector of task ids for which you
 would like statuses.</p></dd>
+
+
+<dt>named</dt>
+<dd><p>Logical, indicating if the return value should be
+named with the task ids; as these are quite long this can make
+the value a little awkward to work with.</p></dd>
 
 
 <dt>follow</dt>
