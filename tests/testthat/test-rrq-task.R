@@ -160,3 +160,22 @@ test_that("Can get results from no tasks", {
   expect_equal(rrq_task_results(character(), named = TRUE, controller = obj),
                set_names(list(), character()))
 })
+
+
+test_that("overview can filter by tasks", {
+  obj <- test_rrq()
+  id <- rrq::rrq_task_create_bulk_call(sqrt, 1:10, controller = obj)
+  empty <- rrq_task_overview(character(), controller = obj)
+  expect_equal(
+    empty,
+    set_names(as.list(rep(0, length(TASK$all))), TASK$all))
+  expect_equal(
+    rrq_task_overview(controller = obj),
+    modifyList(empty, list(PENDING = 10)))
+  expect_equal(
+    rrq_task_overview(NULL, controller = obj),
+    modifyList(empty, list(PENDING = 10)))
+  expect_equal(
+    rrq_task_overview(id[1:3], controller = obj),
+    modifyList(empty, list(PENDING = 3)))
+})
