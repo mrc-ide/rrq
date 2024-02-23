@@ -4,11 +4,16 @@
 \alias{rrq_worker_config_read}
 \title{Read worker configuration}
 \usage{
-rrq_worker_config_read(name, controller = NULL)
+rrq_worker_config_read(name, timeout = 0, controller = NULL)
 }
 \arguments{
 \item{name}{Name of the configuration (see
 \code{\link[=rrq_worker_config_list]{rrq_worker_config_list()}})}
+
+\item{timeout}{Optionally, a timeout to wait for a worker
+configuration to appear.  Generally you won't want to set this,
+but it can be used to block until a configuration becomes
+available.}
 
 \item{controller}{The controller to use.  If not given (or \code{NULL})
 we'll use the controller registered with

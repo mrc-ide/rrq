@@ -18,6 +18,8 @@ but will sit and poll a queue for jobs.
 \item{\code{id}}{The id of the worker}
 
 \item{\code{config}}{The name of the configuration used by this worker}
+
+\item{\code{controller}}{An rrq controller object}
 }
 \if{html}{\out{</div>}}
 }
@@ -122,7 +124,7 @@ format to screen and a machine-readable format to the redis database.
 \subsection{Method \code{load_envir()}}{
 Load the worker environment by creating a new
 environment object and running the create hook (if configured).
-See \verb{$envir} on \code{\link{rrq_controller}} for details.
+See \code{\link[=rrq_worker_envir_set]{rrq_worker_envir_set()}} for details.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_worker$load_envir()}\if{html}{\out{</div>}}
 }

@@ -53,7 +53,26 @@ rrq_worker_spawn <- function(obj, n = 1, logdir = NULL,
                              timeout = 600, name_config = "localhost",
                              worker_id_base = NULL,
                              time_poll = 1, progress = NULL) {
-  ret <- rrq_worker_manager$new(obj, n, logdir, name_config, worker_id_base)
+  controller <- obj$to_v2()
+  rrq_worker_spawn2(n = n, logdir = logdir, timeout = timeout,
+                    name_config = name_config, worker_id_base = worker_id_base,
+                    time_poll = time_poll, progress = progress,
+                    controller = controller)
+}
+
+
+##' @export
+##' @rdname rrq_worker_spawn
+##' @param controller The controller to use.  If not given (or `NULL`)
+##'   we'll use the controller registered with
+##'   [rrq_default_controller_set()].
+rrq_worker_spawn2 <- function(n = 1, logdir = NULL, timeout = 600,
+                              name_config = "localhost", worker_id_base = NULL,
+                              time_poll = 1, progress = NULL,
+                              controller = NULL) {
+  controller <- get_controller(controller)
+  ret <- rrq_worker_manager$new(controller, n, logdir, name_config,
+                                worker_id_base)
   if (timeout > 0) {
     ret$wait_alive(timeout, time_poll, progress)
   }
@@ -147,8 +166,8 @@ rrq_worker_wait2 <- function(key_alive, timeout = Inf, poll = 1,
   keys <- controller$keys
   is_dead <- function() FALSE
   path_logs <- NULL
-  worker_wait_alive(con, keys, key_alive, is_dead, path_logs,
-                    timeout, poll, progress)
+  worker_wait_alive(controller, key_alive, is_dead, path_logs, timeout, poll,
+                    progress)
 }
 
 
@@ -157,8 +176,6 @@ rrq_worker_manager <- R6::R6Class(
 
   private = list(
     controller = NULL,
-    con = NULL,
-    keys = NULL,
     process = NULL,
     logfile = NULL,
     key_alive = NULL,
@@ -185,20 +202,22 @@ rrq_worker_manager <- R6::R6Class(
   public = list(
     id = NULL,
 
-    initialize = function(obj, n, logdir = NULL, name_config = "localhost",
+    initialize = function(controller, n, logdir = NULL,
+                          name_config = "localhost",
                           worker_id_base = NULL) {
-      assert_is(obj, "rrq_controller")
-      private$controller <- obj$to_v2()
-      if (!(name_config %in% obj$worker_config_list())) {
+      assert_is(controller, "rrq_controller2")
+
+      if (!(name_config %in% rrq_worker_config_list(controller))) {
         cli::cli_abort("Invalid rrq worker configuration key '{name_config}'")
       }
       worker_id_base <- worker_id_base %||% ids::adjective_animal()
       worker_ids <- sprintf("%s_%d", worker_id_base, seq_len(n))
-      key_alive <- rrq_worker_expect(obj, worker_ids)
+      key_alive <- rrq_worker_expect2(worker_ids, controller)
       logdir <- logdir %||% tempfile()
       dir.create(logdir, FALSE, TRUE)
-      con <- obj$con
-      keys <- rrq_keys(obj$queue_id)
+
+      con <- controller$con
+      keys <- controller$keys
 
       logfile <- file.path(logdir, worker_ids)
       con$HMSET(keys$worker_process, worker_ids, logfile)
@@ -227,8 +246,7 @@ rrq_worker_manager <- R6::R6Class(
           stdout = logfile[[i]], stderr = logfile[[i]])
       }
 
-      private$con <- con
-      private$keys <- keys
+      private$controller <- controller
       private$process <- process
       private$logfile <- set_names(logfile, worker_ids)
       private$key_alive <- key_alive
@@ -264,18 +282,20 @@ rrq_worker_manager <- R6::R6Class(
     },
 
     wait_alive = function(timeout, poll = 1, progress = NULL) {
-      con <- private$con
       is_dead <- function() {
         !vlapply(private$process, function(p) p$is_alive())
       }
-      worker_wait_alive(private$con, private$keys, private$key_alive,
+      worker_wait_alive(private$controller, private$key_alive,
                         is_dead, self$logs, timeout, poll, progress)
     }
   ))
 
 
-worker_wait_alive <- function(con, keys, key_alive, is_dead, path_logs,
+worker_wait_alive <- function(controller, key_alive, is_dead, path_logs,
                               timeout, poll, progress) {
+  con <- controller$con
+  keys <- controller$keys
+
   assert_scalar_numeric(timeout)
   assert_scalar_integer_like(poll)
 

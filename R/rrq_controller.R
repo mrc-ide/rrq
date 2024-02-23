@@ -1117,7 +1117,7 @@ rrq_controller <- R6::R6Class(
     ##'
     ##' @param name Name of the configuration
     worker_config_read = function(name) {
-      rrq_worker_config_read(name, self)
+      rrq_worker_config_read(name, controller = self)
     },
 
     ##' Report on worker "load" (the number of workers being used over

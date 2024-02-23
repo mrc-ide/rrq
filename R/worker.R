@@ -14,6 +14,9 @@ rrq_worker <- R6::R6Class(
     ##' @field config The name of the configuration used by this worker
     config = NULL,
 
+    ##' @field controller An rrq controller object
+    controller = NULL,
+
     ##' @description Constructor
     ##'
     ##' @param queue_id The queue id
@@ -48,12 +51,9 @@ rrq_worker <- R6::R6Class(
 
       self$id <- worker_id %||% ids::adjective_animal()
       self$config <- name_config
-      private$con <- con
-      private$keys <- rrq_keys(queue_id, self$id)
+      self$controller <- rrq_controller2(queue_id, con, check_version = TRUE)
 
-      rrq_version_check(private$con, private$keys)
-      worker_exists <- con$SISMEMBER(private$keys$worker_id, self$id) == 1L
-      if (is_child != worker_exists) {
+      if (is_child != rrq_worker_exists(self$id, self$controller)) {
         if (is_child) {
           cli::cli_abort(
             c("Can't be a child of nonexistant worker",
@@ -65,29 +65,28 @@ rrq_worker <- R6::R6Class(
         }
       }
 
-      config <- worker_config_read(private$con, private$keys, name_config,
-                                   timeout_config)
+      config <- rrq_worker_config_read(name_config,
+                                       timeout = timeout_config,
+                                       controller = self$controller)
 
-      private$store <- rrq_object_store(private$con, private$keys)
       private$verbose <- config$verbose
       private$is_child <- is_child
       private$poll_queue <- config$poll_queue
       private$poll_process <- config$poll_process
       private$timeout_process_die <- config$timeout_process_die
+      private$key_queue <- rrq_key_queue(queue_id, config$queue)
+      private$key_log <- rrq_key_worker_log(queue_id, self$id)
+      private$key_message <- rrq_key_worker_message(queue_id, self$id)
+      private$key_response <- rrq_key_worker_response(queue_id, self$id)
 
       if (private$is_child) {
         self$log("CHILD")
         self$load_envir()
       } else {
         withCallingHandlers(
-          worker_initialise(self, private, config$queue,
-                            config$timeout_idle,
-                            config$heartbeat_period),
+          worker_initialise(self, private, config),
           error = worker_catch_error(self, private))
       }
-
-      lockBinding("id", self)
-      lockBinding("config", self)
     },
 
     ##' @description Return information about this worker, a list of
@@ -103,17 +102,18 @@ rrq_worker <- R6::R6Class(
     ##'
     ##' @param value Character vector (or null) with log values
     log = function(label, value = NULL) {
-      worker_log(private$con, private$keys, label, value, private$is_child,
+      con <- self$controller$con
+      worker_log(con, private$key_log, label, value, private$is_child,
                  private$verbose)
     },
 
     ##' @description Load the worker environment by creating a new
     ##'   environment object and running the create hook (if configured).
-    ##'   See `$envir` on [`rrq::rrq_controller`] for details.
+    ##'   See [rrq::rrq_worker_envir_set()] for details.
     load_envir = function() {
       self$log("ENVIR", "new")
       private$envir <- new.env(parent = .GlobalEnv)
-      create <- private$con$GET(private$keys$envir)
+      create <- self$controller$con$GET(self$controller$keys$envir)
       if (!is.null(create)) {
         self$log("ENVIR", "create")
         bin_to_object(create)(private$envir)
@@ -126,13 +126,10 @@ rrq_worker <- R6::R6Class(
     ##'   do a blocking wait on the queue but instead reducing the timeout to
     ##'   zero. Intended primarily for use in the tests.
     poll = function(immediate = FALSE) {
-      keys <- private$keys
-      if (private$paused) {
-        keys <- keys$worker_message
-      } else {
-        keys <- c(keys$worker_message, private$queue)
-      }
-      blpop(private$con, keys, private$poll_queue, immediate)
+      con <- self$controller$con
+      keys <- c(private$key_message,
+                if (!private$paused) private$key_queue)
+      blpop(con, keys, private$poll_queue, immediate)
     },
 
     ##' @description Take a single "step". This consists of
@@ -198,8 +195,9 @@ rrq_worker <- R6::R6Class(
           return(invisible())
         }
       }
-      private$con$HSET(private$keys$task_progress, task_id,
-                       object_to_bin(value))
+      con <- self$controller$con
+      keys <- self$controller$keys
+      con$HSET(keys$task_progress, task_id, object_to_bin(value))
       invisible()
     },
 
@@ -210,7 +208,9 @@ rrq_worker <- R6::R6Class(
     task_eval = function(task_id) {
       cache$active_worker <- self
       on.exit(cache$active_worker <- NULL)
-      task <- bin_to_object(private$con$HGET(private$keys$task_expr, task_id))
+      con <- self$controller$con
+      keys <- self$controller$keys
+      task <- bin_to_object(con$HGET(keys$task_expr, task_id))
       private$active_task_id <- task_id
       worker_run_task_local(task, self, private)
     },
@@ -229,8 +229,10 @@ rrq_worker <- R6::R6Class(
           private$heartbeat$stop(graceful),
           error = function(e) message("Could not stop heartbeat"))
       }
-      private$con$SREM(private$keys$worker_id,     self$id)
-      private$con$HSET(private$keys$worker_status, self$id, WORKER_EXITED)
+      con <- self$controller$con
+      keys <- self$controller$keys
+      con$SREM(keys$worker_id,     self$id)
+      con$HSET(keys$worker_status, self$id, WORKER_EXITED)
       self$log("STOP", status)
     }
   ),
@@ -243,11 +245,13 @@ rrq_worker <- R6::R6Class(
     timer = NULL,
     timeout_idle = NULL,
     ## Constants
-    con = NULL,
     heartbeat = NULL,
-    keys = NULL,
-    queue = NULL,
-    store = NULL,
+    key_queue = NULL,
+    key_log = NULL,
+    key_message = NULL,
+    key_response = NULL,
+    key_heartbeat = NULL,
+    # store = NULL,
     poll_queue = NULL,
     verbose = NULL,
     is_child = NULL,
@@ -258,7 +262,7 @@ rrq_worker <- R6::R6Class(
 
 worker_info_collect <- function(worker, private) {
   sys <- sessionInfo()
-  redis_config <- private$con$config()
+  redis_config <- worker$controller$con$config()
   dat <- list(worker = worker$id,
               config = worker$config,
               rrq_version = version_info(),
@@ -266,44 +270,48 @@ worker_info_collect <- function(worker, private) {
               running = sys$running,
               hostname = hostname(),
               username = username(),
-              queue = private$queue,
+              queue = private$key_queue,
               wd = getwd(),
               pid = process_id(),
               redis_host = redis_config$host,
               redis_port = redis_config$port)
   if (!is.null(private$heartbeat)) {
-    dat$heartbeat_key <- private$keys$worker_heartbeat
+    dat$heartbeat_key <- private$key_heartbeat
   }
   dat
 }
 
 
-worker_initialise <- function(worker, private, queue, timeout_idle,
-                              heartbeat_period) {
-  con <- private$con
-  keys <- private$keys
+worker_initialise <- function(worker, private, config) {
+  con <- worker$controller$con
+  keys <- worker$controller$keys
 
-  private$heartbeat <- worker_heartbeat(con, keys, heartbeat_period,
-                                        private$verbose)
-  private$queue <- rrq_key_queue(keys$queue_id, queue)
+  if (!is.null(config$heartbeat_period)) {
+    private$key_heartbeat <- rrq_key_worker_heartbeat(keys$queue_id, worker$id)
+    worker$log("HEARTBEAT", private$key_heartbeat)
+    private$heartbeat <- rrq_heartbeat$new(private$key_heartbeat,
+                                           config$heartbeat_period,
+                                           config = con$config())
+    worker$log("HEARTBEAT", "OK")
+  }
 
   res <- con$pipeline(
     redis$SADD(keys$worker_id,     worker$id),
     redis$HSET(keys$worker_status, worker$id, WORKER_IDLE),
     redis$HDEL(keys$worker_task,   worker$id),
-    redis$DEL(keys$worker_log),
+    redis$DEL(c(private$key_log, private$key_message, private$key_response)),
     redis$HSET(keys$worker_info,   worker$id, object_to_bin(worker$info())),
     redis$HGET(keys$worker_alive, worker$id))
 
   key_alive <- res[[6]]
 
-  if (!is.null(timeout_idle)) {
-    run_message_timeout_set(worker, private, timeout_idle)
+  if (!is.null(config$timeout_idle)) {
+    run_message_timeout_set(worker, private, config$timeout_idle)
   }
 
   worker$log("ALIVE")
   worker$load_envir()
-  worker$log("QUEUE", queue)
+  worker$log("QUEUE", config$queue)
 
   ## This announces that we're up; things may monitor this
   ## queue, and rrq_worker_spawn does a BLPOP to
@@ -324,10 +332,9 @@ rrq_worker_stop_condition <- function(worker, message) {
 ## interestingly do
 worker_step <- function(worker, private, immediate) {
   task <- worker$poll(immediate)
-  keys <- private$keys
 
   if (!is.null(task)) {
-    if (task[[1L]] == keys$worker_message) {
+    if (task[[1L]] == private$key_message) {
       run_message(worker, private, task[[2]])
     } else {
       worker_run_task(worker, private, task[[2]])
@@ -433,10 +440,10 @@ worker_log_format <- function(label, value, is_child) {
 }
 
 
-worker_log <- function(con, keys, label, value, is_child, verbose) {
+worker_log <- function(con, key_log, label, value, is_child, verbose) {
   res <- worker_log_format(label, value, is_child)
   if (verbose) {
     message(res$screen)
   }
-  con$RPUSH(keys$worker_log, res$redis)
+  con$RPUSH(key_log, res$redis)
 }

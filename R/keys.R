@@ -1,13 +1,4 @@
-rrq_keys <- function(queue_id, worker_id = NULL) {
-  if (is.null(worker_id)) {
-    rrq_keys_common(queue_id)
-  } else {
-    c(rrq_keys_common(queue_id),
-      rrq_keys_worker(queue_id, worker_id))
-  }
-}
-
-rrq_keys_common <- function(queue_id) {
+rrq_keys <- function(queue_id) {
   list(queue_id       = queue_id,
 
        controller     = sprintf("%s:controller",     queue_id),
@@ -50,14 +41,6 @@ rrq_keys_common <- function(queue_id) {
        task_time_start    = sprintf("%s:task:time_start",    queue_id),
        task_time_complete = sprintf("%s:task:time_complete", queue_id),
        task_time_moved    = sprintf("%s:task:time_moved",    queue_id))
-}
-
-rrq_keys_worker <- function(queue, worker) {
-  list(worker           = worker,
-       worker_message   = rrq_key_worker_message(queue, worker),
-       worker_response  = rrq_key_worker_response(queue, worker),
-       worker_log       = rrq_key_worker_log(queue, worker),
-       worker_heartbeat = rrq_key_worker_heartbeat(queue, worker))
 }
 
 ## Special key for worker-specific commands to be published to.

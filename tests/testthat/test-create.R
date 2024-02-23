@@ -9,6 +9,7 @@ test_that("can create a basic expression task", {
 
   w <- test_worker_blocking(obj)
   w$step(TRUE)
+
   expect_equal(rrq_task_result(id, controller = obj), sqrt(2))
 })
 
