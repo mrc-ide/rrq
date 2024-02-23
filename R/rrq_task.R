@@ -118,7 +118,7 @@ rrq_task_info <- function(task_id, controller = NULL) {
     dat$root <- task_id
   }
   if (!is.null(dat$root)) {
-    chain <- task_follow_chain(con, keys, dat$root)[[1L]]
+    chain <- task_follow_chain(controller, dat$root)[[1L]]
     pos <- which(chain == task_id)
     if (pos > 1) {
       moved$up <- chain[seq_len(pos - 1)]
@@ -128,8 +128,8 @@ rrq_task_info <- function(task_id, controller = NULL) {
     }
   }
 
-  depends <- list(up = task_depends_up(con, keys, task_id),
-                  down = task_depends_down(con, keys, task_id))
+  depends <- list(up = task_depends_up(controller, task_id),
+                  down = task_depends_down(controller, task_id))
 
   list(
     id = task_id,
@@ -209,7 +209,7 @@ rrq_task_times <- function(task_ids, follow = NULL, controller = NULL) {
   con <- controller$con
   keys <- controller$keys
   if (follow %||% controller$follow) {
-    task_ids_from <- task_follow(controller$con, controller$keys, task_ids)
+    task_ids_from <- task_follow(controller, task_ids)
   } else {
     task_ids_from <- task_ids
   }
@@ -217,15 +217,15 @@ rrq_task_times <- function(task_ids, follow = NULL, controller = NULL) {
     if (length(task_ids) == 0) {
       return(numeric(0))
     }
-    time <- controller$con$HMGET(key, task_ids_from)
+    time <- con$HMGET(key, task_ids_from)
     time[vlapply(time, is.null)] <- NA_character_
     as.numeric(list_to_character(time))
   }
   ret <- cbind(
-    submit = read_time_with_default(controller$keys$task_time_submit),
-    start = read_time_with_default(controller$keys$task_time_start),
-    complete = read_time_with_default(controller$keys$task_time_complete),
-    moved = read_time_with_default(controller$keys$task_time_moved))
+    submit = read_time_with_default(keys$task_time_submit),
+    start = read_time_with_default(keys$task_time_start),
+    complete = read_time_with_default(keys$task_time_complete),
+    moved = read_time_with_default(keys$task_time_moved))
   rownames(ret) <- task_ids
   ret
 }
@@ -261,8 +261,7 @@ rrq_task_result <- function(task_id, error = FALSE, follow = NULL,
   store <- controller$store
   follow <- follow %||% controller$follow
 
-  ## Probably tidy this up soon:
-  task_id_from <- if (follow) task_follow(con, keys, task_id) else task_id
+  task_id_from <- if (follow) task_follow(controller, task_id) else task_id
 
   hash <- con$HGET(keys$task_result, task_id_from)
   if (is.null(hash)) {
@@ -302,7 +301,7 @@ rrq_task_results <- function(task_ids, error = FALSE, named = FALSE,
   store <- controller$store
   follow <- follow %||% controller$follow
 
-  task_ids_from <- if (follow) task_follow(con, keys, task_ids) else task_ids
+  task_ids_from <- if (follow) task_follow(controller, task_ids) else task_ids
   hash <- from_redis_hash(con, keys$task_result, task_ids_from)
   is_missing <- is.na(hash)
   if (any(is_missing)) {
@@ -352,7 +351,7 @@ rrq_task_status <- function(task_ids, named = FALSE, follow = NULL,
       missing = TASK_MISSING)
   }
   if (follow && any(is_moved <- status == TASK_MOVED)) {
-    task_ids_moved <- task_follow(con, keys, task_ids[is_moved])
+    task_ids_moved <- task_follow(controller, task_ids[is_moved])
     status[is_moved] <- rrq_task_status(task_ids_moved, follow = FALSE,
                                         controller = controller)
   }
@@ -426,7 +425,7 @@ rrq_task_position <- function(task_ids, missing = 0L, queue = NULL,
   if (follow && length(queue_contents) > 0L) {
     ## In some ways following is the only thing that makes sense here,
     ## as only the last id in the chain can possibly be queued.
-    task_ids <- task_follow(con, keys, task_ids)
+    task_ids <- task_follow(controller, task_ids)
   }
   match(task_ids, queue_contents, missing)
 }
@@ -459,7 +458,7 @@ rrq_task_preceeding <- function(task_id, queue = NULL, follow = NULL,
   if (follow && length(queue_contents) > 0L) {
     ## In some ways following is the only thing that makes sense here,
     ## as only the last id in the chain can possibly be queued.
-    task_id <- task_follow(con, keys, task_id)
+    task_id <- task_follow(controller, task_id)
   }
   task_position <- match(task_id, queue_contents)
   if (is.na(task_position)) {
@@ -489,7 +488,7 @@ rrq_task_delete <- function(task_ids, check = TRUE, controller = NULL) {
   keys <- controller$keys
   store <- controller$store
 
-  task_chain <- task_follow_chain(con, keys, task_ids)
+  task_chain <- task_follow_chain(controller, task_ids)
   task_ids_root <- vcapply(task_chain, first, USE.NAMES = FALSE)
   task_ids_all <- unlist(task_chain)
 
@@ -538,15 +537,15 @@ rrq_task_delete <- function(task_ids, check = TRUE, controller = NULL) {
     vlapply(res[[n + 1]], function(x) !is.null(x) && x %in% TASK$unstarted)
   if (any(check_dependencies)) {
     ids_all_deps <- unlist(
-      task_depends_down(con, keys, task_ids_all[check_dependencies]),
+      task_depends_down(controller, task_ids_all[check_dependencies]),
       FALSE, FALSE)
     ids_deps <- setdiff(ids_all_deps, task_ids_all)
     status_deps <- rrq_task_status(ids_deps, follow = FALSE,
                                    controller = controller)
     ids_impossible <- ids_deps[status_deps == TASK_DEFERRED]
     if (length(ids_impossible) > 0) {
-      run_task_cleanup_failure(con, keys, store, ids_impossible,
-                               TASK_IMPOSSIBLE, NULL)
+      run_task_cleanup_failure(controller, ids_impossible, TASK_IMPOSSIBLE,
+                               NULL)
     }
   }
 
@@ -631,7 +630,7 @@ rrq_task_cancel <- function(task_id, wait = TRUE, timeout_wait = 10,
       wait_status_change(controller, task_id, TASK_RUNNING, timeout_wait)
     }
   } else {
-    run_task_cleanup_failure(con, keys, store, task_id, TASK_CANCELLED, NULL)
+    run_task_cleanup_failure(controller, task_id, TASK_CANCELLED, NULL)
   }
 
   invisible(NULL)
@@ -689,7 +688,7 @@ rrq_task_wait <- function(task_id, timeout = NULL, time_poll = 1,
     cli::cli_abort("Can't wait on no tasks")
   }
 
-  task_id_from <- if (follow) task_follow(con, keys, task_id) else task_id
+  task_id_from <- if (follow) task_follow(controller, task_id) else task_id
   status <- hash_result_to_character(con$HMGET(keys$task_status, task_id_from),
                                      TASK_MISSING)
   if (any(status == TASK_MISSING)) {
@@ -733,101 +732,6 @@ rrq_task_wait <- function(task_id, timeout = NULL, time_poll = 1,
   }
   con$DEL(key_complete)
   all(status == TASK_COMPLETE)
-}
-
-
-##' Retry a task (or set of tasks). Typically this is after failure
-##' (e.g., `ERROR`, `DIED` or similar) but you can retry even
-##' successfully completed tasks. Once retried, functions that
-##' retrieve information about a task (e.g., [rrq_task_status()]`,
-##' [rrq_task_result()]) will behave differently depending on the
-##' value of their `follow` argument. See
-##' `vignette("fault-tolerance")` for more details.
-##'
-##' @title Retry tasks
-##'
-##' @param task_ids Task ids to retry.
-##'
-##' @inheritParams rrq_task_list
-##'
-##' @return New task ids
-##' @export
-rrq_task_retry <- function(task_ids, controller = NULL) {
-  controller <- get_controller(controller, call = rlang::current_env())
-  assert_character(task_ids)
-  con <- controller$con
-  keys <- controller$keys
-
-  if (anyDuplicated(task_ids) > 0) {
-    stop(sprintf(
-      "task_ids must not contain duplicates:\n%s",
-      paste(sprintf("  - %s", unique(task_ids[duplicated(task_ids)])),
-            collapse = "\n")))
-  }
-
-  chain <- task_follow_chain(con, keys, task_ids)
-  task_ids_leaf <- vcapply(chain, last, USE.NAMES = FALSE)
-  task_ids_root <- vcapply(chain, first, USE.NAMES = FALSE)
-
-  if (anyDuplicated(task_ids_leaf)) {
-    dup <- task_ids[duplicated(task_ids_leaf)]
-    i <- task_ids_leaf %in% dup
-    err <- vcapply(split(task_ids[i], factor(task_ids_leaf[i], dup)),
-                   function(x) paste(sprintf("    - %s", x), collapse = "\n"))
-    stop(sprintf(
-      "task_ids must point to distinct tasks:\n%s",
-      paste(sprintf("  - %s\n%s", names(err), err), collapse = "\n")))
-  }
-
-  status <- rrq_task_status(task_ids_leaf, follow = FALSE,
-                            controller = controller)
-
-  not_retriable <- !(status %in% TASK$retriable)
-  if (any(not_retriable)) {
-    stop(sprintf(
-      "Can't retry tasks that are in state: %s:\n%s",
-      paste(squote(unique(status[not_retriable])), collapse = ", "),
-      paste(sprintf("  - %s", task_ids[not_retriable]), collapse = "\n")),
-      call. = FALSE)
-  }
-
-  n <- length(task_ids)
-  time <- timestamp()
-  task_ids_new <- ids::random_id(n)
-
-  key_queue <- rrq_key_queue(
-    keys$queue_id,
-    list_to_character(con$HMGET(keys$task_queue, task_ids_root)))
-  if (all(key_queue == key_queue[[1]])) {
-    queue_push <- list(redis$RPUSH(key_queue[[1]], task_ids_new))
-  } else {
-    key_queue_split <- split(task_ids_new, key_queue)
-    queue_push <-
-      unname(Map(redis$RPUSH, names(key_queue_split), key_queue_split))
-  }
-
-  key_complete <- con$HMGET(keys$task_complete, task_ids_root)
-  i <- !vlapply(key_complete, is.null)
-  if (any(i)) {
-    set_key_complete <- list(
-      redis$HMSET(keys$task_complete, task_ids_new[i], key_complete[i]))
-  } else {
-    set_key_complete <- NULL
-  }
-
-  con$pipeline(
-    .commands = c(list(
-      redis$HMSET(keys$task_status,      task_ids_leaf, rep(TASK_MOVED, n)),
-      redis$HMSET(keys$task_status,      task_ids_new,  rep(TASK_PENDING, n)),
-      redis$HMSET(keys$task_time_moved,  task_ids_leaf, rep_len(time, n)),
-      redis$HMSET(keys$task_time_submit, task_ids_new,  rep_len(time, n)),
-      redis$HMSET(keys$task_moved_to,    task_ids_leaf, task_ids_new),
-      redis$HMSET(keys$task_moved_root,  task_ids_new,  task_ids_root),
-      redis$HMSET(keys$task_expr,        task_ids_new,  task_ids_root)),
-      set_key_complete,
-      queue_push))
-
-  task_ids_new
 }
 
 
