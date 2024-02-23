@@ -1,37 +1,38 @@
-rrq_lapply <- function(con, keys, store, x, fun, dots, envir, queue,
+rrq_lapply <- function(controller, x, fun, dots, envir, queue,
                        separate_process, timeout_task_run, depends_on,
                        timeout_task_wait, time_poll, progress, delete, error) {
-  dat <- rrq_bulk_submit(con, keys, store, x, fun, dots, FALSE, envir, queue,
+  dat <- rrq_bulk_submit(controller, x, fun, dots, FALSE, envir, queue,
                          separate_process, timeout_task_run, depends_on)
   if (timeout_task_wait == 0) {
     return(dat)
   }
-  rrq_bulk_wait(con, keys, store, dat, timeout_task_wait, time_poll, progress,
+  rrq_bulk_wait(controller, dat, timeout_task_wait, time_poll, progress,
                 delete, error, FALSE)
 }
 
 
-rrq_enqueue_bulk <- function(con, keys, store, x, fun, dots,
+rrq_enqueue_bulk <- function(controller, x, fun, dots,
                              envir, queue, separate_process, timeout_task_run,
                              depends_on, timeout_task_wait, time_poll, progress,
                              delete, error) {
-  dat <- rrq_bulk_submit(con, keys, store, x, fun, dots, TRUE,
+  dat <- rrq_bulk_submit(controller, x, fun, dots, TRUE,
                          envir, queue, separate_process, timeout_task_run,
                          depends_on)
   if (timeout_task_wait == 0) {
     return(dat)
   }
-  rrq_bulk_wait(con, keys, store, dat, timeout_task_wait, time_poll, progress,
+  rrq_bulk_wait(controller, dat, timeout_task_wait, time_poll, progress,
                 delete, error, FALSE)
 }
 
 
-rrq_bulk_submit <- function(con, keys, store, x, fun, dots, do_call,
+rrq_bulk_submit <- function(controller, x, fun, dots, do_call,
                             envir, queue, separate_process, timeout_task_run,
                             depends_on) {
   fun <- match_fun_envir(fun, envir)
   n <- if (do_call && is.data.frame(x)) nrow(x) else length(x)
   task_ids <- ids::random_id(n)
+  store <- controller$store
 
   if (do_call) {
     x <- rrq_bulk_prepare_call_x(x)
@@ -40,8 +41,8 @@ rrq_bulk_submit <- function(con, keys, store, x, fun, dots, do_call,
     dat <- rrq_bulk_prepare_lapply(store, task_ids, x, fun, dots, envir)
   }
 
-  key_complete <- rrq_key_task_complete(keys$queue_id)
-  task_submit_n(con, keys, store, task_ids, dat, key_complete, queue,
+  key_complete <- rrq_key_task_complete(controller$queue_id)
+  task_submit_n(controller, task_ids, dat, key_complete, queue,
                 separate_process, timeout_task_run,
                 depends_on = depends_on)
   ret <- list(task_ids = task_ids,
@@ -127,15 +128,13 @@ rrq_bulk_prepare_call_x <- function(x) {
 }
 
 
-rrq_bulk_wait <- function(con, keys, store, dat, timeout, time_poll, progress,
+rrq_bulk_wait <- function(controller, dat, timeout, time_poll, progress,
                           delete, error, follow) {
   assert_is(dat, "rrq_bulk")
-  ret <- tasks_wait(con, keys, store, dat$task_ids, timeout,
+  ret <- tasks_wait(controller, dat$task_ids, timeout,
                     time_poll, progress, dat$key_complete,
                     error = FALSE, follow = follow)
   if (delete) {
-    ## TODO: not ideal really
-    controller <- rrq_controller2(keys$queue_id, con)
     rrq_task_delete(dat$task_ids, check = FALSE, controller)
   }
   if (error) {
