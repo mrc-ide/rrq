@@ -251,7 +251,6 @@ rrq_worker <- R6::R6Class(
     key_message = NULL,
     key_response = NULL,
     key_heartbeat = NULL,
-    # store = NULL,
     poll_queue = NULL,
     verbose = NULL,
     is_child = NULL,
