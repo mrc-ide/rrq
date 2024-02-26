@@ -60,7 +60,9 @@ run_message_stop <- function(worker, private, message_id, args) {
 
 run_message_info <- function(worker, private) {
   info <- worker$info()
-  private$con$HSET(private$keys$worker_info, worker$id, object_to_bin(info))
+  con <- worker$controller$con
+  keys <- worker$controller$keys
+  con$HSET(keys$worker_info, worker$id, object_to_bin(info))
   info
 }
 
@@ -74,7 +76,9 @@ run_message_pause <- function(worker, private) {
     "NOOP"
   } else {
     private$paused <- TRUE
-    private$con$HSET(private$keys$worker_status, worker$id, WORKER_PAUSED)
+    con <- worker$controller$con
+    keys <- worker$controller$keys
+    con$HSET(keys$worker_status, worker$id, WORKER_PAUSED)
     "OK"
   }
 }
@@ -82,7 +86,9 @@ run_message_pause <- function(worker, private) {
 run_message_resume <- function(worker, private) {
   if (private$paused) {
     private$paused <- FALSE
-    private$con$HSET(private$keys$worker_status, worker$id, WORKER_IDLE)
+    con <- worker$controller$con
+    keys <- worker$controller$keys
+    con$HSET(keys$worker_status, worker$id, WORKER_IDLE)
     "OK"
   } else {
     "NOOP"
@@ -137,5 +143,5 @@ response_prepare <- function(id, command, result) {
 message_respond <- function(worker, private, message_id, cmd, result) {
   worker$log("RESPONSE", cmd)
   response <- response_prepare(message_id, cmd, result)
-  private$con$HSET(private$keys$worker_response, message_id, response)
+  worker$controller$con$HSET(private$key_response, message_id, response)
 }

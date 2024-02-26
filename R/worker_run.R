@@ -6,9 +6,9 @@ worker_run_task <- function(worker, private, task_id) {
     res <- worker_run_task_local(task, worker, private)
   }
 
-  con <- private$con
-  keys <- private$keys
-  store <- private$store
+  con <- worker$controller$con
+  keys <- worker$controller$keys
+  store <- worker$controller$store
   status <- res$status
   if (status == TASK_COMPLETE) {
     run_task_cleanup_success(con, keys, store, task_id, status, res$value)
@@ -19,7 +19,7 @@ worker_run_task <- function(worker, private, task_id) {
   con$pipeline(
     redis$HSET(keys$worker_status, worker$id, WORKER_IDLE),
     redis$HDEL(keys$worker_task,   worker$id),
-    worker_log(redis, keys, paste0("TASK_", status), task_id,
+    worker_log(redis, private$key_log, paste0("TASK_", status), task_id,
                private$is_child, private$verbose))
 
   private$active_task_id <- NULL
@@ -37,7 +37,9 @@ worker_run_task_local <- function(task, worker, private) {
 
 
 worker_run_task_local_old <- function(task, worker, private) {
-  e <- expression_restore_locals(task, private$envir, private$store)
+  keys <- worker$controller$keys
+  store <- worker$controller$store
+  e <- expression_restore_locals(task, private$envir, store)
   result <- withCallingHandlers(
     expression_eval_safely(task$expr, e),
     progress = function(e) worker$progress(unclass(e), FALSE))
@@ -46,14 +48,15 @@ worker_run_task_local_old <- function(task, worker, private) {
          status = TASK_COMPLETE)
   } else {
     list(value = rrq_task_error(result$value, TASK_ERROR,
-                                private$keys$queue_id, task$id),
+                                keys$queue_id, task$id),
          status = TASK_ERROR)
   }
 }
 
 worker_run_task_local_new <- function(task, worker, private) {
   envir <- private$envir
-  store <- private$store
+  keys <- worker$controller$keys
+  store <- worker$controller$store
 
   top <- rlang::current_env() # not quite right, but better than nothing
   local <- new.env(parent = emptyenv())
@@ -103,15 +106,15 @@ worker_run_task_local_new <- function(task, worker, private) {
       result$warnings <- local$warnings$get()
     }
     list(value = rrq_task_error(result, TASK_ERROR,
-                                private$keys$queue_id, task$id),
+                                keys$queue_id, task$id),
          status = TASK_ERROR)
   }
 }
 
 
 worker_run_task_separate_process <- function(task, worker, private) {
-  con <- private$con
-  keys <- private$keys
+  con <- worker$controller$con
+  keys <- worker$controller$keys
   redis_config <- con$config()
   queue_id <- keys$queue_id
   worker_id <- worker$id
@@ -181,10 +184,11 @@ remote_run_task <- function(redis_config, queue_id, worker_id, task_id) {
 
 
 worker_run_task_start <- function(worker, private, task_id) {
-  keys <- private$keys
+  con <- worker$controller$con
+  keys <- worker$controller$keys
   worker_id <- worker$id
-  dat <- private$con$pipeline(
-    worker_log(redis, keys, "TASK_START", task_id,
+  dat <- con$pipeline(
+    worker_log(redis, private$key_log, "TASK_START", task_id,
                private$is_child, private$verbose),             # 1
     redis$HSET(keys$worker_status,   worker_id, WORKER_BUSY),  # 2
     redis$HSET(keys$worker_task,     worker_id, task_id),      # 3
@@ -196,7 +200,7 @@ worker_run_task_start <- function(worker, private, task_id) {
 
   if (is_task_redirect(dat[[8]])) {
     task_id_root <- dat[[8]]
-    dat[7:8] <- private$con$pipeline(
+    dat[7:8] <- con$pipeline(
       redis$HGET(keys$task_local,    task_id_root),
       redis$HGET(keys$task_expr,     task_id_root))
   }

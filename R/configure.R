@@ -64,7 +64,7 @@ rrq_configure <- function(queue_id, con = redux::hiredis(), ...,
     ## which is slightly different.
     cli::cli_abort("Unconsumed dot arguments")
   }
-  keys <- rrq_keys_common(queue_id)
+  keys <- rrq_keys(queue_id)
 
   assert_scalar_numeric(store_max_size)
   if (!is.null(offload_path)) {

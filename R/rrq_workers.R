@@ -33,6 +33,25 @@ rrq_worker_list <- function(controller = NULL) {
 }
 
 
+##' Test if a worker exists
+##'
+##' @title Test if a worker exists
+##'
+##' @param name Name of the worker
+##'
+##' @inheritParams rrq_task_list
+##'
+##' @return A logical value
+##' @export
+rrq_worker_exists <- function(name, controller = NULL) {
+  controller <- get_controller(controller, call = rlang::current_env())
+  assert_scalar_character(name, call = environment())
+  con <- controller$con
+  keys <- controller$keys
+  con$SISMEMBER(keys$worker_id, name) == 1L
+}
+
+
 ##' Returns the ids of workers known to have exited
 ##'
 ##' @title List exited workers
@@ -334,10 +353,6 @@ rrq_worker_stop <- function(worker_ids = NULL, type = "message",
 rrq_worker_detect_exited <- function(controller = NULL) {
   ## TODO: should accept a worker_ids argument I think
   controller <- get_controller(controller, call = rlang::current_env())
-  con <- controller$con
-  keys <- controller$keys
-  store <- controller$store
-
   time <- heartbeat_time_remaining(controller)
   cleanup_orphans(controller, time)
 }
@@ -410,6 +425,8 @@ rrq_worker_envir_set <- function(create, notify = TRUE, controller = NULL) {
 ##'
 ##' @return Invisibly, a boolean indicating if the configuration was
 ##'   updated.
+##'
+##' @export
 rrq_worker_config_save2 <- function(name, config, overwrite = TRUE,
                                     controller = NULL) {
   ## TODO: odd name here while we transition to new interface, clashes
@@ -455,14 +472,33 @@ rrq_worker_config_list <- function(controller = NULL) {
 ##' @param name Name of the configuration (see
 ##'   [rrq_worker_config_list()])
 ##'
+##' @param timeout Optionally, a timeout to wait for a worker
+##'   configuration to appear.  Generally you won't want to set this,
+##'   but it can be used to block until a configuration becomes
+##'   available.
+##'
 ##' @inheritParams rrq_task_list
 ##'
 ##' @export
-rrq_worker_config_read <- function(name, controller = NULL) {
+rrq_worker_config_read <- function(name, timeout = 0, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
-  worker_config_read(con, keys, name, 0)
+
+  read <- function() {
+    config <- con$HGET(keys$worker_config, name)
+    if (is.null(config)) {
+      cli::cli_abort("Invalid rrq worker configuration key '{name}'")
+    }
+    bin_to_object(config)
+  }
+
+  if (timeout > 0) {
+    time_poll <- 1
+    wait_success("config not readable in time", timeout, read, time_poll)
+  } else {
+    read()
+  }
 }
 
 
@@ -531,24 +567,6 @@ worker_log_parse <- function(log, worker_id) {
   command <- sub(re, "\\3", log)
   message <- lstrip(sub(re, "\\4", log))
   data_frame(worker_id, child, time, command, message)
-}
-
-
-worker_config_read <- function(con, keys, name, timeout) {
-  read <- function() {
-    config <- con$HGET(keys$worker_config, name)
-    if (is.null(config)) {
-      cli::cli_abort("Invalid rrq worker configuration key '{name}'")
-    }
-    bin_to_object(config)
-  }
-
-  if (timeout > 0) {
-    time_poll <- 1
-    wait_success("config not readable in time", timeout, read, time_poll)
-  } else {
-    read()
-  }
 }
 
 

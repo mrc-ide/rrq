@@ -2,6 +2,7 @@
 % Please edit documentation in R/worker_spawn.R
 \name{rrq_worker_spawn}
 \alias{rrq_worker_spawn}
+\alias{rrq_worker_spawn2}
 \title{Spawn a worker}
 \usage{
 rrq_worker_spawn(
@@ -13,6 +14,17 @@ rrq_worker_spawn(
   worker_id_base = NULL,
   time_poll = 1,
   progress = NULL
+)
+
+rrq_worker_spawn2(
+  n = 1,
+  logdir = NULL,
+  timeout = 600,
+  name_config = "localhost",
+  worker_id_base = NULL,
+  time_poll = 1,
+  progress = NULL,
+  controller = NULL
 )
 }
 \arguments{
@@ -39,6 +51,10 @@ workers to come up.  Must be an integer, at least 1.}
 
 \item{progress}{Show a progress bar while waiting for workers
 (when \code{timeout} is at least 0)}
+
+\item{controller}{The controller to use.  If not given (or \code{NULL})
+we'll use the controller registered with
+\code{\link[=rrq_default_controller_set]{rrq_default_controller_set()}}.}
 }
 \value{
 An \code{rrq_worker_manager} object with fields:

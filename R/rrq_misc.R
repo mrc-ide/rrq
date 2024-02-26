@@ -22,6 +22,8 @@
 ##'   argument for details.
 ##'
 ##' @param controller The controller to destroy
+##'
+##' @export
 rrq_destroy <- function(delete = TRUE, worker_stop_type = "message",
                         timeout_worker_stop = 0, controller = NULL) {
   controller <- get_controller(controller)
