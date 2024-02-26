@@ -86,6 +86,10 @@ but will sit and poll a queue for jobs.</p>
 <dd><p>The name of the configuration used by this worker</p></dd>
 
 
+<dt><code>controller</code></dt>
+<dd><p>An rrq controller object</p></dd>
+
+
 </dl><p></p></div>
     </div>
     <div id="methods">
@@ -196,7 +200,7 @@ format to screen and a machine-readable format to the redis database.</p><div cl
 <h3 id="method-load-envir-">Method <code>load_envir()</code><a class="anchor" aria-label="anchor" href="#method-load-envir-"></a></h3>
 <p>Load the worker environment by creating a new
 environment object and running the create hook (if configured).
-See <code>$envir</code> on <code><a href="rrq_controller.html">rrq_controller</a></code> for details.</p><div class="section">
+See <code><a href="rrq_worker_envir_set.html">rrq_worker_envir_set()</a></code> for details.</p><div class="section">
 <h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_worker</span><span class="op">$</span><span class="fu">load_envir</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
