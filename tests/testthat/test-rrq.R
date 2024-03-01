@@ -260,7 +260,12 @@ test_that("change environment", {
 
   obj$envir(NULL)
   w$step(TRUE)
-  expect_equal(ls(r6_private(w)$envir), character(0))
+
+  envir <- r6_private(w)$envir
+  expect_equal(ls(envir), c("WORKER_CONFIG", "WORKER_CONTROLLER", "WORKER_ID"))
+  expect_equal(envir$WORKER_ID, w$id)
+  expect_equal(envir$WORKER_CONTROLLER, w$controller)
+  expect_equal(envir$WORKER_CONFIG, w$config)
 })
 
 

@@ -113,6 +113,9 @@ rrq_worker <- R6::R6Class(
     load_envir = function() {
       self$log("ENVIR", "new")
       private$envir <- new.env(parent = .GlobalEnv)
+      private$envir$WORKER_ID <- self$id
+      private$envir$WORKER_CONFIG <- self$config
+      private$envir$WORKER_CONTROLLER <- self$controller
       create <- self$controller$con$GET(self$controller$keys$envir)
       if (!is.null(create)) {
         self$log("ENVIR", "create")
