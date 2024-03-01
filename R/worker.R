@@ -110,6 +110,10 @@ rrq_worker <- R6::R6Class(
     ##' @description Load the worker environment by creating a new
     ##'   environment object and running the create hook (if configured).
     ##'   See [rrq::rrq_worker_envir_set()] for details.
+    ##'   Some environment variables are created by default:
+    ##'     * `WORKER_ID` - same as `id` field
+    ##'     * `WORKER_CONFIG` - same as `config` field
+    ##'     * `WORKER_CONTROLLER` - same as `controller` field
     load_envir = function() {
       self$log("ENVIR", "new")
       private$envir <- new.env(parent = .GlobalEnv)

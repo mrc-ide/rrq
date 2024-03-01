@@ -125,6 +125,10 @@ format to screen and a machine-readable format to the redis database.
 Load the worker environment by creating a new
 environment object and running the create hook (if configured).
 See \code{\link[=rrq_worker_envir_set]{rrq_worker_envir_set()}} for details.
+Some environment variables are created by default:
+* \code{WORKER_ID} - same as \code{id} field
+* \code{WORKER_CONFIG} - same as \code{config} field
+* \code{WORKER_CONTROLLER} - same as \code{controller} field
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_worker$load_envir()}\if{html}{\out{</div>}}
 }

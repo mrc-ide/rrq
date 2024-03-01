@@ -7,9 +7,10 @@
 rrq_task_overview(task_ids = NULL, controller = NULL)
 }
 \arguments{
-\item{task_ids}{Optional character vector of task ids for which you
-would like the overview. If not given (or \code{NULL}) then the status of
-all task ids known to this rrq controller is used.}
+\item{task_ids}{Optional character vector of task ids for which
+you would like the overview. If not given (or \code{NULL}) then the
+status of all task ids known to this rrq controller is used
+(this might be fairly costly).}
 
 \item{controller}{The controller to use.  If not given (or \code{NULL})
 we'll use the controller registered with
