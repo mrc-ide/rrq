@@ -122,6 +122,7 @@ worker_run_task_separate_process <- function(task, worker, private) {
   key_cancel <- keys$task_cancel
   poll_process <- private$poll_process
   timeout_process_die <- private$timeout_process_die
+  env <- private$envir
 
   worker$log("REMOTE", task_id)
   px <- callr::r_bg(
@@ -130,7 +131,8 @@ worker_run_task_separate_process <- function(task, worker, private) {
     },
     list(redis_config, queue_id, worker_id, task_id),
     package = "rrq",
-    supervise = TRUE)
+    supervise = TRUE,
+    env = env)
 
   con$HSET(keys$task_pid, task_id, px$get_pid())
 
