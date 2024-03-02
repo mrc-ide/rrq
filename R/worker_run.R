@@ -58,6 +58,8 @@ worker_run_task_local_new <- function(task, worker, private) {
   keys <- worker$controller$keys
   store <- worker$controller$store
 
+  browser()
+
   top <- rlang::current_env() # not quite right, but better than nothing
   local <- new.env(parent = emptyenv())
   local$warnings <- collector(list())
