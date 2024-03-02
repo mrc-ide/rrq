@@ -70,7 +70,7 @@ worker_run_task_local_new <- function(task, worker, private) {
       if (!is.null(task$variables)) {
         rlang::env_bind(envir, !!!task$variables)
       }
-      eval(task$expr, envir)
+      eval(task$expr, envir = envir)
     } else { # task$type is call
       fn <- task$fn
       args <- task$args
@@ -82,7 +82,7 @@ worker_run_task_local_new <- function(task, worker, private) {
       } else {
         call <- rlang::call2(fn$name, !!!args, .ns = fn$namespace)
       }
-      eval(call, envir)
+      eval(call, envir = envir)
     }
   },
   warning = function(e) {
@@ -122,7 +122,6 @@ worker_run_task_separate_process <- function(task, worker, private) {
   key_cancel <- keys$task_cancel
   poll_process <- private$poll_process
   timeout_process_die <- private$timeout_process_die
-  env <- private$envir
 
   worker$log("REMOTE", task_id)
   px <- callr::r_bg(
@@ -131,8 +130,7 @@ worker_run_task_separate_process <- function(task, worker, private) {
     },
     list(redis_config, queue_id, worker_id, task_id),
     package = "rrq",
-    supervise = TRUE,
-    env = env)
+    supervise = TRUE)
 
   con$HSET(keys$task_pid, task_id, px$get_pid())
 
