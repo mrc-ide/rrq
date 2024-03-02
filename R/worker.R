@@ -87,13 +87,6 @@ rrq_worker <- R6::R6Class(
           worker_initialise(self, private, config),
           error = worker_catch_error(self, private))
       }
-
-      if (is.null(private$envir)) {
-        private$envir <- new.env(parent = .GlobalEnv)
-      }
-      private$envir$WORKER_ID <- self$id
-      private$envir$WORKER_CONFIG <- self$config
-      private$envir$WORKER_CONTROLLER <- self$controller
     },
 
     ##' @description Return information about this worker, a list of
