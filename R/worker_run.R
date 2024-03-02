@@ -58,8 +58,6 @@ worker_run_task_local_new <- function(task, worker, private) {
   keys <- worker$controller$keys
   store <- worker$controller$store
 
-  browser()
-
   top <- rlang::current_env() # not quite right, but better than nothing
   local <- new.env(parent = emptyenv())
   local$warnings <- collector(list())
@@ -132,7 +130,8 @@ worker_run_task_separate_process <- function(task, worker, private) {
     },
     list(redis_config, queue_id, worker_id, task_id),
     package = "rrq",
-    supervise = TRUE)
+    supervise = TRUE,
+    env = c(callr::rcmd_safe_env(), WORKER_ID = worker_id))
 
   con$HSET(keys$task_pid, task_id, px$get_pid())
 
