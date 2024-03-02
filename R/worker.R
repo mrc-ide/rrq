@@ -201,7 +201,10 @@ rrq_worker <- R6::R6Class(
       invisible()
     },
 
-    ##' @description Evaluate a task
+    ##' @description Evaluate a task. When running a task on a separate
+    ##'   process, we will always set two environment variables:
+    ##'     * `WORKER_ID` this is the id field
+    ##'     * `TASK_ID` this is the task id
     ##'
     ##' @param task_id A task identifier. It is undefined what happens if
     ##'   this identifier does not exist.

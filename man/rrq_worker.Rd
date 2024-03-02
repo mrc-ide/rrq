@@ -125,10 +125,6 @@ format to screen and a machine-readable format to the redis database.
 Load the worker environment by creating a new
 environment object and running the create hook (if configured).
 See \code{\link[=rrq_worker_envir_set]{rrq_worker_envir_set()}} for details.
-Some environment variables are created by default:
-* \code{WORKER_ID} - same as \code{id} field
-* \code{WORKER_CONFIG} - same as \code{config} field
-* \code{WORKER_CONTROLLER} - same as \code{controller} field
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_worker$load_envir()}\if{html}{\out{</div>}}
 }
@@ -252,7 +248,10 @@ progress messages have made it to the server.}
 \if{html}{\out{<a id="method-rrq_worker-task_eval"></a>}}
 \if{latex}{\out{\hypertarget{method-rrq_worker-task_eval}{}}}
 \subsection{Method \code{task_eval()}}{
-Evaluate a task
+Evaluate a task. When running a task on a separate
+process, we will always set two environment variables:
+* \code{WORKER_ID} this is the id field
+* \code{TASK_ID} this is the task id
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_worker$task_eval(task_id)}\if{html}{\out{</div>}}
 }

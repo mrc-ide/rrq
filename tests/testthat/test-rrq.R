@@ -260,9 +260,7 @@ test_that("change environment", {
 
   obj$envir(NULL)
   w$step(TRUE)
-
-  envir <- r6_private(w)$envir
-  expect_equal(ls(envir), character(0))
+  expect_equal(ls(r6_private(w)$envir), character(0))
 })
 
 
