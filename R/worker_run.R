@@ -70,7 +70,7 @@ worker_run_task_local_new <- function(task, worker, private) {
       if (!is.null(task$variables)) {
         rlang::env_bind(envir, !!!task$variables)
       }
-      eval(task$expr, envir = envir)
+      eval(task$expr, envir)
     } else { # task$type is call
       fn <- task$fn
       args <- task$args
@@ -82,7 +82,7 @@ worker_run_task_local_new <- function(task, worker, private) {
       } else {
         call <- rlang::call2(fn$name, !!!args, .ns = fn$namespace)
       }
-      eval(call, envir = envir)
+      eval(call, envir)
     }
   },
   warning = function(e) {
