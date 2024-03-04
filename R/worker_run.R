@@ -132,8 +132,8 @@ worker_run_task_separate_process <- function(task, worker, private) {
     package = "rrq",
     supervise = TRUE,
     env = c(callr::rcmd_safe_env(),
-            WORKER_ID = worker_id,
-            TASK_ID = task_id))
+            RRQ_WORKER_ID = worker_id,
+            RRQ_TASK_ID = task_id))
 
   con$HSET(keys$task_pid, task_id, px$get_pid())
 
