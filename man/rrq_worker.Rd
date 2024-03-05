@@ -248,7 +248,10 @@ progress messages have made it to the server.}
 \if{html}{\out{<a id="method-rrq_worker-task_eval"></a>}}
 \if{latex}{\out{\hypertarget{method-rrq_worker-task_eval}{}}}
 \subsection{Method \code{task_eval()}}{
-Evaluate a task
+Evaluate a task. When running a task on a separate
+process, we will always set two environment variables:
+* \code{RRQ_WORKER_ID} this is the id field
+* \code{RRQ_TASK_ID} this is the task id
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_worker$task_eval(task_id)}\if{html}{\out{</div>}}
 }
