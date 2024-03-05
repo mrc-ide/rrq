@@ -144,22 +144,22 @@ current timeout.</p></li>
 details and use the <code>lapply</code> method in much the same way as you
 would in normal R. Assuming that <code>obj</code> is your <code>rrq_controller</code>
 object, you might write:</p>
-<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>ans <span class="ot">&lt;-</span> obj<span class="sc">$</span><span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, sqrt)</span></code></pre><p></p></div>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>ans <span class="ot">&lt;-</span> obj<span class="sc">$</span><span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, sqrt)</span></code></pre><p></p></div>
 <p>which will return the same thing as <code>lapply(1:10, sqrt)</code> (provided
 that you have a Redis server running and workers registered)</p>
 <p>There is some sleight of hand here, though as we need to identify
 that it is the <em>symbol</em> <code>sqrt</code> that matters there corresponding
 to the builtin <a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a> function. You can make this more explicit
 by passing in the name of the function using <code>$lapply_()</code></p>
-<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>ans <span class="ot">&lt;-</span> obj<span class="sc">$</span><span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="fu">quote</span>(sqrt))</span></code></pre><p></p></div>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>ans <span class="ot">&lt;-</span> obj<span class="sc">$</span><span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="fu">quote</span>(sqrt))</span></code></pre><p></p></div>
 <p>The same treatment applies to the dots; this is allowed:</p>
-<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="dv">2</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>ans <span class="ot">&lt;-</span> obj<span class="sc">$</span><span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, log, <span class="at">base =</span> b)</span></code></pre><p></p></div>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>ans <span class="ot">&lt;-</span> obj<span class="sc">$</span><span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, log, <span class="at">base =</span> b)</span></code></pre><p></p></div>
 <p>But this will look up the bindings of <code>log</code> and <code>b</code> in the context
 in which the call is made. This may not always do what is
 expected, so you can use the names directly:</p>
-<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="dv">2</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>ans <span class="ot">&lt;-</span> obj<span class="sc">$</span><span class="fu">lapply_</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="fu">quote</span>(log), <span class="at">base =</span> <span class="fu">quote</span>(b))</span></code></pre><p></p></div>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>ans <span class="ot">&lt;-</span> obj<span class="sc">$</span><span class="fu">lapply_</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="fu">quote</span>(log), <span class="at">base =</span> <span class="fu">quote</span>(b))</span></code></pre><p></p></div>
     </div>
     <div id="public-fields">
     <h2>Public fields</h2>

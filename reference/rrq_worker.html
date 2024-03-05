@@ -314,7 +314,10 @@ progress messages have made it to the server.</p></dd>
 
 </div><p></p><hr><a id="method-rrq_worker-task_eval"></a><div class="section">
 <h3 id="method-task-eval-">Method <code>task_eval()</code><a class="anchor" aria-label="anchor" href="#method-task-eval-"></a></h3>
-<p>Evaluate a task</p><div class="section">
+<p>Evaluate a task. When running a task on a separate
+process, we will always set two environment variables:
+* <code>RRQ_WORKER_ID</code> this is the id field
+* <code>RRQ_TASK_ID</code> this is the task id</p><div class="section">
 <h4 id="usage-10">Usage<a class="anchor" aria-label="anchor" href="#usage-10"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">rrq_worker</span><span class="op">$</span><span class="fu">task_eval</span><span class="op">(</span><span class="va">task_id</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
