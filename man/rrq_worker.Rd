@@ -63,8 +63,7 @@ Constructor
 
 \item{\code{name_config}}{Optional name of the configuration. The
 default "localhost" configuration always exists. Create new
-configurations using the \verb{$worker_config_save} method on the
-\code{\link{rrq_controller}} object.}
+configurations using \link{rrq_worker_config_save2}.}
 
 \item{\code{worker_id}}{Optional worker id.  If omitted, a random
 id will be created.}
@@ -230,8 +229,7 @@ Submit a progress message. See
 \describe{
 \item{\code{value}}{An R object with the contents of the update. This
 will overwrite any previous progress value, and can be retrieved
-from a \link{rrq_controller} with the
-\verb{$task_progress} method.  A value of \code{NULL} will appear
+with \link{rrq_task_progress}.  A value of \code{NULL} will appear
 to clear the status, as \code{NULL} will also be returned if no
 status is found for a task.}
 

@@ -67,10 +67,9 @@ should be considered read-only, and contain only the validated
 input parameters.
 }
 \description{
-Create a worker configuration, suitable to pass into the
-\code{worker_config_save} method of \link{rrq_controller}, or into
-\link{rrq_worker_config_save}. The results of this function should
-not be modified.
+Create a worker configuration, suitable to pass into
+\link{rrq_worker_config_save2}. The results of this function
+should not be modified.
 }
 \examples{
 rrq::rrq_worker_config()
