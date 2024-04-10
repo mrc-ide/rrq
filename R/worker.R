@@ -23,8 +23,7 @@ rrq_worker <- R6::R6Class(
     ##'
     ##' @param name_config Optional name of the configuration. The
     ##'   default "localhost" configuration always exists. Create new
-    ##'   configurations using the `$worker_config_save` method on the
-    ##'  [`rrq::rrq_controller`] object.
+    ##'   configurations using [rrq_worker_config_save2].
     ##'
     ##' @param worker_id Optional worker id.  If omitted, a random
     ##'   id will be created.
@@ -176,8 +175,7 @@ rrq_worker <- R6::R6Class(
     ##'
     ##' @param value An R object with the contents of the update. This
     ##'   will overwrite any previous progress value, and can be retrieved
-    ##'   from a [rrq::rrq_controller] with the
-    ##'   `$task_progress` method.  A value of `NULL` will appear
+    ##'   with [rrq_task_progress].  A value of `NULL` will appear
     ##'   to clear the status, as `NULL` will also be returned if no
     ##'   status is found for a task.
     ##'

@@ -1,7 +1,6 @@
-##' Create a worker configuration, suitable to pass into the
-##' `worker_config_save` method of [rrq::rrq_controller], or into
-##' [rrq::rrq_worker_config_save]. The results of this function should
-##' not be modified.
+##' Create a worker configuration, suitable to pass into
+##' [rrq::rrq_worker_config_save2]. The results of this function
+##' should not be modified.
 ##'
 ##' @title Create worker configuration
 ##'
@@ -94,10 +93,12 @@ rrq_worker_config <- function(queue = NULL, verbose = TRUE,
 
 
 ##' Save a worker configuration. This is an alternative (but
-##' equivalent) to setting the worker configuration via the
+##' equivalent) to setting the worker configuration via [the
 ##' `$worker_config_save()` method in [rrq::rrq_controller], but does
 ##' not require setting up a controller (in fact, one need never have
-##' existed).
+##' existed).  This function is replaced by [rrq_worker_config_save2],
+##' which will be renamed to `rrq_worker_config_save` soon, but note
+##' the change in arguments.
 ##'
 ##' @title Save a worker configuration
 ##'
