@@ -15,8 +15,8 @@
 ##'   read. Typically these will contain just function definitions but
 ##'   you might read large data objects here too.
 ##'
-##' @return A function suitable for passing to the `$envir()` method
-##'   of [`rrq::rrq_controller`]
+##' @return A function suitable for passing to [rrq_worker_envir_set],
+##'   which can set (or update) the environment for your workers.
 ##'
 ##' @export
 rrq_envir <- function(packages = NULL, sources = NULL) {

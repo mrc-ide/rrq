@@ -14,8 +14,8 @@ read. Typically these will contain just function definitions but
 you might read large data objects here too.}
 }
 \value{
-A function suitable for passing to the \verb{$envir()} method
-of \code{\link{rrq_controller}}
+A function suitable for passing to \link{rrq_worker_envir_set},
+which can set (or update) the environment for your workers.
 }
 \description{
 Helper function for creating a worker environment. This function
