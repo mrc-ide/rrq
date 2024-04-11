@@ -145,38 +145,6 @@ test_that("collect progress from signal", {
   expect_equal(obj$task_progress(t), list(message = "iteration 5"))
 })
 
-
-test_that("Separate process leaves global env clean", {
-  obj <- test_rrq("myfuns.R")
-  w <- test_worker_blocking(obj)
-
-  t1 <- obj$enqueue(dirty_double(1))
-  t2 <- obj$enqueue(dirty_double(2))
-  w$step(TRUE)
-  w$step(TRUE)
-
-  ## Running locally pollutes the global environment and is not
-  ## isolated:
-  expect_equal(obj$task_result(t1), list(NULL, 2))
-  expect_equal(obj$task_result(t2), list(1, 4))
-  expect_equal(.GlobalEnv$.rrq_dirty_double, 2)
-
-  t3 <- obj$enqueue(dirty_double(3), separate_process = TRUE)
-  t4 <- obj$enqueue(dirty_double(4), separate_process = TRUE)
-  w$step(TRUE)
-  w$step(TRUE)
-
-  ## Running in separate process is unaffected by global environment
-  ## and does not affect it:
-  expect_equal(obj$task_status(t3),
-               set_names(TASK_COMPLETE, t3))
-  expect_equal(obj$task_result(t3), list(NULL, 6))
-  expect_equal(obj$task_result(t4), list(NULL, 8))
-  expect_equal(.GlobalEnv$.rrq_dirty_double, 2)
-
-  rm(list = ".rrq_dirty_double", envir = .GlobalEnv)
-})
-
 ## OLD ^^^
 ## NEW VVV
 
@@ -329,4 +297,37 @@ test_that("collect progress from signal", {
   expect_equal(rrq_task_result(t, controller = obj), 5)
   expect_equal(rrq_task_progress(t, controller = obj),
                list(message = "iteration 5"))
+})
+
+
+## This one actually belongs elsewhere, really.
+test_that("Separate process leaves global env clean", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+
+  t1 <- obj$enqueue(dirty_double(1))
+  t2 <- obj$enqueue(dirty_double(2))
+  w$step(TRUE)
+  w$step(TRUE)
+
+  ## Running locally pollutes the global environment and is not
+  ## isolated:
+  expect_equal(obj$task_result(t1), list(NULL, 2))
+  expect_equal(obj$task_result(t2), list(1, 4))
+  expect_equal(.GlobalEnv$.rrq_dirty_double, 2)
+
+  t3 <- obj$enqueue(dirty_double(3), separate_process = TRUE)
+  t4 <- obj$enqueue(dirty_double(4), separate_process = TRUE)
+  w$step(TRUE)
+  w$step(TRUE)
+
+  ## Running in separate process is unaffected by global environment
+  ## and does not affect it:
+  expect_equal(obj$task_status(t3),
+               set_names(TASK_COMPLETE, t3))
+  expect_equal(obj$task_result(t3), list(NULL, 6))
+  expect_equal(obj$task_result(t4), list(NULL, 8))
+  expect_equal(.GlobalEnv$.rrq_dirty_double, 2)
+
+  rm(list = ".rrq_dirty_double", envir = .GlobalEnv)
 })
