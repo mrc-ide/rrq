@@ -202,7 +202,7 @@ rrq_controller <- R6::R6Class(
     ##' @description Convert controller to the new-style object.
     ##'   Please don't use this in packages directly
     to_v2 = function() {
-      ret <- list(queue_id = self$keys$queue_id,
+      ret <- list(queue_id = private$keys$queue_id,
                   con = self$con,
                   keys = private$keys,
                   timeout_task_wait = private$timeout_task_wait,
