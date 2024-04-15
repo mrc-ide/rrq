@@ -128,7 +128,7 @@ rrq_worker_expect2 <- function(worker_ids, controller = NULL) {
   con <- controller$con
   keys <- controller$keys
 
-  key_alive <- rrq_key_worker_alive(controller$queue_id)
+  key_alive <- rrq_key_worker_alive(controller$keys$queue_id)
   con$HMSET(keys$worker_alive, worker_ids, rep_along(key_alive, worker_ids))
   con$HSET(keys$worker_expect, key_alive, object_to_bin(worker_ids))
 

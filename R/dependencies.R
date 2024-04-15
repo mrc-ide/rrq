@@ -26,14 +26,14 @@ queue_dependencies <- function(controller, task_id, deferred_task_ids) {
 
 
 task_depends_down <- function(controller, task_ids) {
-  queue_id <- controller$queue_id
+  queue_id <- controller$keys$queue_id
   key <- function(k) rrq_key_task_depends_down(queue_id, k)
   task_depends_walk(controller, key, task_ids)
 }
 
 
 task_depends_up <- function(controller, task_ids) {
-  queue_id <- controller$queue_id
+  queue_id <- controller$keys$queue_id
   key <- function(k) rrq_key_task_depends_up_original(queue_id, k)
   task_depends_walk(controller, key, task_ids)
 }

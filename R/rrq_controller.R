@@ -202,7 +202,7 @@ rrq_controller <- R6::R6Class(
     ##' @description Convert controller to the new-style object.
     ##'   Please don't use this in packages directly
     to_v2 = function() {
-      ret <- list(queue_id = self$queue_id,
+      ret <- list(queue_id = self$keys$queue_id,
                   con = self$con,
                   keys = private$keys,
                   timeout_task_wait = private$timeout_task_wait,
@@ -1265,7 +1265,6 @@ task_submit_n <- function(controller, task_ids, dat, key_complete, queue,
                           separate_process, timeout, depends_on = NULL) {
   con <- controller$con
   keys <- controller$keys
-  store <- controller$store
 
   n <- length(dat)
   queue <- queue %||% QUEUE_DEFAULT
@@ -1366,7 +1365,6 @@ tasks_wait <- function(controller, task_ids, timeout, time_poll,
                        call = NULL) {
   con <- controller$con
   keys <- controller$keys
-  store <- controller$store
 
   ## This can be relaxed in recent Redis >= 6.0.0 as we then interpret
   ## time_poll as a double. To do this efficiently we'll want to get

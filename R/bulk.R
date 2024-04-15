@@ -41,7 +41,7 @@ rrq_bulk_submit <- function(controller, x, fun, dots, do_call,
     dat <- rrq_bulk_prepare_lapply(store, task_ids, x, fun, dots, envir)
   }
 
-  key_complete <- rrq_key_task_complete(controller$queue_id)
+  key_complete <- rrq_key_task_complete(controller$keys$queue_id)
   task_submit_n(controller, task_ids, dat, key_complete, queue,
                 separate_process, timeout_task_run,
                 depends_on = depends_on)
