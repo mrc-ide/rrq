@@ -144,3 +144,31 @@ test_that("can provide informative error messages on worker spawn failure", {
     abort_workers_not_ready(c("waiting", "waiting", "ready"), NULL),
     "2 / 3 workers not ready in time")
 })
+
+
+test_that("report back correctly", {
+  skip_if_not_installed("mockery")
+
+  root <- tempfile()
+  obj <- test_rrq("myfuns.R", root, verbose = TRUE)
+
+  worker_ids <- paste(ids::adjective_animal(), 1:2, sep = "_")
+  path_logs <- withr::local_tempdir()
+  writeLines(c("a", "b"), file.path(path_logs, worker_ids[[1]]))
+  writeLines(c("c", "d"), file.path(path_logs, worker_ids[[2]]))
+
+  fetch_logs <- function(id) {
+    readLines(file.path(path_logs, id))
+  }
+
+  mock_logwatch <- mockery::mock(list(status = c("died", "died")))
+  mockery::stub(worker_wait_alive, "logwatch::logwatch", mock_logwatch)
+  err <- expect_error(
+    worker_wait_alive(obj, worker_ids, is_dead = NULL, fetch_logs = fetch_logs,
+                      timeout = 0, time_poll = 1, progress = FALSE),
+    "All 2 workers died")
+
+  mockery::expect_called(mock_logwatch, 1)
+  expect_equal(err$logs, set_names(list(c("a", "b"), c("c", "d")), worker_ids))
+  expect_equal(err$footer, worker_format_failed_logs)
+})

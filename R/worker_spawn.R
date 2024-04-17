@@ -233,7 +233,7 @@ rrq_worker_manager <- R6::R6Class(
   ))
 
 
-worker_wait_alive <- function(controller, worker_ids, is_dead, path_logs,
+worker_wait_alive <- function(controller, worker_ids, is_dead, fetch_logs,
                               timeout, time_poll, progress, call = NULL) {
   con <- controller$con
   keys <- controller$keys
@@ -261,10 +261,10 @@ worker_wait_alive <- function(controller, worker_ids, is_dead, path_logs,
 
   err <- res$status != "running"
   if (any(err)) {
-    if (is.null(path_logs)) {
+    if (is.null(fetch_logs)) {
       logs <- NULL
     } else {
-      logs <- set_names(lapply(worker_ids[err], path_logs), worker_ids[err])
+      logs <- set_names(lapply(worker_ids[err], fetch_logs), worker_ids[err])
     }
     abort_workers_not_ready(res$status, logs, call = call)
   }
