@@ -229,11 +229,6 @@ last <- function(x) {
 }
 
 
-rep_along <- function(x, y) {
-  rep_len(x, length(y))
-}
-
-
 df_rows <- function(d) {
   i <- vlapply(d, is.list)
   ret <- lapply(seq_len(nrow(d)), function(j) as.list(d[j, , drop = FALSE]))

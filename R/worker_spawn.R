@@ -30,7 +30,7 @@
 ##'   created but appending integers to this base.
 ##'
 ##' @param time_poll Polling period (in seconds) while waiting for
-##'   workers to come up.  Must be an integer, at least 1.
+##'   workers to come up.
 ##'
 ##' @param progress Show a progress bar while waiting for workers
 ##'   (when \code{timeout} is at least 0)
@@ -52,7 +52,7 @@
 rrq_worker_spawn <- function(obj, n = 1, logdir = NULL,
                              timeout = 600, name_config = "localhost",
                              worker_id_base = NULL,
-                             time_poll = 1, progress = NULL) {
+                             time_poll = 0.2, progress = NULL) {
   controller <- obj$to_v2()
   rrq_worker_spawn2(n = n, logdir = logdir, timeout = timeout,
                     name_config = name_config, worker_id_base = worker_id_base,
@@ -68,78 +68,25 @@ rrq_worker_spawn <- function(obj, n = 1, logdir = NULL,
 ##'   [rrq_default_controller_set()].
 rrq_worker_spawn2 <- function(n = 1, logdir = NULL, timeout = 600,
                               name_config = "localhost", worker_id_base = NULL,
-                              time_poll = 1, progress = NULL,
+                              time_poll = 0.2, progress = NULL,
                               controller = NULL) {
   controller <- get_controller(controller)
-  ret <- rrq_worker_manager$new(controller, n, logdir, name_config,
-                                worker_id_base)
+  manager <- rrq_worker_manager$new(controller, n, logdir, name_config,
+                                    worker_id_base)
   if (timeout > 0) {
-    ret$wait_alive(timeout, time_poll, progress)
+    manager$wait_alive(timeout, time_poll, progress)
   }
-  ret
+  manager
 }
 
 
-##' Register that workers are expected.  This generates a key that one
-##' or more workers will write to when they start up (as used by
-##' \code{rrq_worker_spawn}).
+##' Wait for workers to appear.
 ##'
-##' The general pattern here is that the process that submits the
-##' worker (so the parent process, or the user submitting a cluster
-##' job) would run this function to register that some number of
-##' workers will be started at some point in the future.  In the case
-##' of starting workers by submitting them to a cluster, this could
-##' take a long time as the job queues, or if starting by running
-##' another process it could be very quick.  Information about the
-##' workers that are expected and where to find them is stored against
-##' a key, which is returned by `rrq_worker_expect`.
+##' @title Wait for workers
 ##'
-##' Then, to wait on a set of workers, you run `rrq_worker_wait`
+##' @param worker_ids A vector of worker ids to wait for
 ##'
-##' @title Register expected workers
-##'
-##' @param obj A rrq_controller object
-##'
-##' @param worker_ids Ids of expected workers
-##'
-##' @return
-##'
-##' * For `rrq_worker_expect`: A string, which can be passed through
-##'   as the second argument to `rrq_worker_wait` in order to block
-##'   until workers are available.
-##'
-##' * For `rrq_worker_wait`: Invisibly a difftime object with the time
-##'   spent waiting.
-##'
-##' @export
-rrq_worker_expect <- function(obj, worker_ids) {
-  assert_is(obj, "rrq_controller")
-  rrq_worker_expect2(worker_ids, obj)
-}
-
-
-##' @rdname rrq_worker_expect
-##' @param controller The controller to use.  If not given (or `NULL`)
-##'   we'll use the controller registered with
-##'   [rrq_default_controller_set()].
-##' @export
-rrq_worker_expect2 <- function(worker_ids, controller = NULL) {
-  controller <- get_controller(controller)
-  con <- controller$con
-  keys <- controller$keys
-
-  key_alive <- rrq_key_worker_alive(controller$keys$queue_id)
-  con$HMSET(keys$worker_alive, worker_ids, rep_along(key_alive, worker_ids))
-  con$HSET(keys$worker_expect, key_alive, object_to_bin(worker_ids))
-
-  key_alive
-}
-
-
-##' @param key_alive A key as returned by `rrq_worker_expect`
-##'
-##' @param timeout Number of seconds to wait for workers to appear. If
-##'   they have not appeared by this time, we throw an error.
+##' @param timeout Timeout in seconds; default is to wait forever
 ##'
 ##' @param poll Poll interval, in seconds. Must be an integer
 ##'
@@ -148,26 +95,21 @@ rrq_worker_expect2 <- function(worker_ids, controller = NULL) {
 ##'   global option `rrq.progress`, and if that is unset display a
 ##'   progress bar if in an interactive session.
 ##'
-##' @rdname rrq_worker_expect
+##' @param controller The controller to use.  If not given (or `NULL`)
+##'   we'll use the controller registered with
+##'   [rrq_default_controller_set()].
+##'
 ##' @export
-rrq_worker_wait <- function(obj, key_alive, timeout = Inf, poll = 1,
-                            progress = NULL) {
-  assert_is(obj, "rrq_controller")
-  rrq_worker_wait2(key_alive, timeout, poll, progress, obj)
-}
-
-
-##' @rdname rrq_worker_expect
-##' @export
-rrq_worker_wait2 <- function(key_alive, timeout = Inf, poll = 1,
-                             progress = NULL, controller = NULL) {
+rrq_worker_wait <- function(worker_ids, timeout = Inf, time_poll = 1,
+                            progress = NULL, controller = NULL) {
+  assert_scalar_numeric(timeout)
+  assert_scalar_numeric(time_poll)
   controller <- get_controller(controller)
-  con <- controller$con
-  keys <- controller$keys
-  is_dead <- function() FALSE
+  is_dead <- NULL
   path_logs <- NULL
-  worker_wait_alive(controller, key_alive, is_dead, path_logs, timeout, poll,
-                    progress)
+  worker_wait_alive(controller, worker_ids, is_dead, path_logs,
+                    timeout, time_poll, progress,
+                    call = rlang::current_env())
 }
 
 
@@ -178,7 +120,6 @@ rrq_worker_manager <- R6::R6Class(
     controller = NULL,
     process = NULL,
     logfile = NULL,
-    key_alive = NULL,
     worker_id_base = NULL,
 
     check_worker_id = function(worker_id) {
@@ -212,7 +153,6 @@ rrq_worker_manager <- R6::R6Class(
       }
       worker_id_base <- worker_id_base %||% ids::adjective_animal()
       worker_ids <- sprintf("%s_%d", worker_id_base, seq_len(n))
-      key_alive <- rrq_worker_expect2(worker_ids, controller)
       logdir <- logdir %||% tempfile()
       dir.create(logdir, FALSE, TRUE)
 
@@ -222,10 +162,10 @@ rrq_worker_manager <- R6::R6Class(
       logfile <- file.path(logdir, worker_ids)
       con$HMSET(keys$worker_process, worker_ids, logfile)
 
-      message(sprintf("Spawning %d %s with prefix %s",
-                      n, ngettext(n, "worker", "workers"), worker_id_base))
+      cli::cli_alert_info(
+        "Spawning {n} worker{?s} with prefix '{worker_id_base}'")
 
-      args <- list(keys$queue_id, name_config, key_alive, con$config())
+      args <- list(keys$queue_id, name_config, con$config())
       process <- set_names(vector("list", n), worker_ids)
       for (i in seq_len(n)) {
         args_i <- c(list(worker_ids[[i]]), args)
@@ -235,7 +175,7 @@ rrq_worker_manager <- R6::R6Class(
         ## will rarely want the default callr/processx cleanup as we
         ## want to tidy away the worker first.
         process[[i]] <- callr::r_bg(
-          function(worker_id, queue_id, name_config, key_alive, config) {
+          function(worker_id, queue_id, name_config, config) {
             con <- redux::hiredis(config)
             w <- rrq_worker$new(
               queue_id, name_config = name_config, worker_id = worker_id,
@@ -249,7 +189,6 @@ rrq_worker_manager <- R6::R6Class(
       private$controller <- controller
       private$process <- process
       private$logfile <- set_names(logfile, worker_ids)
-      private$key_alive <- key_alive
       private$worker_id_base <- worker_id_base
 
       self$id <- worker_ids
@@ -281,70 +220,96 @@ rrq_worker_manager <- R6::R6Class(
               function(p) p$is_alive())
     },
 
-    wait_alive = function(timeout, poll = 1, progress = NULL) {
+    wait_alive = function(timeout, time_poll = 0.2, progress = NULL) {
+      assert_scalar_numeric(timeout)
+      assert_scalar_numeric(time_poll)
       is_dead <- function() {
         !vlapply(private$process, function(p) p$is_alive())
       }
-      worker_wait_alive(private$controller, private$key_alive,
-                        is_dead, self$logs, timeout, poll, progress)
+      worker_wait_alive(private$controller, self$id, is_dead, self$logs,
+                        timeout, time_poll, progress,
+                        call = rlang::current_env())
     }
   ))
 
 
-worker_wait_alive <- function(controller, key_alive, is_dead, path_logs,
-                              timeout, poll, progress) {
+worker_wait_alive <- function(controller, worker_ids, is_dead, path_logs,
+                              timeout, time_poll, progress, call = NULL) {
   con <- controller$con
   keys <- controller$keys
 
-  assert_scalar_numeric(timeout)
-  assert_scalar_integer_like(poll)
-
-  bin <- con$HGET(keys$worker_expect, key_alive)
-  if (is.null(bin)) {
-    cli::cli_abort("No workers expected on this key")
-  }
-  worker_ids <- bin_to_object(bin)
-
-  worker_done <- function() {
-    worker_ids %in% list_to_character(con$SMEMBERS(keys$worker_id)) | is_dead()
-  }
-
-  fetch <- function() {
-    con$BLPOP(key_alive, poll)
-    worker_done()
-  }
-
-  t0 <- Sys.time()
-  done <- worker_done()
-  if (!all(done)) {
-    done <- general_poll(fetch, 0, timeout, "workers", FALSE, progress)
-  }
-
-  ok <- done & !is_dead()
-  if (!all(ok)) {
-    message(sprintf("%d / %d workers not identified in time",
-                    sum(!ok), length(done)))
-    if (!is.null(path_logs)) {
-      logs <- set_names(lapply(worker_ids[!ok], path_logs), worker_ids[!ok])
-      worker_print_failed_logs(logs)
+  worker_status <- function() {
+    ## I think we can hit rrq_worker_status here and fetch most of this?
+    ## rrq_worker_status(worker_id, controller = controller)
+    known <- list_to_character(con$SMEMBERS(keys$worker_id))
+    ret <- rep("waiting", length(worker_ids))
+    ret[worker_ids  %in% known] <- "running"
+    if (!is.null(is_dead)) {
+      ret[is_dead()] <- "died"
     }
-    cli::cli_abort("Not all workers recovered")
+    ret
   }
 
-  invisible(Sys.time() - t0)
+  res <- logwatch::logwatch(
+    ngettext(length(worker_ids), "worker", "workers"),
+    worker_status,
+    NULL,
+    show_log = FALSE,
+    poll = time_poll,
+    timeout = timeout,
+    status_waiting = "waiting",
+    status_running = character(),
+    multiple = length(worker_ids) > 1)
+
+  err <- res$status != "running"
+  if (any(err)) {
+    if (is.null(path_logs)) {
+      logs <- NULL
+    } else {
+      logs <- set_names(lapply(worker_ids[err], path_logs), worker_ids[err])
+    }
+    abort_workers_not_ready(res$status, logs, call = call)
+  }
+
+  invisible(res$end - res$start)
 }
 
 
-worker_print_failed_logs <- function(logs) {
-  if (is.null(logs)) {
-    cat("Logging not enabled for these workers\n")
+abort_workers_not_ready <- function(status, logs, call = NULL) {
+  n <- length(status)
+  is_dead <- status == "died"
+  is_waiting <- status == "waiting"
+  if (all(is_dead)) {
+    if (n == 1) {
+      msg <- "Worker died"
+    } else {
+      msg <- "All {n} workers died"
+    }
+  } else if (any(is_dead)) {
+    msg <- "{sum(is_dead)} / {n} workers died"
   } else {
-    header <- sprintf("Log files recovered for %d %s\n",
-                      length(logs), ngettext(length(logs), "worker", "workers"))
-    log_str <- vcapply(logs, function(x) {
-      paste(sprintf("  %s\n", x), collapse = "")
-    })
-    txt <- c(header, sprintf("%s\n%s", names(logs), log_str))
-    cat(paste(txt, collapse = "\n"))
+    if (n == 1) {
+      msg <- "Worker not ready in time"
+    } else if (all(is_waiting)) {
+      msg <- "All {n} workers not ready in time"
+    } else {
+      msg <- "{sum(is_waiting)} / {n} workers not ready in time"
+    }
+  }
+
+  cli::cli_abort(msg, footer = worker_format_failed_logs, logs = logs,
+                 call = call)
+}
+
+
+worker_format_failed_logs <- function(err) {
+  logs <- err$logs
+  if (is.null(logs)) {
+    c("!" = "Logging not enabled for these workers")
+  } else {
+    n <- length(logs)
+    details <- unlist(unname(Map(c, ">" = names(logs), unname(logs), "")))
+    c(i = cli::format_inline("Log files recovered for {n} worker{?s}"),
+      details[-length(details)])
   }
 }

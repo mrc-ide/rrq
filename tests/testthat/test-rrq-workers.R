@@ -302,3 +302,25 @@ test_that("multiple queues format correctly when printing worker", {
   expect_equal(sub(".+:queue:", "", queue_string_split),
                c("a", "b", "default"))
 })
+
+
+test_that("can call worker from script", {
+  skip_if_not_installed("processx")
+  obj <- test_rrq()
+  tmp <- withr::local_tempdir()
+  path <- rrq_worker_script(tmp, versioned = TRUE)
+  worker_id <- ids::adjective_animal()
+  args <- c(sprintf("--worker-id=%s", worker_id), obj$queue_id)
+  px <- processx::process$new(path, args)
+  rrq_worker_wait(worker_id, timeout = 5, time_poll = 0.1, progress = FALSE,
+                  controller = obj)
+  expect_equal(rrq_worker_list(controller = obj), worker_id)
+  expect_true(px$is_alive())
+  rrq_worker_stop(worker_id, controller = obj)
+  ## There's a small period where the process is alive and shutting
+  ## down; give that time to run.
+  testthat::try_again(10, {
+    Sys.sleep(.2)
+    expect_false(px$is_alive())
+  })
+})

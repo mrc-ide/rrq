@@ -450,14 +450,12 @@ Usage:
 Options:
 --config=NAME    Name of a worker configuration [default: localhost]
 --name=NAME      Name of the worker (optional)
---key-alive=KEY  Key to write to once alive (optional)
 ```
 
 This is a bash script that can then be called from whatever cluster job scheduler you use. The important things to pass through are:
 
 * `id` the only positional argument, which is the queue id
 * `--config=NAME` allows controlling of the named worker config (set via `$worker_config_set()`, and allowing changing of timeout, verbosity and queues)
-* `--key-alive=KEY` allows setting a key that the worker will report back on
 
 In addition, you may need to change the configuration type. If you need to control redis access you should set the `REDIS_URL` environment variable to point at your Redis server.
 
@@ -476,13 +474,6 @@ We first create a vector of names for the new workers, and then tell `rrq` that 
 ```{r, problem_here}
 obj <- rrq::rrq_controller$new(id)
 worker_ids <- c("cluster_1", "cluster_2")
-key_alive <- rrq::rrq_worker_expect(obj, worker_ids)
-```
-
-It responds with a key that we can use to check if they have appeared:
-
-```{r}
-key_alive
 ```
 
 How you then start the workers is up to you; you might start them at the command line with
@@ -497,7 +488,7 @@ writeLines(c(
 (into separate terminals). Or you might queue these jobs with a cluster scheduler such as Slurm or PBS (with appropriate care over the working directory).  But you can then immediately, in your R console write:
 
 ```r
-rrq::rrq_worker_wait(obj, key_alive)
+rrq::rrq_worker_wait(worker_ids, controller = obj)
 ```
 
 and your session will block and wait for the workers to appear, erroring if they do not appear in time.
