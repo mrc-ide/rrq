@@ -109,8 +109,6 @@ rrq_message_send_and_wait <- function(command, args = NULL, worker_ids = NULL,
                                       timeout = 600, time_poll = 0.05,
                                       progress = NULL, controller = NULL) {
   controller <- get_controller(controller, rlang::current_env())
-  con <- controller$con
-  keys <- controller$keys
 
   if (is.null(worker_ids)) {
     worker_ids <- rrq_worker_list(controller)
@@ -173,21 +171,36 @@ rrq_message_get_response <- function(message_id, worker_ids = NULL,
   if (is.null(worker_ids)) {
     worker_ids <- rrq_worker_list(controller)
   }
+  n <- length(worker_ids)
 
   response_keys <- rrq_key_worker_response(keys$queue_id, worker_ids)
 
-  done <- rep(FALSE, length(response_keys))
-  fetch <- function() {
-    done[!done] <<- hash_exists(con, response_keys[!done], message_id)
-    done
-  }
-  done <- general_poll(fetch, time_poll, timeout, "responses", FALSE, progress)
-  if (!all(done)) {
-    stop(paste0("Response missing for workers: ",
-                paste(worker_ids[!done], collapse = ", ")))
+  done <- rep(FALSE, n)
+  get_status <- function() {
+    done[!done] <- hash_exists(con, response_keys[!done], message_id)
+    ifelse(done, "finished", "waiting")
   }
 
-  res <- lapply(response_keys, function(k) {
+  res <- logwatch::logwatch(
+    if (n == 1) "message" else "messages",
+    get_status = get_status,
+    get_log = NULL,
+    show_log = FALSE,
+    multiple = n > 1,
+    show_spinner = show_progress(progress),
+    poll = time_poll,
+    timeout = timeout,
+    status_waiting = "waiting",
+    status_timeout = "wait:timeout",
+    status_interrupt = "wait:interrupt")
+  is_missing <- res$status %in% c("wait:timeout", "wait:interrupt")
+  if (any(is_missing)) {
+    msg <- worker_ids[is_missing]
+    cli::cli_abort(
+      "Response missing for worker{?s}: {squote(msg)}")
+  }
+
+  response <- lapply(response_keys, function(k) {
     bin_to_object(con$HGET(k, message_id))$result
   })
 
@@ -198,7 +211,7 @@ rrq_message_get_response <- function(message_id, worker_ids = NULL,
   }
 
   if (named) {
-    names(res) <- worker_ids
+    names(response) <- worker_ids
   }
-  res
+  response
 }
