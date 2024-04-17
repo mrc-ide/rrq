@@ -6,14 +6,14 @@ worker_run_task <- function(worker, private, task_id) {
     res <- worker_run_task_local(task, worker, private)
   }
 
-  con <- worker$controller$con
-  keys <- worker$controller$keys
-  store <- worker$controller$store
+  controller <- worker$controller
+  con <- controller$con
+  keys <- controller$keys
   status <- res$status
   if (status == TASK_COMPLETE) {
-    run_task_cleanup_success(con, keys, store, task_id, status, res$value)
+    run_task_cleanup_success(controller, task_id, status, res$value)
   } else {
-    run_task_cleanup_failure(con, keys, store, task_id, status, res$value)
+    run_task_cleanup_failure(controller, task_id, status, res$value)
   }
 
   con$pipeline(

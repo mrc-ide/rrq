@@ -319,11 +319,8 @@ rrq_task_create_bulk_call <- function(fn, data, args = NULL,
 
 task_submit2 <- function(controller, task_ids, dat, queue, separate_process,
                          timeout_task_run, depends_on) {
-  con <- controller$con
-  keys <- controller$keys
-  store <- controller$store
   key_complete <- NULL
-  task_submit_n(con, keys, store, task_ids, dat, key_complete, queue,
+  task_submit_n(controller, task_ids, dat, key_complete, queue,
                 separate_process, timeout_task_run, depends_on)
 }
 

@@ -1,11 +1,10 @@
 ##' Helper function for creating a worker environment. This function
-##' exists to create a function suitable for passing to the `envir`
-##' method of [`rrq::rrq_controller`] for the common case where the
-##' worker should source some R scripts and/or load some packages on
-##' startup. This is a convenience wrapper around defining your own
-##' function for use with the `envir` method of
-##' [`rrq::rrq_controller`], which covers the most simple case. If you
-##' need more flexibility you should write your own.
+##' exists to create a function suitable for passing to
+##' [rrq_worker_envir_set] for the common case where the worker should
+##' source some R scripts and/or load some packages on startup. This
+##' is a convenience wrapper around defining your own function,
+##' covering the most simple case. If you need more flexibility you
+##' should write your own function.
 ##'
 ##' @title Create simple worker environments
 ##'
@@ -15,8 +14,8 @@
 ##'   read. Typically these will contain just function definitions but
 ##'   you might read large data objects here too.
 ##'
-##' @return A function suitable for passing to the `$envir()` method
-##'   of [`rrq::rrq_controller`]
+##' @return A function suitable for passing to [rrq_worker_envir_set],
+##'   which can set (or update) the environment for your workers.
 ##'
 ##' @export
 rrq_envir <- function(packages = NULL, sources = NULL) {

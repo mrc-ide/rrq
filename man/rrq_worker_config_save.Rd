@@ -32,8 +32,10 @@ Invisibly, a boolean indicating if the configuration was written
 }
 \description{
 Save a worker configuration. This is an alternative (but
-equivalent) to setting the worker configuration via the
+equivalent) to setting the worker configuration via [the
 \verb{$worker_config_save()} method in \link{rrq_controller}, but does
 not require setting up a controller (in fact, one need never have
-existed).
+existed).  This function is replaced by \link{rrq_worker_config_save2},
+which will be renamed to \code{rrq_worker_config_save} soon, but note
+the change in arguments.
 }

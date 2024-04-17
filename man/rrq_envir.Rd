@@ -14,16 +14,15 @@ read. Typically these will contain just function definitions but
 you might read large data objects here too.}
 }
 \value{
-A function suitable for passing to the \verb{$envir()} method
-of \code{\link{rrq_controller}}
+A function suitable for passing to \link{rrq_worker_envir_set},
+which can set (or update) the environment for your workers.
 }
 \description{
 Helper function for creating a worker environment. This function
-exists to create a function suitable for passing to the \code{envir}
-method of \code{\link{rrq_controller}} for the common case where the
-worker should source some R scripts and/or load some packages on
-startup. This is a convenience wrapper around defining your own
-function for use with the \code{envir} method of
-\code{\link{rrq_controller}}, which covers the most simple case. If you
-need more flexibility you should write your own.
+exists to create a function suitable for passing to
+\link{rrq_worker_envir_set} for the common case where the worker should
+source some R scripts and/or load some packages on startup. This
+is a convenience wrapper around defining your own function,
+covering the most simple case. If you need more flexibility you
+should write your own function.
 }

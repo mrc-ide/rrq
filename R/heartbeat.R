@@ -18,7 +18,6 @@ cleanup_orphans <- function(controller, time) {
 
   con <- controller$con
   keys <- controller$keys
-  store <- controller$store
 
   message(sprintf(
     "Lost %s %s:\n%s",
@@ -33,7 +32,7 @@ cleanup_orphans <- function(controller, time) {
       "Orphaning %s %s:\n%s",
       length(task_ids), ngettext(sum(i), "task", "tasks"),
       paste0("  - ", task_ids, collapse = "\n")))
-    run_task_cleanup_failure(con, keys, store, task_ids, TASK_DIED, NULL)
+    run_task_cleanup_failure(controller, task_ids, TASK_DIED, NULL)
   }
 
   con$HMSET(keys$worker_status, worker_id, rep(WORKER_LOST, length(worker_id)))

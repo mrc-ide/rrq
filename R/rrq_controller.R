@@ -202,7 +202,7 @@ rrq_controller <- R6::R6Class(
     ##' @description Convert controller to the new-style object.
     ##'   Please don't use this in packages directly
     to_v2 = function() {
-      ret <- list(queue_id = self$queue_id,
+      ret <- list(queue_id = private$keys$queue_id,
                   con = self$con,
                   keys = private$keys,
                   timeout_task_wait = private$timeout_task_wait,
@@ -350,7 +350,7 @@ rrq_controller <- R6::R6Class(
       verify_dependencies_exist(self, depends_on)
       dat <- expression_prepare(expr, envir, private$store, task_id,
                                 export = export)
-      task_submit(self$con, private$keys, private$store, task_id, dat, queue,
+      task_submit(self$to_v2(), task_id, dat, queue,
                   separate_process, timeout_task_run, depends_on)
     },
 
@@ -493,7 +493,7 @@ rrq_controller <- R6::R6Class(
         dots <- list(...)
       }
       timeout_task_wait <- timeout_task_wait %||% private$timeout_task_wait
-      rrq_lapply(self$con, private$keys, private$store, X, FUN, dots, envir,
+      rrq_lapply(self$to_v2(), X, FUN, dots, envir,
                  queue, separate_process, timeout_task_run, depends_on,
                  timeout_task_wait, time_poll, progress, delete, error)
     },
@@ -647,7 +647,7 @@ rrq_controller <- R6::R6Class(
         dots <- list(...)
       }
       timeout_task_wait <- timeout_task_wait %||% private$timeout_task_wait
-      rrq_enqueue_bulk(self$con, private$keys, private$store, X, FUN, dots,
+      rrq_enqueue_bulk(self$to_v2(), X, FUN, dots,
                        envir, queue, separate_process, timeout_task_run,
                        depends_on, timeout_task_wait, time_poll,
                        progress, delete, error)
@@ -680,7 +680,7 @@ rrq_controller <- R6::R6Class(
                          progress = NULL, delete = FALSE, error = FALSE,
                          follow = NULL) {
       timeout <- timeout %||% private$timeout_task_wait
-      rrq_bulk_wait(self$con, private$keys, private$store, x, timeout,
+      rrq_bulk_wait(self$to_v2(), x, timeout,
                     time_poll, progress, delete, error,
                     follow %||% private$follow)
     },
@@ -1254,15 +1254,18 @@ rrq_controller <- R6::R6Class(
 
 
 
-task_submit <- function(con, keys, store, task_id, dat, queue,
+task_submit <- function(controller, task_id, dat, queue,
                         separate_process, timeout, depends_on = NULL) {
-  task_submit_n(con, keys, store, task_id, list(object_to_bin(dat)), NULL,
+  task_submit_n(controller, task_id, list(object_to_bin(dat)), NULL,
                 queue, separate_process, timeout, depends_on)
 }
 
 
-task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
+task_submit_n <- function(controller, task_ids, dat, key_complete, queue,
                           separate_process, timeout, depends_on = NULL) {
+  con <- controller$con
+  keys <- controller$keys
+
   n <- length(dat)
   queue <- queue %||% QUEUE_DEFAULT
   key_queue <- rrq_key_queue(keys$queue_id, queue)
@@ -1323,7 +1326,7 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
   ## In the time between 2 and 3 A could have finished and failed meaning that
   ## the dependency of B will never be satisfied and it will never be run.
   if (any(response$status %in% TASK$terminal_fail)) {
-    run_task_cleanup_failure(con, keys, store, task_ids, TASK_IMPOSSIBLE, NULL)
+    run_task_cleanup_failure(controller, task_ids, TASK_IMPOSSIBLE, NULL)
     incomplete <- response$status[response$status %in% TASK$terminal_fail]
     names(incomplete) <- depends_on[response$status %in% TASK$terminal_fail]
     stop(sprintf("Failed to queue as dependent tasks failed:\n%s",
@@ -1333,7 +1336,7 @@ task_submit_n <- function(con, keys, store, task_ids, dat, key_complete, queue,
 
   complete <- depends_on[response$status == TASK_COMPLETE]
   for (dep_id in complete) {
-    queue_dependencies(con, keys, dep_id, task_ids)
+    queue_dependencies(controller, dep_id, task_ids)
   }
 
   task_ids
@@ -1357,16 +1360,19 @@ worker_naturalsort <- function(x) {
 }
 
 
-tasks_wait <- function(con, keys, store, task_ids, timeout, time_poll,
+tasks_wait <- function(controller, task_ids, timeout, time_poll,
                        progress, key_complete, error, follow,
                        call = NULL) {
+  con <- controller$con
+  keys <- controller$keys
+
   ## This can be relaxed in recent Redis >= 6.0.0 as we then interpret
   ## time_poll as a double. To do this efficiently we'll want to get
   ## the version information stored into the redux client, which is
   ## not hard as we already do some negotiation
   time_poll <- validate_time_poll(con, time_poll, call)
   if (follow) {
-    task_ids_from <- task_follow(con, keys, task_ids)
+    task_ids_from <- task_follow(controller, task_ids)
   } else {
     task_ids_from <- task_ids
   }
@@ -1421,73 +1427,10 @@ verify_dependencies_exist <- function(controller, depends_on) {
   invisible(TRUE)
 }
 
+
 throw_task_errors <- function(res) {
   is_error <- vlapply(res, inherits, "rrq_task_error")
   if (any(is_error)) {
     stop(rrq_task_error_group(unname(res[is_error]), length(res)))
   }
-}
-
-
-## This is probably worth doing in lua, because we're going to hit
-## this really very often.
-task_follow <- function(con, keys, task_ids) {
-  key <- keys$task_moved_to
-  i <- rep_len(TRUE, length(task_ids))
-  while (any(i)) {
-    moved_to <- unname(from_redis_hash(con, key, task_ids[i]))
-    is_terminal <- is.na(moved_to)
-    i[is_terminal] <- FALSE
-    task_ids[i] <- moved_to[!is_terminal]
-  }
-  task_ids
-}
-
-
-task_follow_root <- function(con, keys, task_ids) {
-  task_ids_root <- unname(from_redis_hash(con, keys$task_moved_root, task_ids))
-  task_ids_root[is.na(task_ids_root)] <- task_ids[is.na(task_ids_root)]
-  task_ids_root
-}
-
-
-task_follow_chain <- function(con, keys, task_ids) {
-  task_ids <- task_follow_root(con, keys, task_ids)
-  chain <- NULL
-  while (any(!is.na(task_ids))) {
-    chain <- cbind(chain, task_ids, deparse.level = 0)
-    task_ids <- unname(from_redis_hash(con, keys$task_moved_to, task_ids))
-  }
-  lapply(seq_len(nrow(chain)), function(i) na_drop(chain[i, ]))
-}
-
-
-is_task_redirect <- function(x) {
-  is.character(x)
-}
-
-
-task_depends_down <- function(con, keys, task_ids) {
-  key <- function(k) rrq_key_task_depends_down(keys$queue_id, k)
-  task_depends_walk(con, key, task_ids)
-}
-
-
-task_depends_up <- function(con, keys, task_ids) {
-  key <- function(k) rrq_key_task_depends_up_original(keys$queue_id, k)
-  task_depends_walk(con, key, task_ids)
-}
-
-
-task_depends_walk <- function(con, key, task_ids) {
-  ret <- list()
-  while (length(task_ids) > 0) {
-    deps <- lapply(
-      con$pipeline(.commands = lapply(key(task_ids), redis$SMEMBERS)),
-      list_to_character)
-    i <- lengths(deps) > 0
-    ret <- c(ret, set_names(deps[i], task_ids[i]))
-    task_ids <- unique(unlist(deps[i]))
-  }
-  if (length(ret) == 0) NULL else ret
 }
