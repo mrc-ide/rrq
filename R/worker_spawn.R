@@ -239,8 +239,6 @@ worker_wait_alive <- function(controller, worker_ids, is_dead, path_logs,
   keys <- controller$keys
 
   worker_status <- function() {
-    ## I think we can hit rrq_worker_status here and fetch most of this?
-    ## rrq_worker_status(worker_id, controller = controller)
     known <- list_to_character(con$SMEMBERS(keys$worker_id))
     ret <- rep("waiting", length(worker_ids))
     ret[worker_ids  %in% known] <- "running"
