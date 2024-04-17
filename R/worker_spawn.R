@@ -276,7 +276,7 @@ worker_wait_alive <- function(controller, worker_ids, is_dead, fetch_logs,
 abort_workers_not_ready <- function(status, logs, call = NULL) {
   n <- length(status)
   is_dead <- status == "died"
-  is_waiting <- status == "waiting"
+  is_waiting <- !is_dead & status != "running"
   if (all(is_dead)) {
     if (n == 1) {
       msg <- "Worker died"

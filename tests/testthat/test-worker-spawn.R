@@ -79,7 +79,7 @@ test_that("can wait on manually spawned workers", {
   expect_error(
     suppressMessages(rrq_worker_wait(worker_ids, timeout = 0, time_poll = 1,
                                      progress = FALSE, controller = obj)),
-    "0 / 2 workers not ready in time")
+    "All 2 workers not ready in time")
 
   p1 <- callr::r_bg(function(queue_id, worker_id) {
     rrq::rrq_worker$new(queue_id, worker_id = worker_id)$loop()
@@ -141,7 +141,7 @@ test_that("can provide informative error messages on worker spawn failure", {
     abort_workers_not_ready(rep("waiting", 3), NULL),
     "All 3 workers not ready in time")
   expect_error(
-    abort_workers_not_ready(c("waiting", "waiting", "ready"), NULL),
+    abort_workers_not_ready(c("timeout", "timeout", "running"), NULL),
     "2 / 3 workers not ready in time")
 })
 
