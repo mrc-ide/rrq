@@ -252,7 +252,7 @@ test_that("collect progress from signal", {
 })
 
 
-## TODO: this test is sli[ghly flakey, and I don't see why.
+## TODO: this test is slighly flakey, and I don't see why.
 test_that("collect progress from separate process", {
   obj <- test_rrq("myfuns.R")
   w <- test_worker_spawn(obj, 1)
