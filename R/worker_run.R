@@ -89,6 +89,10 @@ worker_run_task_local_new <- function(task, worker, private) {
     local$warnings$add(list(e))
     tryInvokeRestart("muffleWarning")
   },
+  progress = function(e) {
+    worker$progress(unclass(e), FALSE)
+    rlang::zap()
+  },
   error = function(e) {
     if (is.null(e$trace)) {
       e$trace <- rlang::trace_back(top)
