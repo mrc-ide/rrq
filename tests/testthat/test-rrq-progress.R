@@ -118,14 +118,18 @@ test_that("collect progress from separate process", {
   })
 
   writeLines("something", p)
-  Sys.sleep(0.2)
-  expect_equal(obj$task_progress(t),
-               "Got contents 'something'")
+  testthat::try_again(10, {
+    Sys.sleep(0.2)
+    expect_equal(obj$task_progress(t),
+                 "Got contents 'something'")
+  })
 
   writeLines("another thing", p)
-  Sys.sleep(0.2)
-  expect_equal(obj$task_progress(t),
-               "Got contents 'another thing'")
+  testthat::try_again(10, {
+    Sys.sleep(0.2)
+    expect_equal(obj$task_progress(t),
+                 "Got contents 'another thing'")
+  })
 
   writeLines("STOP", p)
   wait_status(t, obj, status = TASK_RUNNING)

@@ -18,6 +18,7 @@ test_that("Don't wait", {
 
 
 test_that("failed spawn", {
+  skip_on_covr()
   skip_on_windows()
 
   root <- tempfile()
