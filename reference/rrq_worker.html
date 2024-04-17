@@ -133,8 +133,7 @@ but will sit and poll a queue for jobs.</p>
 <dt><code>name_config</code></dt>
 <dd><p>Optional name of the configuration. The
 default "localhost" configuration always exists. Create new
-configurations using the <code>$worker_config_save</code> method on the
-<code><a href="rrq_controller.html">rrq_controller</a></code> object.</p></dd>
+configurations using <a href="rrq_worker_config_save2.html">rrq_worker_config_save2</a>.</p></dd>
 
 
 <dt><code>worker_id</code></dt>
@@ -295,8 +294,7 @@ Used automatically to print the worker by R6.</p><div class="section">
 <p></p><div class="arguments"><dl><dt><code>value</code></dt>
 <dd><p>An R object with the contents of the update. This
 will overwrite any previous progress value, and can be retrieved
-from a <a href="rrq_controller.html">rrq_controller</a> with the
-<code>$task_progress</code> method.  A value of <code>NULL</code> will appear
+with <a href="rrq_task_progress.html">rrq_task_progress</a>.  A value of <code>NULL</code> will appear
 to clear the status, as <code>NULL</code> will also be returned if no
 status is found for a task.</p></dd>
 

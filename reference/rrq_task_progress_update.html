@@ -83,43 +83,35 @@ sent as a progress value (e.g., a string, a list, etc).</p>
     <dl><dt>value</dt>
 <dd><p>An R object with the contents of the update. This
 will overwrite any previous progress value, and can be retrieved
-from a <code><a href="rrq_controller.html">rrq_controller</a></code> with the
-<code>task_progress</code> method.  A value of <code>NULL</code> will appear
+by calling <a href="rrq_task_progress.html">rrq_task_progress</a>.  A value of <code>NULL</code> will appear
 to clear the status, as <code>NULL</code> will also be returned if no
 status is found for a task.</p></dd>
 
 
 <dt>error</dt>
 <dd><p>Logical, indicating if we should throw an error if
-not running as an <code>rrq</code> task. Set this to <code>FALSE</code> if
-you want code to work without modification within and outside of
-an <code>rrq</code> job, or to <code>TRUE</code> if you want to be sure that
-progress messages have made it to the server.</p></dd>
+not running as an <code>rrq</code> task. Set this to <code>FALSE</code> if you want
+code to work without modification within and outside of an <code>rrq</code>
+job, or to <code>TRUE</code> if you want to be sure that progress messages
+have made it to the server.</p></dd>
 
 </dl></div>
     <div id="details">
     <h2>Details</h2>
     <p>In order to report on progress, a task may, in it's code, write</p>
-<div class="sourceCode"><pre><code>
-rrq::rrq_task_progress_update("task is 90<!-- % done") -->
-</code></pre></div>
-
-<p>and this information will be fetchable from <code>rrq_controller</code>
-using the <code>task_progress</code> method and providing the
-<code>task_id</code>.</p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>rrq<span class="sc">::</span><span class="fu">rrq_task_progress_update</span>(<span class="st">"task is 90% done"</span>)</span></code></pre><p></p></div>
+<p>and this information will be fetchable by calling
+<a href="rrq_task_progress.html">rrq_task_progress</a> with the <code>task_id</code>.</p>
 <p>It is also possible to register progress <em>without</em> acquiring
 a dependency on <code>rrq</code>.  If your package/script includes code
 like:</p>
-<div class="sourceCode"><pre><code><span></span>
-<span><span class="va">progress</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">message</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">signalCondition</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/structure.html" class="external-link">structure</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>message <span class="op">=</span> <span class="va">message</span><span class="op">)</span>,</span>
-<span>                            class <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"progress"</span>, <span class="st">"condition"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">}</span></span></code></pre></div>
-
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>progress <span class="ot">&lt;-</span> <span class="cf">function</span>(message) {</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>  <span class="fu">signalCondition</span>(<span class="fu">structure</span>(<span class="fu">list</span>(<span class="at">message =</span> message),</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>                            <span class="at">class =</span> <span class="fu">c</span>(<span class="st">"progress"</span>, <span class="st">"condition"</span>)))</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>}</span></code></pre><p></p></div>
 <p>(this function can be called anything - the important bit is the
-body function body - you must return an object with a
-<code>message</code> element and the two class attributes
-<code>progress</code> and <code>condition</code>).</p>
+body function body - you must return an object with a <code>message</code>
+element and the two class attributes <code>progress</code> and <code>condition</code>).</p>
 <p>then you can use this in the same way as
 <code>rrq::rrq_task_progress_update</code> above in your code.  When run
 without using rrq, this function will appear to do nothing.</p>
