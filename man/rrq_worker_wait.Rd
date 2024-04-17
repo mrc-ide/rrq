@@ -17,6 +17,8 @@ rrq_worker_wait(
 
 \item{timeout}{Timeout in seconds; default is to wait forever}
 
+\item{time_poll}{Poll interval, in seconds. Must be an integer}
+
 \item{progress}{Optional logical indicating if a progress bar
 should be displayed. If \code{NULL} we fall back on the value of the
 global option \code{rrq.progress}, and if that is unset display a
@@ -25,8 +27,6 @@ progress bar if in an interactive session.}
 \item{controller}{The controller to use.  If not given (or \code{NULL})
 we'll use the controller registered with
 \code{\link[=rrq_default_controller_set]{rrq_default_controller_set()}}.}
-
-\item{poll}{Poll interval, in seconds. Must be an integer}
 }
 \description{
 Wait for workers to appear.

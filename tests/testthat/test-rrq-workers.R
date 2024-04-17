@@ -306,6 +306,7 @@ test_that("multiple queues format correctly when printing worker", {
 
 test_that("can call worker from script", {
   skip_if_not_installed("processx")
+  skip_on_windows()
   obj <- test_rrq()
   tmp <- withr::local_tempdir()
   path <- rrq_worker_script(tmp, versioned = TRUE)

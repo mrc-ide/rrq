@@ -88,7 +88,7 @@ rrq_worker_spawn2 <- function(n = 1, logdir = NULL, timeout = 600,
 ##'
 ##' @param timeout Timeout in seconds; default is to wait forever
 ##'
-##' @param poll Poll interval, in seconds. Must be an integer
+##' @param time_poll Poll interval, in seconds. Must be an integer
 ##'
 ##' @param progress Optional logical indicating if a progress bar
 ##'   should be displayed. If `NULL` we fall back on the value of the
