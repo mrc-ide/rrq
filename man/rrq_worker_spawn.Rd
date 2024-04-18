@@ -12,7 +12,7 @@ rrq_worker_spawn(
   timeout = 600,
   name_config = "localhost",
   worker_id_base = NULL,
-  time_poll = 1,
+  time_poll = 0.2,
   progress = NULL
 )
 
@@ -22,7 +22,7 @@ rrq_worker_spawn2(
   timeout = 600,
   name_config = "localhost",
   worker_id_base = NULL,
-  time_poll = 1,
+  time_poll = 0.2,
   progress = NULL,
   controller = NULL
 )
@@ -47,7 +47,7 @@ from.  If omitted a random base will be used. Actual ids will be
 created but appending integers to this base.}
 
 \item{time_poll}{Polling period (in seconds) while waiting for
-workers to come up.  Must be an integer, at least 1.}
+workers to come up.}
 
 \item{progress}{Show a progress bar while waiting for workers
 (when \code{timeout} is at least 0)}

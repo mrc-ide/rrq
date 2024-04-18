@@ -6,36 +6,30 @@ test_that("Don't wait", {
   expect_type(res$id, "character")
   expect_match(res$id, "_[0-9]+$")
 
-  ans <- withVisible(res$wait_alive(timeout = 10, poll = 1))
+  ans <- withVisible(res$wait_alive(timeout = 10, time_poll = 0.1))
   expect_false(ans$visible)
   expect_s3_class(ans$value, "difftime")
 
   ## Can call again with no ill effect:
   expect_s3_class(
-    res$wait_alive(timeout = 10, poll = 1),
+    res$wait_alive(timeout = 10, time_poll = 0.1),
     "difftime")
 })
 
 
 test_that("failed spawn", {
+  skip_on_covr()
   skip_on_windows()
 
   root <- tempfile()
   obj <- test_rrq("myfuns.R", root, verbose = TRUE)
   unlink(file.path(root, "myfuns.R"))
 
-  dat <- evaluate_promise(
-    try(rrq_worker_spawn(obj, 2, timeout = 2),
-        silent = TRUE))
+  err <- expect_error(
+    suppressMessages(rrq_worker_spawn(obj, 2, timeout = 2)),
+    "All 2 workers died")
 
-  expect_s3_class(dat$result, "try-error")
-  expect_match(dat$messages, "2 / 2 workers not identified in time",
-               all = FALSE, fixed = TRUE)
-  expect_match(dat$output, "Log files recovered for 2 workers",
-               all = FALSE, fixed = TRUE)
-  ## This fails occasionally under covr, but I can't reproduce
-  ## expect_match(dat$output, "No such file or directory",
-  ##              all = FALSE, fixed = TRUE)
+  expect_length(err$logs, 2)
 })
 
 
@@ -81,19 +75,11 @@ test_that("can wait on manually spawned workers", {
 
   queue_id <- obj$queue_id
   worker_ids <- sprintf("%s_%d", ids::adjective_animal(), 1:2)
-  key_alive <- rrq::rrq_worker_expect(obj, worker_ids)
-  expect_type(key_alive, "character")
-  expect_length(key_alive, 1)
-  expect_match(key_alive,
-               "^rrq:[[:xdigit:]]{32}:worker:alive:[[:xdigit:]]{32}$")
-
-  bin <- obj$con$HGET(rrq_keys(queue_id)$worker_expect, key_alive)
-  expect_type(bin, "raw")
-  expect_equal(bin_to_object(bin), worker_ids)
 
   expect_error(
-    suppressMessages(rrq_worker_wait(obj, key_alive, 0, 1, FALSE)),
-    "Not all workers recovered")
+    suppressMessages(rrq_worker_wait(worker_ids, timeout = 0, time_poll = 1,
+                                     progress = FALSE, controller = obj)),
+    "All 2 workers not ready in time")
 
   p1 <- callr::r_bg(function(queue_id, worker_id) {
     rrq::rrq_worker$new(queue_id, worker_id = worker_id)$loop()
@@ -102,7 +88,8 @@ test_that("can wait on manually spawned workers", {
     rrq::rrq_worker$new(queue_id, worker_id = worker_id)$loop()
   }, list(queue_id, worker_ids[[2]]), package = TRUE, cleanup = FALSE)
 
-  res <- rrq_worker_wait(obj, key_alive, 5, 1, FALSE)
+  res <- rrq_worker_wait(worker_ids, timeout = 5, time_poll = 0.1,
+                         progress = FALSE, controller = obj)
   expect_s3_class(res, "difftime")
 
   ## If we're unlucky GC will happen within a loop here, so be kind
@@ -110,14 +97,78 @@ test_that("can wait on manually spawned workers", {
   ## coverage build, which is very slow.
   testthat::try_again(
     5,
-    expect_lt(rrq_worker_wait(obj, key_alive, 5, 1, FALSE), 0.5))
+    expect_lt(rrq_worker_wait(worker_ids, timeout = 5, time_poll = 0.1,
+                              progress = FALSE, controller = obj),
+              0.5))
 })
 
 
-test_that("error if no workers expected on key", {
-  obj <- test_rrq("myfuns.R")
-  key_alive <- rrq_key_worker_alive(obj$queue_id)
+test_that("Can build fallback where no logs present", {
+  expect_equal(
+    worker_format_failed_logs(list(logs = NULL)),
+    c("!" = "Logging not enabled for these workers"))
+})
+
+
+test_that("Can format logs for missing workers", {
+  expect_equal(
+    worker_format_failed_logs(list(logs = list(alice = c("a", "b")))),
+    c(i = "Log files recovered for 1 worker",
+      ">" = "alice", "a", "b"))
+  expect_equal(
+    worker_format_failed_logs(list(logs = list(alice = c("a", "b"),
+                                               bob = "c"))),
+    c(i = "Log files recovered for 2 workers",
+      ">" = "alice", "a", "b", "",
+      ">" = "bob", "c"))
+})
+
+
+test_that("can provide informative error messages on worker spawn failure", {
   expect_error(
-    rrq_worker_wait(obj, key_alive, 0, 1, FALSE),
-    "No workers expected on this key")
+    abort_workers_not_ready("died", NULL),
+    "Worker died")
+  expect_error(
+    abort_workers_not_ready(rep("died", 3), NULL),
+    "All 3 workers died")
+  expect_error(
+    abort_workers_not_ready(c("died", "died", "ready", "waiting"), NULL),
+    "2 / 4 workers died")
+  expect_error(
+    abort_workers_not_ready("waiting", NULL),
+    "Worker not ready in time")
+  expect_error(
+    abort_workers_not_ready(rep("waiting", 3), NULL),
+    "All 3 workers not ready in time")
+  expect_error(
+    abort_workers_not_ready(c("timeout", "timeout", "running"), NULL),
+    "2 / 3 workers not ready in time")
+})
+
+
+test_that("report back correctly", {
+  skip_if_not_installed("mockery")
+
+  root <- tempfile()
+  obj <- test_rrq("myfuns.R", root, verbose = TRUE)
+
+  worker_ids <- paste(ids::adjective_animal(), 1:2, sep = "_")
+  path_logs <- withr::local_tempdir()
+  writeLines(c("a", "b"), file.path(path_logs, worker_ids[[1]]))
+  writeLines(c("c", "d"), file.path(path_logs, worker_ids[[2]]))
+
+  fetch_logs <- function(id) {
+    readLines(file.path(path_logs, id))
+  }
+
+  mock_logwatch <- mockery::mock(list(status = c("died", "died")))
+  mockery::stub(worker_wait_alive, "logwatch::logwatch", mock_logwatch)
+  err <- expect_error(
+    worker_wait_alive(obj, worker_ids, is_dead = NULL, fetch_logs = fetch_logs,
+                      timeout = 0, time_poll = 1, progress = FALSE),
+    "All 2 workers died")
+
+  mockery::expect_called(mock_logwatch, 1)
+  expect_equal(err$logs, set_names(list(c("a", "b"), c("c", "d")), worker_ids))
+  expect_equal(err$footer, worker_format_failed_logs)
 })

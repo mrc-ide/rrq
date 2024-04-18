@@ -60,13 +60,6 @@ test_that("Sensible error message on missing config", {
 })
 
 
-test_that("Missing log print fallback", {
-  expect_output(
-    worker_print_failed_logs(NULL),
-    "Logging not enabled for these workers")
-})
-
-
 test_that("worker timeout", {
   obj <- test_rrq("myfuns.R")
 

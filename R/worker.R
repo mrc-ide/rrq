@@ -300,10 +300,7 @@ worker_initialise <- function(worker, private, config) {
     redis$HSET(keys$worker_status, worker$id, WORKER_IDLE),
     redis$HDEL(keys$worker_task,   worker$id),
     redis$DEL(c(private$key_log, private$key_message, private$key_response)),
-    redis$HSET(keys$worker_info,   worker$id, object_to_bin(worker$info())),
-    redis$HGET(keys$worker_alive, worker$id))
-
-  key_alive <- res[[6]]
+    redis$HSET(keys$worker_info,   worker$id, object_to_bin(worker$info())))
 
   if (!is.null(config$timeout_idle)) {
     run_message_timeout_set(worker, private, config$timeout_idle)
@@ -312,12 +309,6 @@ worker_initialise <- function(worker, private, config) {
   worker$log("ALIVE")
   worker$load_envir()
   worker$log("QUEUE", config$queue)
-
-  ## This announces that we're up; things may monitor this
-  ## queue, and rrq_worker_spawn does a BLPOP to
-  if (!is.null(key_alive)) {
-    con$RPUSH(key_alive, worker$id)
-  }
 }
 
 

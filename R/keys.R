@@ -15,7 +15,6 @@ rrq_keys <- function(queue_id) {
        worker_info    = sprintf("%s:worker:info",    queue_id),
        worker_expect  = sprintf("%s:worker:expect",  queue_id),
        worker_process = sprintf("%s:worker:process", queue_id),
-       worker_alive   = sprintf("%s:worker:alive",   queue_id),
 
        task_expr      = sprintf("%s:task:expr",      queue_id),
        task_status    = sprintf("%s:task:status",    queue_id),
@@ -67,10 +66,6 @@ rrq_key_queue <- function(queue, name) {
 ## (Potentially) randomly generated keys:
 rrq_key_task_complete <- function(queue, id = NULL) {
   sprintf("%s:tasks:complete:%s", queue, id %||% ids::random_id())
-}
-
-rrq_key_worker_alive <- function(queue_id) {
-  sprintf("%s:worker:alive:%s", queue_id, ids::random_id())
 }
 
 rrq_key_task_depends_up <- function(queue_id, task_id) {

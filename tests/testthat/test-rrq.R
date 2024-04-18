@@ -433,7 +433,6 @@ test_that("Cancel job sent to new process", {
   t <- obj$enqueue(slowdouble(50), separate_process = TRUE)
   wait_status(t, obj)
   obj$task_cancel(t, wait = TRUE)
-  log <- obj$worker_log_tail(w$id, Inf)
   expect_equal(obj$task_status(t), set_names(TASK_CANCELLED, t))
   expect_equal(obj$task_result(t),
                worker_task_failed(TASK_CANCELLED, obj$queue_id, t))
@@ -441,6 +440,7 @@ test_that("Cancel job sent to new process", {
   ## Flakey on covr, probably due to the job being cancelled before
   ## the second process really finishes starting up.
   skip_on_covr()
+  log <- obj$worker_log_tail(w$id, Inf)
   expect_equal(log$command,
                c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
                  "TASK_START", "REMOTE",
