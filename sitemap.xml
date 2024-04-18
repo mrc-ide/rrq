@@ -178,9 +178,6 @@
     <loc>/reference/rrq_worker_exists.html</loc>
   </url>
   <url>
-    <loc>/reference/rrq_worker_expect.html</loc>
-  </url>
-  <url>
     <loc>/reference/rrq_worker_info.html</loc>
   </url>
   <url>
@@ -212,5 +209,8 @@
   </url>
   <url>
     <loc>/reference/rrq_worker_task_id.html</loc>
+  </url>
+  <url>
+    <loc>/reference/rrq_worker_wait.html</loc>
   </url>
 </urlset>
