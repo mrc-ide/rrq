@@ -7,7 +7,7 @@
 rrq_worker_wait(
   worker_ids,
   timeout = Inf,
-  time_poll = 1,
+  time_poll = 0.2,
   progress = NULL,
   controller = NULL
 )

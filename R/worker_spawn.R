@@ -100,14 +100,14 @@ rrq_worker_spawn2 <- function(n = 1, logdir = NULL, timeout = 600,
 ##'   [rrq_default_controller_set()].
 ##'
 ##' @export
-rrq_worker_wait <- function(worker_ids, timeout = Inf, time_poll = 1,
+rrq_worker_wait <- function(worker_ids, timeout = Inf, time_poll = 0.2,
                             progress = NULL, controller = NULL) {
   assert_scalar_numeric(timeout)
   assert_scalar_numeric(time_poll)
   controller <- get_controller(controller)
   is_dead <- NULL
-  path_logs <- NULL
-  worker_wait_alive(controller, worker_ids, is_dead, path_logs,
+  fetch_logs <- NULL
+  worker_wait_alive(controller, worker_ids, is_dead, fetch_logs,
                     timeout, time_poll, progress,
                     call = rlang::current_env())
 }
