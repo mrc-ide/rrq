@@ -127,8 +127,8 @@ test_that("message response getting", {
 
 test_that("Error on missing response", {
   obj <- test_rrq()
-  w1 <- test_worker_blocking(obj)
-  w2 <- test_worker_blocking(obj)
+  w1 <- test_worker_blocking(obj, worker_id = "a")
+  w2 <- test_worker_blocking(obj, worker_id = "b")
   nms <- c(w1$id, w2$id)
 
   id <- obj$message_send("PING")
@@ -136,12 +136,12 @@ test_that("Error on missing response", {
     obj$message_has_response(id, nms),
     set_names(c(FALSE, FALSE), nms))
   expect_error(obj$message_get_response(id, nms, timeout = 0),
-    sprintf("Response missing for workers: %s, %s", w1$id, w2$id))
+    "Response missing for workers: 'a' and 'b'")
 
   ## Also sensible if we do poll:
   expect_error(
     obj$message_get_response(id, nms, timeout = 0.1, time_poll = 0.1),
-    sprintf("Response missing for workers: %s, %s", w1$id, w2$id))
+    "Response missing for workers: 'a' and 'b'")
 
   expect_message(w1$step(TRUE), "PONG")
 
@@ -150,7 +150,7 @@ test_that("Error on missing response", {
     set_names(c(TRUE, FALSE), nms))
   expect_error(
     obj$message_get_response(id, nms, timeout = 0),
-    sprintf("Response missing for workers: %s", w2$id))
+    "Response missing for worker: 'b'")
 })
 
 
