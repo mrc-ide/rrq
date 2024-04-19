@@ -154,7 +154,7 @@ In addition there are rarer ways a task can end (`CANCELLED`, `DIED`, `TIMEOUT`)
 
 A task in any terminal state (except `IMPOSSIBLE`, so `COMPLETE`, `ERROR`, `CANCELLED`, `DIED` or `TIMEOUT`) can be retried, at which point the status is `MOVED` and the task will "point" somewhere else (that task will move through the usual `PENDING -> RUNNING -> (terminal state)` flow). See `vignette("fault-tolerance")` for details.
 
-Above, we slept for a few seconds in order for the task to become finished. However, this is an extremely common operation, so `rrq` provides a function `rrq_task_wait()` which will will wait until a task finishes, then returns a logical indicating if the task succeeded or not, after which you can fetch the result with `rrq_task_result()`.
+Above, we slept for a few seconds in order for the task to become finished. However, this is an extremely common operation, so `rrq` provides a function `rrq_task_wait()` which will wait until a task finishes, then returns a logical indicating if the task succeeded or not, after which you can fetch the result with `rrq_task_result()`.
 
 ```{r}
 t <- rrq_task_create_expr({

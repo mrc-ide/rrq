@@ -103,7 +103,7 @@ This process is unchanged if the task is run in a separate process (with `separa
 
 ## Increasing resiliance via separate processes
 
-Running tasks in separate processes (e.g., `rrq_task_create_expr(mytask(), separate_process = TRUE)`) is the simplest way of making things more resiliant because this creates a layer of isolation between the worker and the task. If your task crashes R (e.g., a segmentation fault due to a bug in your C/C++ code) or is killed by the operating system then the worker process survives and can update the keys in Redis directly to advertise this fact. This is geerally much nicer than when the worker dies and the task status cannot be updated.
+Running tasks in separate processes (e.g., `rrq_task_create_expr(mytask(), separate_process = TRUE)`) is the simplest way of making things more resiliant because this creates a layer of isolation between the worker and the task. If your task crashes R (e.g., a segmentation fault due to a bug in your C/C++ code) or is killed by the operating system then the worker process survives and can update the keys in Redis directly to advertise this fact. This is generally much nicer than when the worker dies and the task status cannot be updated.
 
 The downside of using separate processes is that it is much slower; compare the time taken to queue, run an retrieve a trivial task run in the same worker process (look at the `elapsed` entry)
 
