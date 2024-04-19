@@ -73,46 +73,6 @@
 ##' * `TIMEOUT_GET` (no args): Tells the worker to respond with its
 ##'   current timeout.
 ##'
-##' @section Bulk interface (`lapply`):
-##'
-##' The bulk interface is a bit more complicated than the basic
-##'   `enqueue` interface. In the majority of cases you can ignore the
-##'   details and use the `lapply` method in much the same way as you
-##'   would in normal R. Assuming that `obj` is your `rrq_controller`
-##'   object, you might write:
-##'
-##' ```
-##' ans <- obj$lapply(1:10, sqrt)
-##' ```
-##'
-##' which will return the same thing as `lapply(1:10, sqrt)` (provided
-##'   that you have a Redis server running and workers registered)
-##'
-##' There is some sleight of hand here, though as we need to identify
-##'   that it is the *symbol* `sqrt` that matters there corresponding
-##'   to the builtin [sqrt] function. You can make this more explicit
-##'   by passing in the name of the function using `$lapply_()`
-##'
-##' ```
-##' ans <- obj$lapply(1:10, quote(sqrt))
-##' ```
-##'
-##' The same treatment applies to the dots; this is allowed:
-##'
-##' ```
-##' b <- 2
-##' ans <- obj$lapply(1:10, log, base = b)
-##' ```
-##'
-##' But this will look up the bindings of `log` and `b` in the context
-##'   in which the call is made. This may not always do what is
-##'   expected, so you can use the names directly:
-##'
-##' ```
-##' b <- 2
-##' ans <- obj$lapply_(1:10, quote(log), base = quote(b))
-##' ```
-##'
 ##' @param follow Optional logical, indicating if we should follow any
 ##'   redirects set up by doing `$task_retry`. If not given, falls
 ##'   back on the value passed into the queue, the global option
@@ -211,36 +171,6 @@ rrq_controller <- R6::R6Class(
                   store = private$store)
       class(ret) <- "rrq_controller2"
       ret
-    },
-
-    ##' @description Entirely destroy a queue, by deleting all keys
-    ##' associated with it from the Redis database. This is a very
-    ##' destructive action and cannot be undone.
-    ##'
-    ##' @param delete Either `TRUE` (the default) indicating that the
-    ##'   keys should be immediately deleted. Alternatively, provide an
-    ##'   integer value and the keys will instead be marked for future
-    ##'   deletion by "expiring" after this many seconds, using Redis'
-    ##'   `EXPIRE` command.
-    ##'
-    ##' @param worker_stop_type Passed to `$worker_stop`; Can be one of
-    ##'   "message", "kill" or "kill_local". The "kill" method requires that
-    ##'   the workers are using a heartbeat, and "kill_local" requires that
-    ##'   the workers are on the same machine as the controller. However,
-    ##'   these may be faster to stop workers than "message", which will
-    ##'   wait until any task is finished.
-    ##'
-    ##' @param timeout_worker_stop A timeout to pass to the worker to
-    ##'   respond the request to stop. See `worker_stop`'s `timeout`
-    ##'   argument for details.
-    destroy = function(delete = TRUE, worker_stop_type = "message",
-                       timeout_worker_stop = 0) {
-      if (!is.null(self$con)) {
-        rrq_destroy(delete, worker_stop_type, timeout_worker_stop, self)
-        ## render the controller useless:
-        self$con <- NULL
-        private$keys <- NULL
-      }
     },
 
     ##' @description Register a function to create an environment when
@@ -685,19 +615,6 @@ rrq_controller <- R6::R6Class(
                     follow %||% private$follow)
     },
 
-    ##' @description List ids of all tasks known to this rrq controller
-    task_list = function() {
-      rrq_task_list(self)
-    },
-
-    ##' @description Test if task with id `task_ids` is known to this
-    ##'   rrq controller
-    ##' @param task_ids Character vector of task ids to check for existence.
-    task_exists = function(task_ids) {
-      named <- TRUE
-      rrq_task_exists(task_ids, named, self)
-    },
-
     ##' @description Return a character vector of task statuses. The name
     ##' of each element corresponds to a task id, and the value will be
     ##' one of the possible statuses ("PENDING", "COMPLETE", etc).
@@ -708,55 +625,6 @@ rrq_controller <- R6::R6Class(
     task_status = function(task_ids = NULL, follow = NULL) {
       named <- TRUE
       rrq_task_status(task_ids %||% self$task_list(), named, follow, self)
-    },
-
-    ##' @description Retrieve task progress, if set. This will be `NULL`
-    ##'   if progress has never been registered, otherwise whatever value
-    ##'   was set - can be an arbitrary R object.
-    ##'
-    ##' @param task_id A single task id for which the progress is wanted.
-    task_progress = function(task_id) {
-      rrq_task_progress(task_id, self)
-    },
-
-    ##' @description Provide a high level overview of task statuses
-    ##' for a set of task ids, being the count in major categories of
-    ##' `PENDING`, `RUNNING`, `COMPLETE` and `ERROR`.
-    ##'
-    ##' @param task_ids Optional character vector of task ids for which you
-    ##' would like the overview. If not given (or `NULL`) then the status of
-    ##' all task ids known to this rrq controller is used.
-    task_overview = function(task_ids = NULL) {
-      rrq_task_overview(task_ids, self)
-    },
-
-    ##' @description Find the position of one or more tasks in the queue.
-    ##'
-    ##' @param task_ids Character vector of tasks to find the position for.
-    ##'
-    ##' @param missing Value to return if the task is not found in the queue.
-    ##'   A task will take value `missing` if it is running, complete,
-    ##'   errored, deferred etc and a positive integer if it is in the queue,
-    ##'   indicating its position (with 1) being the next task to run.
-    ##'
-    ##' @param queue The name of the queue to query (defaults to the
-    ##'   "default" queue).
-    task_position = function(task_ids, missing = 0L, queue = NULL,
-                             follow = NULL) {
-      rrq_task_position(task_ids, missing, queue, follow, self)
-    },
-
-    ##' @description List the tasks in front of `task_id` in the queue.
-    ##'   If the task is missing from the queue this will return NULL. If
-    ##'   the task is next in the queue this will return an empty character
-    ##'   vector.
-    ##'
-    ##' @param task_id Task to find the position for.
-    ##'
-    ##' @param queue The name of the queue to query (defaults to the
-    ##'   "default" queue).
-    task_preceeding = function(task_id, queue = NULL, follow = NULL) {
-      rrq_task_preceeding(task_id, queue, follow, self)
     },
 
     ##' @description Get the result for a single task (see `$tasks_result`
@@ -824,99 +692,6 @@ rrq_controller <- R6::R6Class(
       self$task_result(task_id, error = error, follow = follow)
     },
 
-    ##' @description Poll for a group of tasks to complete, returning the
-    ##' result as list when completed. If the tasks have already completed
-    ##' this is roughly equivalent to `tasks_result`.
-    ##'
-    ##' @param task_ids A vector of task ids to poll for
-    ##'
-    ##' @param timeout Optional timeout, in seconds, after which an
-    ##'   error will be thrown if the task has not completed. If not given,
-    ##'   falls back on the controller's `timeout_task_wait` (see `$new()`)
-    ##'
-    ##' @param time_poll Optional time with which to "poll" for
-    ##'   completion (default is 1s, see `$task_wait()` for details)
-    ##'
-    ##' @param progress Optional logical indicating if a progress bar
-    ##'   should be displayed. If `NULL` we fall back on the value of the
-    ##'   global option `rrq.progress`, and if that is unset display a
-    ##'   progress bar if in an interactive session.
-    ##'
-    ##' @param error Logical, indicating if we should throw an error if
-    ##'   the task was not successful. See `$task_result()` for details.
-    ##'   Note that an error is always thrown if not all tasks are fetched
-    ##'   in time.
-    tasks_wait = function(task_ids, timeout = NULL, time_poll = 1,
-                          progress = NULL, error = FALSE, follow = NULL) {
-      rrq_task_wait(task_ids, timeout, time_poll, progress, follow, self)
-      self$tasks_result(task_ids, error = error, follow = follow)
-    },
-
-    ##' @description Delete one or more tasks
-    ##'
-    ##' @param task_ids Vector of task ids to delete
-    ##'
-    ##' @param check Logical indicating if we should check that the tasks
-    ##'   are not running. Deleting running tasks is unlikely to result in
-    ##'   desirable behaviour.
-    task_delete = function(task_ids, check = TRUE) {
-      rrq_task_delete(task_ids, check, self)
-    },
-
-    ##' @description Cancel a single task. If the task is `PENDING` it
-    ##' will be unqueued and the status set to `CANCELED`.  If `RUNNING`
-    ##' then the task will be stopped if it was set to run in
-    ##' a separate process (i.e., queued with `separate_process = TRUE`).
-    ##' Dependent tasks will be marked as impossible.
-    ##'
-    ##' @param task_id Id of the task to cancel
-    ##'
-    ##' @param wait Wait for the task to be stopped, if it was running.
-    ##'
-    ##' @param timeout_wait Maximum time, in seconds, to wait for the task
-    ##'   to be cancelled by the worker.
-    ##'
-    ##' @return Nothing if successfully cancelled, otherwise throws an
-    ##' error with task_id and status e.g. Task 123 is not running (MISSING)
-    task_cancel = function(task_id, wait = TRUE, timeout_wait = 10) {
-      rrq_task_cancel(task_id, wait, timeout_wait, self)
-    },
-
-    ##' @description Fetch internal data about a task from Redis
-    ##' (expert use only).
-    ##'
-    ##' @param task_id The id of the task
-    task_data = function(task_id) {
-      rrq_task_data(task_id, self)
-    },
-
-    ##' @description Return information about a task. This currently
-    ##' includes information about where a task is (or was) running
-    ##' and information about any retry chain,
-    ##' but will expand in future. The format of the output here is
-    ##' subject to change (and will probably get a nice print method)
-    ##' but the values present in the output will be included in any
-    ##' future update.
-    ##'
-    ##' @param task_id The id of the task to fetch information about
-    task_info = function(task_id) {
-      rrq_task_info(task_id, self)
-    },
-
-    ##' @description Fetch times for tasks at points in their life cycle.
-    ##' For each task returns the time of submission, starting
-    ##' and completion (not necessarily successfully; this includes
-    ##' errors and interruptions).  If a task has not reached a point
-    ##' yet (e.g., submitted but not run, or running but not finished)
-    ##' the time will be `NA`).  Times are returned in unix timestamp
-    ##' format in UTC; you can use [redux::redis_time_to_r] to convert
-    ##' them to a POSIXt object.
-    ##'
-    ##' @param task_ids Task ids to fetch times for.
-    task_times = function(task_ids, follow = NULL) {
-      rrq_task_times(task_ids, follow, self)
-    },
-
     ##' @description Retry a task (or set of tasks). Typically this
     ##' is after failure (e.g., `ERROR`, `DIED` or similar) but you can
     ##' retry even successfully completed tasks. Once retried, methods
@@ -947,61 +722,6 @@ rrq_controller <- R6::R6Class(
       rrq_queue_list(queue, self)
     },
 
-    ##' @description Remove task ids from a queue.
-    ##'
-    ##' @param task_ids Task ids to remove
-    ##'
-    ##' @param queue The name of the queue to query (defaults to the
-    ##'   "default" queue).
-    queue_remove = function(task_ids, queue = NULL) {
-      ## NOTE: uses a pipeline to avoid a race condition - nothing may
-      ## interere with the queue between the LRANGE and the DEL or we
-      ## might lose tasks or double-queue them. If a job is queued
-      ## between the DEL and the RPUSH the newly submitted job gets
-      ## bounced ahead in the queue, which seems tolerable but might not
-      ## always be ideal.  To solve this we should use a lua script.
-      rrq_queue_remove(task_ids, queue, self)
-    },
-
-    ##' @description Return deferred tasks and what they are waiting on.
-    ##'   Note this is in an arbitrary order, tasks will be added to the
-    ##'   queue as their dependencies are satisfied.
-    deferred_list = function() {
-      rrq_deferred_list(self)
-    },
-
-    ##' @description Returns the number of active workers
-    worker_len = function() {
-      rrq_worker_len(self)
-    },
-
-    ##' @description Returns the ids of active workers
-    worker_list = function() {
-      rrq_worker_list(self)
-    },
-
-    ##' @description Returns the ids of workers known to have exited
-    worker_list_exited = function() {
-      rrq_worker_list_exited(self)
-    },
-
-    ##' @description Returns a list of information about active
-    ##' workers (or exited workers if `worker_ids` includes them).
-    ##
-    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
-    ##' all active workers are used.
-    worker_info = function(worker_ids = NULL) {
-      rrq_worker_info(worker_ids, self)
-    },
-
-    ##' @description Returns a character vector of current worker statuses
-    ##'
-    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
-    ##' all active workers are used.
-    worker_status = function(worker_ids = NULL) {
-      rrq_worker_status(worker_ids, self)
-    },
-
     ##' @description Returns the last (few) elements in the worker
     ##' log. The log will be returned as a [data.frame] of entries
     ##' `worker_id` (the worker id), `child` (the process id, an integer,
@@ -1018,14 +738,6 @@ rrq_controller <- R6::R6Class(
     ##' last entry. Use `Inf` or `0` to indicate that you want all log entries
     worker_log_tail = function(worker_ids = NULL, n = 1) {
       rrq_worker_log_tail(worker_ids, n, self)
-    },
-
-    ##' @description Cleans up workers known to have exited
-    ##'
-    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
-    ##' rrq looks for exited workers.
-    worker_delete_exited = function(worker_ids = NULL) {
-      rrq_worker_delete_exited(worker_ids, self)
     },
 
     ##' @description Stop workers.
@@ -1078,17 +790,6 @@ rrq_controller <- R6::R6Class(
       rrq_worker_detect_exited(self)
     },
 
-    ##' @description Return the contents of a worker's process log, if
-    ##' it is located on the same physical storage (including network
-    ##' storage) as the controller. This will generally behave for
-    ##' workers started with [rrq_worker_spawn] but may require significant
-    ##' care otherwise.
-    ##'
-    ##' @param worker_id The worker for which the log is required
-    worker_process_log = function(worker_id) {
-      rrq_worker_process_log(worker_id, self)
-    },
-
     ##' @description Save a worker configuration, which can be used to
     ##' start workers with a set of options with the cli. These
     ##' correspond to arguments to [rrq::rrq_worker].
@@ -1107,140 +808,6 @@ rrq_controller <- R6::R6Class(
     ##'   updated.
     worker_config_save = function(name, config, overwrite = TRUE) {
       rrq_worker_config_save2(name, config, overwrite, self)
-    },
-
-    ##' @description Return names of worker configurations saved by
-    ##' `$worker_config_save`
-    worker_config_list = function() {
-      rrq_worker_config_list(self)
-    },
-
-    ##' @description Return the value of a of worker configuration saved by
-    ##' `$worker_config_save`
-    ##'
-    ##' @param name Name of the configuration
-    worker_config_read = function(name) {
-      rrq_worker_config_read(name, controller = self)
-    },
-
-    ##' Report on worker "load" (the number of workers being used over
-    ##' time). Reruns an object of class `worker_load`, for which a
-    ##' `mean` method exists (this method is a work in progress and the
-    ##' interface may change).
-    ##'
-    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
-    ##'   all active workers are used.
-    worker_load = function(worker_ids = NULL) {
-      rrq_worker_load(worker_ids, self)
-    },
-
-    ##' @description Send a message to workers. Sending a message returns
-    ##' a message id, which can be used to poll for a response with the
-    ##' other `message_*` methods.
-    ##'
-    ##' @param command A command, such as `PING`, `PAUSE`; see the Messages
-    ##' section of the Details for al messages.
-    ##'
-    ##' @param args Arguments to the command, if supported
-    ##'
-    ##' @param worker_ids Optional vector of worker ids to send the message
-    ##'   to. If `NULL` then the message will be sent to all active workers.
-    message_send = function(command, args = NULL, worker_ids = NULL) {
-      rrq_message_send(command, args, worker_ids, self)
-    },
-
-    ##' @description Detect if a response is available for a message
-    ##'
-    ##' @param message_id The message id
-    ##'
-    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
-    ##'   all active workers are used (note that this may differ to the set
-    ##'   of workers that the message was sent to!)
-    ##'
-    ##' @param named Logical, indicating if the return vector should be named
-    message_has_response = function(message_id, worker_ids = NULL,
-                                    named = TRUE) {
-      rrq_message_has_response(message_id, worker_ids, named, self)
-    },
-
-    ##' @description Get response to messages, waiting until the
-    ##' message has been responded to.
-    ##'
-    ##' @param message_id The message id
-    ##'
-    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
-    ##'   all active workers are used (note that this may differ to the set
-    ##'   of workers that the message was sent to!)
-    ##'
-    ##' @param named Logical, indicating if the return value should be
-    ##'   named by worker id.
-    ##'
-    ##' @param delete Logical, indicating if messages should be deleted
-    ##'   after retrieval
-    ##'
-    ##' @param timeout Integer, representing seconds to wait until the
-    ##'   response has been received. An error will be thrown if a
-    ##'   response has not been received in this time.
-    ##'
-    ##' @param time_poll If `timeout` is greater
-    ##'   than zero, this is the polling interval used between redis calls.
-    ##'   Increasing this reduces network load but increases the time that
-    ##'   may be waited for.
-    ##'
-    ##' @param progress Optional logical indicating if a progress bar
-    ##'   should be displayed. If `NULL` we fall back on the value of the
-    ##'   global option `rrq.progress`, and if that is unset display a
-    ##'   progress bar if in an interactive session.
-    message_get_response = function(message_id, worker_ids = NULL, named = TRUE,
-                                    delete = FALSE, timeout = 0,
-                                    time_poll = 0.05, progress = NULL) {
-      rrq_message_get_response(message_id, worker_ids, named, delete, timeout,
-                               time_poll, progress, self)
-    },
-
-    ##' @description Return ids for messages with responses for a
-    ##' particular worker.
-    ##'
-    ##' @param worker_id The worker id
-    message_response_ids = function(worker_id) {
-      rrq_message_response_ids(worker_id, self)
-    },
-
-    ##' @description Send a message and wait for responses.
-    ##' This is a helper function around `message_send` and
-    ##' `message_get_response`.
-    ##'
-    ##' @param command A command, such as `PING`, `PAUSE`; see the Messages
-    ##' section of the Details for al messages.
-    ##'
-    ##' @param args Arguments to the command, if supported
-    ##'
-    ##' @param worker_ids Optional vector of worker ids to send the message
-    ##'   to. If `NULL` then the message will be sent to all active workers.
-    ##' @param named Logical, indicating if the return value should be
-    ##'   named by worker id.
-    ##'
-    ##' @param delete Logical, indicating if messages should be deleted
-    ##'   after retrieval
-    ##'
-    ##' @param timeout Integer, representing seconds to wait until the
-    ##'   response has been received. An error will be thrown if a
-    ##'   response has not been received in this time.
-    ##'
-    ##' @param time_poll If `timeout` is greater
-    ##'   than zero, this is the polling interval used between redis calls.
-    ##'   Increasing this reduces network load but increases the time that
-    ##'   may be waited for.
-    ##'
-    ##' @param progress Optional logical indicating if a progress bar
-    ##'   should be displayed. If `NULL` we fall back on the value of the
-    ##'   global option `rrq.progress`, and if that is unset display a
-    ##'   progress bar if in an interactive session.
-    message_send_and_wait = function(command, args = NULL, worker_ids = NULL,
-                                     named = TRUE, delete = TRUE, timeout = 600,
-                                     time_poll = 0.05, progress = NULL) {
-      rrq_message_send_and_wait(command, args, worker_ids, named, delete,
-                                timeout, time_poll, progress, self)
     }
   ),
 
