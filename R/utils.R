@@ -137,20 +137,6 @@ is_call <- function(expr, what) {
 }
 
 
-df_to_list <- function(x) {
-  at <- attributes(x)
-  attributes(x) <- at[intersect(names(at), c("names", "class", "row.names"))]
-
-  i <- vlapply(x, is.list)
-  prepare <- function(el) {
-    el <- as.list(el)
-    el[i] <- lapply(el[i], unlist, FALSE)
-    el
-  }
-  unname(lapply(split(x, seq_len(nrow(x))), prepare))
-}
-
-
 wait_timeout <- function(explanation, timeout, keep_going,
                          poll = timeout / 100, call = NULL) {
   t_end <- Sys.time() + timeout
