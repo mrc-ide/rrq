@@ -171,26 +171,6 @@ rrq_controller <- R6::R6Class(
                   store = private$store)
       class(ret) <- "rrq_controller2"
       ret
-    },
-
-    ##' @description Save a worker configuration, which can be used to
-    ##' start workers with a set of options with the cli. These
-    ##' correspond to arguments to [rrq::rrq_worker].
-    ##'
-    ##' @param name Name for this configuration
-    ##'
-    ##' @param config A worker configuration, created by
-    ##'   [rrq::rrq_worker_config()]
-    ##'
-    ##' @param overwrite Logical, indicating if an existing configuration
-    ##'   with this `name` should be overwritten if it exists. If `FALSE`,
-    ##'   then the configuration is not updated, even if it differs from
-    ##'   the version currently saved.
-    ##'
-    ##' @return Invisibly, a boolean indicating if the configuration was
-    ##'   updated.
-    worker_config_save = function(name, config, overwrite = TRUE) {
-      rrq_worker_config_save2(name, config, overwrite, self)
     }
   ),
 
