@@ -98,11 +98,11 @@ rrq_task_exists <- function(task_ids, named = FALSE, controller = NULL) {
 ##' @export
 rrq_task_info <- function(task_id, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
-  assert_scalar_character(task_id, rlang::current_env())
+  assert_scalar_character(task_id, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
 
-  assert_scalar_character(task_id)
+  assert_scalar_character(task_id, call = rlang::current_env())
   dat <- con$pipeline(
     status = redis$HGET(keys$task_status, task_id),
     queue = redis$HGET(keys$task_queue, task_id),
@@ -155,7 +155,7 @@ rrq_task_info <- function(task_id, controller = NULL) {
 ##' @export
 rrq_task_data <- function(task_id, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
-  assert_scalar_character(task_id, rlang::current_env())
+  assert_scalar_character(task_id, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
   store <- controller$store
@@ -205,7 +205,7 @@ rrq_task_data <- function(task_id, controller = NULL) {
 ##' @export
 rrq_task_times <- function(task_ids, follow = NULL, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
-  assert_character(task_ids, rlang::current_env())
+  assert_character(task_ids, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
   if (follow %||% controller$follow) {
@@ -255,7 +255,7 @@ rrq_task_times <- function(task_ids, follow = NULL, controller = NULL) {
 rrq_task_result <- function(task_id, error = FALSE, follow = NULL,
                             controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
-  assert_scalar_character(task_id, rlang::current_env())
+  assert_scalar_character(task_id, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
   store <- controller$store
@@ -295,7 +295,7 @@ rrq_task_result <- function(task_id, error = FALSE, follow = NULL,
 rrq_task_results <- function(task_ids, error = FALSE, named = FALSE,
                              follow = NULL, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
-  assert_character(task_ids, rlang::current_env())
+  assert_character(task_ids, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
   store <- controller$store
@@ -338,7 +338,7 @@ rrq_task_results <- function(task_ids, error = FALSE, named = FALSE,
 rrq_task_status <- function(task_ids, named = FALSE, follow = NULL,
                             controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
-  assert_character(task_ids, rlang::current_env())
+  assert_character(task_ids, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
   follow <- follow %||% controller$follow
@@ -373,7 +373,7 @@ rrq_task_status <- function(task_ids, named = FALSE, follow = NULL,
 ##' @export
 rrq_task_progress <- function(task_id, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
-  assert_scalar_character(task_id, rlang::current_env())
+  assert_scalar_character(task_id, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
 
@@ -408,7 +408,7 @@ rrq_task_position <- function(task_ids, missing = 0L, queue = NULL,
                               follow = NULL, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   ## TODO: validate missing - integer or NA?
-  assert_character(task_ids, rlang::current_env())
+  assert_character(task_ids, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
   follow <- follow %||% controller$follow
@@ -448,7 +448,7 @@ rrq_task_position <- function(task_ids, missing = 0L, queue = NULL,
 rrq_task_preceeding <- function(task_id, queue = NULL, follow = NULL,
                                 controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
-  assert_scalar_character(task_id, rlang::current_env())
+  assert_scalar_character(task_id, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
   follow <- follow %||% controller$follow
@@ -483,7 +483,7 @@ rrq_task_preceeding <- function(task_id, queue = NULL, follow = NULL,
 ##' @return Nothing, called for side effects only
 rrq_task_delete <- function(task_ids, check = TRUE, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
-  assert_character(task_ids, rlang::current_env())
+  assert_character(task_ids, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
   store <- controller$store
@@ -582,7 +582,7 @@ rrq_task_cancel <- function(task_id, wait = TRUE, timeout_wait = 10,
   ## * why not use our general timeout?
   ## * why not cancel several at once?
   controller <- get_controller(controller, call = rlang::current_env())
-  assert_scalar_character(task_id, rlang::current_env())
+  assert_scalar_character(task_id, call = rlang::current_env())
   assert_scalar_logical(wait)
   assert_valid_timeout(timeout_wait)
   con <- controller$con
@@ -682,7 +682,7 @@ rrq_task_wait <- function(task_id, timeout = NULL, time_poll = 1,
   store <- controller$store
   timeout <- timeout %||% controller$timeout_task_wait
   follow <- follow %||% controller$follow
-  time_poll <- validate_time_poll(con, time_poll, rlang::current_env())
+  time_poll <- validate_time_poll(con, time_poll, call = rlang::current_env())
 
   if (length(task_id) == 0) {
     cli::cli_abort("Can't wait on no tasks")
