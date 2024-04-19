@@ -17,36 +17,40 @@ vignette shows what the possible messages do.
 
 In order to do this, we're going to need a queue and a worker:
 
+
 ```r
-obj <- rrq::rrq_controller$new("rrq:messages")
+library(rrq)
+id <- paste0("rrq:", ids::random_id(bytes = 4))
+obj <- rrq_controller2(id)
+rrq_default_controller_set(obj)
 logdir <- tempfile()
-w <- rrq::rrq_worker_spawn(obj, logdir = logdir)
-#> Spawning 1 worker with prefix salaried_kite
+w <- rrq_worker_spawn2(logdir = logdir)
+#> ℹ Spawning 1 worker with prefix 'schematic_hairstreakbutterfly'
 worker_id <- w$id
 ```
 
 On startup the worker log contains:
 
 ```plain
-[2023-05-03 11:57:37] ALIVE
-[2023-05-03 11:57:37] ENVIR new
-[2023-05-03 11:57:37] QUEUE default
+[2024-04-19 12:24:14.351378] ALIVE
+[2024-04-19 12:24:14.353241] ENVIR new
+[2024-04-19 12:24:14.354013] QUEUE default
                                  __
                 ______________ _/ /
       ______   / ___/ ___/ __ `/ /_____
      /_____/  / /  / /  / /_/ /_/_____/
  ______      /_/  /_/   \__, (_)   ______
 /_____/                   /_/     /_____/
-    worker:        salaried_kite_1
+    worker:        schematic_hairstreakbutterfly_1
     config:        localhost
-    rrq_version:   0.7.0
+    rrq_version:   0.7.13
     platform:      x86_64-pc-linux-gnu (64-bit)
-    running:       Ubuntu 20.04.5 LTS
-    hostname:      wpia-dide300
-    username:      rfitzjoh
-    queue:         rrq:messages:queue:default
-    wd:            /home/rfitzjoh/Documents/src/rrq/vignettes_src
-    pid:           1040716
+    running:       Ubuntu 20.04.6 LTS
+    hostname:      wpia-dide136
+    username:      rich
+    queue:         rrq:82028045:queue:default
+    wd:            /home/rich/Documents/src/rrq/vignettes_src
+    pid:           79662
     redis_host:    127.0.0.1
     redis_port:    6379
     heartbeat_key: <not set>
@@ -87,7 +91,7 @@ little
 
 
 ```r
-message_id <- obj$message_send("PING")
+message_id <- rrq_message_send("PING")
 ```
 
 The message id is going to be useful for getting responses:
@@ -95,16 +99,16 @@ The message id is going to be useful for getting responses:
 
 ```r
 message_id
-#> [1] "1683111457.996978"
+#> [1] "1713525854.452866"
 ```
 
 (this is derived from the current time, according to Redis which is
 the central reference point of time for the whole system).
 
 ```plain
-[2023-05-03 11:57:37] MESSAGE PING
+[2024-04-19 12:24:14.453323] MESSAGE PING
 PONG
-[2023-05-03 11:57:37] RESPONSE PING
+[2024-04-19 12:24:14.454021] RESPONSE PING
 ```
 
 The logfile prints:
@@ -117,13 +121,13 @@ We can access the same bits of information in the worker log:
 
 
 ```r
-obj$worker_log_tail(n = Inf)
-#>         worker_id child       time  command message
-#> 1 salaried_kite_1    NA 1683111458    ALIVE
-#> 2 salaried_kite_1    NA 1683111458    ENVIR     new
-#> 3 salaried_kite_1    NA 1683111458    QUEUE default
-#> 4 salaried_kite_1    NA 1683111458  MESSAGE    PING
-#> 5 salaried_kite_1    NA 1683111458 RESPONSE    PING
+rrq_worker_log_tail(n = Inf)
+#>                         worker_id child       time  command message
+#> 1 schematic_hairstreakbutterfly_1    NA 1713525854    ALIVE
+#> 2 schematic_hairstreakbutterfly_1    NA 1713525854    ENVIR     new
+#> 3 schematic_hairstreakbutterfly_1    NA 1713525854    QUEUE default
+#> 4 schematic_hairstreakbutterfly_1    NA 1713525854  MESSAGE    PING
+#> 5 schematic_hairstreakbutterfly_1    NA 1713525854 RESPONSE    PING
 ```
 
 This includes the `ALIVE` message as the worker comes up.
@@ -135,17 +139,17 @@ We already know that our worker has a response, but we can ask anyway:
 
 
 ```r
-obj$message_has_response(message_id)
-#> salaried_kite_1
-#>            TRUE
+rrq_message_has_response(message_id)
+#> schematic_hairstreakbutterfly_1
+#>                            TRUE
 ```
 
 Or inversely we can as what messages a given worker has responses for:
 
 
 ```r
-obj$message_response_ids(worker_id)
-#> [1] "1683111457.996978"
+rrq_message_response_ids(worker_id)
+#> [1] "1713525854.452866"
 ```
 
 To fetch the responses from all workers it was sent to (always
@@ -153,8 +157,8 @@ returning a named list):
 
 
 ```r
-obj$message_get_response(message_id)
-#> $salaried_kite_1
+rrq_message_get_response(message_id)
+#> $schematic_hairstreakbutterfly_1
 #> [1] "PONG"
 ```
 
@@ -162,8 +166,8 @@ or to fetch the response from a given worker:
 
 
 ```r
-obj$message_get_response(message_id, worker_id)
-#> $salaried_kite_1
+rrq_message_get_response(message_id, worker_id)
+#> $schematic_hairstreakbutterfly_1
 #> [1] "PONG"
 ```
 
@@ -171,8 +175,8 @@ The response can be deleted by passing `delete = TRUE` to this method:
 
 
 ```r
-obj$message_get_response(message_id, worker_id, delete = TRUE)
-#> $salaried_kite_1
+rrq_message_get_response(message_id, worker_id, delete = TRUE)
+#> $schematic_hairstreakbutterfly_1
 #> [1] "PONG"
 ```
 
@@ -180,20 +184,22 @@ after which recalling the message will throw an error:
 
 
 ```r
-obj$message_get_response(message_id, worker_id)
-#> Error in message_get_response(self$con, private$keys, message_id, worker_ids, : Response missing for workers: salaried_kite_1
+rrq_message_get_response(message_id, worker_id)
+#> Error in `rrq_message_get_response()`:
+#> ! Response missing for worker: 'schematic_hairstreakbutterfly_1'
 ```
 
 There is also a `timeout` argument that lets you wait until a response is
-ready (as in `$task_wait()`).
+ready (as in `rrq_task_wait()`).
 
 
 ```r
-obj$enqueue(Sys.sleep(2))
-#> [1] "44001ee8e79917fc8dafdc7c7c18cfc1"
-message_id <- obj$message_send("PING")
-obj$message_get_response(message_id, worker_id, delete = TRUE, timeout = 10)
-#> $salaried_kite_1
+rrq_task_create_expr(Sys.sleep(2))
+#> [1] "647f26b19fd40d13426a8ea60fe1cc2d"
+message_id <- rrq_message_send("PING")
+rrq_message_get_response(
+  message_id, worker_id, delete = TRUE, timeout = 10)
+#> $schematic_hairstreakbutterfly_1
 #> [1] "PONG"
 ```
 
@@ -201,15 +207,15 @@ Looking at the log will show what went on here:
 
 
 ```r
-obj$worker_log_tail(n = 4)
-#>         worker_id child       time       command
-#> 1 salaried_kite_1    NA 1683111458    TASK_START
-#> 2 salaried_kite_1    NA 1683111460 TASK_COMPLETE
-#> 3 salaried_kite_1    NA 1683111460       MESSAGE
-#> 4 salaried_kite_1    NA 1683111460      RESPONSE
+rrq_worker_log_tail(n = 4)
+#>                         worker_id child       time       command
+#> 1 schematic_hairstreakbutterfly_1    NA 1713525855    TASK_START
+#> 2 schematic_hairstreakbutterfly_1    NA 1713525857 TASK_COMPLETE
+#> 3 schematic_hairstreakbutterfly_1    NA 1713525857       MESSAGE
+#> 4 schematic_hairstreakbutterfly_1    NA 1713525857      RESPONSE
 #>                            message
-#> 1 44001ee8e79917fc8dafdc7c7c18cfc1
-#> 2 44001ee8e79917fc8dafdc7c7c18cfc1
+#> 1 647f26b19fd40d13426a8ea60fe1cc2d
+#> 2 647f26b19fd40d13426a8ea60fe1cc2d
 #> 3                             PING
 #> 4                             PING
 ```
@@ -224,11 +230,11 @@ completed, the response takes a while to come back.  Equivalently,
 from the worker log:
 
 ```plain
-[2023-05-03 11:57:38] TASK_START 44001ee8e79917fc8dafdc7c7c18cfc1
-[2023-05-03 11:57:40] TASK_COMPLETE 44001ee8e79917fc8dafdc7c7c18cfc1
-[2023-05-03 11:57:40] MESSAGE PING
+[2024-04-19 12:24:14.603817] TASK_START 647f26b19fd40d13426a8ea60fe1cc2d
+[2024-04-19 12:24:16.612506] TASK_COMPLETE 647f26b19fd40d13426a8ea60fe1cc2d
+[2024-04-19 12:24:16.614554] MESSAGE PING
 PONG
-[2023-05-03 11:57:40] RESPONSE PING
+[2024-04-19 12:24:16.615794] RESPONSE PING
 ```
 
 ## `ECHO`
@@ -239,16 +245,16 @@ response.
 
 
 ```r
-message_id <- obj$message_send("ECHO", "hello world!")
-obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $salaried_kite_1
+message_id <- rrq_message_send("ECHO", "hello world!")
+rrq_message_get_response(message_id, worker_id, timeout = 10)
+#> $schematic_hairstreakbutterfly_1
 #> [1] "OK"
 ```
 
 ```plain
-[2023-05-03 11:57:40] MESSAGE ECHO
+[2024-04-19 12:24:17.136045] MESSAGE ECHO
 hello world!
-[2023-05-03 11:57:40] RESPONSE ECHO
+[2024-04-19 12:24:17.136638] RESPONSE ECHO
 ```
 
 ## `INFO`
@@ -259,18 +265,18 @@ We already have a copy of the worker info; it was created when the
 worker started up:
 
 ```r
-obj$worker_info()[[worker_id]]
+rrq_worker_info()[[worker_id]]
 #>   <rrq_worker_info>
-#>     worker:      salaried_kite_1
+#>     worker:      schematic_hairstreakbutterfly_1
 #>     config:      localhost
-#>     rrq_version: 0.7.0
+#>     rrq_version: 0.7.13
 #>     platform:    x86_64-pc-linux-gnu (64-bit)
-#>     running:     Ubuntu 20.04.5 LTS
-#>     hostname:    wpia-dide300
-#>     username:    rfitzjoh
-#>     queue:       rrq:messages:queue:default
-#>     wd:          /home/rfitzjoh/Documents/src/rrq/vignettes_src
-#>     pid:         1040716
+#>     running:     Ubuntu 20.04.6 LTS
+#>     hostname:    wpia-dide136
+#>     username:    rich
+#>     queue:       rrq:82028045:queue:default
+#>     wd:          /home/rich/Documents/src/rrq/vignettes_src
+#>     pid:         79662
 #>     redis_host:  127.0.0.1
 #>     redis_port:  6379
 ```
@@ -279,7 +285,7 @@ We can force the worker to refresh:
 
 
 ```r
-message_id <- obj$message_send("INFO")
+message_id <- rrq_message_send("INFO")
 ```
 
 Here's the new worker information, complete with an updated `envir`
@@ -287,42 +293,42 @@ field:
 
 
 ```r
-obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $salaried_kite_1
-#> $salaried_kite_1$worker
-#> [1] "salaried_kite_1"
+rrq_message_get_response(message_id, worker_id, timeout = 10)
+#> $schematic_hairstreakbutterfly_1
+#> $schematic_hairstreakbutterfly_1$worker
+#> [1] "schematic_hairstreakbutterfly_1"
 #>
-#> $salaried_kite_1$config
+#> $schematic_hairstreakbutterfly_1$config
 #> [1] "localhost"
 #>
-#> $salaried_kite_1$rrq_version
-#> [1] "0.7.0"
+#> $schematic_hairstreakbutterfly_1$rrq_version
+#> [1] "0.7.13"
 #>
-#> $salaried_kite_1$platform
+#> $schematic_hairstreakbutterfly_1$platform
 #> [1] "x86_64-pc-linux-gnu (64-bit)"
 #>
-#> $salaried_kite_1$running
-#> [1] "Ubuntu 20.04.5 LTS"
+#> $schematic_hairstreakbutterfly_1$running
+#> [1] "Ubuntu 20.04.6 LTS"
 #>
-#> $salaried_kite_1$hostname
-#> [1] "wpia-dide300"
+#> $schematic_hairstreakbutterfly_1$hostname
+#> [1] "wpia-dide136"
 #>
-#> $salaried_kite_1$username
-#> [1] "rfitzjoh"
+#> $schematic_hairstreakbutterfly_1$username
+#> [1] "rich"
 #>
-#> $salaried_kite_1$queue
-#> [1] "rrq:messages:queue:default"
+#> $schematic_hairstreakbutterfly_1$queue
+#> [1] "rrq:82028045:queue:default"
 #>
-#> $salaried_kite_1$wd
-#> [1] "/home/rfitzjoh/Documents/src/rrq/vignettes_src"
+#> $schematic_hairstreakbutterfly_1$wd
+#> [1] "/home/rich/Documents/src/rrq/vignettes_src"
 #>
-#> $salaried_kite_1$pid
-#> [1] 1040716
+#> $schematic_hairstreakbutterfly_1$pid
+#> [1] 79662
 #>
-#> $salaried_kite_1$redis_host
+#> $schematic_hairstreakbutterfly_1$redis_host
 #> [1] "127.0.0.1"
 #>
-#> $salaried_kite_1$redis_port
+#> $schematic_hairstreakbutterfly_1$redis_port
 #> [1] 6379
 ```
 
@@ -335,9 +341,9 @@ in which queued code is evaluated in.
 
 
 ```r
-message_id <- obj$message_send("EVAL", "1 + 1")
-obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $salaried_kite_1
+message_id <- rrq_message_send("EVAL", "1 + 1")
+rrq_message_get_response(message_id, worker_id, timeout = 10)
+#> $schematic_hairstreakbutterfly_1
 #> [1] 2
 ```
 
@@ -352,38 +358,37 @@ The `PAUSE` / `RESUME` messages can be used to prevent workers from picking up n
 
 
 ```r
-obj$worker_status()
-#> salaried_kite_1
-#>          "IDLE"
-message_id <- obj$message_send("PAUSE")
-obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $salaried_kite_1
+rrq_worker_status()
+#> schematic_hairstreakbutterfly_1
+#>                          "IDLE"
+message_id <- rrq_message_send("PAUSE")
+rrq_message_get_response(message_id, worker_id, timeout = 10)
+#> $schematic_hairstreakbutterfly_1
 #> [1] "OK"
-obj$worker_status()
-#> salaried_kite_1
-#>        "PAUSED"
+rrq_worker_status()
+#> schematic_hairstreakbutterfly_1
+#>                        "PAUSED"
 ```
 
 Once paused workers ignore tasks, which stay on the queue:
 
 
 ```r
-t <- obj$enqueue(runif(5))
-obj$task_status(t)
-#> 64e789d929053f536d025674f32a9210
-#>                        "PENDING"
+t <- rrq_task_create_expr(runif(5))
+rrq_task_status(t)
+#> [1] "PENDING"
 ```
 
 Sending a `RESUME` message unpauses the worker:
 
 
 ```r
-message_id <- obj$message_send("RESUME")
-obj$message_get_response(message_id, worker_id, timeout = 10)
-#> $salaried_kite_1
+message_id <- rrq_message_send("RESUME")
+rrq_message_get_response(message_id, worker_id, timeout = 10)
+#> $schematic_hairstreakbutterfly_1
 #> [1] "OK"
-obj$task_wait(t, 5)
-#> [1] 0.903223432 0.082105777 0.683756358 0.636414855 0.003699163
+rrq_task_wait(t, 5)
+#> [1] TRUE
 ```
 
 ## `SET_TIMEOUT` / `GET_TIMEOUT`
@@ -392,8 +397,8 @@ Workers will quit after being left idle for more than a certain time; this is th
 
 
 ```r
-obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $salaried_kite_1
+rrq_message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
+#> $schematic_hairstreakbutterfly_1
 #> timeout_idle    remaining
 #>          Inf          Inf
 ```
@@ -402,8 +407,8 @@ We can set this to a finite value, in seconds:
 
 
 ```r
-obj$message_send_and_wait("TIMEOUT_SET", 600, worker_ids = worker_id)
-#> $salaried_kite_1
+rrq_message_send_and_wait("TIMEOUT_SET", 600, worker_ids = worker_id)
+#> $schematic_hairstreakbutterfly_1
 #> [1] "OK"
 ```
 
@@ -413,52 +418,54 @@ Once set, the `TIMEOUT_GET` returns the length of time remaining before the work
 
 
 ```r
-obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $salaried_kite_1
+rrq_message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
+#> $schematic_hairstreakbutterfly_1
 #> timeout_idle    remaining
-#>     600.0000     599.9429
+#>     600.0000     599.9353
 Sys.sleep(5)
-obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $salaried_kite_1
+rrq_message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
+#> $schematic_hairstreakbutterfly_1
 #> timeout_idle    remaining
-#>      600.000      594.886
+#>     600.0000     594.8724
 ```
 
 One useful pattern is to send work to workers, then set the timeout to zero. This means that when work is complete they will exit (almost) immediately:
 
 
 ```r
-grp <- obj$lapply(1:5, function(x) {
+ids <- rrq_task_create_bulk_call(function(x) {
   Sys.sleep(0.5)
   runif(x)
-}, timeout_task_wait = 0)
-obj$message_send("TIMEOUT_SET", 0, worker_id)
-obj$tasks_wait(grp$task_ids)
-#> $`22a6af800da166fe1b41969e4037e5f7`
-#> [1] 0.5124512
+}, 1:5)
+rrq_message_send("TIMEOUT_SET", 0, worker_id)
+rrq_task_wait(ids)
+#> [1] TRUE
+rrq_task_results(ids)
+#> [[1]]
+#> [1] 0.1705179
 #>
-#> $`38fa8aa6ee28a243c7157d8f1aebc59f`
-#> [1] 0.6227799 0.1765862
+#> [[2]]
+#> [1] 0.2393208 0.4059544
 #>
-#> $`749f356a3c23e91eba04f22dfa3bda21`
-#> [1] 0.7466381 0.3805679 0.2578736
+#> [[3]]
+#> [1] 0.5884221 0.9453424 0.6684895
 #>
-#> $aacbd45276715c5a66185aee3342e16c
-#> [1] 0.5686461 0.7394387 0.7312080 0.5955060
+#> [[4]]
+#> [1] 0.07630751 0.92618400 0.67542756 0.28708847
 #>
-#> $ebea0c34dc45e32232e3a418c98d4125
-#> [1] 0.009762116 0.265471032 0.780959455 0.230073945 0.128220401
+#> [[5]]
+#> [1] 0.7492767 0.2436322 0.6087192 0.8494850 0.2543259
 ```
 
 The worker will remain idle for 60s (by default) which is the length of time that one poll for work lasts, then it will exit.
 
 
 ```r
-obj$worker_status(worker_id)
-#> salaried_kite_1
-#>          "IDLE"
-obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $salaried_kite_1
+rrq_worker_status(worker_id)
+#> schematic_hairstreakbutterfly_1
+#>                          "IDLE"
+rrq_message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
+#> $schematic_hairstreakbutterfly_1
 #> timeout_idle    remaining
 #>            0            0
 ```
@@ -467,7 +474,7 @@ obj$message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
 
 ## Messages that are supported but use via wrappers:
 
-There are other methods that are typically used via methods on the [`rrq::rrq_controller`] object.
+There are other methods that are typically used via methods on the [`rrq_controller`] object.
 
-* `REFRESH`: requests that the worker refresh its evaluation environment. Typically used via the `$envir()` method
-* `STOP`: sent with a informational message as an argument, requests that the worker stop. Typically used via the `$worker_stop()` method
+* `REFRESH`: requests that the worker refresh its evaluation environment. Typically used via `rrq_worker_envir_set()`
+* `STOP`: sent with a informational message as an argument, requests that the worker stop. Typically used via `rrq_worker_stop()`

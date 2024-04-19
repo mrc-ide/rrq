@@ -44,6 +44,6 @@ format.rrq_worker_info <- function(x, ...) {
 
 #' @export
 print.rrq_worker_info <- function(x, ...) {
-  cat(paste0(format(x, ...), collapse = "\n"))
+  cat(paste0(format(x, ...), "\n", collapse = ""))
   invisible(x)
 }
