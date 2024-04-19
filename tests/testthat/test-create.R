@@ -105,7 +105,7 @@ test_that("can run task that throws an error", {
   w <- test_worker_blocking(obj)
   w$step(TRUE)
 
-  res <- obj$task_result(id)
+  res <- rrq_task_result(id, controller = obj)
   expect_s3_class(res, "rrq_task_error")
   expect_null(res$warnings)
   expect_equal(res$task_id, id)
@@ -121,7 +121,7 @@ test_that("task warnings are returned", {
   w <- test_worker_blocking(obj)
   w$step(TRUE)
 
-  res <- obj$task_result(id)
+  res <- rrq_task_result(id, controller = obj)
   expect_s3_class(res, "rrq_task_error")
   expect_type(res$warnings, "list")
   expect_length(res$warnings, 2)

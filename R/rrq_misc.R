@@ -36,6 +36,26 @@ rrq_destroy <- function(delete = TRUE, worker_stop_type = "message",
 }
 
 
+##' Returns the length of the queue (the number of tasks waiting to
+##' run).  This is the same as the length of the value returned by
+##' [rrq_queue_list].
+##'
+##' @title Queue length
+##'
+##' @inheritParams rrq_queue_list
+##'
+##' @return A number
+##'
+##' @export
+rrq_queue_length <- function(queue = NULL, controller = NULL) {
+  controller <- get_controller(controller)
+  con <- controller$con
+  keys <- controller$keys
+  key_queue <- rrq_key_queue(keys$queue_id, queue)
+  con$LLEN(key_queue)
+}
+
+
 ##' Returns the keys in the task queue.
 ##'
 ##' @title List queue contents

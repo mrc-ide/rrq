@@ -2,8 +2,8 @@ test_that("rrq_default configuration", {
   ## (this is actually the *test* default configuration, which is
   ## possibly not what is wanted)
   obj <- test_rrq()
-  expect_equal(obj$worker_config_list(), WORKER_CONFIG_DEFAULT)
-  expect_equal(obj$worker_config_read(WORKER_CONFIG_DEFAULT),
+  expect_equal(rrq_worker_config_list(controller = obj), WORKER_CONFIG_DEFAULT)
+  expect_equal(rrq_worker_config_read(WORKER_CONFIG_DEFAULT, controller = obj),
                rrq_worker_config(poll_queue = 1, verbose = FALSE))
 })
 
@@ -13,7 +13,7 @@ test_that("create short-lived worker", {
 
   key <- "stop_immediately"
   cfg <- rrq_worker_config(timeout_idle = 0, poll_queue = 1, verbose = TRUE)
-  obj$worker_config_save(key, cfg)
+  rrq_worker_config_save2(key, cfg, controller = obj)
 
   ## Local:
   msg1 <- capture_messages(
@@ -26,13 +26,13 @@ test_that("create short-lived worker", {
   logs <- tempfile()
   w <- test_worker_spawn(obj, name_config = key, logdir = logs)
   expect_type(w$id, "character")
-  log <- obj$worker_log_tail(w$id, Inf)
+  log <- rrq_worker_log_tail(w$id, Inf, controller = obj)
   expect_s3_class(log, "data.frame")
   expect_true(nrow(log) >= 1)
 
   remaining <- time_checker(3)
   while (remaining() > 0) {
-    log <- obj$worker_log_tail(w$id, Inf)
+    log <- rrq_worker_log_tail(w$id, Inf, controller = obj)
     if (nrow(log) >= 5L) {
       break
     } else {
@@ -65,7 +65,7 @@ test_that("worker timeout", {
 
   t <- as.integer(runif(1, min = 100, max = 10000))
   cfg <- rrq_worker_config(timeout_idle = t, verbose = FALSE)
-  res <- obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
+  res <- rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
   expect_true(res)
   expect_equal(cfg$timeout_idle, t)
 
@@ -73,9 +73,9 @@ test_that("worker timeout", {
   expect_equal(r6_private(w)$timeout_idle, t)
   expect_lte(r6_private(w)$timer(), t)
 
-  id <- obj$message_send("TIMEOUT_GET")
+  id <- rrq_message_send("TIMEOUT_GET", controller = obj)
   w$step(TRUE)
-  res <- obj$message_get_response(id, w$id)[[1]]
+  res <- rrq_message_get_response(id, w$id, controller = obj)[[1]]
   expect_equal(res[["timeout_idle"]], t)
   expect_lte(res[["remaining"]], t)
 })
@@ -84,15 +84,15 @@ test_that("worker timeout", {
 test_that("infinite timeout", {
   obj <- test_rrq("myfuns.R")
   cfg <- rrq_worker_config(timeout_idle = Inf, verbose = FALSE)
-  obj$worker_config_save("infinite", cfg)
+  rrq_worker_config_save2("infinite", cfg, controller = obj)
 
   w <- test_worker_blocking(obj, name_config = "infinite")
   expect_equal(r6_private(w)$timeout_idle, Inf)
   expect_null(r6_private(w)$timer)
 
-  id <- obj$message_send("TIMEOUT_GET")
+  id <- rrq_message_send("TIMEOUT_GET", controller = obj)
   w$step(TRUE)
-  res <- obj$message_get_response(id, w$id)[[1]]
+  res <- rrq_message_get_response(id, w$id, controller = obj)[[1]]
   expect_equal(res, c(timeout_idle = Inf, remaining = Inf))
 })
 
@@ -104,10 +104,12 @@ test_that("rrq_default configuration", {
   obj <- test_rrq()
   cfg1 <- rrq_worker_config(timeout_idle = 1)
   cfg2 <- rrq_worker_config(timeout_idle = 2)
-  expect_true(obj$worker_config_save("new", cfg1, overwrite = FALSE))
-  expect_equal(obj$worker_config_read("new"), cfg1)
-  expect_false(obj$worker_config_save("new", cfg2, overwrite = FALSE))
-  expect_equal(obj$worker_config_read("new"), cfg1)
+  expect_true(rrq_worker_config_save2("new", cfg1, overwrite = FALSE,
+                                      controller = obj))
+  expect_equal(rrq_worker_config_read("new", controller = obj), cfg1)
+  expect_false(rrq_worker_config_save2("new", cfg2, overwrite = FALSE,
+                                       controller = obj))
+  expect_equal(rrq_worker_config_read("new", controller = obj), cfg1)
 })
 
 
@@ -135,12 +137,13 @@ test_that("timeout_process_die is validated", {
 
 
 test_that("can save worker configuration with top-level function", {
-  con <- test_hiredis()
-  name <- sprintf("rrq:%s", ids::random_id())
+  obj <- test_rrq()
   cfg <- rrq_worker_config(timeout_idle = 10, verbose = FALSE)
-  rrq_worker_config_save(name, WORKER_CONFIG_DEFAULT, cfg)
-  obj <- rrq_controller$new(name)
-  expect_equal(obj$worker_config_read(WORKER_CONFIG_DEFAULT), cfg)
+  rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+  obj2 <- rrq_controller$new(obj$queue_id)
+  expect_equal(
+    rrq_worker_config_read(WORKER_CONFIG_DEFAULT, controller = obj2),
+    cfg)
 })
 
 
@@ -165,7 +168,7 @@ test_that("default worker config poll queue depends on interactivity", {
 test_that("can timeout while reading a configuration", {
   skip_if_not_installed("mockery")
   obj <- test_rrq()
-  cfg <- obj$worker_config_read(WORKER_CONFIG_DEFAULT)
+  cfg <- rrq_worker_config_read(WORKER_CONFIG_DEFAULT, controller = obj)
   mock_wait <- mockery::mock(cfg)
   mockery::stub(rrq_worker_config_read, "wait_success", mock_wait)
   res <- rrq_worker_config_read(WORKER_CONFIG_DEFAULT, 30, obj)
