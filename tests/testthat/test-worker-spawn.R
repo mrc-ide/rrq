@@ -36,7 +36,7 @@ test_that("failed spawn", {
 test_that("read worker process log", {
   obj <- test_rrq(verbose = TRUE)
   w <- test_worker_spawn(obj, 1)
-  obj$message_send_and_wait("STOP")
+  rrq_message_send_and_wait("STOP", controller = obj)
   txt <- rrq_worker_process_log(w$id, controller = obj)
   expect_type(txt, "character")
   expect_match(txt, "ALIVE", all = FALSE)

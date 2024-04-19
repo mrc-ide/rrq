@@ -4,7 +4,7 @@ test_that("clean up exited workers", {
 
   expect_equal(rrq_worker_list(controller = obj), w$id)
 
-  id <- obj$message_send("STOP")
+  id <- rrq_message_send("STOP", controller = obj)
 
   expect_error(
     w$step(), "BYE", class = "rrq_worker_stop")
@@ -12,7 +12,7 @@ test_that("clean up exited workers", {
   w$shutdown()
 
   expect_equal(
-    obj$message_get_response(id, w$id),
+    rrq_message_get_response(id, w$id, controller = obj),
     set_names(list("BYE"), w$id))
 
   log <- rrq_worker_log_tail(w$id, n = Inf, controller = obj)
@@ -124,7 +124,7 @@ test_that("Child workers require a parent", {
 test_that("Timer is recreated after task run", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
-  obj$message_send("TIMEOUT_SET", 10)
+  rrq_message_send("TIMEOUT_SET", 10, controller = obj)
   w$step(TRUE)
   expect_is_function(r6_private(w)$timer)
 
@@ -157,7 +157,7 @@ test_that("kill worker locally", {
   obj <- test_rrq(timeout_worker_stop = 0)
   w <- test_worker_spawn(obj)
 
-  expect_equal(obj$message_send_and_wait("PING", w$id)[[1]], "PONG")
+  expect_equal(rrq_message_send_and_wait("PING", w$id, controller = obj)[[1]], "PONG")
 
   ## Can't kill with heartbeat:
   expect_error(
@@ -242,7 +242,7 @@ test_that("clean up worker when one still running", {
 
   expect_setequal(rrq_worker_list(controller = obj), c(w1$id, w2$id))
 
-  id <- obj$message_send("STOP", worker_ids = w1$id)
+  id <- rrq_message_send("STOP", worker_ids = w1$id, controller = obj)
 
   expect_error(
     w1$step(), "BYE", class = "rrq_worker_stop")
@@ -251,7 +251,7 @@ test_that("clean up worker when one still running", {
   w1$shutdown()
 
   expect_equal(
-    obj$message_get_response(id, w1$id),
+    rrq_message_get_response(id, w1$id, controller = obj),
     set_names(list("BYE"), w1$id))
 
   expect_equal(rrq_worker_list_exited(controller = obj), w1$id)

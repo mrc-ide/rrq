@@ -73,9 +73,9 @@ test_that("worker timeout", {
   expect_equal(r6_private(w)$timeout_idle, t)
   expect_lte(r6_private(w)$timer(), t)
 
-  id <- obj$message_send("TIMEOUT_GET")
+  id <- rrq_message_send("TIMEOUT_GET", controller = obj)
   w$step(TRUE)
-  res <- obj$message_get_response(id, w$id)[[1]]
+  res <- rrq_message_get_response(id, w$id, controller = obj)[[1]]
   expect_equal(res[["timeout_idle"]], t)
   expect_lte(res[["remaining"]], t)
 })
@@ -90,9 +90,9 @@ test_that("infinite timeout", {
   expect_equal(r6_private(w)$timeout_idle, Inf)
   expect_null(r6_private(w)$timer)
 
-  id <- obj$message_send("TIMEOUT_GET")
+  id <- rrq_message_send("TIMEOUT_GET", controller = obj)
   w$step(TRUE)
-  res <- obj$message_get_response(id, w$id)[[1]]
+  res <- rrq_message_get_response(id, w$id, controller = obj)[[1]]
   expect_equal(res, c(timeout_idle = Inf, remaining = Inf))
 })
 
