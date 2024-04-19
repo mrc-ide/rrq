@@ -173,22 +173,6 @@ rrq_controller <- R6::R6Class(
       ret
     },
 
-    ##' @description Register a function to create an environment when
-    ##'   creating a worker. When a worker starts, they will run this
-    ##'   function.
-    ##'
-    ##' @param create A function that will create an environment. It will
-    ##'   be called with one parameter (an environment), in a fresh R
-    ##'   session. The function [rrq::rrq_envir()] can be used to
-    ##'   create a suitable function for the most common case (loading
-    ##'   packages and sourcing scripts).
-    ##'
-    ##' @param notify Boolean, indicating if we should send a `REFRESH`
-    ##'   message to all workers to update their environment.
-    envir = function(create, notify = TRUE) {
-      rrq_worker_envir_set(create, notify, self)
-    },
-
     ##' @description Queue an expression
     ##'
     ##' @param expr Any R expression, unevaluated
@@ -296,71 +280,6 @@ rrq_controller <- R6::R6Class(
       rrq_task_status(task_ids %||% self$task_list(), named, follow, self)
     },
 
-    ##' @description Get the result for a single task (see `$tasks_result`
-    ##'   for a method for efficiently getting multiple results at once).
-    ##'   Returns the value of running the task if it is complete, and an
-    ##'   error otherwise.
-    ##'
-    ##' @param task_id The single id for which the result is wanted.
-    ##'
-    ##' @param error Logical, indicating if we should throw an error
-    ##'   if a task was not successful. By default (`error = FALSE`),
-    ##'   in the case of the task result returning an error we return
-    ##'   an object of class `rrq_task_error`, which contains information
-    ##'   about the error. Passing `error = TRUE` simply calls `stop()`
-    ##'   on this error if it is returned.
-    task_result = function(task_id, error = FALSE, follow = NULL) {
-      rrq_task_result(task_id, error, follow, self)
-    },
-
-    ##' @description Get the results of a group of tasks, returning them as a
-    ##' list.
-    ##'
-    ##' @param task_ids A vector of task ids for which the task result
-    ##' is wanted.
-    ##'
-    ##' @param error Logical, indicating if we should throw an error if
-    ##'   the task was not successful. See `$task_result()` for details.
-    tasks_result = function(task_ids, error = FALSE, follow = NULL) {
-      named <- TRUE
-      rrq_task_results(task_ids, error, named, follow, self)
-    },
-
-    ##' @description Poll for a task to complete, returning the result
-    ##' when completed. If the task has already completed this is
-    ##' roughly equivalent to `task_result`. See `$tasks_wait` for an
-    ##' efficient way of doing this for a group of tasks.
-    ##'
-    ##' @param task_id The single id that we will wait for
-    ##'
-    ##' @param timeout Optional timeout, in seconds, after which an
-    ##'   error will be thrown if the task has not completed. If not given,
-    ##'   falls back on the controller's `timeout_task_wait` (see `$new()`)
-    ##'
-    ##' @param time_poll Optional time with which to "poll" for completion.
-    ##'   By default this will be 1 second; this is the time that each
-    ##'   request for a completed task may block for (however, if the task
-    ##'   is finished before this, the actual time waited for will be less).
-    ##'   Increasing this will reduce the responsiveness of your R session
-    ##'   to interrupting, but will cause slightly less network load.
-    ##'   Values less than 1s are not currently supported as this requires
-    ##'   a very recent Redis server.
-    ##'
-    ##' @param progress Optional logical indicating if a progress bar
-    ##'   should be displayed. If `NULL` we fall back on the value of the
-    ##'   global option `rrq.progress`, and if that is unset display a
-    ##'   progress bar if in an interactive session.
-    ##'
-    ##' @param error Logical, indicating if we should throw an error if
-    ##'   the task was not successful. See `$task_result()` for details.
-    ##'   Note that an error is always thrown if not all tasks are fetched
-    ##'   in time.
-    task_wait = function(task_id, timeout = NULL, time_poll = 1,
-                         progress = NULL, error = FALSE, follow = NULL) {
-      rrq_task_wait(task_id, timeout, time_poll, progress, follow, self)
-      self$task_result(task_id, error = error, follow = follow)
-    },
-
     ##' @description Retry a task (or set of tasks). Typically this
     ##' is after failure (e.g., `ERROR`, `DIED` or similar) but you can
     ##' retry even successfully completed tasks. Once retried, methods
@@ -372,91 +291,6 @@ rrq_controller <- R6::R6Class(
     ##' @param task_ids Task ids to retry.
     task_retry = function(task_ids) {
       rrq_task_retry(task_ids, self)
-    },
-
-    ##' @description Returns the number of tasks in the queue (waiting for
-    ##' an available worker).
-    ##'
-    ##' @param queue The name of the queue to query (defaults to the
-    ##'   "default" queue).
-    queue_length = function(queue = NULL) {
-      rrq_queue_length(queue, self)
-    },
-
-    ##' @description Returns the keys in the task queue.
-    ##'
-    ##' @param queue The name of the queue to query (defaults to the
-    ##'   "default" queue).
-    queue_list = function(queue = NULL) {
-      rrq_queue_list(queue, self)
-    },
-
-    ##' @description Returns the last (few) elements in the worker
-    ##' log. The log will be returned as a [data.frame] of entries
-    ##' `worker_id` (the worker id), `child` (the process id, an integer,
-    ##' where logs come from a child process from a task queued with
-    ##' `separate_process = TRUE`), `time` (the time in Redis when the
-    ##' event happened; see [redux::redis_time] to convert this to an R
-    ##' time), `command` (the worker command) and `message` (the message
-    ##' corresponding to that command).
-    ##'
-    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
-    ##' all active workers are used.
-    ##'
-    ##' @param n Number of elements to select, the default being the single
-    ##' last entry. Use `Inf` or `0` to indicate that you want all log entries
-    worker_log_tail = function(worker_ids = NULL, n = 1) {
-      rrq_worker_log_tail(worker_ids, n, self)
-    },
-
-    ##' @description Stop workers.
-    ##'
-    ##' @param worker_ids Optional vector of worker ids. If `NULL` then
-    ##' all active workers will be stopped.
-    ##'
-    ##' @param type The strategy used to stop the workers. Can be `message`,
-    ##'   `kill` or `kill_local` (see details).
-    ##'
-    ##' @param timeout Optional timeout; if greater than zero then we poll
-    ##'   for a response from the worker for this many seconds until they
-    ##'   acknowledge the message and stop (only has an effect if `type`
-    ##'   is `message`). If a timeout of greater than zero is given, then
-    ##'   for a `message`-based stop we wait up to this many seconds for the
-    ##'   worker to exit. That means that we might wait up to `2 * timeout`
-    ##'   seconds for this function to return.
-    ##'
-    ##' @param time_poll If `type` is `message` and `timeout` is greater
-    ##'   than zero, this is the polling interval used between redis calls.
-    ##'   Increasing this reduces network load but decreases the ability
-    ##'   to interrupt the process.
-    ##'
-    ##' @param progress Optional logical indicating if a progress bar
-    ##'   should be displayed. If `NULL` we fall back on the value of the
-    ##'   global option `rrq.progress`, and if that is unset display a
-    ##'   progress bar if in an interactive session.
-    ##'
-    ##' @details The `type` parameter indicates the strategy used to stop
-    ##' workers, and interacts with other parameters. The strategies used by
-    ##' the different values are:
-    ##'
-    ##' * `message`, in which case a `STOP` message will be sent to the
-    ##'   worker, which they will receive after finishing any currently
-    ##'   running task (if `RUNNING`; `IDLE` workers will stop immediately).
-    ##' * `kill`, in which case a kill signal will be sent via the heartbeat
-    ##'   (if the worker is using one). This will kill the worker even if
-    ##'   is currently working on a task, eventually leaving that task with
-    ##'   a status of `DIED`.
-    ##' * `kill_local`, in which case a kill signal is sent using operating
-    ##'    system signals, which requires that the worker is on the same
-    ##'    machine as the controller.
-    worker_stop = function(worker_ids = NULL, type = "message",
-                           timeout = 0, time_poll = 0.05, progress = NULL) {
-      rrq_worker_stop(worker_ids, type, timeout, time_poll, progress, self)
-    },
-
-    ##' @description Detects exited workers through a lapsed heartbeat
-    worker_detect_exited = function() {
-      rrq_worker_detect_exited(self)
     },
 
     ##' @description Save a worker configuration, which can be used to
@@ -521,12 +355,7 @@ task_submit_n <- function(controller, task_ids, dat, key_complete, queue,
   depends_up_keys <- rrq_key_task_depends_up(keys$queue_id, task_ids)
   depends_down_keys <- rrq_key_task_depends_down(keys$queue_id, depends_on)
 
-  if (!is.null(key_complete)) {
-    cmds <- list(
-      redis$HMSET(keys$task_complete, task_ids, rep_len(key_complete, n)))
-  } else {
-    cmds <- list()
-  }
+  cmds <- list()
 
   time <- timestamp()
   cmds <- c(
@@ -596,45 +425,6 @@ worker_naturalsort <- function(x) {
 }
 
 
-tasks_wait <- function(controller, task_ids, timeout, time_poll,
-                       progress, key_complete, error, follow,
-                       call = NULL) {
-  con <- controller$con
-  keys <- controller$keys
-
-  ## This can be relaxed in recent Redis >= 6.0.0 as we then interpret
-  ## time_poll as a double. To do this efficiently we'll want to get
-  ## the version information stored into the redux client, which is
-  ## not hard as we already do some negotiation
-  time_poll <- validate_time_poll(con, time_poll, call)
-  if (follow) {
-    task_ids_from <- task_follow(controller, task_ids)
-  } else {
-    task_ids_from <- task_ids
-  }
-
-  done <- set_names(
-    hash_exists(con, keys$task_result, task_ids_from, TRUE),
-    task_ids_from)
-
-  fetch <- function() {
-    tmp <- con$BLPOP(key_complete, time_poll)
-    if (!is.null(tmp)) {
-      done[[tmp[[2L]]]] <<- TRUE
-    }
-    done
-  }
-
-  if (!all(done)) {
-    general_poll(fetch, 0, timeout, "tasks", TRUE, progress)
-  }
-
-  ## A bit inefficient, but we won't do it this way for long:
-  controller <- rrq_controller2(keys$queue_id, con)
-  rrq_task_results(task_ids_from, error = error, controller = controller)
-}
-
-
 rrq_object_store <- function(con, keys) {
   config <- rrq_configure_read(con, keys)
   if (is.null(config$offload_path)) {
@@ -661,12 +451,4 @@ verify_dependencies_exist <- function(controller, depends_on) {
     }
   }
   invisible(TRUE)
-}
-
-
-throw_task_errors <- function(res) {
-  is_error <- vlapply(res, inherits, "rrq_task_error")
-  if (any(is_error)) {
-    stop(rrq_task_error_group(unname(res[is_error]), length(res)))
-  }
 }
