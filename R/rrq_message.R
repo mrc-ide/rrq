@@ -19,7 +19,7 @@
 ##' @export
 rrq_message_send <- function(command, args = NULL, worker_ids = NULL,
                              controller = NULL) {
-  controller <- get_controller(controller, rlang::current_env())
+  controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
   if (is.null(worker_ids)) {
@@ -56,7 +56,7 @@ rrq_message_send <- function(command, args = NULL, worker_ids = NULL,
 ##' @export
 rrq_message_has_response <- function(message_id, worker_ids = NULL,
                                      named = TRUE, controller = NULL) {
-  controller <- get_controller(controller, rlang::current_env())
+  controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
 
@@ -83,7 +83,7 @@ rrq_message_has_response <- function(message_id, worker_ids = NULL,
 ##'
 ##' @export
 rrq_message_response_ids <- function(worker_id, controller = NULL) {
-  controller <- get_controller(controller, rlang::current_env())
+  controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
 
@@ -108,7 +108,7 @@ rrq_message_send_and_wait <- function(command, args = NULL, worker_ids = NULL,
                                       named = TRUE, delete = TRUE,
                                       timeout = 600, time_poll = 0.05,
                                       progress = NULL, controller = NULL) {
-  controller <- get_controller(controller, rlang::current_env())
+  controller <- get_controller(controller, call = rlang::current_env())
 
   if (is.null(worker_ids)) {
     worker_ids <- rrq_worker_list(controller)
@@ -162,7 +162,7 @@ rrq_message_get_response <- function(message_id, worker_ids = NULL,
                                      named = TRUE, delete = FALSE, timeout = 0,
                                      time_poll = 0.5, progress = NULL,
                                      controller = NULL) {
-  controller <- get_controller(controller, rlang::current_env())
+  controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
 
