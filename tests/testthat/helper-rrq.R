@@ -26,7 +26,7 @@ wait_status <- function(t, obj, timeout = 2, time_poll = 0.05,
                         status = "PENDING") {
   remaining <- time_checker(timeout)
   while (remaining() > 0) {
-    if (all(obj$task_status(t) != status)) {
+    if (all(rrq_task_status(t, controller = obj) != status)) {
       return()
     }
     if (!testthat::is_testing()) {
@@ -42,7 +42,7 @@ wait_worker_status <- function(w, obj, status, timeout = 2,
                                time_poll = 0.05) {
   remaining <- time_checker(timeout)
   while (remaining() > 0) {
-    if (all(obj$worker_status(w) != status)) {
+    if (all(rrq_worker_status(w, controller = obj) != status)) {
       return()
     }
     if (!testthat::is_testing()) {
@@ -108,8 +108,8 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
   obj <- rrq_controller$new(name, follow = follow)
 
   cfg <- rrq_worker_config(poll_queue = 1, verbose = verbose)
-  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
-  obj$envir(create)
+  rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+  rrq_worker_envir_set(create, controller = obj)
 
   withr::defer_parent(test_rrq_cleanup(obj, timeout_worker_stop))
 
@@ -124,11 +124,11 @@ test_rrq2 <- function(...) {
 
 test_rrq_cleanup <- function(obj, timeout_worker_stop) {
   if (is.null(timeout_worker_stop)) {
-    worker_pid <- vnapply(obj$worker_info(), "[[", "pid")
+    worker_pid <- vnapply(rrq_worker_info(controller = obj), "[[", "pid")
     worker_is_separate <- worker_pid != Sys.getpid()
     timeout_worker_stop <- if (all(worker_is_separate)) 10 else 0
   }
-  obj$destroy(timeout_worker_stop = timeout_worker_stop)
+  rrq_destroy(timeout_worker_stop = timeout_worker_stop, controller = obj)
 }
 
 
