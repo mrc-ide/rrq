@@ -23,53 +23,58 @@ Task queues for R, implemented using Redis.
 
 ## Getting started
 
+```{r}
+library(rrq)
+```
+
 Create an `rrq_controller` object
 
 ```{r}
-obj <- rrq::rrq_controller$new("rrq:readme")
+obj <- rrq_controller2("rrq:readme")
+rrq_default_controller_set(obj)
 ```
 
 Submit work to the queue:
 
 ```{r}
-t <- obj$enqueue(runif(10))
+t <- rrq_task_create_expr(runif(10))
 t
 ```
 
 Query task process:
 
 ```{r}
-obj$task_status(t)
+rrq_task_status(t)
 ```
 
 Run tasks on workers in the background
 
 ```{r}
-rrq::rrq_worker_spawn(obj)
+rrq_worker_spawn2()
 ```
 
-Collect task results when complete
+Wait for tasks to complete
 
 ```{r}
-obj$task_wait(t)
+rrq_task_wait(t)
 ```
 
-Or try and retrieve them regardless of if they are complete
+Retrieve results from a task
 
 ```{r}
-obj$task_result(t)
+rrq_task_result(t)
 ```
 
 Query what workers have done
 
 ```{r}
-obj$worker_log_tail(n = Inf)
+rrq_worker_log_tail(n = Inf)
 ```
 
 For more information, see `vignette("rrq")`
 
 ```{r, include = FALSE}
-obj$destroy(timeout_worker_stop = 10)
+rrq_destroy(timeout_worker_stop = 10)
 ```
 
 ## Installation
