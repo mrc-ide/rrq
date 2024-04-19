@@ -17,6 +17,6 @@ we'll use the controller registered with
 Return the contents of a worker's process log, if
 it is located on the same physical storage (including network
 storage) as the controller. This will generally behave for
-workers started with \link{rrq_worker_spawn} but may require significant
+workers started with \link{rrq_worker_spawn2} but may require significant
 care otherwise.
 }
