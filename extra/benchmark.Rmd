@@ -21,48 +21,54 @@ knitr::opts_chunk$set(error = FALSE)
 A controller to throw jobs at:
 
 ```{r}
+library(rrq)
 id <- paste0("rrq:", ids::random_id(bytes = 4))
-obj <- rrq::rrq_controller$new(id)
-rrq::rrq_worker_spawn(obj, 1)
+obj <- rrq_controller2(id)
+rrq_default_controller_set(obj)
+w <- rrq_worker_spawn2(1)
 ```
 
 Running a thousand trivial jobs (look in particular at `elapsed` as we're interested in wall time)
 
 ```{r}
-system.time(obj$lapply(1:1000, identity, progress = FALSE))
+run_example <- function(n) {
+  id <- rrq_task_create_bulk_call(identity, seq_len(n))
+  rrq_task_wait(id, progress = FALSE)
+  rrq_task_results(id)
+}
+run_example(5)
 ```
 
 Then over a matrix of numbers of tasks and workers:
 
 ```{r run_benchmarks}
-bench_rrq <- function(n, nworkers, nrep, obj) {
+bench_rrq <- function(n, nworkers, nrep) {
   if (interactive()) {
     message(sprintf("%d / %d / %d", n, nrep, nworkers))
   }
-  diff <- nworkers - obj$worker_len()
+  diff <- nworkers - rrq_worker_len()
   if (diff > 0L) {
-    suppressMessages(rrq::rrq_worker_spawn(obj, diff))
+    suppressMessages(rrq_worker_spawn2(diff))
   } else if (diff < 0L) {
-    obj$worker_stop(obj$worker_list()[seq_len(-diff)])
+    rrq_worker_stop(rrq_worker_list()[seq_len(-diff)])
   }
-  i <- seq_len(n)
   replicate(
     nrep,
-    system.time(obj$lapply(i, identity, progress = FALSE))[["elapsed"]])
+    system.time(run_example(n))[["elapsed"]])
 }
 
 n <- 2^c(1, 3, 5, 7, 9, 11)
 nw <- 1:4
 nrep <- 10
 dat <- expand.grid(n = n, nworkers = nw)
-times <- Map(bench_rrq, dat$n, dat$nworkers, nrep, list(obj))
+times <- Map(bench_rrq, dat$n, dat$nworkers, nrep)
 time <- matrix(vapply(times, median, numeric(1)), length(n)) * 1000
 ```
 
 Total time taken
 
 ```{r}
-cols <- RColorBrewer::brewer.pal(length(nw), "Blues")
+cols <- seq_along(nw) # RColorBrewer::brewer.pal(length(nw), "Blues")
 matplot(n, time, type = "l", log = "xy", lty = 1, col = cols,
         xlab = "Number of tasks", ylab = "Total time (ms)")
 legend("topleft", legend = nw, col = cols, lty = 1, bty = "n")
@@ -79,18 +85,8 @@ legend("topright", legend = nw, col = cols, lty = 1, bty = "n")
 text(n[length(n)], time_call[nrow(time_call), ], adj = -0.5, cex = 0.5)
 ```
 
-Time per call per worker
+Cleanup
 
 ```{r}
-time_call_worker <- time / n / rep(nw, each = nrow(time))
-matplot(n, time_call_worker, type = "l", log = "xy", lty = 1, col = cols,
-        xlab = "Number of tasks",
-        ylab = "Per-call-per-worker time (ms / call / worker)")
-legend("topright", legend = nw, col = cols, lty = 1, bty = "n")
-text(n[length(n)], time_call_worker[nrow(time_call_worker), ],
-     adj = -0.5, cex = 0.5)
-```
-
-```{r}
-obj$destroy()
+rrq_destroy()
 ```
