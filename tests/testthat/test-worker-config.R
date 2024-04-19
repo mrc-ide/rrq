@@ -104,9 +104,11 @@ test_that("rrq_default configuration", {
   obj <- test_rrq()
   cfg1 <- rrq_worker_config(timeout_idle = 1)
   cfg2 <- rrq_worker_config(timeout_idle = 2)
-  expect_true(rrq_worker_config_save2("new", cfg1, overwrite = FALSE, controller = obj))
+  expect_true(rrq_worker_config_save2("new", cfg1, overwrite = FALSE,
+                                      controller = obj))
   expect_equal(rrq_worker_config_read("new", controller = obj), cfg1)
-  expect_false(rrq_worker_config_save2("new", cfg2, overwrite = FALSE, controller = obj))
+  expect_false(rrq_worker_config_save2("new", cfg2, overwrite = FALSE,
+                                       controller = obj))
   expect_equal(rrq_worker_config_read("new", controller = obj), cfg1)
 })
 

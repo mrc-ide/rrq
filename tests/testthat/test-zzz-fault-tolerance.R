@@ -100,12 +100,14 @@ test_that("detect killed worker (via heartbeat)", {
   t <- rrq_task_create_expr(slowdouble(10000), controller = obj)
   wait_status(t, obj, status = TASK_PENDING)
   expect_equal(rrq_task_status(t, controller = obj), TASK_RUNNING)
-  expect_equal(rrq_worker_status(w$id, controller = obj), setNames(WORKER_BUSY, w$id))
+  expect_equal(rrq_worker_status(w$id, controller = obj),
+               setNames(WORKER_BUSY, w$id))
 
   w$kill()
   Sys.sleep(0.1)
   expect_equal(rrq_task_status(t, controller = obj), TASK_RUNNING)
-  expect_equal(rrq_worker_status(w$id, controller = obj), setNames(WORKER_BUSY, w$id))
+  expect_equal(rrq_worker_status(w$id, controller = obj),
+               setNames(WORKER_BUSY, w$id))
 
   ## This is a bit annoying as it takes a while to run through;
   Sys.sleep(expire)

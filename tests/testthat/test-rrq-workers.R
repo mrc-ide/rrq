@@ -157,7 +157,8 @@ test_that("kill worker locally", {
   obj <- test_rrq(timeout_worker_stop = 0)
   w <- test_worker_spawn(obj)
 
-  expect_equal(rrq_message_send_and_wait("PING", w$id, controller = obj)[[1]], "PONG")
+  expect_equal(rrq_message_send_and_wait("PING", w$id, controller = obj)[[1]],
+               "PONG")
 
   ## Can't kill with heartbeat:
   expect_error(

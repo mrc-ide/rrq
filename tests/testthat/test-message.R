@@ -103,19 +103,26 @@ test_that("message response getting", {
   expect_s3_class(redux::redis_time_to_r(id), "POSIXct")
 
   ## Not yet a response:
-  expect_equal(rrq_message_has_response(id, w$id, controller = obj), set_names(FALSE, w$id))
-  expect_equal(rrq_message_has_response(id, controller = obj), set_names(FALSE, w$id))
-  expect_equal(rrq_message_has_response(id, w$id, named = FALSE, controller = obj), FALSE)
-  expect_equal(rrq_message_has_response(id, named = FALSE, controller = obj), FALSE)
+  expect_equal(rrq_message_has_response(id, w$id, controller = obj),
+               set_names(FALSE, w$id))
+  expect_equal(rrq_message_has_response(id, controller = obj),
+               set_names(FALSE, w$id))
+  expect_equal(rrq_message_has_response(id, w$id, named = FALSE,
+                                        controller = obj),
+               FALSE)
+  expect_equal(rrq_message_has_response(id, named = FALSE, controller = obj),
+               FALSE)
 
   ## Move worker through one cycle
   expect_message(w$step(TRUE), "PONG")
 
-  expect_equal(rrq_message_has_response(id, w$id, controller = obj), set_names(TRUE, w$id))
+  expect_equal(rrq_message_has_response(id, w$id, controller = obj),
+               set_names(TRUE, w$id))
   expect_equal(rrq_message_response_ids(w$id, controller = obj), id)
 
   ## Getting a response does not delete it by default
-  expect_equal(rrq_message_get_response(id, controller = obj), set_names(list("PONG"), w$id))
+  expect_equal(rrq_message_get_response(id, controller = obj),
+               set_names(list("PONG"), w$id))
   expect_true(rrq_message_has_response(id, w$id, controller = obj))
 
   ## But once deleted it is gone
@@ -140,7 +147,8 @@ test_that("Error on missing response", {
 
   ## Also sensible if we do poll:
   expect_error(
-    rrq_message_get_response(id, nms, timeout = 0.1, time_poll = 0.1, controller = obj),
+    rrq_message_get_response(id, nms, timeout = 0.1, time_poll = 0.1,
+                             controller = obj),
     "Response missing for workers: 'a' and 'b'")
 
   expect_message(w1$step(TRUE), "PONG")
@@ -174,11 +182,13 @@ test_that("EVAL", {
   id1 <- rrq_message_send("EVAL", "1 + 1", controller = obj)
   id2 <- rrq_message_send("EVAL", quote(2 + 2), controller = obj)
   expect_output(w$step(TRUE), "2\\s*$")
-  expect_equal(rrq_message_get_response(id1, w$id, timeout = 1, controller = obj),
+  expect_equal(rrq_message_get_response(id1, w$id, timeout = 1,
+                                        controller = obj),
                set_names(list(2), w$id))
 
   expect_output(w$step(TRUE), "4\\s*$")
-  expect_equal(rrq_message_get_response(id2, w$id, timeout = 1, controller = obj),
+  expect_equal(rrq_message_get_response(id2, w$id, timeout = 1,
+                                        controller = obj),
                set_names(list(4), w$id))
 })
 
@@ -240,7 +250,8 @@ test_that("PAUSE: workers ignore tasks", {
 
   id <- rrq_message_send("RESUME", controller = obj)
   w$step(TRUE)
-  expect_equal(rrq_worker_status(controller = obj), set_names(WORKER_IDLE, w$id))
+  expect_equal(rrq_worker_status(controller = obj),
+               set_names(WORKER_IDLE, w$id))
 
   expect_equal(rrq_task_status(task, controller = obj), TASK_PENDING)
 
@@ -302,7 +313,8 @@ test_that("REFRESH", {
 
   id <- rrq_message_send("REFRESH", controller = obj)
   w$step(TRUE)
-  expect_equal(rrq_message_get_response(id, w$id, FALSE, controller = obj), list("OK"))
+  expect_equal(rrq_message_get_response(id, w$id, FALSE, controller = obj),
+               list("OK"))
 
   t3 <- rrq_task_create_expr(f1(3), controller = obj)
   w$step(TRUE)
@@ -372,7 +384,8 @@ test_that("send and wait", {
   expect_equal(unname(res), rep(list("PONG"), length(w$id)))
 
   ## Send to just one worker:
-  res <- rrq_message_send_and_wait("PING", worker_ids = w$id[[1]], controller = obj)
+  res <- rrq_message_send_and_wait("PING", worker_ids = w$id[[1]],
+                                   controller = obj)
   expect_equal(res, set_names(list("PONG"), w$id[[1]]))
 
   ## Don't delete:

@@ -133,17 +133,24 @@ test_that("can retry task from non-leaf tasks", {
   t3 <- rrq_task_retry(t1, controller = obj)
   w$step(TRUE)
 
-  expect_equal(rrq_task_info(t1, controller = obj)$moved, list(up = NULL, down = c(t2, t3)))
-  expect_equal(rrq_task_info(t2, controller = obj)$moved, list(up = t1, down = t3))
-  expect_equal(rrq_task_info(t3, controller = obj)$moved, list(up = c(t1, t2), down = NULL))
+  expect_equal(rrq_task_info(t1, controller = obj)$moved,
+               list(up = NULL, down = c(t2, t3)))
+  expect_equal(rrq_task_info(t2, controller = obj)$moved,
+               list(up = t1, down = t3))
+  expect_equal(rrq_task_info(t3, controller = obj)$moved,
+               list(up = c(t1, t2), down = NULL))
 
   t4 <- rrq_task_retry(t2, controller = obj)
   w$step(TRUE)
 
-  expect_equal(rrq_task_info(t1, controller = obj)$moved, list(up = NULL, down = c(t2, t3, t4)))
-  expect_equal(rrq_task_info(t2, controller = obj)$moved, list(up = t1, down = c(t3, t4)))
-  expect_equal(rrq_task_info(t3, controller = obj)$moved, list(up = c(t1, t2), down = t4))
-  expect_equal(rrq_task_info(t4, controller = obj)$moved, list(up = c(t1, t2, t3), down = NULL))
+  expect_equal(rrq_task_info(t1, controller = obj)$moved,
+               list(up = NULL, down = c(t2, t3, t4)))
+  expect_equal(rrq_task_info(t2, controller = obj)$moved,
+               list(up = t1, down = c(t3, t4)))
+  expect_equal(rrq_task_info(t3, controller = obj)$moved,
+               list(up = c(t1, t2), down = t4))
+  expect_equal(rrq_task_info(t4, controller = obj)$moved,
+               list(up = c(t1, t2, t3), down = NULL))
 })
 
 
@@ -254,7 +261,8 @@ test_that("Can fetch task data of redirected tasks", {
   t1 <- rrq_task_create_expr(runif(5), controller = obj)
   w$step(TRUE)
   t2 <- rrq_task_retry(t1, controller = obj)
-  expect_identical(rrq_task_data(t2, controller = obj), rrq_task_data(t1, controller = obj))
+  expect_identical(rrq_task_data(t2, controller = obj),
+                   rrq_task_data(t1, controller = obj))
 })
 
 
