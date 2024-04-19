@@ -155,8 +155,8 @@ test_that("Separate process leaves global env clean", {
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
 
-  t1 <- obj$enqueue(dirty_double(1))
-  t2 <- obj$enqueue(dirty_double(2))
+  t1 <- rrq_task_create_expr(dirty_double(1), controller = obj)
+  t2 <- rrq_task_create_expr(dirty_double(2), controller = obj)
   w$step(TRUE)
   w$step(TRUE)
 
@@ -166,8 +166,12 @@ test_that("Separate process leaves global env clean", {
   expect_equal(rrq_task_result(t2, controller = obj), list(1, 4))
   expect_equal(.GlobalEnv$.rrq_dirty_double, 2)
 
-  t3 <- obj$enqueue(dirty_double(3), separate_process = TRUE)
-  t4 <- obj$enqueue(dirty_double(4), separate_process = TRUE)
+  t3 <- rrq_task_create_expr(dirty_double(3),
+                             separate_process = TRUE,
+                             controller = obj)
+  t4 <- rrq_task_create_expr(dirty_double(4),
+                             separate_process = TRUE,
+                             controller = obj)
   w$step(TRUE)
   w$step(TRUE)
 

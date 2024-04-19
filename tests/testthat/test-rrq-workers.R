@@ -128,7 +128,7 @@ test_that("Timer is recreated after task run", {
   w$step(TRUE)
   expect_is_function(r6_private(w)$timer)
 
-  obj$enqueue(sin(1))
+  rrq_task_create_expr(sin(1), controller = obj)
   w$step(TRUE)
   expect_null(r6_private(w)$timer)
 

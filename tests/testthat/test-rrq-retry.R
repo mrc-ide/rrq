@@ -4,7 +4,7 @@ test_that("can retry a task and fetch its status and result", {
 
   ## Run a task once
   set.seed(1)
-  t1 <- obj$enqueue(runif(5))
+  t1 <- rrq_task_create_expr(runif(5), controller = obj)
   w$step(TRUE)
   r1 <- rrq_task_result(t1, controller = obj)
 
@@ -39,8 +39,8 @@ test_that("can retry a task and fetch its status and result", {
 test_that("Can't retry a task that has not been run", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
-  t1 <- obj$enqueue(runif(5))
-  t2 <- obj$enqueue(runif(5))
+  t1 <- rrq_task_create_expr(runif(5), controller = obj)
+  t2 <- rrq_task_create_expr(runif(5), controller = obj)
   expect_error(
     rrq_task_retry(t1, controller = obj),
     "Can't retry tasks that are in state: 'PENDING':")
@@ -58,7 +58,7 @@ test_that("Can get moved times", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
   set.seed(1)
-  t1 <- obj$enqueue(runif(5))
+  t1 <- rrq_task_create_expr(runif(5), controller = obj)
   r1 <- rrq_task_times(t1, controller = obj)
   Sys.sleep(0.02)
   w$step(TRUE)
@@ -93,7 +93,7 @@ test_that("Can delete tasks consistently from root", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
   set.seed(1)
-  t1 <- obj$enqueue(runif(5))
+  t1 <- rrq_task_create_expr(runif(5), controller = obj)
   w$step(TRUE)
   t2 <- rrq_task_retry(t1, controller = obj)
   w$step(TRUE)
@@ -110,7 +110,7 @@ test_that("Can delete tasks consistently from leaf", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
   set.seed(1)
-  t1 <- obj$enqueue(runif(5))
+  t1 <- rrq_task_create_expr(runif(5), controller = obj)
   w$step(TRUE)
   t2 <- rrq_task_retry(t1, controller = obj)
   w$step(TRUE)
@@ -126,7 +126,7 @@ test_that("can retry task from non-leaf tasks", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
   set.seed(1)
-  t1 <- obj$enqueue(runif(5))
+  t1 <- rrq_task_create_expr(runif(5), controller = obj)
   w$step(TRUE)
   t2 <- rrq_task_retry(t1, controller = obj)
   w$step(TRUE)
@@ -173,7 +173,7 @@ test_that("Pathalogical retry key case is allowed", {
   ## (without) to make sure that we set these up correctly.
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
-  t1 <- obj$enqueue(runif(1, 3, 4))
+  t1 <- rrq_task_create_expr(runif(1, 3, 4), controller = obj)
   grp <- obj$lapply(2:3, function(i) runif(1, i, i + 1), timeout_task_wait = 0)
   for (i in 1:3) {
     w$step(TRUE)
@@ -201,8 +201,8 @@ test_that("Pathalogical retry key case is allowed", {
 test_that("Can't retry duplicate tasks", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
-  t1 <- obj$enqueue(runif(5))
-  t2 <- obj$enqueue(runif(5))
+  t1 <- rrq_task_create_expr(runif(5), controller = obj)
+  t2 <- rrq_task_create_expr(runif(5), controller = obj)
   w$step(TRUE)
   w$step(TRUE)
 
@@ -218,9 +218,9 @@ test_that("Can't retry duplicate tasks", {
 test_that("Can't retry duplicate tasks via redirection", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
-  t1 <- obj$enqueue(runif(5))
-  t2 <- obj$enqueue(runif(5))
-  t3 <- obj$enqueue(runif(5))
+  t1 <- rrq_task_create_expr(runif(5), controller = obj)
+  t2 <- rrq_task_create_expr(runif(5), controller = obj)
+  t3 <- rrq_task_create_expr(runif(5), controller = obj)
   w$step(TRUE)
   w$step(TRUE)
   w$step(TRUE)
@@ -248,7 +248,7 @@ test_that("Can't retry duplicate tasks via redirection", {
 test_that("Can fetch task data of redirected tasks", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
-  t1 <- obj$enqueue(runif(5))
+  t1 <- rrq_task_create_expr(runif(5), controller = obj)
   w$step(TRUE)
   t2 <- rrq_task_retry(t1, controller = obj)
   expect_identical(rrq_task_data(t2, controller = obj), rrq_task_data(t1, controller = obj))
@@ -261,7 +261,7 @@ test_that("can follow nested redirect", {
 
   ## Run a task once
   set.seed(1)
-  t1 <- obj$enqueue(runif(5))
+  t1 <- rrq_task_create_expr(runif(5), controller = obj)
   w$step(TRUE)
   r1 <- rrq_task_result(t1, controller = obj)
   t2 <- rrq_task_retry(t1, controller = obj)

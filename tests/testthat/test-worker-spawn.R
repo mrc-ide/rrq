@@ -50,7 +50,7 @@ test_that("wait for worker exit", {
 
   con <- obj$con # save a copy
   queue_id <- obj$queue_id
-  obj$destroy(timeout_worker_stop = 0.5)
+  rrq_destroy(timeout_worker_stop = 0.5, controller = obj)
 
   expect_equal(
     redux::scan_find(con, paste0(queue_id, ":*")),

@@ -78,7 +78,7 @@ test_that("TIMEOUT_GET restores a timer", {
 
   rrq_message_send("TIMEOUT_SET", 100, controller = obj)
   w$step(TRUE)
-  obj$enqueue(sin(1))
+  rrq_task_create_expr(sin(1), controller = obj)
   w$step(TRUE)
   expect_equal(r6_private(w)$timeout_idle, 100)
   expect_null(r6_private(w)$timer)
@@ -210,7 +210,7 @@ test_that("messages take priority over tasks", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
 
-  id_task <- obj$enqueue(sin(1))
+  id_task <- rrq_task_create_expr(sin(1), controller = obj)
   id_message <- rrq_message_send("PING", controller = obj)
 
   expect_message(w$step(TRUE), "PONG")
@@ -233,7 +233,7 @@ test_that("PAUSE: workers ignore tasks", {
   expect_equal(rrq_worker_status(controller = obj),
                set_names(WORKER_PAUSED, w$id))
 
-  task <- obj$enqueue(sin(1))
+  task <- rrq_task_create_expr(sin(1), controller = obj)
   expect_silent(w$step(TRUE))
 
   expect_equal(rrq_task_status(task, controller = obj), TASK_PENDING)
@@ -291,12 +291,12 @@ test_that("REFRESH", {
 
   w <- test_worker_blocking(obj)
 
-  t1 <- obj$enqueue(f1(1))
+  t1 <- rrq_task_create_expr(f1(1), controller = obj)
   w$step(TRUE)
   expect_equal(rrq_task_result(t1, controller = obj), 2)
 
   writeLines("f1 <- function(x) x + 2", myfuns)
-  t2 <- obj$enqueue(f1(2))
+  t2 <- rrq_task_create_expr(f1(2), controller = obj)
   w$step(TRUE)
   expect_equal(rrq_task_result(t2, controller = obj), 3)
 
@@ -304,7 +304,7 @@ test_that("REFRESH", {
   w$step(TRUE)
   expect_equal(rrq_message_get_response(id, w$id, FALSE, controller = obj), list("OK"))
 
-  t3 <- obj$enqueue(f1(3))
+  t3 <- rrq_task_create_expr(f1(3), controller = obj)
   w$step(TRUE)
   expect_equal(rrq_task_result(t3, controller = obj), 5)
 })

@@ -6,7 +6,7 @@ test_that("use task wait timeout when waiting for tasks", {
     test_rrq("myfuns.R"))
   w <- test_worker_spawn(obj)
 
-  t <- obj$enqueue(slowdouble(5))
+  t <- rrq_task_create_expr(slowdouble(5), controller = obj)
   err <- expect_error(rrq_task_wait(t, controller = obj),
                       "task did not complete in time")
   expect_true(rrq_task_wait(t, timeout = 10, controller = obj))

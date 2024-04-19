@@ -97,7 +97,7 @@ test_that("detect killed worker (via heartbeat)", {
   expect_equal(obj$con$GET(key), as.character(expire))
   expect_lte(obj$con$TTL(key), expire)
 
-  t <- obj$enqueue(slowdouble(10000))
+  t <- rrq_task_create_expr(slowdouble(10000), controller = obj)
   wait_status(t, obj, status = TASK_PENDING)
   expect_equal(rrq_task_status(t, controller = obj), TASK_RUNNING)
   expect_equal(rrq_worker_status(w$id, controller = obj), setNames(WORKER_BUSY, w$id))
@@ -140,8 +140,8 @@ test_that("detect multiple killed workers", {
 
   w <- test_worker_spawn(obj, n = 2)
 
-  t1 <- obj$enqueue(slowdouble(10000))
-  t2 <- obj$enqueue(slowdouble(10000))
+  t1 <- rrq_task_create_expr(slowdouble(10000), controller = obj)
+  t2 <- rrq_task_create_expr(slowdouble(10000), controller = obj)
   wait_status(t1, obj, status = TASK_PENDING)
   wait_status(t2, obj, status = TASK_PENDING)
 
@@ -176,7 +176,9 @@ test_that("Cope with dying subprocess task", {
   w <- test_worker_spawn(obj)
 
   path <- tempfile()
-  t <- obj$enqueue(pid_and_sleep(path, 600), separate_process = TRUE)
+  t <- rrq_task_create_expr(pid_and_sleep(path, 600),
+                            separate_process = TRUE,
+                            controller = obj)
 
   wait_status(t, obj)
   wait_timeout("File did not appear", 10, function() !file.exists(path))
@@ -200,7 +202,7 @@ test_that("Can wait on a retried task", {
   obj <- test_rrq("myfuns.R")
   w <- test_worker_spawn(obj)
 
-  t1 <- obj$enqueue(runif(1))
+  t1 <- rrq_task_create_expr(runif(1), controller = obj)
   rrq_task_wait(t1, controller = obj)
   r1 <- rrq_task_result(t1, controller = obj)
 
