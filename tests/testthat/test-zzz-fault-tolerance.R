@@ -99,12 +99,12 @@ test_that("detect killed worker (via heartbeat)", {
 
   t <- obj$enqueue(slowdouble(10000))
   wait_status(t, obj, status = TASK_PENDING)
-  expect_equal(obj$task_status(t), setNames(TASK_RUNNING, t))
+  expect_equal(rrq_task_status(t, controller = obj), TASK_RUNNING)
   expect_equal(obj$worker_status(w$id), setNames(WORKER_BUSY, w$id))
 
   w$kill()
   Sys.sleep(0.1)
-  expect_equal(obj$task_status(t), setNames(TASK_RUNNING, t))
+  expect_equal(rrq_task_status(t, controller = obj), TASK_RUNNING)
   expect_equal(obj$worker_status(w$id), setNames(WORKER_BUSY, w$id))
 
   ## This is a bit annoying as it takes a while to run through;
@@ -124,8 +124,8 @@ test_that("detect killed worker (via heartbeat)", {
   expect_silent(res <- obj$worker_detect_exited())
   expect_null(res)
 
-  expect_equal(obj$task_status(t), set_names(TASK_DIED, t))
-  expect_equal(obj$task_result(t),
+  expect_equal(rrq_task_status(t, controller = obj), TASK_DIED)
+  expect_equal(rrq_task_result(t, controller = obj),
                worker_task_failed(TASK_DIED, obj$queue_id, t))
 })
 
@@ -161,12 +161,12 @@ test_that("detect multiple killed workers", {
   expect_silent(res <- obj$worker_detect_exited())
   expect_null(res)
 
-  expect_equal(obj$task_status(t1), set_names(TASK_DIED, t1))
-  expect_equal(obj$task_result(t1),
+  expect_equal(rrq_task_status(t1, controller = obj), TASK_DIED)
+  expect_equal(rrq_task_result(t1, controller = obj),
                worker_task_failed(TASK_DIED, obj$queue_id, t1))
 
-  expect_equal(obj$task_status(t2), set_names(TASK_DIED, t2))
-  expect_equal(obj$task_result(t2),
+  expect_equal(rrq_task_status(t2, controller = obj), TASK_DIED)
+  expect_equal(rrq_task_result(t2, controller = obj),
                worker_task_failed(TASK_DIED, obj$queue_id, t2))
 })
 
@@ -184,8 +184,8 @@ test_that("Cope with dying subprocess task", {
   pid_sub <- as.integer(readLines(path))
   tools::pskill(pid_sub)
   wait_status(t, obj, status = TASK_RUNNING)
-  expect_equal(obj$task_status(t), set_names(TASK_DIED, t))
-  expect_equal(obj$task_result(t),
+  expect_equal(rrq_task_status(t, controller = obj), TASK_DIED)
+  expect_equal(rrq_task_result(t, controller = obj),
                worker_task_failed(TASK_DIED, obj$queue_id, t))
 
   log <- obj$worker_log_tail(w$id, Inf)
@@ -201,10 +201,12 @@ test_that("Can wait on a retried task", {
   w <- test_worker_spawn(obj)
 
   t1 <- obj$enqueue(runif(1))
-  r1 <- obj$task_wait(t1)
+  rrq_task_wait(t1, controller = obj)
+  r1 <- rrq_task_result(t1, controller = obj)
 
-  t2 <- obj$task_retry(t1)
-  r2 <- obj$task_wait(t2)
+  t2 <- rrq_task_retry(t1, controller = obj)
+  rrq_task_wait(t2, controller = obj)
+  r2 <- rrq_task_result(t2, controller = obj)
 
   expect_type(r2, "double")
   expect_true(r1 != r2)
@@ -220,10 +222,10 @@ test_that("Can wait on retried tasks within bundle", {
   expect_equal(vnapply(res1, floor), 1:10)
 
   ## So, hitting this immediately does not work:
-  ids <- obj$task_retry(grp$task_ids[2:5])
+  ids <- rrq_task_retry(grp$task_ids[2:5], controller = obj)
   res2 <- obj$bulk_wait(grp, time_poll = 1, timeout = 3, delete = FALSE)
 
   expect_equal(vnapply(res2, floor), 1:10)
   expect_equal(unlist(res2) != unlist(res1), 1:10 %in% 2:5)
-  expect_equal(unname(obj$task_status(ids)), rep(TASK_COMPLETE, 4))
+  expect_equal(unname(rrq_task_status(ids, controller = obj)), rep(TASK_COMPLETE, 4))
 })

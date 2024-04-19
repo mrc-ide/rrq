@@ -215,11 +215,11 @@ test_that("messages take priority over tasks", {
 
   expect_message(w$step(TRUE), "PONG")
   expect_true(obj$message_has_response(id_message, w$id))
-  expect_equal(obj$task_status(id_task), set_names(TASK_PENDING, id_task))
+  expect_equal(rrq_task_status(id_task, controller = obj), TASK_PENDING)
 
   w$step(TRUE)
 
-  expect_equal(obj$task_status(id_task), set_names(TASK_COMPLETE, id_task))
+  expect_equal(rrq_task_status(id_task, controller = obj), TASK_COMPLETE)
 })
 
 
@@ -235,16 +235,16 @@ test_that("PAUSE: workers ignore tasks", {
   task <- obj$enqueue(sin(1))
   expect_silent(w$step(TRUE))
 
-  expect_equal(obj$task_status(task), set_names(TASK_PENDING, task))
+  expect_equal(rrq_task_status(task, controller = obj), TASK_PENDING)
 
   id <- obj$message_send("RESUME")
   w$step(TRUE)
   expect_equal(obj$worker_status(), set_names(WORKER_IDLE, w$id))
 
-  expect_equal(obj$task_status(task), set_names(TASK_PENDING, task))
+  expect_equal(rrq_task_status(task, controller = obj), TASK_PENDING)
 
   w$step(TRUE)
-  expect_equal(obj$task_status(task), set_names(TASK_COMPLETE, task))
+  expect_equal(rrq_task_status(task, controller = obj), TASK_COMPLETE)
 })
 
 
@@ -292,12 +292,12 @@ test_that("REFRESH", {
 
   t1 <- obj$enqueue(f1(1))
   w$step(TRUE)
-  expect_equal(obj$task_result(t1), 2)
+  expect_equal(rrq_task_result(t1, controller = obj), 2)
 
   writeLines("f1 <- function(x) x + 2", myfuns)
   t2 <- obj$enqueue(f1(2))
   w$step(TRUE)
-  expect_equal(obj$task_result(t2), 3)
+  expect_equal(rrq_task_result(t2, controller = obj), 3)
 
   id <- obj$message_send("REFRESH")
   w$step(TRUE)
@@ -305,7 +305,7 @@ test_that("REFRESH", {
 
   t3 <- obj$enqueue(f1(3))
   w$step(TRUE)
-  expect_equal(obj$task_result(t3), 5)
+  expect_equal(rrq_task_result(t3, controller = obj), 5)
 })
 
 

@@ -4,15 +4,15 @@ test_that("empty", {
   expect_s3_class(obj, "rrq_controller")
 
   expect_equal(obj$worker_list(), character(0))
-  expect_equal(obj$task_list(), character(0))
+  expect_equal(rrq_task_list(controller = obj), character(0))
   expect_equal(obj$worker_len(), 0)
   expect_equal(obj$queue_length(), 0)
   expect_equal(obj$queue_list(), character(0))
 
   id <- obj$enqueue(sin(1))
-  expect_equal(obj$task_list(), id)
+  expect_equal(rrq_task_list(controller = obj), id)
   expect_equal(obj$queue_list(), id)
-  expect_equal(obj$task_status(id), setNames(TASK_PENDING, id))
+  expect_equal(rrq_task_status(id, controller = obj), TASK_PENDING)
 
   expect_equal(
     obj$worker_log_tail(),
@@ -33,8 +33,8 @@ test_that("basic use", {
   t <- obj$enqueue(slowdouble(0.1))
   expect_type(t, "character")
   w$step(TRUE)
-  expect_equal(obj$task_wait(t, 2), 0.2)
-  expect_equal(obj$task_result(t), 0.2)
+  expect_true(rrq_task_wait(t, 2, controller = obj))
+  expect_equal(rrq_task_result(t, controller = obj), 0.2)
 })
 
 
@@ -44,11 +44,11 @@ test_that("task errors are returned", {
 
   t1 <- obj$enqueue(only_positive(1))
   w$step(TRUE)
-  expect_equal(obj$task_result(t1), 1)
+  expect_equal(rrq_task_result(t1, controller = obj), 1)
 
   t2 <- obj$enqueue(only_positive(-1))
   w$step(TRUE)
-  res <- obj$task_result(t2)
+  res <- rrq_task_result(t2, controller = obj)
   expect_s3_class(res, "rrq_task_error")
   expect_null(res$warnings)
   expect_equal(res$task_id, t2)
@@ -57,7 +57,7 @@ test_that("task errors are returned", {
 
   t3 <- obj$enqueue(nonexistant_function(-1))
   w$step(TRUE)
-  res <- obj$task_result(t3)
+  res <- rrq_task_result(t3, controller = obj)
   expect_s3_class(res, "rrq_task_error")
   expect_null(res$warnings)
   expect_equal(res$task_id, t3)
@@ -76,7 +76,7 @@ test_that("task warnings are returned", {
                                 "This is warning number 1"),
                  "This is warning number 2")
 
-  r1 <- obj$task_result(t1)
+  r1 <- rrq_task_result(t1, controller = obj)
   expect_s3_class(r1, "rrq_task_error")
   expect_type(r1$warnings, "character")
   expect_equal(length(r1$warnings), 2)
@@ -94,12 +94,16 @@ test_that("task_position", {
   t2 <- obj$enqueue(sin(1))
   t3 <- obj$enqueue(sin(1))
 
-  expect_equal(obj$task_position(t1), 1L)
-  expect_equal(obj$task_position(c(t1, t2, t3)), c(1L, 2L, 3L))
-  expect_equal(obj$task_position("not a real task"), 0L)
-  expect_equal(obj$task_position("not a real task", NA_integer_), NA_integer_)
-  expect_equal(obj$task_position(c(t1, "not a real task"), NA_integer_),
-               c(1L, NA_integer_))
+  expect_equal(rrq_task_position(t1, controller = obj), 1L)
+  expect_equal(rrq_task_position(c(t1, t2, t3), controller = obj),
+               c(1L, 2L, 3L))
+  expect_equal(rrq_task_position("not a real task", controller = obj), 0L)
+  expect_equal(
+    rrq_task_position("not a real task", NA_integer_, controller = obj),
+    NA_integer_)
+  expect_equal(
+    rrq_task_position(c(t1, "not a real task"), NA_integer_, controller = obj),
+    c(1L, NA_integer_))
 })
 
 test_that("task_preceeding", {
@@ -109,14 +113,14 @@ test_that("task_preceeding", {
   t2 <- obj$enqueue(sin(1))
   t3 <- obj$enqueue(sin(1))
 
-  expect_equal(obj$task_preceeding(t1), character(0))
-  expect_equal(obj$task_preceeding(t2), t1)
-  expect_equal(obj$task_preceeding(t3), c(t1, t2))
-  expect_null(obj$task_preceeding("not a real task"))
+  expect_equal(rrq_task_preceeding(t1, controller = obj), character(0))
+  expect_equal(rrq_task_preceeding(t2, controller = obj), t1)
+  expect_equal(rrq_task_preceeding(t3, controller = obj), c(t1, t2))
+  expect_null(rrq_task_preceeding("not a real task", controller = obj))
 
   w <- test_worker_spawn(obj)
-  obj$task_wait(t3)
-  expect_null(obj$task_preceeding(t3))
+  rrq_task_wait(t3, controller = obj)
+  expect_null(rrq_task_preceeding(t3, controller = obj))
 })
 
 
@@ -127,9 +131,9 @@ test_that("task_position and task_preceeding are consistent", {
   t2 <- obj$enqueue(sin(1))
   t3 <- obj$enqueue(sin(1))
 
-  expect_equal(length(obj$task_preceeding(t1)), obj$task_position(t1) - 1)
-  expect_equal(length(obj$task_preceeding(t2)), obj$task_position(t2) - 1)
-  expect_equal(length(obj$task_preceeding(t3)), obj$task_position(t3) - 1)
+  expect_equal(length(rrq_task_preceeding(t1, controller = obj)), rrq_task_position(t1, controller = obj) - 1)
+  expect_equal(length(rrq_task_preceeding(t2, controller = obj)), rrq_task_position(t2, controller = obj) - 1)
+  expect_equal(length(rrq_task_preceeding(t3, controller = obj)), rrq_task_position(t3, controller = obj) - 1)
 })
 
 
@@ -137,7 +141,7 @@ test_that("task_overview", {
   obj <- test_rrq("myfuns.R")
 
   expect_equal(
-    obj$task_overview(),
+    rrq_task_overview(controller = obj),
     list(PENDING = 0, RUNNING = 0, COMPLETE = 0, ERROR = 0, CANCELLED = 0,
          DIED = 0, TIMEOUT = 0, IMPOSSIBLE = 0, DEFERRED = 0, MOVED = 0))
 
@@ -146,7 +150,7 @@ test_that("task_overview", {
   t3 <- obj$enqueue(sin(1))
 
   expect_equal(
-    obj$task_overview(),
+    rrq_task_overview(controller = obj),
     list(PENDING = 3, RUNNING = 0, COMPLETE = 0, ERROR = 0, CANCELLED = 0,
          DIED = 0, TIMEOUT = 0, IMPOSSIBLE = 0, DEFERRED = 0, MOVED = 0))
 })
@@ -159,17 +163,17 @@ test_that("wait for tasks", {
   t1 <- obj$enqueue(1 + 1)
   t2 <- obj$enqueue(2 + 2)
 
-  res <- obj$tasks_wait(c(t1, t2))
-  expect_equal(res, set_names(list(2, 4), c(t1, t2)))
+  expect_true(rrq_task_wait(c(t1, t2), controller = obj))
+  expect_equal(rrq_task_results(c(t1, t2), controller = obj), list(2, 4))
 
   ## Slightly slower jobs:
   t3 <- obj$enqueue(slowdouble(0.1))
   t4 <- obj$enqueue(slowdouble(0.1))
-  res <- obj$tasks_wait(c(t3, t4))
-  expect_equal(res, set_names(list(0.2, 0.2), c(t3, t4)))
+  expect_true(rrq_task_wait(c(t3, t4), controller = obj))
+  expect_equal(rrq_task_results(c(t3, t4), controller = obj), list(0.2, 0.2))
 
   expect_error(
-    obj$tasks_wait(c(t1, t2), time_poll = -1),
+    rrq_task_wait(c(t1, t2), time_poll = -1, controller = obj),
     "'time_poll' cannot be less than 0")
 })
 
@@ -180,11 +184,11 @@ test_that("task delete", {
   t2 <- obj$enqueue(2 + 2)
   t3 <- obj$enqueue(3 + 3)
 
-  expect_setequal(obj$task_list(), c(t1, t2, t3))
-  obj$task_delete(t1)
-  expect_setequal(obj$task_list(), c(t2, t3))
-  obj$task_delete(c(t2, t3))
-  expect_setequal(obj$task_list(), character(0))
+  expect_setequal(rrq_task_list(controller = obj), c(t1, t2, t3))
+  rrq_task_delete(t1, controller = obj)
+  expect_setequal(rrq_task_list(controller = obj), c(t2, t3))
+  rrq_task_delete(c(t2, t3), controller = obj)
+  expect_setequal(rrq_task_list(controller = obj), character(0))
 })
 
 
@@ -213,7 +217,7 @@ test_that("Can't delete running tasks", {
   w$poll(TRUE)
   worker_run_task_start(w, r6_private(w), id)
   expect_error(
-    obj$task_delete(id),
+    rrq_task_delete(id, controller = obj),
     "Can't delete running tasks")
 })
 
@@ -222,11 +226,11 @@ test_that("Error if results are not ready", {
   obj <- test_rrq()
   id1 <- obj$enqueue(sin(1))
   id2 <- obj$enqueue(sin(1))
-  expect_error(obj$task_result(id1),
+  expect_error(rrq_task_result(id1, controller = obj),
                sprintf("Missing result for task: '%s'", id1))
-  expect_error(obj$tasks_result(id1),
+  expect_error(rrq_task_results(id1, controller = obj),
                sprintf("Missing result for task:\n  - %s", id1))
-  expect_error(obj$tasks_result(c(id1, id2)),
+  expect_error(rrq_task_results(c(id1, id2), controller = obj),
                sprintf("Missing result for task:\n  - %s\n  - %s", id1, id2))
 })
 
@@ -283,10 +287,10 @@ test_that("queue remove", {
 test_that("cancel queued task", {
   obj <- test_rrq()
   t <- obj$enqueue(sqrt(1))
-  expect_equal(obj$task_status(t), set_names(TASK_PENDING, t))
-  obj$task_cancel(t)
+  expect_equal(rrq_task_status(t, controller = obj), TASK_PENDING)
+  rrq_task_cancel(t, controller = obj)
 
-  expect_equal(obj$task_status(t), set_names(TASK_CANCELLED, t))
+  expect_equal(rrq_task_status(t, controller = obj), TASK_CANCELLED)
   expect_equal(obj$queue_list(), character(0))
 })
 
@@ -297,9 +301,9 @@ test_that("cancel queued task from alternative queue", {
   t2 <- obj$enqueue(sqrt(1), queue = "other")
   t3 <- obj$enqueue(sqrt(1), queue = "other")
   expect_equal(obj$queue_list("other"), c(t1, t2, t3))
-  obj$task_cancel(t2)
+  rrq_task_cancel(t2, controller = obj)
   expect_equal(obj$queue_list("other"), c(t1, t3))
-  expect_equal(obj$task_status(t2), set_names(TASK_CANCELLED, t2))
+  expect_equal(rrq_task_status(t2, controller = obj), TASK_CANCELLED)
 })
 
 
@@ -309,9 +313,9 @@ test_that("can't cancel completed task", {
   t <- obj$enqueue(sqrt(1))
   w$step(TRUE)
   expect_error(
-    obj$task_cancel(t),
+    rrq_task_cancel(t, controller = obj),
     "Task [[:xdigit:]]{32} is not cancelable \\(COMPLETE\\)")
-  expect_equal(obj$task_result(t), 1)
+  expect_equal(rrq_task_result(t, controller = obj), 1)
 })
 
 
@@ -319,7 +323,7 @@ test_that("can't cancel nonexistant task", {
   obj <- test_rrq()
   id <- ids::random_id()
   expect_error(
-    obj$task_cancel(id),
+    rrq_task_cancel(id, controller = obj),
     "Task [[:xdigit:]]{32} is not cancelable \\(MISSING\\)")
 })
 
@@ -330,7 +334,7 @@ test_that("can't cancel running in-process task", {
   t <- obj$enqueue(Sys.sleep(20))
   wait_status(t, obj)
   expect_error(
-    obj$task_cancel(t, wait = TRUE),
+    rrq_task_cancel(t, wait = TRUE, controller = obj),
     "Can't cancel running task '[[:xdigit:]]{32}' as not in separate process")
   w$stop(type = "kill_local")
 })
@@ -342,7 +346,7 @@ test_that("get task info", {
   a <- 1
   b <- 2
   t <- obj$enqueue(log(a, b))
-  res <- obj$task_data(t)
+  res <- rrq_task_data(t, controller = obj)
   expect_equal(res$expr, quote(log(a, b)))
   expect_mapequal(res$objects, list(a = 1, b = 2))
 })
@@ -352,7 +356,7 @@ test_that("get task data errors appropriately if task is missing", {
   obj <- test_rrq()
   id <- ids::random_id()
   expect_error(
-    obj$task_data(id),
+    rrq_task_data(id, controller = obj),
     "Task '[[:xdigit:]]+' not found")
 })
 
@@ -367,20 +371,20 @@ test_that("a worker will pick up tasks from the priority queue", {
   t2 <- obj$enqueue(sin(2), queue = "b")
   t3 <- obj$enqueue(sin(3), queue = "a")
 
-  expect_equal(unname(obj$task_status(c(t1, t2, t3))),
+  expect_equal(rrq_task_status(c(t1, t2, t3), controller = obj),
                rep("PENDING", 3))
   expect_equal(obj$queue_list(), t1)
   expect_equal(obj$queue_list("b"), t2)
   expect_equal(obj$queue_list("a"), t3)
 
   w$step(TRUE)
-  expect_equal(unname(obj$task_status(c(t1, t2, t3))),
+  expect_equal(rrq_task_status(c(t1, t2, t3), controller = obj),
                c("PENDING", "PENDING", "COMPLETE"))
   w$step(TRUE)
-  expect_equal(unname(obj$task_status(c(t1, t2, t3))),
+  expect_equal(rrq_task_status(c(t1, t2, t3), controller = obj),
                c("PENDING", "COMPLETE", "COMPLETE"))
   w$step(TRUE)
-  expect_equal(unname(obj$task_status(c(t1, t2, t3))),
+  expect_equal(rrq_task_status(c(t1, t2, t3), controller = obj),
                c("COMPLETE", "COMPLETE", "COMPLETE"))
 })
 
@@ -392,18 +396,18 @@ test_that("Query jobs in different queues", {
   t2 <- obj$enqueue(sin(2), queue = "a")
   t3 <- obj$enqueue(sin(3), queue = "a")
 
-  expect_equal(unname(obj$task_status(c(t1, t2, t3))),
+  expect_equal(rrq_task_status(c(t1, t2, t3), controller = obj),
                rep("PENDING", 3))
   expect_equal(obj$queue_list(), character(0))
   expect_equal(obj$queue_list("a"), c(t1, t2, t3))
 
-  expect_equal(obj$task_position(t1, queue = "a"), 1)
-  expect_equal(obj$task_position(t2, queue = "a"), 2)
+  expect_equal(rrq_task_position(t1, queue = "a", controller = obj), 1)
+  expect_equal(rrq_task_position(t2, queue = "a", controller = obj), 2)
 
   expect_true(obj$queue_remove(t1, queue = "a"))
   expect_false(obj$queue_remove(t1, queue = "a"))
 
-  expect_equal(obj$task_position(t2, queue = "a"), 1)
+  expect_equal(rrq_task_position(t2, queue = "a", controller = obj), 1)
   expect_equal(obj$queue_length("a"), 2)
   expect_equal(obj$queue_list("a"), c(t2, t3))
 })
@@ -417,8 +421,8 @@ test_that("Send job to new process", {
   t <- obj$enqueue(slowdouble(0.1), separate_process = TRUE)
   expect_type(t, "character")
   w$step(TRUE)
-  expect_equal(obj$task_wait(t, 2), 0.2)
-  expect_equal(obj$task_result(t), 0.2)
+  rrq_task_wait(t, timeout = 2, controller = obj)
+  expect_equal(rrq_task_result(t, controller = obj), 0.2)
 })
 
 
@@ -432,9 +436,9 @@ test_that("Cancel job sent to new process", {
   w <- test_worker_spawn(obj)
   t <- obj$enqueue(slowdouble(50), separate_process = TRUE)
   wait_status(t, obj)
-  obj$task_cancel(t, wait = TRUE)
-  expect_equal(obj$task_status(t), set_names(TASK_CANCELLED, t))
-  expect_equal(obj$task_result(t),
+  rrq_task_cancel(t, wait = TRUE, controller = obj)
+  expect_equal(rrq_task_status(t, controller = obj), TASK_CANCELLED)
+  expect_equal(rrq_task_result(t, controller = obj),
                worker_task_failed(TASK_CANCELLED, obj$queue_id, t))
 
   ## Flakey on covr, probably due to the job being cancelled before
@@ -452,12 +456,12 @@ test_that("can check task exists", {
   obj <- test_rrq("myfuns.R")
   t <- obj$enqueue(sin(0))
   t2 <- obj$enqueue(sin(0))
-  expect_true(obj$task_exists(t))
-  expect_false(obj$task_exists("123"))
-  expect_equal(obj$task_exists(c(t, t2)),
-               setNames(c(TRUE, TRUE), c(t, t2)))
-  expect_equal(obj$task_exists(c(t, "123")),
-               setNames(c(TRUE, FALSE), c(t, "123")))
+  expect_true(rrq_task_exists(t, controller = obj))
+  expect_false(rrq_task_exists("123", controller = obj))
+  expect_equal(rrq_task_exists(c(t, t2), controller = obj),
+               c(TRUE, TRUE))
+  expect_equal(rrq_task_exists(c(t, "123"), controller = obj),
+               c(TRUE, FALSE))
 })
 
 
@@ -482,7 +486,7 @@ test_that("task can be queued with dependency", {
   t3 <- obj$enqueue(sin(pi / 2), depends_on = c(t, t2))
   ## t3 has not been added to main queue yet
   expect_equal(obj$queue_list(), c(t, t2))
-  expect_equal(unname(obj$task_status(t3)), "DEFERRED")
+  expect_equal(unname(rrq_task_status(t3, controller = obj)), "DEFERRED")
 
   ## Original dependencies are stored
   original_deps_keys <- rrq_key_task_depends_up_original(obj$queue_id, t3)
@@ -501,10 +505,10 @@ test_that("task can be queued with dependency", {
   ## Function to retrieve status of t3 and see what it is waiting for
 
   w$step(TRUE)
-  obj$task_wait(t, 2)
-  expect_equal(unname(obj$task_status(t)), "COMPLETE")
-  expect_equal(unname(obj$task_status(t2)), "PENDING")
-  expect_equal(unname(obj$task_status(t3)), "DEFERRED")
+  rrq_task_wait(t, 2, controller = obj)
+  expect_equal(unname(rrq_task_status(t, controller = obj)), "COMPLETE")
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), "PENDING")
+  expect_equal(unname(rrq_task_status(t3, controller = obj)), "DEFERRED")
   ## Still not on queue
   expect_equal(obj$queue_list(), t2)
   ## Status of it has updated
@@ -512,9 +516,9 @@ test_that("task can be queued with dependency", {
   expect_equal(obj$con$SMEMBERS(dependency_keys), list(t2))
 
   w$step(TRUE)
-  obj$task_wait(t2, 2)
-  expect_equal(unname(obj$task_status(t2)), "COMPLETE")
-  expect_equal(unname(obj$task_status(t3)), "PENDING")
+  rrq_task_wait(t2, 2, controller = obj)
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), "COMPLETE")
+  expect_equal(unname(rrq_task_status(t3, controller = obj)), "PENDING")
   ## Now added to queue
   expect_equal(obj$queue_list(), t3)
   ## Status can be retrieved
@@ -522,8 +526,8 @@ test_that("task can be queued with dependency", {
   expect_equal(obj$con$SMEMBERS(dependency_keys), list())
 
   w$step(TRUE)
-  obj$task_wait(t3, 2)
-  expect_equal(unname(obj$task_status(t3)), "COMPLETE")
+  rrq_task_wait(t3, 2, controller = obj)
+  expect_equal(unname(rrq_task_status(t3, controller = obj)), "COMPLETE")
 })
 
 
@@ -535,12 +539,12 @@ test_that("task added to queue immediately if dependencies satified", {
   expect_equal(obj$queue_list(), t)
 
   w$step(TRUE)
-  obj$task_wait(t, 2)
+  rrq_task_wait(t, 2, controller = obj)
 
   ## Immediately added to queue as t has completed
   t2 <- obj$enqueue(sin(pi / 2), depends_on = t)
   expect_equal(obj$queue_list(), t2)
-  expect_equal(unname(obj$task_status(t2)), TASK_PENDING)
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), TASK_PENDING)
 })
 
 
@@ -550,7 +554,7 @@ test_that("queueing with depends_on errored task fails", {
 
   t1 <- obj$enqueue(only_positive(-1))
   w$step(TRUE)
-  res <- obj$task_result(t1)
+  res <- rrq_task_result(t1, controller = obj)
   expect_s3_class(res, "rrq_task_error")
 
   expect_error(obj$enqueue(sin(0), depends_on = t1),
@@ -558,13 +562,13 @@ test_that("queueing with depends_on errored task fails", {
                       t1, ": ERROR"),
                fixed = TRUE)
 
-  ids <- obj$task_list()
+  ids <- rrq_task_list(controller = obj)
   expect_length(ids, 2)
   t2 <- setdiff(ids, t1)
 
   ## Task is set to impossible
-  expect_equal(obj$task_status(t1), set_names(TASK_ERROR, t1))
-  expect_equal(obj$task_status(t2), set_names(TASK_IMPOSSIBLE, t2))
+  expect_equal(rrq_task_status(t1, controller = obj), TASK_ERROR)
+  expect_equal(rrq_task_status(t2, controller = obj), TASK_IMPOSSIBLE)
 })
 
 
@@ -578,19 +582,19 @@ test_that("dependent tasks updated if dependency fails", {
   t4 <- obj$enqueue(sin(0), depends_on = t2)
 
   expect_equal(obj$queue_list(), t)
-  expect_equal(unname(obj$task_status(t)), "PENDING")
-  expect_equal(unname(obj$task_status(t2)), "DEFERRED")
-  expect_equal(unname(obj$task_status(t3)), "DEFERRED")
-  expect_equal(unname(obj$task_status(t4)), "DEFERRED")
+  expect_equal(unname(rrq_task_status(t, controller = obj)), "PENDING")
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), "DEFERRED")
+  expect_equal(unname(rrq_task_status(t3, controller = obj)), "DEFERRED")
+  expect_equal(unname(rrq_task_status(t4, controller = obj)), "DEFERRED")
 
   w$step(TRUE)
-  obj$task_wait(t, 2)
-  expect_equal(unname(obj$task_status(t)), "ERROR")
+  rrq_task_wait(t, 2, controller = obj)
+  expect_equal(unname(rrq_task_status(t, controller = obj)), "ERROR")
 
   ## Dependent task updated and nothing queued
-  expect_equal(unname(obj$task_status(t2)), "IMPOSSIBLE")
-  expect_equal(unname(obj$task_status(t3)), "IMPOSSIBLE")
-  expect_equal(unname(obj$task_status(t4)), "IMPOSSIBLE")
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), "IMPOSSIBLE")
+  expect_equal(unname(rrq_task_status(t3, controller = obj)), "IMPOSSIBLE")
+  expect_equal(unname(rrq_task_status(t4, controller = obj)), "IMPOSSIBLE")
   expect_equal(obj$queue_list(), character(0))
 })
 
@@ -603,14 +607,14 @@ test_that("multiple tasks can be queued with same dependency", {
   t2 <- obj$enqueue(sin(0), depends_on = t)
   t3 <- obj$enqueue(sin(0), depends_on = t)
   expect_equal(obj$queue_list(), t)
-  expect_equal(unname(obj$task_status(t2)), "DEFERRED")
-  expect_equal(unname(obj$task_status(t3)), "DEFERRED")
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), "DEFERRED")
+  expect_equal(unname(rrq_task_status(t3, controller = obj)), "DEFERRED")
 
   w$step(TRUE)
-  obj$task_wait(t, 2)
-  expect_equal(unname(obj$task_status(t)), "COMPLETE")
-  expect_equal(unname(obj$task_status(t2)), "PENDING")
-  expect_equal(unname(obj$task_status(t3)), "PENDING")
+  rrq_task_wait(t, 2, controller = obj)
+  expect_equal(unname(rrq_task_status(t, controller = obj)), "COMPLETE")
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), "PENDING")
+  expect_equal(unname(rrq_task_status(t3, controller = obj)), "PENDING")
   expect_setequal(obj$queue_list(), c(t2, t3))
 })
 
@@ -626,7 +630,7 @@ test_that("deferred task is added to specified queue", {
   expect_equal(obj$queue_list("a"), character(0))
 
   w$step(TRUE)
-  obj$task_wait(t, 2)
+  rrq_task_wait(t, 2, controller = obj)
 
   expect_equal(obj$queue_list(), t2)
   expect_equal(obj$queue_list("a"), t3)
@@ -640,25 +644,25 @@ test_that("task set to impossible cannot be added to queue", {
   t <- obj$enqueue(only_positive(-1))
   t2 <- obj$enqueue(sin(0))
   t3 <- obj$enqueue(sin(pi / 2), depends_on = c(t, t2))
-  expect_equal(unname(obj$task_status(t)), "PENDING")
-  expect_equal(unname(obj$task_status(t2)), "PENDING")
-  expect_equal(unname(obj$task_status(t3)), "DEFERRED")
+  expect_equal(unname(rrq_task_status(t, controller = obj)), "PENDING")
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), "PENDING")
+  expect_equal(unname(rrq_task_status(t3, controller = obj)), "DEFERRED")
   expect_equal(obj$queue_list(), c(t, t2))
 
   w$step(TRUE)
-  res <- obj$task_result(t)
+  res <- rrq_task_result(t, controller = obj)
   expect_s3_class(res, "rrq_task_error")
 
-  expect_equal(unname(obj$task_status(t)), "ERROR")
-  expect_equal(unname(obj$task_status(t2)), "PENDING")
-  expect_equal(unname(obj$task_status(t3)), "IMPOSSIBLE")
+  expect_equal(unname(rrq_task_status(t, controller = obj)), "ERROR")
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), "PENDING")
+  expect_equal(unname(rrq_task_status(t3, controller = obj)), "IMPOSSIBLE")
   expect_equal(obj$queue_list(), t2)
 
   w$step(TRUE)
-  obj$task_wait(t2, 2)
+  rrq_task_wait(t2, 2, controller = obj)
 
-  expect_equal(unname(obj$task_status(t2)), "COMPLETE")
-  expect_equal(unname(obj$task_status(t3)), "IMPOSSIBLE")
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), "COMPLETE")
+  expect_equal(unname(rrq_task_status(t3, controller = obj)), "IMPOSSIBLE")
   expect_equal(obj$queue_list(), character(0))
 })
 
@@ -670,32 +674,32 @@ test_that("deferred task delete", {
   t3 <- obj$enqueue(2 + 2, depends_on = t1)
   t4 <- obj$enqueue(2 + 2, depends_on = t3)
 
-  expect_setequal(obj$task_list(), c(t1, t2, t3, t4))
+  expect_setequal(rrq_task_list(controller = obj), c(t1, t2, t3, t4))
   expect_equal(obj$queue_list(), t1)
 
-  obj$task_delete(t2)
-  expect_setequal(obj$task_list(), c(t1, t3, t4))
+  rrq_task_delete(t2, controller = obj)
+  expect_setequal(rrq_task_list(controller = obj), c(t1, t3, t4))
   expect_equal(obj$queue_list(), t1)
-  expect_equal(unname(obj$task_status(t1)), "PENDING")
-  expect_equal(unname(obj$task_status(t2)), "MISSING")
-  expect_equal(unname(obj$task_status(t3)), "DEFERRED")
-  expect_equal(unname(obj$task_status(t4)), "DEFERRED")
+  expect_equal(unname(rrq_task_status(t1, controller = obj)), "PENDING")
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), "MISSING")
+  expect_equal(unname(rrq_task_status(t3, controller = obj)), "DEFERRED")
+  expect_equal(unname(rrq_task_status(t4, controller = obj)), "DEFERRED")
 
-  obj$task_delete(t1)
-  expect_setequal(obj$task_list(), c(t3, t4))
+  rrq_task_delete(t1, controller = obj)
+  expect_setequal(rrq_task_list(controller = obj), c(t3, t4))
   expect_setequal(obj$queue_list(), character(0))
-  expect_equal(unname(obj$task_status(t1)), "MISSING")
-  expect_equal(unname(obj$task_status(t2)), "MISSING")
-  expect_equal(unname(obj$task_status(t3)), "IMPOSSIBLE")
-  expect_equal(unname(obj$task_status(t4)), "IMPOSSIBLE")
+  expect_equal(unname(rrq_task_status(t1, controller = obj)), "MISSING")
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), "MISSING")
+  expect_equal(unname(rrq_task_status(t3, controller = obj)), "IMPOSSIBLE")
+  expect_equal(unname(rrq_task_status(t4, controller = obj)), "IMPOSSIBLE")
 
-  obj$task_delete(t3)
-  expect_setequal(obj$task_list(), t4)
+  rrq_task_delete(t3, controller = obj)
+  expect_setequal(rrq_task_list(controller = obj), t4)
   expect_setequal(obj$queue_list(), character(0))
-  expect_equal(unname(obj$task_status(t1)), "MISSING")
-  expect_equal(unname(obj$task_status(t2)), "MISSING")
-  expect_equal(unname(obj$task_status(t3)), "MISSING")
-  expect_equal(unname(obj$task_status(t4)), "IMPOSSIBLE")
+  expect_equal(unname(rrq_task_status(t1, controller = obj)), "MISSING")
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), "MISSING")
+  expect_equal(unname(rrq_task_status(t3, controller = obj)), "MISSING")
+  expect_equal(unname(rrq_task_status(t4, controller = obj)), "IMPOSSIBLE")
 })
 
 
@@ -706,18 +710,18 @@ test_that("delete completed task does not clear dependencies", {
   t2 <- obj$enqueue(2 + 2, depends_on = t1)
 
   w$step(TRUE)
-  obj$task_wait(t1, 2)
+  rrq_task_wait(t1, 2, controller = obj)
 
-  expect_setequal(obj$task_list(), c(t1, t2))
+  expect_setequal(rrq_task_list(controller = obj), c(t1, t2))
   expect_equal(obj$queue_list(), t2)
-  expect_equal(unname(obj$task_status(t1)), "COMPLETE")
-  expect_equal(unname(obj$task_status(t2)), "PENDING")
+  expect_equal(unname(rrq_task_status(t1, controller = obj)), "COMPLETE")
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), "PENDING")
 
-  obj$task_delete(t1)
-  expect_setequal(obj$task_list(), t2)
+  rrq_task_delete(t1, controller = obj)
+  expect_setequal(rrq_task_list(controller = obj), t2)
   expect_equal(obj$queue_list(), t2)
-  expect_equal(unname(obj$task_status(t1)), "MISSING")
-  expect_equal(unname(obj$task_status(t2)), "PENDING")
+  expect_equal(unname(rrq_task_status(t1, controller = obj)), "MISSING")
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), "PENDING")
 })
 
 
@@ -728,20 +732,20 @@ test_that("deferred task cancel", {
   t3 <- obj$enqueue(2 + 2, depends_on = t1)
   t4 <- obj$enqueue(2 + 2, depends_on = t3)
 
-  expect_setequal(obj$task_list(), c(t1, t2, t3, t4))
+  expect_setequal(rrq_task_list(controller = obj), c(t1, t2, t3, t4))
   expect_equal(obj$queue_list(), t1)
 
-  obj$task_cancel(t2)
-  expect_setequal(obj$task_list(), c(t1, t2, t3, t4))
+  rrq_task_cancel(t2, controller = obj)
+  expect_setequal(rrq_task_list(controller = obj), c(t1, t2, t3, t4))
   expect_equal(obj$queue_list(), t1)
-  expect_equal(unname(obj$task_status(t3)), "DEFERRED")
-  expect_equal(unname(obj$task_status(t4)), "DEFERRED")
+  expect_equal(unname(rrq_task_status(t3, controller = obj)), "DEFERRED")
+  expect_equal(unname(rrq_task_status(t4, controller = obj)), "DEFERRED")
 
-  obj$task_cancel(t1)
-  expect_setequal(obj$task_list(), c(t1, t2, t3, t4))
+  rrq_task_cancel(t1, controller = obj)
+  expect_setequal(rrq_task_list(controller = obj), c(t1, t2, t3, t4))
   expect_setequal(obj$queue_list(), character(0))
-  expect_equal(unname(obj$task_status(t3)), "IMPOSSIBLE")
-  expect_equal(unname(obj$task_status(t4)), "IMPOSSIBLE")
+  expect_equal(unname(rrq_task_status(t3, controller = obj)), "IMPOSSIBLE")
+  expect_equal(unname(rrq_task_status(t4, controller = obj)), "IMPOSSIBLE")
 })
 
 test_that("can get deferred tasks", {
@@ -762,7 +766,7 @@ test_that("can get deferred tasks", {
   expect_equal(tasks[[t4]][[t1]], "PENDING")
 
   w$step(TRUE)
-  obj$task_wait(t1, 2)
+  rrq_task_wait(t1, 2, controller = obj)
 
   tasks <- obj$deferred_list()
   expect_equal(names(tasks), t3)
@@ -772,8 +776,8 @@ test_that("can get deferred tasks", {
 
   w$step(TRUE)
   w$step(TRUE)
-  obj$task_wait(t2, 2)
-  obj$task_wait(t4, 2)
+  rrq_task_wait(t2, 2, controller = obj)
+  rrq_task_wait(t4, 2, controller = obj)
 
   tasks <- obj$deferred_list()
   expect_setequal(obj$deferred_list(), list())
@@ -788,18 +792,20 @@ test_that("can use task_wait with impossible tasks", {
   t2 <- obj$enqueue(sin(0), depends_on = t)
 
   expect_equal(obj$queue_list(), t)
-  expect_equal(unname(obj$task_status(t)), "PENDING")
-  expect_equal(unname(obj$task_status(t2)), "DEFERRED")
+  expect_equal(unname(rrq_task_status(t, controller = obj)), "PENDING")
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), "DEFERRED")
 
   w$step(TRUE)
-  out <- obj$task_wait(t, 2)
-  expect_equal(unname(obj$task_status(t)), "ERROR")
+  rrq_task_wait(t, 2, controller = obj)
+  out <- rrq_task_result(t, controller = obj)
+  expect_equal(rrq_task_status(t, controller = obj), "ERROR")
   expect_equal(out$task_id, t)
   expect_equal(out$queue_id, obj$queue_id)
 
   ## task wait returns for an impossible task
-  expect_equal(unname(obj$task_status(t2)), "IMPOSSIBLE")
-  out <- obj$task_wait(t2, 2)
+  expect_equal(unname(rrq_task_status(t2, controller = obj)), "IMPOSSIBLE")
+  rrq_task_wait(t2, 2, controller = obj)
+  out <- rrq_task_result(t2, controller = obj)
   ## Not just a timeout error - it has returned
   expect_s3_class(out, "rrq_task_error")
   expect_equal(out$message, "Task not successful: IMPOSSIBLE")
@@ -825,8 +831,8 @@ test_that("submit a task with a timeout", {
   w <- test_worker_blocking(obj)
   w$step(TRUE)
 
-  expect_equal(obj$task_status(t), set_names(TASK_TIMEOUT, t))
-  expect_equal(obj$task_result(t),
+  expect_equal(rrq_task_status(t, controller = obj), TASK_TIMEOUT)
+  expect_equal(rrq_task_result(t, controller = obj),
                worker_task_failed(TASK_TIMEOUT, obj$queue_id, t))
 
   ## Flakey on covr, probably due to the job being cancelled before
@@ -848,22 +854,22 @@ test_that("manual control over environment", {
 
   t <- obj$enqueue(sqrt(a), e, export = character(0))
   w$step(TRUE)
-  expect_equal(obj$task_status(t), set_names(TASK_ERROR, t))
-  expect_length(obj$task_data(t)$objects, 0)
+  expect_equal(rrq_task_status(t, controller = obj), TASK_ERROR)
+  expect_length(rrq_task_data(t, controller = obj)$objects, 0)
 
   w_envir <- r6_private(w)$envir
   w_envir$a <- 2
   t <- obj$enqueue(sqrt(a), e, export = character(0))
   w$step(TRUE)
-  expect_equal(obj$task_status(t), set_names(TASK_COMPLETE, t))
-  expect_length(obj$task_data(t)$objects, 0)
-  expect_equal(obj$task_result(t), sqrt(2))
+  expect_equal(rrq_task_status(t, controller = obj), TASK_COMPLETE)
+  expect_length(rrq_task_data(t, controller = obj)$objects, 0)
+  expect_equal(rrq_task_result(t, controller = obj), sqrt(2))
 
   t <- obj$enqueue(sqrt(a), e, export = "a")
   w$step(TRUE)
-  expect_equal(obj$task_status(t), set_names(TASK_COMPLETE, t))
-  expect_length(obj$task_data(t)$objects, 1)
-  expect_equal(obj$task_result(t), sqrt(10))
+  expect_equal(rrq_task_status(t, controller = obj), TASK_COMPLETE)
+  expect_length(rrq_task_data(t, controller = obj)$objects, 1)
+  expect_equal(rrq_task_result(t, controller = obj), sqrt(10))
 })
 
 
@@ -881,7 +887,7 @@ test_that("can offload storage", {
   w <- test_worker_blocking(obj)
   w$step(TRUE)
 
-  expect_equal(obj$task_result(t), sum(b) / a)
+  expect_equal(rrq_task_result(t, controller = obj), sum(b) / a)
 
   ## Did successfully offload data:
   store <- r6_private(obj)$store
@@ -892,7 +898,7 @@ test_that("can offload storage", {
   expect_length(dir(path), 1L)
   expect_true(dir(path) %in% h)
 
-  obj$task_delete(t)
+  rrq_task_delete(t, controller = obj)
 
   expect_equal(store$list(), character(0))
   expect_equal(dir(path), character(0))
@@ -907,7 +913,7 @@ test_that("offload storage in result", {
   w <- test_worker_blocking(obj)
   w$step(TRUE)
 
-  expect_equal(obj$task_result(t), rep(1, 100))
+  expect_equal(rrq_task_result(t, controller = obj), rep(1, 100))
 
   ## Did successfully offload data:
   store <- r6_private(obj)$store
@@ -917,7 +923,7 @@ test_that("offload storage in result", {
   expect_equal(store$tags(), t)
   expect_equal(dir(path), h)
 
-  obj$task_delete(t)
+  rrq_task_delete(t, controller = obj)
 
   expect_equal(store$list(), character(0))
   expect_equal(dir(path), character(0))
@@ -932,7 +938,7 @@ test_that("collect times", {
   t2 <- obj$enqueue(slowdouble(0.1))
   tt <- c(t1, t2)
 
-  times1 <- obj$task_times(tt)
+  times1 <- rrq_task_times(tt, controller = obj)
   expect_true(is.matrix(times1)) # testthat 3e makes this quite hard
   expect_equal(dimnames(times1),
                list(tt, c("submit", "start", "complete", "moved")))
@@ -943,9 +949,9 @@ test_that("collect times", {
   expect_false(any(is.na(times1[tt, "submit"])))
 
   w$step(TRUE)
-  times2 <- obj$task_times(tt)
+  times2 <- rrq_task_times(tt, controller = obj)
   expect_equal(times2[t2, , drop = FALSE], times1[t2, , drop = FALSE])
-  expect_equal(obj$task_times(t2), times1[t2, , drop = FALSE])
+  expect_equal(rrq_task_times(t2, controller = obj), times1[t2, , drop = FALSE])
   expect_equal(is.na(times2[t1, ]),
                c(submit = FALSE, start = FALSE, complete = FALSE, moved = TRUE))
 })
@@ -957,21 +963,18 @@ test_that("task errors can be immediately thrown", {
 
   t <- obj$enqueue(only_positive(-1))
   w$step(TRUE)
-  err <- expect_error(obj$task_result(t, error = TRUE),
+  err <- expect_error(rrq_task_result(t, error = TRUE, controller = obj),
                       class = "rrq_task_error")
   expect_equal(err$queue_id, obj$queue_id)
   expect_equal(err$task_id, t)
 
-  err2 <- expect_error(obj$task_wait(t, error = TRUE),
-                       class = "rrq_task_error")
-  expect_equal(err2, err)
-
-  err3 <- expect_error(obj$tasks_result(c(t, t), error = TRUE),
-                       class = "rrq_task_error_group")
-  expect_equal(err3$errors, list(err, err))
+  err2 <- expect_error(
+    rrq_task_results(c(t, t), error = TRUE, controller = obj),
+    class = "rrq_task_error_group")
+  expect_equal(err2$errors, list(err, err))
 
   expect_equal(
-    format(err3),
+    format(err2),
     c("<rrq_task_error_group>",
       paste("  2/2 tasks failed:",
             "    - x must be positive",
@@ -1007,7 +1010,7 @@ test_that("Can get information about a task in the same process", {
   w <- test_worker_blocking(obj)
   t <- obj$enqueue(sqrt(4))
 
-  d1 <- obj$task_info(t)
+  d1 <- rrq_task_info(t, controller = obj)
   expect_setequal(
     names(d1),
     c("id", "status", "queue", "separate_process", "timeout", "worker", "pid",
@@ -1023,7 +1026,7 @@ test_that("Can get information about a task in the same process", {
   expect_equal(d1$depends, list(up = NULL, down = NULL))
 
   w$step(TRUE)
-  d2 <- obj$task_info(t)
+  d2 <- rrq_task_info(t, controller = obj)
   expect_setequal(names(d2), names(d1))
   expect_equal(d2$id, t)
   expect_equal(d2$status, TASK_COMPLETE)
@@ -1042,7 +1045,7 @@ test_that("Can get information about a task in a different process", {
   w <- test_worker_blocking(obj)
   t <- obj$enqueue(sqrt(4), separate_process = TRUE, timeout_task_run = 5)
 
-  d1 <- obj$task_info(t)
+  d1 <- rrq_task_info(t, controller = obj)
   expect_setequal(
     names(d1),
     c("id", "status", "queue", "separate_process", "timeout", "worker", "pid",
@@ -1058,7 +1061,7 @@ test_that("Can get information about a task in a different process", {
   expect_equal(d1$depends, list(up = NULL, down = NULL))
 
   w$step(TRUE)
-  d2 <- obj$task_info(t)
+  d2 <- rrq_task_info(t, controller = obj)
   expect_setequal(names(d2), names(d1))
   expect_equal(d2$id, t)
   expect_equal(d2$status, TASK_COMPLETE)
@@ -1079,28 +1082,28 @@ test_that("Can get information about task retries", {
 
   t1 <- obj$enqueue(identity(1))
   w$step(TRUE)
-  expect_mapequal(obj$task_info(t1)$moved, list(up = NULL, down = NULL))
+  expect_mapequal(rrq_task_info(t1, controller = obj)$moved, list(up = NULL, down = NULL))
 
-  t2 <- obj$task_retry(t1)
+  t2 <- rrq_task_retry(t1, controller = obj)
   w$step(TRUE)
-  expect_mapequal(obj$task_info(t1)$moved, list(up = NULL, down = t2))
-  expect_mapequal(obj$task_info(t2)$moved, list(up = t1, down = NULL))
+  expect_mapequal(rrq_task_info(t1, controller = obj)$moved, list(up = NULL, down = t2))
+  expect_mapequal(rrq_task_info(t2, controller = obj)$moved, list(up = t1, down = NULL))
 
-  t3 <- obj$task_retry(t2)
+  t3 <- rrq_task_retry(t2, controller = obj)
   w$step(TRUE)
-  expect_mapequal(obj$task_info(t1)$moved, list(up = NULL, down = c(t2, t3)))
-  expect_mapequal(obj$task_info(t2)$moved, list(up = t1, down = t3))
-  expect_mapequal(obj$task_info(t3)$moved, list(up = c(t1, t2), down = NULL))
+  expect_mapequal(rrq_task_info(t1, controller = obj)$moved, list(up = NULL, down = c(t2, t3)))
+  expect_mapequal(rrq_task_info(t2, controller = obj)$moved, list(up = t1, down = t3))
+  expect_mapequal(rrq_task_info(t3, controller = obj)$moved, list(up = c(t1, t2), down = NULL))
 
-  t4 <- obj$task_retry(t3)
+  t4 <- rrq_task_retry(t3, controller = obj)
   w$step(TRUE)
-  expect_mapequal(obj$task_info(t1)$moved,
+  expect_mapequal(rrq_task_info(t1, controller = obj)$moved,
                   list(up = NULL, down = c(t2, t3, t4)))
-  expect_mapequal(obj$task_info(t2)$moved,
+  expect_mapequal(rrq_task_info(t2, controller = obj)$moved,
                   list(up = t1, down = c(t3, t4)))
-  expect_mapequal(obj$task_info(t3)$moved,
+  expect_mapequal(rrq_task_info(t3, controller = obj)$moved,
                   list(up = c(t1, t2), down = t4))
-  expect_mapequal(obj$task_info(t4)$moved,
+  expect_mapequal(rrq_task_info(t4, controller = obj)$moved,
                   list(up = c(t1, t2, t3), down = NULL))
 })
 
@@ -1118,20 +1121,20 @@ test_that("Can retry tasks that span multiple queues at once", {
     w$step(TRUE)
   }
 
-  t2 <- obj$task_retry(t1)
+  t2 <- rrq_task_retry(t1, controller = obj)
 
-  expect_equal(obj$task_status(t2), set_names(rep(TASK_PENDING, 3), t2))
+  expect_equal(rrq_task_status(t2, controller = obj), rep(TASK_PENDING, 3))
   expect_equal(obj$queue_list("a"), t2[1:2])
   expect_equal(obj$queue_list("b"), t2[3])
 
-  expect_equal(obj$task_position(t2, queue = "a"), c(1, 2, 0))
-  expect_equal(obj$task_position(t2, queue = "b"), c(0, 0, 1))
+  expect_equal(rrq_task_position(t2, queue = "a", controller = obj), c(1, 2, 0))
+  expect_equal(rrq_task_position(t2, queue = "b", controller = obj), c(0, 0, 1))
 
   ## Can also get the position from the old ids:
-  expect_equal(obj$task_position(t1, queue = "a"), c(1, 2, 0))
-  expect_equal(obj$task_position(t1, queue = "b"), c(0, 0, 1))
-  expect_equal(obj$task_position(t1, queue = "a", follow = FALSE), c(0, 0, 0))
-  expect_equal(obj$task_position(t1, queue = "b", follow = FALSE), c(0, 0, 0))
+  expect_equal(rrq_task_position(t1, queue = "a", controller = obj), c(1, 2, 0))
+  expect_equal(rrq_task_position(t1, queue = "b", controller = obj), c(0, 0, 1))
+  expect_equal(rrq_task_position(t1, queue = "a", follow = FALSE, controller = obj), c(0, 0, 0))
+  expect_equal(rrq_task_position(t1, queue = "b", follow = FALSE, controller = obj), c(0, 0, 0))
 })
 
 
@@ -1142,16 +1145,16 @@ test_that("can get task position and preceeding from retried tasks", {
   w$step()
 
   ta <- c(obj$enqueue(sin(2)), obj$enqueue(sin(3)))
-  t2 <- obj$task_retry(t1)
+  t2 <- rrq_task_retry(t1, controller = obj)
   tb <- c(obj$enqueue(sin(4)), obj$enqueue(sin(5)), obj$enqueue(sin(6)))
 
-  expect_equal(obj$task_position(t2), 3)
-  expect_equal(obj$task_position(t1), 3)
-  expect_equal(obj$task_position(t1, follow = FALSE), 0)
+  expect_equal(rrq_task_position(t2, controller = obj), 3)
+  expect_equal(rrq_task_position(t1, controller = obj), 3)
+  expect_equal(rrq_task_position(t1, follow = FALSE, controller = obj), 0)
 
-  expect_equal(obj$task_preceeding(t2), ta)
-  expect_equal(obj$task_preceeding(t1), ta)
-  expect_null(obj$task_preceeding(t1, follow = FALSE))
+  expect_equal(rrq_task_preceeding(t2, controller = obj), ta)
+  expect_equal(rrq_task_preceeding(t1, controller = obj), ta)
+  expect_null(rrq_task_preceeding(t1, follow = FALSE, controller = obj))
 })
 
 
@@ -1201,7 +1204,7 @@ test_that("Running in separate process produces coherent logs", {
   expect_type(t, "character")
   w$step(TRUE)
 
-  expect_equal(obj$task_status(t), set_names(TASK_COMPLETE, t))
+  expect_equal(rrq_task_status(t, controller = obj), TASK_COMPLETE)
 
   log <- obj$worker_log_tail(w$id, Inf)
   expect_equal(log[seq_len(nrow(log0)), ], log0)
@@ -1228,11 +1231,11 @@ test_that("Can extract dependency information", {
   t4 <- obj$enqueue(identity(4), depends_on = c(t1, t2))
   t5 <- obj$enqueue(identity(4), depends_on = c(t4, t3))
 
-  deps1 <- obj$task_info(t1)$depends
-  deps2 <- obj$task_info(t2)$depends
-  deps3 <- obj$task_info(t3)$depends
-  deps4 <- obj$task_info(t4)$depends
-  deps5 <- obj$task_info(t5)$depends
+  deps1 <- rrq_task_info(t1, controller = obj)$depends
+  deps2 <- rrq_task_info(t2, controller = obj)$depends
+  deps3 <- rrq_task_info(t3, controller = obj)$depends
+  deps4 <- rrq_task_info(t4, controller = obj)$depends
+  deps5 <- rrq_task_info(t5, controller = obj)$depends
 
   expect_null(deps1$up)
   expect_setequal(names(deps1$down), c(t1, t2, t3, t4))
