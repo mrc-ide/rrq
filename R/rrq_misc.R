@@ -33,6 +33,10 @@ rrq_destroy <- function(delete = TRUE, worker_stop_type = "message",
   ## TODO: this can be made a bit less weird once we complete the
   ## refactor, as soon we'll have access to the controller everywhere.
   rrq_clean(con, queue_id, delete, worker_stop_type, timeout_worker_stop)
+  if (identical(pkg$default_controller$queue_id, queue_id)) {
+    rrq_default_controller_clear()
+  }
+  invisible()
 }
 
 
