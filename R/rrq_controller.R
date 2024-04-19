@@ -936,7 +936,7 @@ rrq_controller <- R6::R6Class(
     ##' @param queue The name of the queue to query (defaults to the
     ##'   "default" queue).
     queue_length = function(queue = NULL) {
-      self$con$LLEN(rrq_key_queue(private$keys$queue_id, queue))
+      rrq_queue_length(queue, self)
     },
 
     ##' @description Returns the keys in the task queue.
