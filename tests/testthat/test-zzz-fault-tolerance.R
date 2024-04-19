@@ -219,15 +219,20 @@ test_that("Can wait on retried tasks within bundle", {
   obj <- test_rrq()
   w <- test_worker_spawn(obj)
 
-  grp <- obj$lapply(1:10, function(i) runif(1, i, i + 1), timeout_task_wait = 0)
-  res1 <- obj$bulk_wait(grp, delete = FALSE, timeout = 3)
+  ids1 <- rrq_task_create_bulk_call(
+    function(i) runif(1, i, i + 1),
+    1:10,
+    controller = obj)
+  expect_true(rrq_task_wait(ids1, timeout = 3, controller = obj))
+  res1 <- rrq_task_results(ids1, controller = obj)
   expect_equal(vnapply(res1, floor), 1:10)
 
-  ## So, hitting this immediately does not work:
-  ids <- rrq_task_retry(grp$task_ids[2:5], controller = obj)
-  res2 <- obj$bulk_wait(grp, time_poll = 1, timeout = 3, delete = FALSE)
+  ids2 <- rrq_task_retry(ids1[2:5], controller = obj)
+  expect_true(rrq_task_wait(ids1, timeout = 3, controller = obj))
+  res2 <- rrq_task_results(ids1, controller = obj)
 
   expect_equal(vnapply(res2, floor), 1:10)
   expect_equal(unlist(res2) != unlist(res1), 1:10 %in% 2:5)
-  expect_equal(unname(rrq_task_status(ids, controller = obj)), rep(TASK_COMPLETE, 4))
+  expect_equal(
+    rrq_task_status(ids1, controller = obj), rep(TASK_COMPLETE, 10))
 })

@@ -148,6 +148,7 @@ test_that("can retry task from non-leaf tasks", {
 
 
 test_that("Retrying a task is does the right thing with the complete key", {
+  ## This test is removed once the old bulk interface goes
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
   grp <- obj$lapply(1:3, function(i) runif(1, i, i + 1), timeout_task_wait = 0)
@@ -168,6 +169,8 @@ test_that("Retrying a task is does the right thing with the complete key", {
 
 
 test_that("Pathalogical retry key case is allowed", {
+  ## This test is removed once the old bulk interface goes
+
   ## Verifies a fairly unlikely situation where we retry tasks that
   ## were from a bundle (with a dedicated complete key) and free tasks
   ## (without) to make sure that we set these up correctly.
