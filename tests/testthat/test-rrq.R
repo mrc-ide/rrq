@@ -977,8 +977,8 @@ test_that("Can set the task wait timeout on controller creation", {
   obj <- test_rrq()
 
   f <- function(timeout) {
-    r <- rrq_controller$new(obj$queue_id, timeout_task_wait = timeout)
-    r6_private(r)$timeout_task_wait
+    r <- rrq_controller2(obj$queue_id, timeout_task_wait = timeout)
+    r$timeout_task_wait
   }
 
   withr::with_options(list(rrq.timeout_task_wait = 30), {
@@ -1162,8 +1162,7 @@ test_that("Can set the follow default on controller creation", {
   obj <- test_rrq()
 
   f <- function(follow) {
-    r <- rrq_controller$new(obj$queue_id, follow = follow)
-    r6_private(r)$follow
+    rrq_controller2(obj$queue_id, follow = follow)$follow
   }
 
   withr::with_options(list(rrq.follow = FALSE), {

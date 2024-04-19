@@ -140,7 +140,7 @@ test_that("can save worker configuration with top-level function", {
   obj <- test_rrq()
   cfg <- rrq_worker_config(timeout_idle = 10, verbose = FALSE)
   rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
-  obj2 <- rrq_controller$new(obj$queue_id)
+  obj2 <- rrq_controller2(obj$queue_id)
   expect_equal(
     rrq_worker_config_read(WORKER_CONFIG_DEFAULT, controller = obj2),
     cfg)
