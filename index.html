@@ -92,56 +92,80 @@
 <div class="section level2">
 <h2 id="getting-started">Getting started<a class="anchor" aria-label="anchor" href="#getting-started"></a>
 </h2>
-<p>Create an <code>rrq_controller</code> object</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="va"><a href="reference/rrq_controller.html">rrq_controller</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"rrq:readme"</span><span class="op">)</span></span></code></pre></div>
-<p>Submit work to the queue:</p>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/mrc-ide/rrq" class="external-link">rrq</a></span><span class="op">)</span></span></code></pre></div>
+<p>Create an <code>rrq_controller</code> object</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">t</span></span>
-<span><span class="co">#&gt; [1] "1604b9d2665fc935c5f432b0d7da4889"</span></span></code></pre></div>
-<p>Query task process:</p>
+<code class="sourceCode R"><span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/rrq_controller2.html">rrq_controller2</a></span><span class="op">(</span><span class="st">"rrq:readme"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/rrq_default_controller_set.html">rrq_default_controller_set</a></span><span class="op">(</span><span class="va">obj</span><span class="op">)</span></span></code></pre></div>
+<p>Submit work to the queue:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 1604b9d2665fc935c5f432b0d7da4889</span></span>
-<span><span class="co">#&gt;                        "PENDING"</span></span></code></pre></div>
-<p>Run tasks on workers in the background</p>
+<code class="sourceCode R"><span><span class="va">t</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/rrq_task_create_expr.html">rrq_task_create_expr</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">t</span></span>
+<span><span class="co">#&gt; [1] "0b6ae3ae76e1cfab43a8ad4d41b7c4cd"</span></span></code></pre></div>
+<p>Query task process:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="reference/rrq_worker_spawn.html">rrq_worker_spawn</a></span><span class="op">(</span><span class="va">obj</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Spawning 1 worker with prefix hexagonal_xenurine</span></span>
-<span><span class="co">#&gt; [1] "hexagonal_xenurine_1"</span></span></code></pre></div>
-<p>Collect task results when complete</p>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/rrq_task_status.html">rrq_task_status</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "PENDING"</span></span></code></pre></div>
+<p>Run tasks on workers in the background</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_wait</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] 0.21934439 0.47012520 0.57837978 0.17550807 0.07085051 0.04189457</span></span>
-<span><span class="co">#&gt;  [7] 0.43439891 0.79186554 0.82606661 0.86208847</span></span></code></pre></div>
-<p>Or try and retrieve them regardless of if they are complete</p>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/rrq_worker_spawn.html">rrq_worker_spawn2</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; ℹ Spawning 1 worker with prefix 'pepperish_zebralongwingbutterfly'</span></span>
+<span><span class="co">#&gt; &lt;rrq_worker_manager&gt;</span></span>
+<span><span class="co">#&gt;   Public:</span></span>
+<span><span class="co">#&gt;     clone: function (deep = FALSE)</span></span>
+<span><span class="co">#&gt;     id: pepperish_zebralongwingbutterfly_1</span></span>
+<span><span class="co">#&gt;     initialize: function (controller, n, logdir = NULL, name_config = "localhost",</span></span>
+<span><span class="co">#&gt;     is_alive: function (worker_id = NULL)</span></span>
+<span><span class="co">#&gt;     kill: function (worker_id = NULL)</span></span>
+<span><span class="co">#&gt;     logs: function (worker_id)</span></span>
+<span><span class="co">#&gt;     stop: function (worker_id = NULL, ...)</span></span>
+<span><span class="co">#&gt;     wait_alive: function (timeout, time_poll = 0.2, progress = NULL)</span></span>
+<span><span class="co">#&gt;   Private:</span></span>
+<span><span class="co">#&gt;     check_worker_id: function (worker_id)</span></span>
+<span><span class="co">#&gt;     controller: rrq_controller2</span></span>
+<span><span class="co">#&gt;     logfile: /tmp/Rtmp3k3m8o/file183821cbeb985/pepperish_zebralongwin ...</span></span>
+<span><span class="co">#&gt;     process: list</span></span>
+<span><span class="co">#&gt;     worker_id_base: pepperish_zebralongwingbutterfly</span></span></code></pre></div>
+<p>Wait for tasks to complete</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_result</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] 0.21934439 0.47012520 0.57837978 0.17550807 0.07085051 0.04189457</span></span>
-<span><span class="co">#&gt;  [7] 0.43439891 0.79186554 0.82606661 0.86208847</span></span></code></pre></div>
-<p>Query what workers have done</p>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/rrq_task_wait.html">rrq_task_wait</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<p>Retrieve results from a task</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_log_tail</span><span class="op">(</span>n <span class="op">=</span> <span class="cn">Inf</span><span class="op">)</span></span>
-<span><span class="co">#&gt;              worker_id       time       command</span></span>
-<span><span class="co">#&gt; 1 hexagonal_xenurine_1 1678370725         ALIVE</span></span>
-<span><span class="co">#&gt; 2 hexagonal_xenurine_1 1678370725    TASK_START</span></span>
-<span><span class="co">#&gt; 3 hexagonal_xenurine_1 1678370726 TASK_COMPLETE</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
+<span><span class="co">#&gt;  [1] 0.88813000 0.69115977 0.58344801 0.49533313 0.23230984 0.94035381</span></span>
+<span><span class="co">#&gt;  [7] 0.06302391 0.75492762 0.69768060 0.31522964</span></span></code></pre></div>
+<p>Query what workers have done</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/rrq_worker_log_tail.html">rrq_worker_log_tail</a></span><span class="op">(</span>n <span class="op">=</span> <span class="cn">Inf</span><span class="op">)</span></span>
+<span><span class="co">#&gt;                            worker_id child       time       command</span></span>
+<span><span class="co">#&gt; 1 pepperish_zebralongwingbutterfly_1    NA 1713530454         ALIVE</span></span>
+<span><span class="co">#&gt; 2 pepperish_zebralongwingbutterfly_1    NA 1713530454         ENVIR</span></span>
+<span><span class="co">#&gt; 3 pepperish_zebralongwingbutterfly_1    NA 1713530454         QUEUE</span></span>
+<span><span class="co">#&gt; 4 pepperish_zebralongwingbutterfly_1    NA 1713530454    TASK_START</span></span>
+<span><span class="co">#&gt; 5 pepperish_zebralongwingbutterfly_1    NA 1713530454 TASK_COMPLETE</span></span>
+<span><span class="co">#&gt; 6 pepperish_zebralongwingbutterfly_1    NA 1713530454    TASK_START</span></span>
+<span><span class="co">#&gt; 7 pepperish_zebralongwingbutterfly_1    NA 1713530454 TASK_COMPLETE</span></span>
 <span><span class="co">#&gt;                            message</span></span>
 <span><span class="co">#&gt; 1</span></span>
-<span><span class="co">#&gt; 2 1604b9d2665fc935c5f432b0d7da4889</span></span>
-<span><span class="co">#&gt; 3 1604b9d2665fc935c5f432b0d7da4889</span></span></code></pre></div>
+<span><span class="co">#&gt; 2                              new</span></span>
+<span><span class="co">#&gt; 3                          default</span></span>
+<span><span class="co">#&gt; 4 a7f89f9e729d693de669bb3eca5f6710</span></span>
+<span><span class="co">#&gt; 5 a7f89f9e729d693de669bb3eca5f6710</span></span>
+<span><span class="co">#&gt; 6 0b6ae3ae76e1cfab43a8ad4d41b7c4cd</span></span>
+<span><span class="co">#&gt; 7 0b6ae3ae76e1cfab43a8ad4d41b7c4cd</span></span></code></pre></div>
 <p>For more information, see <code><a href="articles/rrq.html">vignette("rrq")</a></code></p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <p>Install from the mrc-ide package repository:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">drat</span><span class="fu">:::</span><span class="fu">add</span><span class="op">(</span><span class="st">"mrc-ide"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"rrq"</span><span class="op">)</span></span></code></pre></div>
 <p>Alternatively, install with <code>remotes</code>:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"mrc-ide/rrq"</span>, upgrade <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">

@@ -133,35 +133,40 @@ two variables:</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="va"><a href="../reference/rrq_controller.html">rrq_controller</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"rrq:"</span>, <span class="fu">ids</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ids/man/random_id.html" class="external-link">random_id</a></span><span class="op">(</span>bytes <span class="op">=</span> <span class="fl">4</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">envir</span><span class="op">(</span><span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/rrq_envir.html">rrq_envir</a></span><span class="op">(</span>sources <span class="op">=</span> <span class="st">"fault.R"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">w</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/rrq_worker_spawn.html">rrq_worker_spawn</a></span><span class="op">(</span><span class="va">obj</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/mrc-ide/rrq" class="external-link">rrq</a></span><span class="op">)</span></span>
+<span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rrq_controller2.html">rrq_controller2</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"rrq:"</span>, <span class="fu">ids</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ids/man/random_id.html" class="external-link">random_id</a></span><span class="op">(</span>bytes <span class="op">=</span> <span class="fl">4</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/rrq_default_controller_set.html">rrq_default_controller_set</a></span><span class="op">(</span><span class="va">obj</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/rrq_worker_envir_set.html">rrq_worker_envir_set</a></span><span class="op">(</span><span class="fu"><a href="../reference/rrq_envir.html">rrq_envir</a></span><span class="op">(</span>sources <span class="op">=</span> <span class="st">"fault.R"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">w</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rrq_worker_spawn.html">rrq_worker_spawn2</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Spawning 1 worker with prefix 'nonspheric_siberiantiger'</span></span></code></pre></div>
 <p>In the happy case, everything works as expected:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span>
 <span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fl">2</span> <span class="op">*</span> <span class="va">x</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>, <span class="fl">0</span>, <span class="fl">0.2</span><span class="op">)</span></span>
-<span><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu">fit_model</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">task_wait</span><span class="op">(</span><span class="va">t</span>, <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="va">t</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rrq_task_create_expr.html">rrq_task_create_expr</a></span><span class="op">(</span><span class="fu">fit_model</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/rrq_task_wait.html">rrq_task_wait</a></span><span class="op">(</span><span class="va">t</span>, <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span>
+<span><span class="fu"><a href="../reference/rrq_task_status.html">rrq_task_status</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "COMPLETE"</span></span>
+<span><span class="fu"><a href="../reference/rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Call:</span></span>
 <span><span class="co">#&gt; lm(formula = y ~ x)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
 <span><span class="co">#&gt; (Intercept)            x  </span></span>
-<span><span class="co">#&gt;     -0.3968       2.5900</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt; aa12f46b25ff7f4a76809d6cd520717e </span></span>
-<span><span class="co">#&gt;                       "COMPLETE"</span></span></code></pre></div>
+<span><span class="co">#&gt;     -0.3968       2.5900</span></span></code></pre></div>
 <p>But if we provide invalid input, the task will error:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu">fit_model</span><span class="op">(</span><span class="va">x</span>, <span class="cn">NULL</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">task_wait</span><span class="op">(</span><span class="va">t</span>, <span class="fl">10</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">t</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rrq_task_create_expr.html">rrq_task_create_expr</a></span><span class="op">(</span><span class="fu">fit_model</span><span class="op">(</span><span class="va">x</span>, <span class="cn">NULL</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/rrq_task_wait.html">rrq_task_wait</a></span><span class="op">(</span><span class="va">t</span>, <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] FALSE</span></span>
+<span><span class="fu"><a href="../reference/rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   from:   model.frame.default(formula = y ~ x, drop.unused.levels = TRUE)</span></span>
 <span><span class="co">#&gt;   error:  invalid type (NULL) for variable 'y'</span></span>
-<span><span class="co">#&gt;   queue:  rrq:25e6caee</span></span>
-<span><span class="co">#&gt;   task:   06cfee22bbc6af3f1a4310a3e9472326</span></span>
+<span><span class="co">#&gt;   queue:  rrq:eb739da0</span></span>
+<span><span class="co">#&gt;   task:   2be6f366a611f4c51d8a0df966a3319c</span></span>
 <span><span class="co">#&gt;   status: ERROR</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span>
 <span><span class="co">#&gt;   * This error has a stack trace, use '$trace' to see it</span></span></code></pre></div>
@@ -169,13 +174,13 @@ two variables:</p>
 when you fetch the result, either via <code>task_wait</code> as above,
 or via <code>task_result</code>:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">r</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">task_result</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">r</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
 <span><span class="va">r</span></span>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   from:   model.frame.default(formula = y ~ x, drop.unused.levels = TRUE)</span></span>
 <span><span class="co">#&gt;   error:  invalid type (NULL) for variable 'y'</span></span>
-<span><span class="co">#&gt;   queue:  rrq:25e6caee</span></span>
-<span><span class="co">#&gt;   task:   06cfee22bbc6af3f1a4310a3e9472326</span></span>
+<span><span class="co">#&gt;   queue:  rrq:eb739da0</span></span>
+<span><span class="co">#&gt;   task:   2be6f366a611f4c51d8a0df966a3319c</span></span>
 <span><span class="co">#&gt;   status: ERROR</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span>
 <span><span class="co">#&gt;   * This error has a stack trace, use '$trace' to see it</span></span></code></pre></div>
@@ -193,21 +198,23 @@ error:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">r</span><span class="op">$</span><span class="va">trace</span></span>
 <span><span class="co">#&gt; <span style="color: #555555;">     </span>▆</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">  1. </span>├─<span style="font-weight: bold;">base</span>::tryCatch(...)</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">  2. </span>│ └─base (local) tryCatchList(expr, classes, parentenv, handlers)</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">  3. </span>│   └─base (local) tryCatchOne(expr, names, parentenv, handlers[[1L]])</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">  4. </span>│     └─base (local) doTryCatch(return(expr), name, parentenv, handler)</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">  5. </span>├─base::withCallingHandlers(...)</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">  6. </span>├─base::eval(expr, envir)</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">  7. </span>│ └─base::eval(expr, envir)</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">  8. </span>│   └─fit_model(x, NULL)</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">  9. </span>│     ├─<span style="font-weight: bold;">stats</span>::lm(y ~ x)</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;"> 10. </span>│     │ └─<span style="font-weight: bold;">base</span>::eval(mf, parent.frame())</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;"> 11. </span>│     │   └─base::eval(mf, parent.frame())</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;"> 12. </span>│     ├─<span style="font-weight: bold;">stats</span>::model.frame(formula = y ~ x, drop.unused.levels = TRUE)</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;"> 13. </span>│     └─stats::model.frame.default(formula = y ~ x, drop.unused.levels = TRUE)</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;"> 14. </span>└─<span style="font-weight: bold;">base</span>::.handleSimpleError(...)</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;"> 15. </span>  └─<span style="font-weight: bold;">rrq</span> (local) h(simpleError(msg, call))</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #555555;">  1. </span>├─<span style="font-weight: bold;">rlang</span>::try_fetch(...)</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">  2. </span>│ ├─<span style="font-weight: bold;">base</span>::tryCatch(...)</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">  3. </span>│ │ └─base (local) tryCatchList(expr, classes, parentenv, handlers)</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">  4. </span>│ │   └─base (local) tryCatchOne(expr, names, parentenv, handlers[[1L]])</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">  5. </span>│ │     └─base (local) doTryCatch(return(expr), name, parentenv, handler)</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">  6. </span>│ └─base::withCallingHandlers(...)</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">  7. </span>├─base::eval(task$expr, envir)</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">  8. </span>│ └─base::eval(task$expr, envir)</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">  9. </span>│   └─fit_model(x, NULL)</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;"> 10. </span>│     ├─<span style="font-weight: bold;">stats</span>::lm(y ~ x)</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;"> 11. </span>│     │ └─<span style="font-weight: bold;">base</span>::eval(mf, parent.frame())</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;"> 12. </span>│     │   └─base::eval(mf, parent.frame())</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;"> 13. </span>│     ├─<span style="font-weight: bold;">stats</span>::model.frame(formula = y ~ x, drop.unused.levels = TRUE)</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;"> 14. </span>│     └─stats::model.frame.default(formula = y ~ x, drop.unused.levels = TRUE)</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;"> 15. </span>└─<span style="font-weight: bold;">base</span>::.handleSimpleError(...)</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;"> 16. </span>  └─<span style="font-weight: bold;">rlang</span> (local) h(simpleError(msg, call))</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;"> 17. </span>    └─handlers[[3L]](cnd)</span></span></code></pre></div>
 <p>These are <code>rlang</code> stack traces, which are somewhat richer
 than those produced by <code><a href="https://rdrr.io/r/base/traceback.html" class="external-link">traceback()</a></code>, containing the same set
 of stacks but arranged in a tree. See the <a href="https://rlang.r-lib.org/reference/trace_back.html" class="external-link">documentation
@@ -222,13 +229,12 @@ behave as expected in programs using errors for flow control (e.g., with
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop</a></span><span class="op">(</span><span class="va">r</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Error in model.frame.default(formula = y ~ x, drop.unused.levels = TRUE): invalid type (NULL) for variable 'y'</span></span></code></pre></div>
 <p>You can also change the default behaviour to error on failure by
-passing <code>error = TRUE</code> to any of <code>$task_result()</code>,
-<code>$task_wait()</code>, <code>$tasks_result()</code> or
-<code>$tasks_wait()</code>, which will immediately rethrow the error in
-your R session (your program could then stop or you could again catch it
-with <code>tryCatch</code>):</p>
+passing <code>error = TRUE</code> to <code><a href="../reference/rrq_task_result.html">rrq_task_result()</a></code> or
+<code>rrq_tasks_result()</code>, which will immediately rethrow the
+error in your R session (your program could then stop or you could again
+catch it with <code>tryCatch</code>):</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_result</span><span class="op">(</span><span class="va">t</span>, error <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t</span>, error <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Error in model.frame.default(formula = y ~ x, drop.unused.levels = TRUE): invalid type (NULL) for variable 'y'</span></span></code></pre></div>
 <p>This process is unchanged if the task is run in a separate process
 (with <code>separate_process = TRUE</code> passed to
@@ -239,28 +245,28 @@ the trace information available after failure.</p>
 <h2 id="increasing-resiliance-via-separate-processes">Increasing resiliance via separate processes<a class="anchor" aria-label="anchor" href="#increasing-resiliance-via-separate-processes"></a>
 </h2>
 <p>Running tasks in separate processes (e.g.,
-<code>obj$enqueue(mytask(), separate_process = TRUE)</code>) is the
-simplest way of making things more resiliant because this creates a
+<code>rrq_task_create_expr(mytask(), separate_process = TRUE)</code>) is
+the simplest way of making things more resiliant because this creates a
 layer of isolation between the worker and the task. If your task crashes
 R (e.g., a segmentation fault due to a bug in your C/C++ code) or is
 killed by the operating system then the worker process survives and can
 update the keys in Redis directly to advertise this fact. This is
-geerally much nicer than when the worker dies and the task status cannot
-be updated.</p>
+generally much nicer than when the worker dies and the task status
+cannot be updated.</p>
 <p>The downside of using separate processes is that it is much slower;
 compare the time taken to queue, run an retrieve a trivial task run in
 the same worker process (look at the <code>elapsed</code> entry)</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span>
-<span>  <span class="va">obj</span><span class="op">$</span><span class="fu">task_wait</span><span class="op">(</span><span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/identity.html" class="external-link">identity</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/rrq_task_wait.html">rrq_task_wait</a></span><span class="op">(</span><span class="fu"><a href="../reference/rrq_task_create_expr.html">rrq_task_create_expr</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/identity.html" class="external-link">identity</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    user  system elapsed </span></span>
-<span><span class="co">#&gt;   0.000   0.002   0.003</span></span></code></pre></div>
+<span><span class="co">#&gt;   0.001   0.000   0.002</span></span></code></pre></div>
 <p>with the same task run in a separate process on the worker</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span>
-<span>  <span class="va">obj</span><span class="op">$</span><span class="fu">task_wait</span><span class="op">(</span><span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/identity.html" class="external-link">identity</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>, separate_process <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/rrq_task_wait.html">rrq_task_wait</a></span><span class="op">(</span><span class="fu"><a href="../reference/rrq_task_create_expr.html">rrq_task_create_expr</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/identity.html" class="external-link">identity</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>, separate_process <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    user  system elapsed </span></span>
-<span><span class="co">#&gt;   0.002   0.000   0.365</span></span></code></pre></div>
+<span><span class="co">#&gt;   0.001   0.000   0.345</span></span></code></pre></div>
 <p>We expect this difference to be ~100 fold in local workers. Almost
 all the cost is due to the overhead of starting and terminating a fresh
 R session. If your queue uses a lot of packages there will be additional
@@ -273,20 +279,20 @@ handle failures via that route.</p>
 <p>Consider running some long running job; this one simply sleeps for an
 hour</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">3600</span><span class="op">)</span>, separate_process <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">t</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rrq_task_create_expr.html">rrq_task_create_expr</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">3600</span><span class="op">)</span>, separate_process <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>To simulate the process crashing, we’ve killed it. Because we have
-queued this on a separate process we can use <code>$task_info()</code>
-to fetch the process id (PID) of the process that the task is running in
-(this is different to that of the worker).</p>
+queued this on a separate process we can use
+<code><a href="../reference/rrq_task_info.html">rrq_task_info()</a></code> to fetch the process id (PID) of the
+process that the task is running in (this is different to that of the
+worker).</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">info</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">task_info</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">info</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rrq_task_info.html">rrq_task_info</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
 <span><span class="fu">tools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/tools/pskill.html" class="external-link">pskill</a></span><span class="op">(</span><span class="va">info</span><span class="op">$</span><span class="va">pid</span><span class="op">)</span></span></code></pre></div>
 <p>Because the task was run in a separate process, our worker could
 detect that the task has died unexpectedly:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt; bfb969650bfefe5188516c09f808a5cb </span></span>
-<span><span class="co">#&gt;                           "DIED"</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_status.html">rrq_task_status</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "DIED"</span></span></code></pre></div>
 <p>This is different to the error status in the previous section (that
 was ERROR). Note that if we had not run the task in a separate process
 the task status would be unchanged as RUNNING) because nothing could
@@ -297,12 +303,12 @@ don’t throw but instead return an object of class
 and <code>condition</code>). However, this time there’s really not much
 extra information in the error:</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">r</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">task_result</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">r</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
 <span><span class="va">r</span></span>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   error:  Task not successful: DIED</span></span>
-<span><span class="co">#&gt;   queue:  rrq:25e6caee</span></span>
-<span><span class="co">#&gt;   task:   bfb969650bfefe5188516c09f808a5cb</span></span>
+<span><span class="co">#&gt;   queue:  rrq:eb739da0</span></span>
+<span><span class="co">#&gt;   task:   841bcbb0df47ed75a183b9c6db834458</span></span>
 <span><span class="co">#&gt;   status: DIED</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span></code></pre></div>
 <p>There’s also no trace available</p>
@@ -329,27 +335,26 @@ as its key has expired. We can then take some action.</p>
 <p>To enable the heartbeat, save a worker configuration before starting
 a worker:</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_config_save</span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_worker_config_save2.html">rrq_worker_config_save2</a></span><span class="op">(</span></span>
 <span>  <span class="st">"localhost"</span>,</span>
-<span>  <span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/rrq_worker_config.html">rrq_worker_config</a></span><span class="op">(</span>heartbeat_period <span class="op">=</span> <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="../reference/rrq_worker_config.html">rrq_worker_config</a></span><span class="op">(</span>heartbeat_period <span class="op">=</span> <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>When you spawn a worker it will pick up this configuration, and we’ll
 be able to detect if it has died.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">w</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/rrq_worker_spawn.html">rrq_worker_spawn</a></span><span class="op">(</span><span class="va">obj</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">w</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rrq_worker_spawn.html">rrq_worker_spawn2</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Spawning 1 worker with prefix 'raging_llama'</span></span></code></pre></div>
 <p>In order to simulate the loss of the worker, we will kill it after
 starting a long-running task:</p>
 <p>Now, we can queue some long running process, which this worker will
 start:</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">t</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">3600</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">t</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rrq_task_create_expr.html">rrq_task_create_expr</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">3600</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>The worker wil pick the task up fairly quickly, and the status will
 change to <code>RUNNING</code>:</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt; df3109362ea98929b53f3d8a7b85ec1a </span></span>
-<span><span class="co">#&gt;                        "RUNNING"</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_status</span><span class="op">(</span><span class="va">w</span><span class="op">$</span><span class="va">id</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_status.html">rrq_task_status</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "RUNNING"</span></span>
+<span><span class="fu"><a href="../reference/rrq_worker_status.html">rrq_worker_status</a></span><span class="op">(</span><span class="va">w</span><span class="op">$</span><span class="va">id</span><span class="op">)</span></span>
 <span><span class="co">#&gt; raging_llama_1 </span></span>
 <span><span class="co">#&gt;         "BUSY"</span></span></code></pre></div>
 <p>We kill the worker (simulating the job crashing, or the machine
@@ -360,10 +365,9 @@ turning off, etc):</p>
 us that the task can’t be completed, so this status will never
 change:</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt; df3109362ea98929b53f3d8a7b85ec1a </span></span>
-<span><span class="co">#&gt;                        "RUNNING"</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_status</span><span class="op">(</span><span class="va">w</span><span class="op">$</span><span class="va">id</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_status.html">rrq_task_status</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "RUNNING"</span></span>
+<span><span class="fu"><a href="../reference/rrq_worker_status.html">rrq_worker_status</a></span><span class="op">(</span><span class="va">w</span><span class="op">$</span><span class="va">id</span><span class="op">)</span></span>
 <span><span class="co">#&gt; raging_llama_1 </span></span>
 <span><span class="co">#&gt;         "BUSY"</span></span></code></pre></div>
 <p>The heartbeat will persist for 3 times the period given above (this
@@ -377,26 +381,25 @@ expired:</p>
 <p>We can then use the <code>worker_detect_exited()</code> method to
 clean up</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_detect_exited</span><span class="op">(</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_worker_detect_exited.html">rrq_worker_detect_exited</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Lost 1 worker:</span></span>
 <span><span class="co">#&gt;   - raging_llama_1</span></span>
 <span><span class="co">#&gt; Orphaning 1 task:</span></span>
-<span><span class="co">#&gt;   - df3109362ea98929b53f3d8a7b85ec1a</span></span></code></pre></div>
+<span><span class="co">#&gt;   - d6cea2e95e54d6a37631a2f85adf80f5</span></span></code></pre></div>
 <p>At this point, the statuses of our task and worker are correct:</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
-<span><span class="co">#&gt; df3109362ea98929b53f3d8a7b85ec1a </span></span>
-<span><span class="co">#&gt;                           "DIED"</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">worker_status</span><span class="op">(</span><span class="va">w</span><span class="op">$</span><span class="va">id</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_status.html">rrq_task_status</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "DIED"</span></span>
+<span><span class="fu"><a href="../reference/rrq_worker_status.html">rrq_worker_status</a></span><span class="op">(</span><span class="va">w</span><span class="op">$</span><span class="va">id</span><span class="op">)</span></span>
 <span><span class="co">#&gt; raging_llama_1 </span></span>
 <span><span class="co">#&gt;         "LOST"</span></span></code></pre></div>
 <p>Fetching the task result provides the same DIED error as above:</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_result</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   error:  Task not successful: DIED</span></span>
-<span><span class="co">#&gt;   queue:  rrq:25e6caee</span></span>
-<span><span class="co">#&gt;   task:   df3109362ea98929b53f3d8a7b85ec1a</span></span>
+<span><span class="co">#&gt;   queue:  rrq:eb739da0</span></span>
+<span><span class="co">#&gt;   task:   d6cea2e95e54d6a37631a2f85adf80f5</span></span>
 <span><span class="co">#&gt;   status: DIED</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span></code></pre></div>
 <p>This is still not terribly useful, as we have not provided any
@@ -420,9 +423,9 @@ case you should also fix your program!)</li>
 <p>Alternatively, perhaps your task ran to successful completion but you
 simply want to rerun it (e.g., some stochastic algorithm that is
 displaying a non-fatal pathology).</p>
-<p>You can use the <code>$task_retry</code> method to retry any number
-of tasks that have <em>completed</em> (in one of the terminal states -
-including <code>COMPLETE</code> but also <code>ERROR</code>,
+<p>You can use <code>rrq_task_retry</code> to retry any number of tasks
+that have <em>completed</em> (in one of the terminal states - including
+<code>COMPLETE</code> but also <code>ERROR</code>,
 <code>CANCELLED</code> <code>DIED</code> or <code>TIMEOUT</code>). This
 is nondestructive to any of the task data, in particular its result, so
 you will still have access to the failed run and its stack trace (but
@@ -445,18 +448,20 @@ enough times:</p>
 <p>We can create a new environment for our worker, to pick up this
 function:</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">envir</span><span class="op">(</span><span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/rrq_envir.html">rrq_envir</a></span><span class="op">(</span>sources <span class="op">=</span> <span class="st">"fault2.R"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">w</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/rrq_worker_spawn.html">rrq_worker_spawn</a></span><span class="op">(</span><span class="va">obj</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_worker_envir_set.html">rrq_worker_envir_set</a></span><span class="op">(</span><span class="fu"><a href="../reference/rrq_envir.html">rrq_envir</a></span><span class="op">(</span>sources <span class="op">=</span> <span class="st">"fault2.R"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">w</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="fu"><a href="../reference/rrq_worker_spawn.html">rrq_worker_spawn2</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Spawning 1 worker with prefix 'congenial_dassierat'</span></span></code></pre></div>
 <p>Now, we enqueue a task as usual, then wait on it</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">t1</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">enqueue</span><span class="op">(</span><span class="fu">stochastic_failure</span><span class="op">(</span><span class="fl">0.5</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">task_wait</span><span class="op">(</span><span class="va">t1</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">t1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rrq_task_create_expr.html">rrq_task_create_expr</a></span><span class="op">(</span><span class="fu">stochastic_failure</span><span class="op">(</span><span class="fl">0.5</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/rrq_task_wait.html">rrq_task_wait</a></span><span class="op">(</span><span class="va">t1</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] FALSE</span></span>
+<span><span class="fu"><a href="../reference/rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   from:   stochastic_failure(0.5)</span></span>
 <span><span class="co">#&gt;   error:  Convergence failure - x is only 0.27</span></span>
-<span><span class="co">#&gt;   queue:  rrq:25e6caee</span></span>
-<span><span class="co">#&gt;   task:   2d836943f64c912bcf43a9e9a2157192</span></span>
+<span><span class="co">#&gt;   queue:  rrq:eb739da0</span></span>
+<span><span class="co">#&gt;   task:   ec9c60accf3766f9d8a57bc84273d3d6</span></span>
 <span><span class="co">#&gt;   status: ERROR</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span>
 <span><span class="co">#&gt;   * This error has a stack trace, use '$trace' to see it</span></span></code></pre></div>
@@ -466,13 +471,15 @@ meaning that it will run exactly as before. However, the random number
 stream has moved on and this task will return a different answer -
 perhaps it will work this time?</p>
 <div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">t2</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">task_retry</span><span class="op">(</span><span class="va">t1</span><span class="op">)</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">task_wait</span><span class="op">(</span><span class="va">t2</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">t2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rrq_task_retry.html">rrq_task_retry</a></span><span class="op">(</span><span class="va">t1</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/rrq_task_wait.html">rrq_task_wait</a></span><span class="op">(</span><span class="va">t2</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] FALSE</span></span>
+<span><span class="fu"><a href="../reference/rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t2</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   from:   stochastic_failure(0.5)</span></span>
 <span><span class="co">#&gt;   error:  Convergence failure - x is only 0.37</span></span>
-<span><span class="co">#&gt;   queue:  rrq:25e6caee</span></span>
-<span><span class="co">#&gt;   task:   5ec281ea785faefc1ae9198e42a2f873</span></span>
+<span><span class="co">#&gt;   queue:  rrq:eb739da0</span></span>
+<span><span class="co">#&gt;   task:   80786df4d2847ca3222c86e34e60d7c7</span></span>
 <span><span class="co">#&gt;   status: ERROR</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span>
 <span><span class="co">#&gt;   * This error has a stack trace, use '$trace' to see it</span></span></code></pre></div>
@@ -482,8 +489,10 @@ However, we could also have used the original id (more on this
 below).</p>
 <p>Let’s give it one more go:</p>
 <div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">t3</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="fu">task_retry</span><span class="op">(</span><span class="va">t2</span><span class="op">)</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">task_wait</span><span class="op">(</span><span class="va">t3</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">t3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rrq_task_retry.html">rrq_task_retry</a></span><span class="op">(</span><span class="va">t2</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/rrq_task_wait.html">rrq_task_wait</a></span><span class="op">(</span><span class="va">t3</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span>
+<span><span class="fu"><a href="../reference/rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.5728534</span></span></code></pre></div>
 <p>Success! The task has run to completion and we no longer have an
 error.</p>
@@ -492,82 +501,76 @@ task id to the new one, and in most cases you can use whichever you find
 more convenient. For example, we can now read the successful task result
 from any of the task ids:</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">tasks_result</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t1</span>, <span class="va">t2</span>, <span class="va">t3</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $`2d836943f64c912bcf43a9e9a2157192`</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_results.html">rrq_task_results</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t1</span>, <span class="va">t2</span>, <span class="va">t3</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [[1]]</span></span>
 <span><span class="co">#&gt; [1] 0.5728534</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $`5ec281ea785faefc1ae9198e42a2f873`</span></span>
+<span><span class="co">#&gt; [[2]]</span></span>
 <span><span class="co">#&gt; [1] 0.5728534</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $b964c48805d478b649d850cb0094fa31</span></span>
+<span><span class="co">#&gt; [[3]]</span></span>
 <span><span class="co">#&gt; [1] 0.5728534</span></span></code></pre></div>
 <p>To prevent this, pass <code>follow = FALSE</code> to return the
 original result</p>
 <div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">tasks_result</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t1</span>, <span class="va">t2</span>, <span class="va">t3</span><span class="op">)</span>, follow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $`2d836943f64c912bcf43a9e9a2157192`</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_results.html">rrq_task_results</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t1</span>, <span class="va">t2</span>, <span class="va">t3</span><span class="op">)</span>, follow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [[1]]</span></span>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   from:   stochastic_failure(0.5)</span></span>
 <span><span class="co">#&gt;   error:  Convergence failure - x is only 0.27</span></span>
-<span><span class="co">#&gt;   queue:  rrq:25e6caee</span></span>
-<span><span class="co">#&gt;   task:   2d836943f64c912bcf43a9e9a2157192</span></span>
+<span><span class="co">#&gt;   queue:  rrq:eb739da0</span></span>
+<span><span class="co">#&gt;   task:   ec9c60accf3766f9d8a57bc84273d3d6</span></span>
 <span><span class="co">#&gt;   status: ERROR</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span>
 <span><span class="co">#&gt;   * This error has a stack trace, use '$trace' to see it</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $`5ec281ea785faefc1ae9198e42a2f873`</span></span>
+<span><span class="co">#&gt; [[2]]</span></span>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   from:   stochastic_failure(0.5)</span></span>
 <span><span class="co">#&gt;   error:  Convergence failure - x is only 0.37</span></span>
-<span><span class="co">#&gt;   queue:  rrq:25e6caee</span></span>
-<span><span class="co">#&gt;   task:   5ec281ea785faefc1ae9198e42a2f873</span></span>
+<span><span class="co">#&gt;   queue:  rrq:eb739da0</span></span>
+<span><span class="co">#&gt;   task:   80786df4d2847ca3222c86e34e60d7c7</span></span>
 <span><span class="co">#&gt;   status: ERROR</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span>
 <span><span class="co">#&gt;   * This error has a stack trace, use '$trace' to see it</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $b964c48805d478b649d850cb0094fa31</span></span>
+<span><span class="co">#&gt; [[3]]</span></span>
 <span><span class="co">#&gt; [1] 0.5728534</span></span></code></pre></div>
 <p>Here, we can see that the first two times we ran the task they
 failed, along with the error and any backtraces. The same logic applies
-to other methods, such as <code>$task_status()</code></p>
+to other functions, such as <code><a href="../reference/rrq_task_status.html">rrq_task_status()</a></code></p>
 <div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t1</span>, <span class="va">t2</span>, <span class="va">t3</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 2d836943f64c912bcf43a9e9a2157192 5ec281ea785faefc1ae9198e42a2f873 </span></span>
-<span><span class="co">#&gt;                       "COMPLETE"                       "COMPLETE" </span></span>
-<span><span class="co">#&gt; b964c48805d478b649d850cb0094fa31 </span></span>
-<span><span class="co">#&gt;                       "COMPLETE"</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t1</span>, <span class="va">t2</span>, <span class="va">t3</span><span class="op">)</span>, follow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 2d836943f64c912bcf43a9e9a2157192 5ec281ea785faefc1ae9198e42a2f873 </span></span>
-<span><span class="co">#&gt;                          "MOVED"                          "MOVED" </span></span>
-<span><span class="co">#&gt; b964c48805d478b649d850cb0094fa31 </span></span>
-<span><span class="co">#&gt;                       "COMPLETE"</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_status.html">rrq_task_status</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t1</span>, <span class="va">t2</span>, <span class="va">t3</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "COMPLETE" "COMPLETE" "COMPLETE"</span></span>
+<span><span class="fu"><a href="../reference/rrq_task_status.html">rrq_task_status</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t1</span>, <span class="va">t2</span>, <span class="va">t3</span><span class="op">)</span>, follow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "MOVED"    "MOVED"    "COMPLETE"</span></span></code></pre></div>
 <p>Note that the task status above has overwritten the original status
 (previously it was ERROR, but now it is MOVED). However, you can always
 read the original status in the error object’s status field, should you
 need it.</p>
 <p>You can also extract times that events happened with
-<code>$task_times()</code></p>
+<code><a href="../reference/rrq_task_times.html">rrq_task_times()</a></code></p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_times</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t1</span>, <span class="va">t2</span>, <span class="va">t3</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_times.html">rrq_task_times</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t1</span>, <span class="va">t2</span>, <span class="va">t3</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                                      submit      start   complete moved</span></span>
-<span><span class="co">#&gt; 2d836943f64c912bcf43a9e9a2157192 1713537960 1713537960 1713537960    NA</span></span>
-<span><span class="co">#&gt; 5ec281ea785faefc1ae9198e42a2f873 1713537960 1713537960 1713537960    NA</span></span>
-<span><span class="co">#&gt; b964c48805d478b649d850cb0094fa31 1713537960 1713537960 1713537960    NA</span></span>
-<span><span class="va">obj</span><span class="op">$</span><span class="fu">task_times</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t1</span>, <span class="va">t2</span>, <span class="va">t3</span><span class="op">)</span>, follow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; ec9c60accf3766f9d8a57bc84273d3d6 1713541567 1713541567 1713541567    NA</span></span>
+<span><span class="co">#&gt; 80786df4d2847ca3222c86e34e60d7c7 1713541567 1713541567 1713541567    NA</span></span>
+<span><span class="co">#&gt; 840a0960641f33981bd7849f9bf20510 1713541567 1713541567 1713541567    NA</span></span>
+<span><span class="fu"><a href="../reference/rrq_task_times.html">rrq_task_times</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t1</span>, <span class="va">t2</span>, <span class="va">t3</span><span class="op">)</span>, follow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                                      submit      start   complete      moved</span></span>
-<span><span class="co">#&gt; 2d836943f64c912bcf43a9e9a2157192 1713537959 1713537959 1713537959 1713537959</span></span>
-<span><span class="co">#&gt; 5ec281ea785faefc1ae9198e42a2f873 1713537959 1713537959 1713537959 1713537960</span></span>
-<span><span class="co">#&gt; b964c48805d478b649d850cb0094fa31 1713537960 1713537960 1713537960         NA</span></span></code></pre></div>
+<span><span class="co">#&gt; ec9c60accf3766f9d8a57bc84273d3d6 1713541567 1713541567 1713541567 1713541567</span></span>
+<span><span class="co">#&gt; 80786df4d2847ca3222c86e34e60d7c7 1713541567 1713541567 1713541567 1713541567</span></span>
+<span><span class="co">#&gt; 840a0960641f33981bd7849f9bf20510 1713541567 1713541567 1713541567         NA</span></span></code></pre></div>
 <p>This means that most of the time you can ignore that a task has been
 retried and work with whatever task id you have handy.</p>
 <p>You can inspect the chain of tasks by looking at the return values
-<code>$task_info</code>. In the above example we have a chain of three
-tasks 2d8369… -&gt; 5ec281… -&gt; b964c4…, which we can discover this
-way:</p>
+<code><a href="../reference/rrq_task_info.html">rrq_task_info()</a></code>. In the above example we have a chain of
+three tasks ec9c60… -&gt; 80786d… -&gt; 840a09…, which we can discover
+this way:</p>
 <div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_info</span><span class="op">(</span><span class="va">t1</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_info.html">rrq_task_info</a></span><span class="op">(</span><span class="va">t1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $id</span></span>
-<span><span class="co">#&gt; [1] "2d836943f64c912bcf43a9e9a2157192"</span></span>
+<span><span class="co">#&gt; [1] "ec9c60accf3766f9d8a57bc84273d3d6"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $status</span></span>
 <span><span class="co">#&gt; [1] "MOVED"</span></span>
@@ -600,7 +603,7 @@ way:</p>
 <span><span class="co">#&gt; NULL</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $moved$down</span></span>
-<span><span class="co">#&gt; [1] "5ec281ea785faefc1ae9198e42a2f873" "b964c48805d478b649d850cb0094fa31"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "80786df4d2847ca3222c86e34e60d7c7" "840a0960641f33981bd7849f9bf20510"</span></span></code></pre></div>
 <p>Here, the <code>moved</code> field shows the tasks that are upstream
 (<code>up</code>) and downstream (<code>down</code>) of this task. For
 tasks that have never been retried both elements are <code>NULL</code>.
@@ -609,17 +612,17 @@ tasks are always linear (i.e., there is no forking).</p>
 <p>For the middle task in the chain, both <code>up</code> and
 <code>down</code> point at different tasks:</p>
 <div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_info</span><span class="op">(</span><span class="va">t2</span><span class="op">)</span><span class="op">$</span><span class="va">moved</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_info.html">rrq_task_info</a></span><span class="op">(</span><span class="va">t2</span><span class="op">)</span><span class="op">$</span><span class="va">moved</span></span>
 <span><span class="co">#&gt; $up</span></span>
-<span><span class="co">#&gt; [1] "2d836943f64c912bcf43a9e9a2157192"</span></span>
+<span><span class="co">#&gt; [1] "ec9c60accf3766f9d8a57bc84273d3d6"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $down</span></span>
-<span><span class="co">#&gt; [1] "b964c48805d478b649d850cb0094fa31"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "840a0960641f33981bd7849f9bf20510"</span></span></code></pre></div>
 <p>and for the leaf task:</p>
 <div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_info</span><span class="op">(</span><span class="va">t3</span><span class="op">)</span><span class="op">$</span><span class="va">moved</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_info.html">rrq_task_info</a></span><span class="op">(</span><span class="va">t3</span><span class="op">)</span><span class="op">$</span><span class="va">moved</span></span>
 <span><span class="co">#&gt; $up</span></span>
-<span><span class="co">#&gt; [1] "2d836943f64c912bcf43a9e9a2157192" "5ec281ea785faefc1ae9198e42a2f873"</span></span>
+<span><span class="co">#&gt; [1] "ec9c60accf3766f9d8a57bc84273d3d6" "80786df4d2847ca3222c86e34e60d7c7"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $down</span></span>
 <span><span class="co">#&gt; NULL</span></span></code></pre></div>
@@ -636,8 +639,16 @@ if it has been moved.</p>
 <p>To change this behaviour, pass the <code>follow</code> argument to
 the queue constructor, for example:</p>
 <div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj_nofollow</span> <span class="op">&lt;-</span> <span class="fu">rrq</span><span class="fu">::</span><span class="va"><a href="../reference/rrq_controller.html">rrq_controller</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">obj</span><span class="op">$</span><span class="va">queue_id</span>, follow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="va">obj_nofollow</span><span class="op">$</span><span class="fu">task_result</span><span class="op">(</span><span class="va">t1</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">obj_nofollow</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rrq_controller2.html">rrq_controller2</a></span><span class="op">(</span><span class="va">obj</span><span class="op">$</span><span class="va">queue_id</span>, follow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t1</span>, controller <span class="op">=</span> <span class="va">obj_nofollow</span><span class="op">)</span></span>
+<span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
+<span><span class="co">#&gt;   from:   stochastic_failure(0.5)</span></span>
+<span><span class="co">#&gt;   error:  Convergence failure - x is only 0.27</span></span>
+<span><span class="co">#&gt;   queue:  rrq:eb739da0</span></span>
+<span><span class="co">#&gt;   task:   ec9c60accf3766f9d8a57bc84273d3d6</span></span>
+<span><span class="co">#&gt;   status: ERROR</span></span>
+<span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span>
+<span><span class="co">#&gt;   * This error has a stack trace, use '$trace' to see it</span></span></code></pre></div>
 <p>Here, we would create a queue controller object with the default
 follow behaviour set to <code>FALSE</code> and so accessing a task
 result of a moved task would not search down through any potential
@@ -652,14 +663,11 @@ the original task) and downstream (down to the last time that the task
 was retried). This is because otherwise it is too easy to end up with
 inconsistent state. So if we run</p>
 <div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_delete</span><span class="op">(</span><span class="va">t1</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_delete.html">rrq_task_delete</a></span><span class="op">(</span><span class="va">t1</span><span class="op">)</span></span></code></pre></div>
 <p>all three tasks in the chain are deleted:</p>
 <div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">$</span><span class="fu">task_status</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t1</span>, <span class="va">t2</span>, <span class="va">t3</span><span class="op">)</span>, follow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 2d836943f64c912bcf43a9e9a2157192 5ec281ea785faefc1ae9198e42a2f873 </span></span>
-<span><span class="co">#&gt;                        "MISSING"                        "MISSING" </span></span>
-<span><span class="co">#&gt; b964c48805d478b649d850cb0094fa31 </span></span>
-<span><span class="co">#&gt;                        "MISSING"</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_status.html">rrq_task_status</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t1</span>, <span class="va">t2</span>, <span class="va">t3</span><span class="op">)</span>, follow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "MISSING" "MISSING" "MISSING"</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="going-further">Going further<a class="anchor" aria-label="anchor" href="#going-further"></a>

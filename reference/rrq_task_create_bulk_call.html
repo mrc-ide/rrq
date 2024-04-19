@@ -121,13 +121,20 @@ queue with no worker, it will queue forever.</p></dd>
 
 <dt>separate_process</dt>
 <dd><p>Logical, indicating if the task should be
-run in a separate process on the worker (see <code>$enqueue</code> for
-details).</p></dd>
+run in a separate process on the worker. If <code>TRUE</code>, then the
+worker runs the task in a separate process using the <code>callr</code>
+package. This means that the worker environment is completely
+clean, subsequent runs are not affected by preceding ones.  The
+downside of this approach is a considerable overhead in starting
+the external process and transferring data back.</p></dd>
 
 
 <dt>timeout_task_run</dt>
 <dd><p>Optionally, a maximum allowed running
-time, in seconds (see <code>$enqueue</code> for details).</p></dd>
+time, in seconds. This parameter only has an effect if
+<code>separate_process</code> is <code>TRUE</code>. If given, then if the task takes
+longer than this time it will be stopped and the task status set
+to <code>TIMEOUT</code>.</p></dd>
 
 
 <dt>depends_on</dt>

@@ -90,10 +90,11 @@ should not be modified.</p>
 <dd><p>Optional character vector of queues to listen on for
 tasks. There is a default queue which is always listened on
 (called 'default'). You can specify additional names here and
-tasks put onto these queues with <code>$enqueue()</code> will have <em>higher</em>
-priority than the default. You can explicitly list the "default"
-queue (e.g., <code>queue = c("high", "default", "low")</code>) to set the
-position of the default queue.</p></dd>
+tasks put onto these queues with <code><a href="rrq_task_create_expr.html">rrq_task_create_expr()</a></code> (or
+other functions) will have <em>higher</em> priority than the
+default. You can explicitly list the "default" queue (e.g.,
+<code>queue = c("high", "default", "low")</code>) to set the position of
+the default queue.</p></dd>
 
 
 <dt>verbose</dt>
