@@ -179,7 +179,7 @@ test_that("Can't kill non-local workers", {
 
   info <- rrq_worker_info(w$id, controller = obj)[[w$id]]
   info$hostname <- paste0(info$hostname, "_but_on_mars")
-  obj$con$HSET(queue_keys(obj)$worker_info, w$id, object_to_bin(info))
+  obj$con$HSET(obj$to_v2()$keys$worker_info, w$id, object_to_bin(info))
   expect_error(
     rrq_worker_stop(w$id, "kill_local", controller = obj),
     "Not all workers are local:")

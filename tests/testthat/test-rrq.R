@@ -842,7 +842,7 @@ test_that("submit a task with a timeout", {
                             timeout_task_run = 1,
                             separate_process = TRUE,
                             controller = obj)
-  expect_equal(obj$con$HGET(queue_keys(obj)$task_timeout, t), "1")
+  expect_equal(obj$con$HGET(obj$to_v2()$keys$task_timeout, t), "1")
 
   w <- test_worker_blocking(obj)
   w$step(TRUE)
@@ -1182,15 +1182,15 @@ test_that("Can set the follow default on controller creation", {
 
 test_that("Can avoid following on controller creation", {
   obj1 <- test_rrq(follow = FALSE)
-  obj2 <- rrq_controller$new(obj1$queue_id, follow = TRUE)
+  obj2 <- rrq_controller2(obj1$queue_id, follow = TRUE)
   w <- test_worker_blocking(obj1)
 
-  t1 <- obj1$enqueue(runif(1))
+  t1 <- rrq_task_create_expr(runif(1), controller = obj1)
   w$step(TRUE)
 
-  t2 <- obj1$task_retry(t1)
-  expect_equal(obj1$task_status(t1), set_names(TASK_MOVED, t1))
-  expect_equal(obj2$task_status(t1), set_names(TASK_PENDING, t1))
+  t2 <- rrq_task_retry(t1, controller = obj1)
+  expect_equal(rrq_task_status(t1, controller = obj1), TASK_MOVED)
+  expect_equal(rrq_task_status(t1, controller = obj2), TASK_PENDING)
 })
 
 
