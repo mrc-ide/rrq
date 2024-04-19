@@ -91,36 +91,3 @@ rrq_worker_config <- function(queue = NULL, verbose = TRUE,
   class(ret) <- "rrq_worker_config"
   ret
 }
-
-
-##' Save a worker configuration. This is an alternative (but
-##' equivalent) to setting the worker configuration via [the
-##' `$worker_config_save()` method in [rrq::rrq_controller], but does
-##' not require setting up a controller (in fact, one need never have
-##' existed).  This function is replaced by [rrq_worker_config_save2],
-##' which will be renamed to `rrq_worker_config_save` soon, but note
-##' the change in arguments.
-##'
-##' @title Save a worker configuration
-##'
-##' @param queue_id The id for the queue
-##'
-##' @param name Name for this configuration
-##'
-##' @param config A worker configuration, created by
-##'   [rrq::rrq_worker_config()]
-##'
-##' @param overwrite Logical, indicating if an existing configuration
-##'   with this `name` should be overwritten if it exists. If `FALSE`,
-##'   then the configuration is not updated, even if it differs from
-##'   the version currently saved.
-##'
-##' @param con The redis connection to use
-##'
-##' @return Invisibly, a boolean indicating if the configuration was written
-##' @export
-rrq_worker_config_save <- function(queue_id, name, config, overwrite = TRUE,
-                                   con = redux::hiredis()) {
-  controller <- rrq_controller2(queue_id, con)
-  rrq_worker_config_save2(name, config, overwrite, controller)
-}

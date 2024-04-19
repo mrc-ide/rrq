@@ -167,13 +167,7 @@ rrq_task_data <- function(task_id, controller = NULL) {
     return(rrq_task_data(expr, controller))
   }
   task <- bin_to_object(expr)
-  if (is.null(task$type)) {
-    task$type <- "legacy"
-    data <- as.list(expression_restore_locals(task, emptyenv(), store))
-    task$objects <- data[names(task$objects)]
-  } else {
-    task <- task_load_from_store(task, store)
-  }
+  task <- task_load_from_store(task, store)
   task
 }
 
