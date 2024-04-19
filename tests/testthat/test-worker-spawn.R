@@ -18,8 +18,7 @@ test_that("Don't wait", {
 
 
 test_that("failed spawn", {
-  skip_on_covr()
-  skip_on_windows()
+  skip_for_spawn()
 
   root <- tempfile()
   obj <- test_rrq("myfuns.R", root, verbose = TRUE)
