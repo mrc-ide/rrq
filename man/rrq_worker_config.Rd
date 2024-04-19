@@ -18,10 +18,11 @@ rrq_worker_config(
 \item{queue}{Optional character vector of queues to listen on for
 tasks. There is a default queue which is always listened on
 (called 'default'). You can specify additional names here and
-tasks put onto these queues with \verb{$enqueue()} will have \emph{higher}
-priority than the default. You can explicitly list the "default"
-queue (e.g., \code{queue = c("high", "default", "low")}) to set the
-position of the default queue.}
+tasks put onto these queues with \code{rrq_task_create_expr()} (or
+other functions) will have \emph{higher} priority than the
+default. You can explicitly list the "default" queue (e.g.,
+\code{queue = c("high", "default", "low")}) to set the position of
+the default queue.}
 
 \item{verbose}{Logical, indicating if the worker should print
 logging output to the screen.  Logging to screen has a small but

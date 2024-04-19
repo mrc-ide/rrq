@@ -23,11 +23,18 @@ can specify that here. Be warned that if you push jobs onto a
 queue with no worker, it will queue forever.}
 
 \item{separate_process}{Logical, indicating if the task should be
-run in a separate process on the worker (see \verb{$enqueue} for
-details).}
+run in a separate process on the worker. If \code{TRUE}, then the
+worker runs the task in a separate process using the \code{callr}
+package. This means that the worker environment is completely
+clean, subsequent runs are not affected by preceding ones.  The
+downside of this approach is a considerable overhead in starting
+the external process and transferring data back.}
 
 \item{timeout_task_run}{Optionally, a maximum allowed running
-time, in seconds (see \verb{$enqueue} for details).}
+time, in seconds. This parameter only has an effect if
+\code{separate_process} is \code{TRUE}. If given, then if the task takes
+longer than this time it will be stopped and the task status set
+to \code{TIMEOUT}.}
 
 \item{depends_on}{Vector or list of IDs of tasks which must have
 completed before this job can be run. Once all dependent tasks

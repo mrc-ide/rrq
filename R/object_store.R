@@ -10,11 +10,12 @@
 ##' task. So, if we had
 ##'
 ##' ```
-##' obj$enqueue(f(a, b))
+##' rrq_task_create_expr(f(a, b))
 ##' ```
 ##'
 ##' that would be the objects `a` and `b` from the context where
-##' `enqueue` was called. There are a few considerations here:
+##'   `rrq_task_create_expr` was called. There are a few
+##'   considerations here:
 ##'
 ##' * The names `a` and `b` are only useful in the immediate context
 ##'   of the controller at the point the task is sent and so we need
