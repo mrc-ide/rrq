@@ -363,7 +363,7 @@ task_variables <- function(names, envir) {
   if (length(names) == 0) {
     NULL
   } else {
-    rlang::env_get_list(envir, names, inherit = TRUE, last = topenv())
+    rlang::env_get_list(envir, names, inherit = TRUE)
   }
 }
 
