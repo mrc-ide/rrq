@@ -47,7 +47,7 @@ test_that("Can't retry a task that has not been run", {
   expect_error(
     rrq_task_retry(c(t1, t2), controller = obj),
     "Can't retry tasks that are in state: 'PENDING':")
-  obj$con$HSET(obj$to_v2()$keys$task_status, t1, TASK_RUNNING)
+  obj$con$HSET(obj$keys$task_status, t1, TASK_RUNNING)
   expect_error(
     rrq_task_retry(c(t1, t2), controller = obj),
     "Can't retry tasks that are in state: 'RUNNING', 'PENDING'")

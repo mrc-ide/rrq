@@ -16,7 +16,7 @@ test_that("can wait on a completed task", {
 test_that("can error if tasks don't complete on time", {
   obj <- test_rrq()
   t <- rrq_task_create_expr(sqrt(2), controller = obj)
-  new_redis <- obj$to_v2()$con$version() >= numeric_version("6.0.0")
+  new_redis <- obj$con$version() >= numeric_version("6.0.0")
   time_poll <- if (new_redis) 0.01 else 1
   expect_error(
     rrq_task_wait(t, timeout = 0, time_poll = time_poll, controller = obj),

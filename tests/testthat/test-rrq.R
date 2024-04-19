@@ -1,7 +1,7 @@
 test_that("empty", {
   obj <- test_rrq()
 
-  expect_s3_class(obj, "rrq_controller")
+  expect_s3_class(obj, "rrq_controller2")
 
   expect_equal(rrq_worker_list(controller = obj), character(0))
   expect_equal(rrq_task_list(controller = obj), character(0))
@@ -842,7 +842,7 @@ test_that("submit a task with a timeout", {
                             timeout_task_run = 1,
                             separate_process = TRUE,
                             controller = obj)
-  expect_equal(obj$con$HGET(obj$to_v2()$keys$task_timeout, t), "1")
+  expect_equal(obj$con$HGET(obj$keys$task_timeout, t), "1")
 
   w <- test_worker_blocking(obj)
   w$step(TRUE)
@@ -878,7 +878,7 @@ test_that("can offload storage", {
   expect_equal(rrq_task_result(t, controller = obj), sum(b) / a)
 
   ## Did successfully offload data:
-  store <- r6_private(obj)$store
+  store <- obj$store
   h <- store$list()
   expect_length(h, 3)
   expect_setequal(store$location(h), c("redis", "offload"))
@@ -904,7 +904,7 @@ test_that("offload storage in result", {
   expect_equal(rrq_task_result(t, controller = obj), rep(1, 100))
 
   ## Did successfully offload data:
-  store <- r6_private(obj)$store
+  store <- obj$store
   h <- store$list()
   expect_length(h, 1)
   expect_setequal(store$location(h), "offload")

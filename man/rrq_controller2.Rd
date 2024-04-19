@@ -15,7 +15,7 @@ rrq_controller2(
 \arguments{
 \item{queue_id}{An identifier for the queue.  This will prefix all
 keys in redis, so a prefix might be useful here depending on
-your use case (e.g. \code{rrq:<user>:<id>})}
+your use case (e.g. \verb{rrq:<user>:<id>})}
 
 \item{con}{A redis connection. The default tries to create a redis
 connection using default ports, or environment variables set as in
@@ -49,3 +49,69 @@ Create a new controller.  This is the new interface that will
 replace \link{rrq_controller} soon, at which point it will rename back
 to \code{rrq_controller}.
 }
+\section{Task lifecycle}{
+\itemize{
+\item A task is queued with \verb{$enqueue()}, at which point it becomes \code{PENDING}
+\item Once a worker selects the task to run, it becomes \code{RUNNING}
+\item If the task completes successfully without error it becomes \code{COMPLETE}
+\item If the task throws an error, it becomes \code{ERROR}
+\item If the task was cancelled (e.g., via \verb{$task_cancel()}) it becomes
+\code{CANCELLED}
+\item If the task is killed by an external process, crashes or the worker
+dies (and is running a heartbeat) then the task becomes \code{DIED}.
+\item The status of an unknown task is \code{MISSING}
+\item Tasks in any terminal state (except \code{IMPOSSIBLE}) may be retried
+with \code{task_retry} at which point they become \code{MOVED}, see
+\code{vignette("fault-tolerance")} for details
+}
+}
+
+\section{Worker lifecycle}{
+\itemize{
+\item A worker appears and is \code{IDLE}
+\item When running a task it is \code{BUSY}
+\item If it receives a \code{PAUSE} message it becomes \code{PAUSED} until it
+receives a \code{RESUME} message
+\item If it exits cleanly (e.g., via a \code{STOP} message or a timeout) it
+becomes \code{EXITED}
+\item If it crashes and was running a heartbeat, it becomes \code{LOST}
+}
+}
+
+\section{Messages}{
+Most of the time workers process tasks, but you can also send them
+"messages". Messages take priority over tasks, so if a worker
+becomes idle (by coming online or by finishing a task) it will
+consume all available messages before starting on a new task,
+even if both are available.
+
+Each message has a "command" and may have "arguments" to that
+command. The supported messages are:
+\itemize{
+\item \code{PING} (no args): "ping" the worker, if alive it will respond
+with "PONG"
+\item \code{ECHO} (accepts an argument of a string): Print a string to the
+terminal and log of the worker. Will respond with \code{OK} once the
+message has been printed.
+\item \code{EVAL} (accepts a string or a quoted expression): Evaluate an
+arbitrary R expression on the worker. Responds with the value of
+this expression.
+\item \code{STOP} (accepts a string to print as the worker exits, defaults
+to "BYE"): Tells the worker to stop.
+\item \code{INFO} (no args): Returns information about the worker (versions
+of packages, hostname, pid, etc).
+\item \code{PAUSE} (no args): Tells the worker to stop accepting tasks
+(until it receives a \code{RESUME} message). Messages are processed
+as normal.
+\item \code{RESUME} (no args): Tells a paused worker to resume accepting
+tasks.
+\item \code{REFRESH} (no args): Tells the worker to rebuild their
+environment with the \code{create} method.
+\item \code{TIMEOUT_SET} (accepts a number, representing seconds): Updates
+the worker timeout - the length of time after which it will exit
+if it has not processed a task.
+\item \code{TIMEOUT_GET} (no args): Tells the worker to respond with its
+current timeout.
+}
+}
+
