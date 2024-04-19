@@ -148,8 +148,8 @@ rrq_controller <- R6::R6Class(
       if (check_version) {
         rrq_version_check(self$con, private$keys)
       }
-      self$worker_config_save(WORKER_CONFIG_DEFAULT, rrq_worker_config(),
-                              overwrite = FALSE)
+      rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, rrq_worker_config(),
+                              overwrite = FALSE, controller = self)
 
       private$store <- rrq_object_store(self$con, private$keys)
       private$scripts <- rrq_scripts_load(self$con)
