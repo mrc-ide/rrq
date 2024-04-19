@@ -7,10 +7,11 @@
 ##' @param queue Optional character vector of queues to listen on for
 ##'   tasks. There is a default queue which is always listened on
 ##'   (called 'default'). You can specify additional names here and
-##'   tasks put onto these queues with `$enqueue()` will have *higher*
-##'   priority than the default. You can explicitly list the "default"
-##'   queue (e.g., `queue = c("high", "default", "low")`) to set the
-##'   position of the default queue.
+##'   tasks put onto these queues with `rrq_task_create_expr()` (or
+##'   other functions) will have *higher* priority than the
+##'   default. You can explicitly list the "default" queue (e.g.,
+##'   `queue = c("high", "default", "low")`) to set the position of
+##'   the default queue.
 ##'
 ##' @param verbose Logical, indicating if the worker should print
 ##'   logging output to the screen.  Logging to screen has a small but

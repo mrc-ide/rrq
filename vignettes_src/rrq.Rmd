@@ -382,7 +382,7 @@ The additional features that it provides are:
 
 The sorts of tasks that benefit from this sort of approach are typically long-running (expected running times in the 10s of seconds or more) so that the overhead is low, but also the features of cancellation and timeouts become more useful. We have also seen this used usefully where the task may leak memory, or cache results aggressively - over time this would cause the worker process to consume more memory until the worker process was killed by the operating system.
 
-To use a separate process, add `separate_process = TRUE` to calls to `$enqueue()`. This will then enable the argument `timeout` to have an effect, as well as the `$task_cancel()` method.
+To use a separate process, add `separate_process = TRUE` to calls to `rrq_task_create_expr()`. This will then enable the argument `timeout` to have an effect, as well as `rrq_task_cancel()`.
 
 ## Coping with memory use
 
@@ -465,7 +465,7 @@ Options:
 This is a bash script that can then be called from whatever cluster job scheduler you use. The important things to pass through are:
 
 * `id` the only positional argument, which is the queue id
-* `--config=NAME` allows controlling of the named worker config (set via `$worker_config_set()`, and allowing changing of timeout, verbosity and queues)
+* `--config=NAME` allows controlling of the named worker config (set via `rrq_worker_config_save2()`, and allowing changing of timeout, verbosity and queues)
 
 In addition, you may need to change the configuration type. If you need to control redis access you should set the `REDIS_URL` environment variable to point at your Redis server.
 

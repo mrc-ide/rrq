@@ -8,11 +8,12 @@ When you create a task with rrq and that task uses local variables
 these need to be copied over to the worker that will evaluate the
 task. So, if we had
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{obj$enqueue(f(a, b))
+\if{html}{\out{<div class="sourceCode">}}\preformatted{rrq_task_create_expr(f(a, b))
 }\if{html}{\out{</div>}}
 
 that would be the objects \code{a} and \code{b} from the context where
-\code{enqueue} was called. There are a few considerations here:
+\code{rrq_task_create_expr} was called. There are a few
+considerations here:
 \itemize{
 \item The names \code{a} and \code{b} are only useful in the immediate context
 of the controller at the point the task is sent and so we need
