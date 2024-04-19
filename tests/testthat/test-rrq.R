@@ -490,7 +490,7 @@ test_that("task can be queued with dependency", {
                              controller = obj)
   ## t3 has not been added to main queue yet
   expect_equal(rrq_queue_list(controller = obj), c(t, t2))
-  expect_equal(unname(rrq_task_status(t3, controller = obj)), "DEFERRED")
+  expect_equal(rrq_task_status(t3, controller = obj), "DEFERRED")
 
   ## Original dependencies are stored
   original_deps_keys <- rrq_key_task_depends_up_original(obj$queue_id, t3)
@@ -510,9 +510,9 @@ test_that("task can be queued with dependency", {
 
   w$step(TRUE)
   rrq_task_wait(t, 2, controller = obj)
-  expect_equal(unname(rrq_task_status(t, controller = obj)), "COMPLETE")
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), "PENDING")
-  expect_equal(unname(rrq_task_status(t3, controller = obj)), "DEFERRED")
+  expect_equal(rrq_task_status(t, controller = obj), "COMPLETE")
+  expect_equal(rrq_task_status(t2, controller = obj), "PENDING")
+  expect_equal(rrq_task_status(t3, controller = obj), "DEFERRED")
   ## Still not on queue
   expect_equal(rrq_queue_list(controller = obj), t2)
   ## Status of it has updated
@@ -521,8 +521,8 @@ test_that("task can be queued with dependency", {
 
   w$step(TRUE)
   rrq_task_wait(t2, 2, controller = obj)
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), "COMPLETE")
-  expect_equal(unname(rrq_task_status(t3, controller = obj)), "PENDING")
+  expect_equal(rrq_task_status(t2, controller = obj), "COMPLETE")
+  expect_equal(rrq_task_status(t3, controller = obj), "PENDING")
   ## Now added to queue
   expect_equal(rrq_queue_list(controller = obj), t3)
   ## Status can be retrieved
@@ -531,7 +531,7 @@ test_that("task can be queued with dependency", {
 
   w$step(TRUE)
   rrq_task_wait(t3, 2, controller = obj)
-  expect_equal(unname(rrq_task_status(t3, controller = obj)), "COMPLETE")
+  expect_equal(rrq_task_status(t3, controller = obj), "COMPLETE")
 })
 
 
@@ -548,7 +548,7 @@ test_that("task added to queue immediately if dependencies satified", {
   ## Immediately added to queue as t has completed
   t2 <- rrq_task_create_expr(sin(pi / 2), depends_on = t, controller = obj)
   expect_equal(rrq_queue_list(controller = obj), t2)
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), TASK_PENDING)
+  expect_equal(rrq_task_status(t2, controller = obj), TASK_PENDING)
 })
 
 
@@ -586,19 +586,19 @@ test_that("dependent tasks updated if dependency fails", {
   t4 <- rrq_task_create_expr(sin(0), depends_on = t2, controller = obj)
 
   expect_equal(rrq_queue_list(controller = obj), t)
-  expect_equal(unname(rrq_task_status(t, controller = obj)), "PENDING")
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), "DEFERRED")
-  expect_equal(unname(rrq_task_status(t3, controller = obj)), "DEFERRED")
-  expect_equal(unname(rrq_task_status(t4, controller = obj)), "DEFERRED")
+  expect_equal(rrq_task_status(t, controller = obj), "PENDING")
+  expect_equal(rrq_task_status(t2, controller = obj), "DEFERRED")
+  expect_equal(rrq_task_status(t3, controller = obj), "DEFERRED")
+  expect_equal(rrq_task_status(t4, controller = obj), "DEFERRED")
 
   w$step(TRUE)
   rrq_task_wait(t, 2, controller = obj)
-  expect_equal(unname(rrq_task_status(t, controller = obj)), "ERROR")
+  expect_equal(rrq_task_status(t, controller = obj), "ERROR")
 
   ## Dependent task updated and nothing queued
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), "IMPOSSIBLE")
-  expect_equal(unname(rrq_task_status(t3, controller = obj)), "IMPOSSIBLE")
-  expect_equal(unname(rrq_task_status(t4, controller = obj)), "IMPOSSIBLE")
+  expect_equal(rrq_task_status(t2, controller = obj), "IMPOSSIBLE")
+  expect_equal(rrq_task_status(t3, controller = obj), "IMPOSSIBLE")
+  expect_equal(rrq_task_status(t4, controller = obj), "IMPOSSIBLE")
   expect_equal(rrq_queue_list(controller = obj), character(0))
 })
 
@@ -611,14 +611,14 @@ test_that("multiple tasks can be queued with same dependency", {
   t2 <- rrq_task_create_expr(sin(0), depends_on = t, controller = obj)
   t3 <- rrq_task_create_expr(sin(0), depends_on = t, controller = obj)
   expect_equal(rrq_queue_list(controller = obj), t)
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), "DEFERRED")
-  expect_equal(unname(rrq_task_status(t3, controller = obj)), "DEFERRED")
+  expect_equal(rrq_task_status(t2, controller = obj), "DEFERRED")
+  expect_equal(rrq_task_status(t3, controller = obj), "DEFERRED")
 
   w$step(TRUE)
   rrq_task_wait(t, 2, controller = obj)
-  expect_equal(unname(rrq_task_status(t, controller = obj)), "COMPLETE")
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), "PENDING")
-  expect_equal(unname(rrq_task_status(t3, controller = obj)), "PENDING")
+  expect_equal(rrq_task_status(t, controller = obj), "COMPLETE")
+  expect_equal(rrq_task_status(t2, controller = obj), "PENDING")
+  expect_equal(rrq_task_status(t3, controller = obj), "PENDING")
   expect_setequal(rrq_queue_list(controller = obj), c(t2, t3))
 })
 
@@ -648,25 +648,25 @@ test_that("task set to impossible cannot be added to queue", {
   t <- rrq_task_create_expr(only_positive(-1), controller = obj)
   t2 <- rrq_task_create_expr(sin(0), controller = obj)
   t3 <- rrq_task_create_expr(sin(pi / 2), depends_on = c(t, t2), controller = obj)
-  expect_equal(unname(rrq_task_status(t, controller = obj)), "PENDING")
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), "PENDING")
-  expect_equal(unname(rrq_task_status(t3, controller = obj)), "DEFERRED")
+  expect_equal(rrq_task_status(t, controller = obj), "PENDING")
+  expect_equal(rrq_task_status(t2, controller = obj), "PENDING")
+  expect_equal(rrq_task_status(t3, controller = obj), "DEFERRED")
   expect_equal(rrq_queue_list(controller = obj), c(t, t2))
 
   w$step(TRUE)
   res <- rrq_task_result(t, controller = obj)
   expect_s3_class(res, "rrq_task_error")
 
-  expect_equal(unname(rrq_task_status(t, controller = obj)), "ERROR")
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), "PENDING")
-  expect_equal(unname(rrq_task_status(t3, controller = obj)), "IMPOSSIBLE")
+  expect_equal(rrq_task_status(t, controller = obj), "ERROR")
+  expect_equal(rrq_task_status(t2, controller = obj), "PENDING")
+  expect_equal(rrq_task_status(t3, controller = obj), "IMPOSSIBLE")
   expect_equal(rrq_queue_list(controller = obj), t2)
 
   w$step(TRUE)
   rrq_task_wait(t2, 2, controller = obj)
 
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), "COMPLETE")
-  expect_equal(unname(rrq_task_status(t3, controller = obj)), "IMPOSSIBLE")
+  expect_equal(rrq_task_status(t2, controller = obj), "COMPLETE")
+  expect_equal(rrq_task_status(t3, controller = obj), "IMPOSSIBLE")
   expect_equal(rrq_queue_list(controller = obj), character(0))
 })
 
@@ -684,26 +684,26 @@ test_that("deferred task delete", {
   rrq_task_delete(t2, controller = obj)
   expect_setequal(rrq_task_list(controller = obj), c(t1, t3, t4))
   expect_equal(rrq_queue_list(controller = obj), t1)
-  expect_equal(unname(rrq_task_status(t1, controller = obj)), "PENDING")
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), "MISSING")
-  expect_equal(unname(rrq_task_status(t3, controller = obj)), "DEFERRED")
-  expect_equal(unname(rrq_task_status(t4, controller = obj)), "DEFERRED")
+  expect_equal(rrq_task_status(t1, controller = obj), "PENDING")
+  expect_equal(rrq_task_status(t2, controller = obj), "MISSING")
+  expect_equal(rrq_task_status(t3, controller = obj), "DEFERRED")
+  expect_equal(rrq_task_status(t4, controller = obj), "DEFERRED")
 
   rrq_task_delete(t1, controller = obj)
   expect_setequal(rrq_task_list(controller = obj), c(t3, t4))
   expect_setequal(rrq_queue_list(controller = obj), character(0))
-  expect_equal(unname(rrq_task_status(t1, controller = obj)), "MISSING")
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), "MISSING")
-  expect_equal(unname(rrq_task_status(t3, controller = obj)), "IMPOSSIBLE")
-  expect_equal(unname(rrq_task_status(t4, controller = obj)), "IMPOSSIBLE")
+  expect_equal(rrq_task_status(t1, controller = obj), "MISSING")
+  expect_equal(rrq_task_status(t2, controller = obj), "MISSING")
+  expect_equal(rrq_task_status(t3, controller = obj), "IMPOSSIBLE")
+  expect_equal(rrq_task_status(t4, controller = obj), "IMPOSSIBLE")
 
   rrq_task_delete(t3, controller = obj)
   expect_setequal(rrq_task_list(controller = obj), t4)
   expect_setequal(rrq_queue_list(controller = obj), character(0))
-  expect_equal(unname(rrq_task_status(t1, controller = obj)), "MISSING")
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), "MISSING")
-  expect_equal(unname(rrq_task_status(t3, controller = obj)), "MISSING")
-  expect_equal(unname(rrq_task_status(t4, controller = obj)), "IMPOSSIBLE")
+  expect_equal(rrq_task_status(t1, controller = obj), "MISSING")
+  expect_equal(rrq_task_status(t2, controller = obj), "MISSING")
+  expect_equal(rrq_task_status(t3, controller = obj), "MISSING")
+  expect_equal(rrq_task_status(t4, controller = obj), "IMPOSSIBLE")
 })
 
 
@@ -718,14 +718,14 @@ test_that("delete completed task does not clear dependencies", {
 
   expect_setequal(rrq_task_list(controller = obj), c(t1, t2))
   expect_equal(rrq_queue_list(controller = obj), t2)
-  expect_equal(unname(rrq_task_status(t1, controller = obj)), "COMPLETE")
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), "PENDING")
+  expect_equal(rrq_task_status(t1, controller = obj), "COMPLETE")
+  expect_equal(rrq_task_status(t2, controller = obj), "PENDING")
 
   rrq_task_delete(t1, controller = obj)
   expect_setequal(rrq_task_list(controller = obj), t2)
   expect_equal(rrq_queue_list(controller = obj), t2)
-  expect_equal(unname(rrq_task_status(t1, controller = obj)), "MISSING")
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), "PENDING")
+  expect_equal(rrq_task_status(t1, controller = obj), "MISSING")
+  expect_equal(rrq_task_status(t2, controller = obj), "PENDING")
 })
 
 
@@ -742,14 +742,14 @@ test_that("deferred task cancel", {
   rrq_task_cancel(t2, controller = obj)
   expect_setequal(rrq_task_list(controller = obj), c(t1, t2, t3, t4))
   expect_equal(rrq_queue_list(controller = obj), t1)
-  expect_equal(unname(rrq_task_status(t3, controller = obj)), "DEFERRED")
-  expect_equal(unname(rrq_task_status(t4, controller = obj)), "DEFERRED")
+  expect_equal(rrq_task_status(t3, controller = obj), "DEFERRED")
+  expect_equal(rrq_task_status(t4, controller = obj), "DEFERRED")
 
   rrq_task_cancel(t1, controller = obj)
   expect_setequal(rrq_task_list(controller = obj), c(t1, t2, t3, t4))
   expect_setequal(rrq_queue_list(controller = obj), character(0))
-  expect_equal(unname(rrq_task_status(t3, controller = obj)), "IMPOSSIBLE")
-  expect_equal(unname(rrq_task_status(t4, controller = obj)), "IMPOSSIBLE")
+  expect_equal(rrq_task_status(t3, controller = obj), "IMPOSSIBLE")
+  expect_equal(rrq_task_status(t4, controller = obj), "IMPOSSIBLE")
 })
 
 test_that("can get deferred tasks", {
@@ -796,8 +796,8 @@ test_that("can use task_wait with impossible tasks", {
   t2 <- rrq_task_create_expr(sin(0), depends_on = t, controller = obj)
 
   expect_equal(rrq_queue_list(controller = obj), t)
-  expect_equal(unname(rrq_task_status(t, controller = obj)), "PENDING")
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), "DEFERRED")
+  expect_equal(rrq_task_status(t, controller = obj), "PENDING")
+  expect_equal(rrq_task_status(t2, controller = obj), "DEFERRED")
 
   w$step(TRUE)
   rrq_task_wait(t, 2, controller = obj)
@@ -807,7 +807,7 @@ test_that("can use task_wait with impossible tasks", {
   expect_equal(out$queue_id, obj$queue_id)
 
   ## task wait returns for an impossible task
-  expect_equal(unname(rrq_task_status(t2, controller = obj)), "IMPOSSIBLE")
+  expect_equal(rrq_task_status(t2, controller = obj), "IMPOSSIBLE")
   rrq_task_wait(t2, 2, controller = obj)
   out <- rrq_task_result(t2, controller = obj)
   ## Not just a timeout error - it has returned
