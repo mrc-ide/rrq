@@ -93,7 +93,6 @@ after creation.}
 \itemize{
 \item \href{#method-rrq_controller-new}{\code{rrq_controller$new()}}
 \item \href{#method-rrq_controller-to_v2}{\code{rrq_controller$to_v2()}}
-\item \href{#method-rrq_controller-worker_config_save}{\code{rrq_controller$worker_config_save()}}
 }
 }
 \if{html}{\out{<hr>}}
@@ -152,36 +151,5 @@ Please don't use this in packages directly
 \if{html}{\out{<div class="r">}}\preformatted{rrq_controller$to_v2()}\if{html}{\out{</div>}}
 }
 
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-rrq_controller-worker_config_save"></a>}}
-\if{latex}{\out{\hypertarget{method-rrq_controller-worker_config_save}{}}}
-\subsection{Method \code{worker_config_save()}}{
-Save a worker configuration, which can be used to
-start workers with a set of options with the cli. These
-correspond to arguments to \link{rrq_worker}.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{rrq_controller$worker_config_save(name, config, overwrite = TRUE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{name}}{Name for this configuration}
-
-\item{\code{config}}{A worker configuration, created by
-\code{\link[=rrq_worker_config]{rrq_worker_config()}}}
-
-\item{\code{overwrite}}{Logical, indicating if an existing configuration
-with this \code{name} should be overwritten if it exists. If \code{FALSE},
-then the configuration is not updated, even if it differs from
-the version currently saved.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-Invisibly, a boolean indicating if the configuration was
-updated.
-}
 }
 }

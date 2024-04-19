@@ -11,8 +11,6 @@
 ##'
 ##' @title Spawn a worker
 ##'
-##' @param obj An \code{rrq_controller} object
-##'
 ##' @param n Number of workers to spawn
 ##'
 ##' @param logdir Path of a log directory to write the worker process
@@ -35,6 +33,10 @@
 ##' @param progress Show a progress bar while waiting for workers
 ##'   (when \code{timeout} is at least 0)
 ##'
+##' @param controller The controller to use.  If not given (or `NULL`)
+##'   we'll use the controller registered with
+##'   [rrq_default_controller_set()].
+##'
 ##' @export
 ##' @return An `rrq_worker_manager` object with fields:
 ##'
@@ -49,23 +51,6 @@
 ##'   except `logs` which requires a single worker id (as a string or
 ##'   integer). For all methods except `logs`, the default of `NULL`
 ##'   means "all managed workers".
-rrq_worker_spawn <- function(obj, n = 1, logdir = NULL,
-                             timeout = 600, name_config = "localhost",
-                             worker_id_base = NULL,
-                             time_poll = 0.2, progress = NULL) {
-  controller <- obj$to_v2()
-  rrq_worker_spawn2(n = n, logdir = logdir, timeout = timeout,
-                    name_config = name_config, worker_id_base = worker_id_base,
-                    time_poll = time_poll, progress = progress,
-                    controller = controller)
-}
-
-
-##' @export
-##' @rdname rrq_worker_spawn
-##' @param controller The controller to use.  If not given (or `NULL`)
-##'   we'll use the controller registered with
-##'   [rrq_default_controller_set()].
 rrq_worker_spawn2 <- function(n = 1, logdir = NULL, timeout = 600,
                               name_config = "localhost", worker_id_base = NULL,
                               time_poll = 0.2, progress = NULL,
