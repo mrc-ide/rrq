@@ -105,7 +105,7 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
                   offload_path = offload_path)
   }
 
-  obj <- rrq_controller$new(name, follow = follow)
+  obj <- rrq_controller2(name, follow = follow)
 
   cfg <- rrq_worker_config(poll_queue = 1, verbose = verbose)
   rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
@@ -118,7 +118,7 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
 
 
 test_rrq2 <- function(...) {
-  test_rrq(...)$to_v2()
+  test_rrq(...)
 }
 
 

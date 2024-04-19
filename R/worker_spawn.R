@@ -1,6 +1,6 @@
 ##' Spawn a worker in the background
 ##'
-##' Spawning multiple workers.  If \code{n} is greater than one,
+##' Spawning multiple workers.  If `n` is greater than one,
 ##' multiple workers will be spawned.  This happens in parallel so it
 ##' does not take n times longer than spawning a single worker.
 ##'
@@ -21,7 +21,7 @@
 ##'   method of the returned object to run this test manually)
 ##'
 ##' @param name_config Name of the configuration to use.  By default
-##'   the \code{"localhost"} configuration is used
+##'   the `"localhost"` configuration is used
 ##'
 ##' @param worker_id_base Optional base to construct the worker ids
 ##'   from.  If omitted a random base will be used. Actual ids will be
@@ -31,7 +31,7 @@
 ##'   workers to come up.
 ##'
 ##' @param progress Show a progress bar while waiting for workers
-##'   (when \code{timeout} is at least 0)
+##'   (when `timeout` is at least 0)
 ##'
 ##' @param controller The controller to use.  If not given (or `NULL`)
 ##'   we'll use the controller registered with
