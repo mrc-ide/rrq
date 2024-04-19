@@ -2,7 +2,7 @@ test_that("clean up exited workers", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
 
-  expect_equal(obj$worker_list(), w$id)
+  expect_equal(rrq_worker_list(controller = obj), w$id)
 
   id <- obj$message_send("STOP")
 
@@ -15,15 +15,15 @@ test_that("clean up exited workers", {
     obj$message_get_response(id, w$id),
     set_names(list("BYE"), w$id))
 
-  log <- obj$worker_log_tail(w$id, n = Inf)
+  log <- rrq_worker_log_tail(w$id, n = Inf, controller = obj)
   expect_equal(log$command, c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
                               "MESSAGE", "RESPONSE", "STOP"))
 
-  expect_equal(obj$worker_list_exited(), w$id)
-  expect_equal(obj$worker_delete_exited(), w$id)
-  expect_equal(obj$worker_list_exited(), character(0))
-  expect_equal(obj$worker_delete_exited(), character(0))
-  expect_error(obj$worker_delete_exited(w$id),
+  expect_equal(rrq_worker_list_exited(controller = obj), w$id)
+  expect_equal(rrq_worker_delete_exited(controller = obj), w$id)
+  expect_equal(rrq_worker_list_exited(controller = obj), character(0))
+  expect_equal(rrq_worker_delete_exited(controller = obj), character(0))
+  expect_error(rrq_worker_delete_exited(w$id, controller = obj),
                "Workers .+ may not have exited or may not exist")
 })
 
@@ -69,11 +69,11 @@ test_that("worker catch graceful stop", {
   worker_catch_stop(w, r6_private(w))(rrq_worker_stop_condition(w, "message"))
 
   expect_false(r6_private(w)$loop_continue)
-  log <- obj$worker_log_tail(w$id)
+  log <- rrq_worker_log_tail(w$id, controller = obj)
   expect_equal(log$command, "STOP")
   expect_equal(log$message, "OK (message)")
-  expect_equal(obj$worker_list(), character(0))
-  expect_equal(obj$worker_list_exited(), w$id)
+  expect_equal(rrq_worker_list(controller = obj), character(0))
+  expect_equal(rrq_worker_list_exited(controller = obj), w$id)
 })
 
 
@@ -91,11 +91,11 @@ test_that("worker catch naked error", {
                all = FALSE)
 
   expect_false(r6_private(w)$loop_continue)
-  log <- obj$worker_log_tail(w$id)
+  log <- rrq_worker_log_tail(w$id, controller = obj)
   expect_equal(log$command, "STOP")
   expect_equal(log$message, "ERROR")
-  expect_equal(obj$worker_list(), character(0))
-  expect_equal(obj$worker_list_exited(), w$id)
+  expect_equal(rrq_worker_list(controller = obj), character(0))
+  expect_equal(rrq_worker_list_exited(controller = obj), w$id)
 })
 
 
@@ -142,10 +142,10 @@ test_that("kill worker with a signal", {
 
   obj <- test_rrq(timeout_worker_stop = 0)
   cfg <- rrq_worker_config(heartbeat_period = 3)
-  res <- obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
+  res <- rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
   w <- test_worker_spawn(obj)
 
-  obj$worker_stop(w$id, "kill")
+  rrq_worker_stop(w$id, "kill", controller = obj)
   Sys.sleep(0.5)
   expect_false(w$is_alive())
 })
@@ -161,12 +161,12 @@ test_that("kill worker locally", {
 
   ## Can't kill with heartbeat:
   expect_error(
-    obj$worker_stop(w$id, "kill"),
+    rrq_worker_stop(w$id, "kill", controller = obj),
     "Worker does not support heatbeat - can't kill with signal:")
   expect_true(w$is_alive())
 
   ## But can kill locally:
-  obj$worker_stop(w$id, "kill_local")
+  rrq_worker_stop(w$id, "kill_local", controller = obj)
   Sys.sleep(0.5)
   expect_false(w$is_alive())
 })
@@ -176,11 +176,11 @@ test_that("Can't kill non-local workers", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
 
-  info <- obj$worker_info(w$id)[[w$id]]
+  info <- rrq_worker_info(w$id, controller = obj)[[w$id]]
   info$hostname <- paste0(info$hostname, "_but_on_mars")
   obj$con$HSET(queue_keys(obj)$worker_info, w$id, object_to_bin(info))
   expect_error(
-    obj$worker_stop(w$id, "kill_local"),
+    rrq_worker_stop(w$id, "kill_local", controller = obj),
     "Not all workers are local:")
 })
 
@@ -240,7 +240,7 @@ test_that("clean up worker when one still running", {
   w1 <- test_worker_blocking(obj)
   w2 <- test_worker_blocking(obj)
 
-  expect_setequal(obj$worker_list(), c(w1$id, w2$id))
+  expect_setequal(rrq_worker_list(controller = obj), c(w1$id, w2$id))
 
   id <- obj$message_send("STOP", worker_ids = w1$id)
 
@@ -254,12 +254,12 @@ test_that("clean up worker when one still running", {
     obj$message_get_response(id, w1$id),
     set_names(list("BYE"), w1$id))
 
-  expect_equal(obj$worker_list_exited(), w1$id)
+  expect_equal(rrq_worker_list_exited(controller = obj), w1$id)
 
-  expect_equal(obj$worker_delete_exited(), w1$id)
-  expect_setequal(obj$worker_list(), w2$id)
-  expect_equal(obj$worker_list_exited(), character(0))
-  expect_equal(obj$worker_delete_exited(), character(0))
+  expect_equal(rrq_worker_delete_exited(controller = obj), w1$id)
+  expect_setequal(rrq_worker_list(controller = obj), w2$id)
+  expect_equal(rrq_worker_list_exited(controller = obj), character(0))
+  expect_equal(rrq_worker_delete_exited(controller = obj), character(0))
 })
 
 
@@ -268,10 +268,10 @@ test_that("can get worker info", {
 
   obj <- test_rrq(timeout_worker_stop = 10)
   cfg <- rrq_worker_config(heartbeat_period = 3)
-  res <- obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
+  res <- rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
   w <- test_worker_spawn(obj)
 
-  info <- obj$worker_info(w$id)
+  info <- rrq_worker_info(w$id, controller = obj)
   expect_length(info, 1)
   expect_s3_class(info[[1]], "rrq_worker_info")
   expect_equal(names(info), w$id)
@@ -287,7 +287,7 @@ test_that("can get worker info", {
 test_that("multiple queues format correctly when printing worker", {
   obj <- test_rrq()
   cfg <- rrq_worker_config(queue = c("a", "b"), verbose = FALSE)
-  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
+  rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
   w <- test_worker_blocking(obj)
   format <- worker_format(w)
 

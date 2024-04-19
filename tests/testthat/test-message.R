@@ -230,7 +230,8 @@ test_that("PAUSE: workers ignore tasks", {
   id <- obj$message_send("PAUSE")
   w$step(TRUE)
 
-  expect_equal(obj$worker_status(), set_names(WORKER_PAUSED, w$id))
+  expect_equal(rrq_worker_status(controller = obj),
+               set_names(WORKER_PAUSED, w$id))
 
   task <- obj$enqueue(sin(1))
   expect_silent(w$step(TRUE))
@@ -239,7 +240,7 @@ test_that("PAUSE: workers ignore tasks", {
 
   id <- obj$message_send("RESUME")
   w$step(TRUE)
-  expect_equal(obj$worker_status(), set_names(WORKER_IDLE, w$id))
+  expect_equal(rrq_worker_status(controller = obj), set_names(WORKER_IDLE, w$id))
 
   expect_equal(rrq_task_status(task, controller = obj), TASK_PENDING)
 
@@ -362,7 +363,7 @@ test_that("send and wait", {
 
   w <- test_worker_spawn(obj, 5)
 
-  st <- obj$worker_status()
+  st <- rrq_worker_status(controller = obj)
   expect_equal(sort(names(st)), sort(w$id))
   expect_equal(unname(st), rep(WORKER_IDLE, length(w$id)))
 

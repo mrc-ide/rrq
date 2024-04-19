@@ -3,9 +3,9 @@ test_that("empty", {
 
   expect_s3_class(obj, "rrq_controller")
 
-  expect_equal(obj$worker_list(), character(0))
+  expect_equal(rrq_worker_list(controller = obj), character(0))
   expect_equal(rrq_task_list(controller = obj), character(0))
-  expect_equal(obj$worker_len(), 0)
+  expect_equal(rrq_worker_len(controller = obj), 0)
   expect_equal(obj$queue_length(), 0)
   expect_equal(obj$queue_list(), character(0))
 
@@ -15,7 +15,7 @@ test_that("empty", {
   expect_equal(rrq_task_status(id, controller = obj), TASK_PENDING)
 
   expect_equal(
-    obj$worker_log_tail(),
+    rrq_worker_log_tail(controller = obj),
     data_frame(worker_id = character(0),
                child = integer(0),
                time = numeric(0),
@@ -195,7 +195,7 @@ test_that("task delete", {
 test_that("stop worker", {
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
-  obj$worker_stop()
+  rrq_worker_stop(controller = obj)
   expect_error(
     w$step(), "BYE", class = "rrq_worker_stop")
 })
@@ -205,7 +205,7 @@ test_that("Can't read logs unless enabled", {
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
   expect_error(
-    obj$worker_process_log(w$id),
+    rrq_worker_process_log(w$id, controller = obj),
     "Process log not enabled for this worker")
 })
 
@@ -239,7 +239,7 @@ test_that("worker load", {
   obj <- test_rrq()
   w1 <- test_worker_blocking(obj)
   w2 <- test_worker_blocking(obj)
-  load <- obj$worker_load()
+  load <- rrq_worker_load(controller = obj)
   expect_s3_class(load, "worker_load")
   expect_setequal(load$worker_id, c(w1$id, w2$id))
   avg <- mean(load)
@@ -364,7 +364,7 @@ test_that("get task data errors appropriately if task is missing", {
 test_that("a worker will pick up tasks from the priority queue", {
   obj <- test_rrq("myfuns.R")
   cfg <- rrq_worker_config(queue = c("a", "b"), verbose = FALSE)
-  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
+  rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
   w <- test_worker_blocking(obj)
 
   t1 <- obj$enqueue(sin(1))
@@ -416,7 +416,7 @@ test_that("Query jobs in different queues", {
 test_that("Send job to new process", {
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
-  obj$worker_log_tail(w$id, Inf)
+  rrq_worker_log_tail(w$id, Inf, controller = obj)
 
   t <- obj$enqueue(slowdouble(0.1), separate_process = TRUE)
   expect_type(t, "character")
@@ -444,7 +444,7 @@ test_that("Cancel job sent to new process", {
   ## Flakey on covr, probably due to the job being cancelled before
   ## the second process really finishes starting up.
   skip_on_covr()
-  log <- obj$worker_log_tail(w$id, Inf)
+  log <- rrq_worker_log_tail(w$id, Inf, controller = obj)
   expect_equal(log$command,
                c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
                  "TASK_START", "REMOTE",
@@ -838,7 +838,7 @@ test_that("submit a task with a timeout", {
   ## Flakey on covr, probably due to the job being cancelled before
   ## the second process really finishes starting up.
   skip_on_covr()
-  expect_equal(obj$worker_log_tail(w$id, Inf)$command,
+  expect_equal(rrq_worker_log_tail(w$id, Inf, controller = obj)$command,
                c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
                  "TASK_START", "REMOTE",
                  "CHILD", "ENVIR", "ENVIR", "TIMEOUT", "TASK_TIMEOUT"))
@@ -1111,7 +1111,7 @@ test_that("Can get information about task retries", {
 test_that("Can retry tasks that span multiple queues at once", {
   obj <- test_rrq()
   cfg <- rrq_worker_config(queue = c("a", "b"), verbose = FALSE)
-  obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
+  rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
   t1 <- c(obj$enqueue(sin(1), queue = "a"),
           obj$enqueue(sin(2), queue = "a"),
           obj$enqueue(sin(3), queue = "b"))
@@ -1198,7 +1198,7 @@ test_that("Running in separate process produces coherent logs", {
   obj <- test_rrq()
   w <- test_worker_blocking(obj)
 
-  log0 <- obj$worker_log_tail(w$id, Inf)
+  log0 <- rrq_worker_log_tail(w$id, Inf, controller = obj)
 
   t <- obj$enqueue(runif(1), separate_process = TRUE)
   expect_type(t, "character")
@@ -1206,7 +1206,7 @@ test_that("Running in separate process produces coherent logs", {
 
   expect_equal(rrq_task_status(t, controller = obj), TASK_COMPLETE)
 
-  log <- obj$worker_log_tail(w$id, Inf)
+  log <- rrq_worker_log_tail(w$id, Inf, controller = obj)
   expect_equal(log[seq_len(nrow(log0)), ], log0)
 
   log1 <- log[-seq_len(nrow(log0)), ]

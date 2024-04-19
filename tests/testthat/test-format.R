@@ -57,11 +57,11 @@ test_that("can print worker info", {
 
   obj <- test_rrq()
   cfg <- rrq_worker_config(heartbeat_period = 3)
-  res <- obj$worker_config_save(WORKER_CONFIG_DEFAULT, cfg)
+  res <- rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
   w1 <- test_worker_spawn(obj)
   w2 <- test_worker_spawn(obj)
 
-  info <- obj$worker_info()
+  info <- rrq_worker_info(controller = obj)
   text <- testthat::evaluate_promise(withVisible(print(info)))
   text <- strsplit(text$output, "\n")[[1]]
   expect_equal(sum(text == "  <rrq_worker_info>"), 2)
