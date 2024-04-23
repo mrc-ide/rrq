@@ -128,7 +128,7 @@ rrq_controller <- function(queue_id, con = redux::hiredis(),
   if (check_version) {
     rrq_version_check(con, keys)
   }
-  
+
   ret <- list(queue_id = keys$queue_id,
               con = con,
               keys = keys,
