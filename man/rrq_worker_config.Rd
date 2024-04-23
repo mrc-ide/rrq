@@ -69,7 +69,7 @@ input parameters.
 }
 \description{
 Create a worker configuration, suitable to pass into
-\link{rrq_worker_config_save2}. The results of this function
+\link{rrq_worker_config_save}. The results of this function
 should not be modified.
 }
 \examples{

@@ -63,7 +63,7 @@ Constructor
 
 \item{\code{name_config}}{Optional name of the configuration. The
 default "localhost" configuration always exists. Create new
-configurations using \link{rrq_worker_config_save2}.}
+configurations using \link{rrq_worker_config_save}.}
 
 \item{\code{worker_id}}{Optional worker id.  If omitted, a random
 id will be created.}

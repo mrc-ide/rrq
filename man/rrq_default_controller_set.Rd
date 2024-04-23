@@ -10,7 +10,7 @@ rrq_default_controller_set(controller)
 rrq_default_controller_clear()
 }
 \arguments{
-\item{controller}{An rrq_controller2 object}
+\item{controller}{An rrq_controller object}
 }
 \description{
 Set or clear a default controller for use with rrq functions.  You

@@ -645,7 +645,7 @@ rrq_task_cancel <- function(task_id, wait = TRUE, timeout_wait = 10,
 ##' @param timeout Optional timeout, in seconds, after which an error
 ##'   will be thrown if the task has not completed. If not given,
 ##'   falls back on the controller's `timeout_task_wait` (see
-##'   [rrq_controller2])
+##'   [rrq_controller])
 ##'
 ##' @param time_poll Optional time with which to "poll" for
 ##'   completion.  By default this will be 1 second; this is the time

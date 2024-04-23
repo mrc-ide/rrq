@@ -1,5 +1,5 @@
 ##' Create a worker configuration, suitable to pass into
-##' [rrq::rrq_worker_config_save2]. The results of this function
+##' [rrq::rrq_worker_config_save]. The results of this function
 ##' should not be modified.
 ##'
 ##' @title Create worker configuration

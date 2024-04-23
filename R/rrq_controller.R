@@ -1,5 +1,5 @@
-task_submit_n <- function(controller, task_ids, dat, key_complete, queue,
-                          separate_process, timeout, depends_on = NULL) {
+task_submit <- function(controller, task_ids, dat, queue,
+                        separate_process, timeout, depends_on = NULL) {
   con <- controller$con
   keys <- controller$keys
 

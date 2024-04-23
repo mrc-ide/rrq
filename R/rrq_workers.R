@@ -361,7 +361,7 @@ rrq_worker_detect_exited <- function(controller = NULL) {
 ##' Return the contents of a worker's process log, if
 ##' it is located on the same physical storage (including network
 ##' storage) as the controller. This will generally behave for
-##' workers started with [rrq_worker_spawn2] but may require significant
+##' workers started with [rrq_worker_spawn] but may require significant
 ##' care otherwise.
 ##'
 ##' @title Read worker process log
@@ -439,8 +439,8 @@ rrq_worker_envir_set <- function(create, notify = TRUE, controller = NULL) {
 ##'   updated.
 ##'
 ##' @export
-rrq_worker_config_save2 <- function(name, config, overwrite = TRUE,
-                                    controller = NULL) {
+rrq_worker_config_save <- function(name, config, overwrite = TRUE,
+                                   controller = NULL) {
   ## TODO: odd name here while we transition to new interface, clashes
   ## with rrq_worker_config_save, used in hint.
   controller <- get_controller(controller, call = rlang::current_env())
@@ -458,7 +458,7 @@ rrq_worker_config_save2 <- function(name, config, overwrite = TRUE,
 
 
 ##' Return names of worker configurations saved by
-##' [rrq_worker_config_save2()]
+##' [rrq_worker_config_save()]
 ##'
 ##' @title List worker configurations
 ##'
@@ -477,7 +477,7 @@ rrq_worker_config_list <- function(controller = NULL) {
 
 
 ##' Return the value of a of worker configuration saved by
-##'   [rrq_worker_config_save2()]
+##'   [rrq_worker_config_save()]
 ##'
 ##' @title Read worker configuration
 ##'

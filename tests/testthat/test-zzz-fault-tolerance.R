@@ -2,7 +2,7 @@ test_that("heartbeat", {
   obj <- test_rrq()
 
   cfg <- rrq_worker_config(heartbeat_period = 3, verbose = FALSE)
-  res <- rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+  res <- rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
 
   w <- test_worker_blocking(obj)
   dat <- w$info()
@@ -55,7 +55,7 @@ test_that("detecting output with clean exit is quiet", {
   ## control back.
   cfg <- rrq_worker_config(poll_queue = 1, heartbeat_period = 1,
                            verbose = FALSE)
-  rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+  rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
 
   w <- test_worker_spawn(obj)
 
@@ -87,7 +87,7 @@ test_that("detect killed worker (via heartbeat)", {
   ## control back.
   cfg <- rrq_worker_config(poll_queue = 1, heartbeat_period = 1,
                            verbose = FALSE)
-  res <- rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+  res <- rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
 
   w <- test_worker_spawn(obj)
 
@@ -138,7 +138,7 @@ test_that("detect multiple killed workers", {
 
   cfg <- rrq_worker_config(poll_queue = 1, heartbeat_period = 1,
                            verbose = FALSE)
-  rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+  rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
 
   w <- test_worker_spawn(obj, n = 2)
 

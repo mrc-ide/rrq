@@ -105,10 +105,10 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
                   offload_path = offload_path)
   }
 
-  obj <- rrq_controller2(name, follow = follow)
+  obj <- rrq_controller(name, follow = follow)
 
   cfg <- rrq_worker_config(poll_queue = 1, verbose = verbose)
-  rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+  rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
   rrq_worker_envir_set(create, controller = obj)
 
   withr::defer_parent(test_rrq_cleanup(obj, timeout_worker_stop))
@@ -136,7 +136,7 @@ test_worker_spawn <- function(obj, ..., timeout = 10) {
   skip_on_cran()
   skip_on_windows()
   skip_if_installed_version_differs()
-  suppressMessages(rrq_worker_spawn2(..., timeout = timeout, controller = obj))
+  suppressMessages(rrq_worker_spawn(..., timeout = timeout, controller = obj))
 }
 
 

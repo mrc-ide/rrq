@@ -21,36 +21,36 @@ In order to do this, we're going to need a queue and a worker:
 ```r
 library(rrq)
 id <- paste0("rrq:", ids::random_id(bytes = 4))
-obj <- rrq_controller2(id)
+obj <- rrq_controller(id)
 rrq_default_controller_set(obj)
 logdir <- tempfile()
-w <- rrq_worker_spawn2(logdir = logdir)
-#> ℹ Spawning 1 worker with prefix 'schematic_hairstreakbutterfly'
+w <- rrq_worker_spawn(logdir = logdir)
+#> ℹ Spawning 1 worker with prefix 'boiling_cockatoo'
 worker_id <- w$id
 ```
 
 On startup the worker log contains:
 
 ```plain
-[2024-04-19 12:24:14.351378] ALIVE
-[2024-04-19 12:24:14.353241] ENVIR new
-[2024-04-19 12:24:14.354013] QUEUE default
+[2024-04-23 09:15:49.424189] ALIVE
+[2024-04-23 09:15:49.425172] ENVIR new
+[2024-04-23 09:15:49.425903] QUEUE default
                                  __
                 ______________ _/ /
       ______   / ___/ ___/ __ `/ /_____
      /_____/  / /  / /  / /_/ /_/_____/
  ______      /_/  /_/   \__, (_)   ______
 /_____/                   /_/     /_____/
-    worker:        schematic_hairstreakbutterfly_1
+    worker:        boiling_cockatoo_1
     config:        localhost
-    rrq_version:   0.7.13
+    rrq_version:   0.7.15
     platform:      x86_64-pc-linux-gnu (64-bit)
     running:       Ubuntu 20.04.6 LTS
-    hostname:      wpia-dide136
-    username:      rich
-    queue:         rrq:82028045:queue:default
-    wd:            /home/rich/Documents/src/rrq/vignettes_src
-    pid:           79662
+    hostname:      wpia-dide300
+    username:      rfitzjoh
+    queue:         rrq:7c911007:queue:default
+    wd:            /home/rfitzjoh/Documents/src/rrq/vignettes_src
+    pid:           597597
     redis_host:    127.0.0.1
     redis_port:    6379
     heartbeat_key: <not set>
@@ -99,16 +99,16 @@ The message id is going to be useful for getting responses:
 
 ```r
 message_id
-#> [1] "1713525854.452866"
+#> [1] "1713860149.627246"
 ```
 
 (this is derived from the current time, according to Redis which is
 the central reference point of time for the whole system).
 
 ```plain
-[2024-04-19 12:24:14.453323] MESSAGE PING
+[2024-04-23 09:15:49.627994] MESSAGE PING
 PONG
-[2024-04-19 12:24:14.454021] RESPONSE PING
+[2024-04-23 09:15:49.628864] RESPONSE PING
 ```
 
 The logfile prints:
@@ -122,12 +122,12 @@ We can access the same bits of information in the worker log:
 
 ```r
 rrq_worker_log_tail(n = Inf)
-#>                         worker_id child       time  command message
-#> 1 schematic_hairstreakbutterfly_1    NA 1713525854    ALIVE
-#> 2 schematic_hairstreakbutterfly_1    NA 1713525854    ENVIR     new
-#> 3 schematic_hairstreakbutterfly_1    NA 1713525854    QUEUE default
-#> 4 schematic_hairstreakbutterfly_1    NA 1713525854  MESSAGE    PING
-#> 5 schematic_hairstreakbutterfly_1    NA 1713525854 RESPONSE    PING
+#>            worker_id child       time  command message
+#> 1 boiling_cockatoo_1    NA 1713860149    ALIVE
+#> 2 boiling_cockatoo_1    NA 1713860149    ENVIR     new
+#> 3 boiling_cockatoo_1    NA 1713860149    QUEUE default
+#> 4 boiling_cockatoo_1    NA 1713860150  MESSAGE    PING
+#> 5 boiling_cockatoo_1    NA 1713860150 RESPONSE    PING
 ```
 
 This includes the `ALIVE` message as the worker comes up.
@@ -140,8 +140,8 @@ We already know that our worker has a response, but we can ask anyway:
 
 ```r
 rrq_message_has_response(message_id)
-#> schematic_hairstreakbutterfly_1
-#>                            TRUE
+#> boiling_cockatoo_1
+#>               TRUE
 ```
 
 Or inversely we can as what messages a given worker has responses for:
@@ -149,7 +149,7 @@ Or inversely we can as what messages a given worker has responses for:
 
 ```r
 rrq_message_response_ids(worker_id)
-#> [1] "1713525854.452866"
+#> [1] "1713860149.627246"
 ```
 
 To fetch the responses from all workers it was sent to (always
@@ -158,7 +158,7 @@ returning a named list):
 
 ```r
 rrq_message_get_response(message_id)
-#> $schematic_hairstreakbutterfly_1
+#> $boiling_cockatoo_1
 #> [1] "PONG"
 ```
 
@@ -167,7 +167,7 @@ or to fetch the response from a given worker:
 
 ```r
 rrq_message_get_response(message_id, worker_id)
-#> $schematic_hairstreakbutterfly_1
+#> $boiling_cockatoo_1
 #> [1] "PONG"
 ```
 
@@ -176,7 +176,7 @@ The response can be deleted by passing `delete = TRUE` to this method:
 
 ```r
 rrq_message_get_response(message_id, worker_id, delete = TRUE)
-#> $schematic_hairstreakbutterfly_1
+#> $boiling_cockatoo_1
 #> [1] "PONG"
 ```
 
@@ -186,7 +186,7 @@ after which recalling the message will throw an error:
 ```r
 rrq_message_get_response(message_id, worker_id)
 #> Error in `rrq_message_get_response()`:
-#> ! Response missing for worker: 'schematic_hairstreakbutterfly_1'
+#> ! Response missing for worker: 'boiling_cockatoo_1'
 ```
 
 There is also a `timeout` argument that lets you wait until a response is
@@ -195,11 +195,11 @@ ready (as in `rrq_task_wait()`).
 
 ```r
 rrq_task_create_expr(Sys.sleep(2))
-#> [1] "647f26b19fd40d13426a8ea60fe1cc2d"
+#> [1] "1a878e7cac11aa4e7fa234286676954c"
 message_id <- rrq_message_send("PING")
 rrq_message_get_response(
   message_id, worker_id, delete = TRUE, timeout = 10)
-#> $schematic_hairstreakbutterfly_1
+#> $boiling_cockatoo_1
 #> [1] "PONG"
 ```
 
@@ -208,14 +208,14 @@ Looking at the log will show what went on here:
 
 ```r
 rrq_worker_log_tail(n = 4)
-#>                         worker_id child       time       command
-#> 1 schematic_hairstreakbutterfly_1    NA 1713525855    TASK_START
-#> 2 schematic_hairstreakbutterfly_1    NA 1713525857 TASK_COMPLETE
-#> 3 schematic_hairstreakbutterfly_1    NA 1713525857       MESSAGE
-#> 4 schematic_hairstreakbutterfly_1    NA 1713525857      RESPONSE
+#>            worker_id child       time       command
+#> 1 boiling_cockatoo_1    NA 1713860150    TASK_START
+#> 2 boiling_cockatoo_1    NA 1713860152 TASK_COMPLETE
+#> 3 boiling_cockatoo_1    NA 1713860152       MESSAGE
+#> 4 boiling_cockatoo_1    NA 1713860152      RESPONSE
 #>                            message
-#> 1 647f26b19fd40d13426a8ea60fe1cc2d
-#> 2 647f26b19fd40d13426a8ea60fe1cc2d
+#> 1 1a878e7cac11aa4e7fa234286676954c
+#> 2 1a878e7cac11aa4e7fa234286676954c
 #> 3                             PING
 #> 4                             PING
 ```
@@ -230,11 +230,11 @@ completed, the response takes a while to come back.  Equivalently,
 from the worker log:
 
 ```plain
-[2024-04-19 12:24:14.603817] TASK_START 647f26b19fd40d13426a8ea60fe1cc2d
-[2024-04-19 12:24:16.612506] TASK_COMPLETE 647f26b19fd40d13426a8ea60fe1cc2d
-[2024-04-19 12:24:16.614554] MESSAGE PING
+[2024-04-23 09:15:49.751482] TASK_START 1a878e7cac11aa4e7fa234286676954c
+[2024-04-23 09:15:51.754822] TASK_COMPLETE 1a878e7cac11aa4e7fa234286676954c
+[2024-04-23 09:15:51.755615] MESSAGE PING
 PONG
-[2024-04-19 12:24:16.615794] RESPONSE PING
+[2024-04-23 09:15:51.756114] RESPONSE PING
 ```
 
 ## `ECHO`
@@ -247,14 +247,14 @@ response.
 ```r
 message_id <- rrq_message_send("ECHO", "hello world!")
 rrq_message_get_response(message_id, worker_id, timeout = 10)
-#> $schematic_hairstreakbutterfly_1
+#> $boiling_cockatoo_1
 #> [1] "OK"
 ```
 
 ```plain
-[2024-04-19 12:24:17.136045] MESSAGE ECHO
+[2024-04-23 09:15:52.269914] MESSAGE ECHO
 hello world!
-[2024-04-19 12:24:17.136638] RESPONSE ECHO
+[2024-04-23 09:15:52.27044] RESPONSE ECHO
 ```
 
 ## `INFO`
@@ -267,16 +267,16 @@ worker started up:
 ```r
 rrq_worker_info()[[worker_id]]
 #>   <rrq_worker_info>
-#>     worker:      schematic_hairstreakbutterfly_1
+#>     worker:      boiling_cockatoo_1
 #>     config:      localhost
-#>     rrq_version: 0.7.13
+#>     rrq_version: 0.7.15
 #>     platform:    x86_64-pc-linux-gnu (64-bit)
 #>     running:     Ubuntu 20.04.6 LTS
-#>     hostname:    wpia-dide136
-#>     username:    rich
-#>     queue:       rrq:82028045:queue:default
-#>     wd:          /home/rich/Documents/src/rrq/vignettes_src
-#>     pid:         79662
+#>     hostname:    wpia-dide300
+#>     username:    rfitzjoh
+#>     queue:       rrq:7c911007:queue:default
+#>     wd:          /home/rfitzjoh/Documents/src/rrq/vignettes_src
+#>     pid:         597597
 #>     redis_host:  127.0.0.1
 #>     redis_port:  6379
 ```
@@ -294,41 +294,41 @@ field:
 
 ```r
 rrq_message_get_response(message_id, worker_id, timeout = 10)
-#> $schematic_hairstreakbutterfly_1
-#> $schematic_hairstreakbutterfly_1$worker
-#> [1] "schematic_hairstreakbutterfly_1"
+#> $boiling_cockatoo_1
+#> $boiling_cockatoo_1$worker
+#> [1] "boiling_cockatoo_1"
 #>
-#> $schematic_hairstreakbutterfly_1$config
+#> $boiling_cockatoo_1$config
 #> [1] "localhost"
 #>
-#> $schematic_hairstreakbutterfly_1$rrq_version
-#> [1] "0.7.13"
+#> $boiling_cockatoo_1$rrq_version
+#> [1] "0.7.15"
 #>
-#> $schematic_hairstreakbutterfly_1$platform
+#> $boiling_cockatoo_1$platform
 #> [1] "x86_64-pc-linux-gnu (64-bit)"
 #>
-#> $schematic_hairstreakbutterfly_1$running
+#> $boiling_cockatoo_1$running
 #> [1] "Ubuntu 20.04.6 LTS"
 #>
-#> $schematic_hairstreakbutterfly_1$hostname
-#> [1] "wpia-dide136"
+#> $boiling_cockatoo_1$hostname
+#> [1] "wpia-dide300"
 #>
-#> $schematic_hairstreakbutterfly_1$username
-#> [1] "rich"
+#> $boiling_cockatoo_1$username
+#> [1] "rfitzjoh"
 #>
-#> $schematic_hairstreakbutterfly_1$queue
-#> [1] "rrq:82028045:queue:default"
+#> $boiling_cockatoo_1$queue
+#> [1] "rrq:7c911007:queue:default"
 #>
-#> $schematic_hairstreakbutterfly_1$wd
-#> [1] "/home/rich/Documents/src/rrq/vignettes_src"
+#> $boiling_cockatoo_1$wd
+#> [1] "/home/rfitzjoh/Documents/src/rrq/vignettes_src"
 #>
-#> $schematic_hairstreakbutterfly_1$pid
-#> [1] 79662
+#> $boiling_cockatoo_1$pid
+#> [1] 597597
 #>
-#> $schematic_hairstreakbutterfly_1$redis_host
+#> $boiling_cockatoo_1$redis_host
 #> [1] "127.0.0.1"
 #>
-#> $schematic_hairstreakbutterfly_1$redis_port
+#> $boiling_cockatoo_1$redis_port
 #> [1] 6379
 ```
 
@@ -343,7 +343,7 @@ in which queued code is evaluated in.
 ```r
 message_id <- rrq_message_send("EVAL", "1 + 1")
 rrq_message_get_response(message_id, worker_id, timeout = 10)
-#> $schematic_hairstreakbutterfly_1
+#> $boiling_cockatoo_1
 #> [1] 2
 ```
 
@@ -359,15 +359,15 @@ The `PAUSE` / `RESUME` messages can be used to prevent workers from picking up n
 
 ```r
 rrq_worker_status()
-#> schematic_hairstreakbutterfly_1
-#>                          "IDLE"
+#> boiling_cockatoo_1
+#>             "IDLE"
 message_id <- rrq_message_send("PAUSE")
 rrq_message_get_response(message_id, worker_id, timeout = 10)
-#> $schematic_hairstreakbutterfly_1
+#> $boiling_cockatoo_1
 #> [1] "OK"
 rrq_worker_status()
-#> schematic_hairstreakbutterfly_1
-#>                        "PAUSED"
+#> boiling_cockatoo_1
+#>           "PAUSED"
 ```
 
 Once paused workers ignore tasks, which stay on the queue:
@@ -385,7 +385,7 @@ Sending a `RESUME` message unpauses the worker:
 ```r
 message_id <- rrq_message_send("RESUME")
 rrq_message_get_response(message_id, worker_id, timeout = 10)
-#> $schematic_hairstreakbutterfly_1
+#> $boiling_cockatoo_1
 #> [1] "OK"
 rrq_task_wait(t, 5)
 #> [1] TRUE
@@ -398,7 +398,7 @@ Workers will quit after being left idle for more than a certain time; this is th
 
 ```r
 rrq_message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $schematic_hairstreakbutterfly_1
+#> $boiling_cockatoo_1
 #> timeout_idle    remaining
 #>          Inf          Inf
 ```
@@ -408,7 +408,7 @@ We can set this to a finite value, in seconds:
 
 ```r
 rrq_message_send_and_wait("TIMEOUT_SET", 600, worker_ids = worker_id)
-#> $schematic_hairstreakbutterfly_1
+#> $boiling_cockatoo_1
 #> [1] "OK"
 ```
 
@@ -419,14 +419,14 @@ Once set, the `TIMEOUT_GET` returns the length of time remaining before the work
 
 ```r
 rrq_message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $schematic_hairstreakbutterfly_1
+#> $boiling_cockatoo_1
 #> timeout_idle    remaining
 #>     600.0000     599.9353
 Sys.sleep(5)
 rrq_message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $schematic_hairstreakbutterfly_1
+#> $boiling_cockatoo_1
 #> timeout_idle    remaining
-#>     600.0000     594.8724
+#>      600.000      594.872
 ```
 
 One useful pattern is to send work to workers, then set the timeout to zero. This means that when work is complete they will exit (almost) immediately:
@@ -442,19 +442,19 @@ rrq_task_wait(ids)
 #> [1] TRUE
 rrq_task_results(ids)
 #> [[1]]
-#> [1] 0.1705179
+#> [1] 0.6824953
 #>
 #> [[2]]
-#> [1] 0.2393208 0.4059544
+#> [1] 0.3917506 0.7700726
 #>
 #> [[3]]
-#> [1] 0.5884221 0.9453424 0.6684895
+#> [1] 0.61080994 0.47160999 0.06371166
 #>
 #> [[4]]
-#> [1] 0.07630751 0.92618400 0.67542756 0.28708847
+#> [1] 0.2314934 0.4231295 0.7559091 0.4027418
 #>
 #> [[5]]
-#> [1] 0.7492767 0.2436322 0.6087192 0.8494850 0.2543259
+#> [1] 0.6109091 0.8732575 0.4324995 0.2940482 0.2035300
 ```
 
 The worker will remain idle for 60s (by default) which is the length of time that one poll for work lasts, then it will exit.
@@ -462,10 +462,10 @@ The worker will remain idle for 60s (by default) which is the length of time tha
 
 ```r
 rrq_worker_status(worker_id)
-#> schematic_hairstreakbutterfly_1
-#>                          "IDLE"
+#> boiling_cockatoo_1
+#>             "IDLE"
 rrq_message_send_and_wait("TIMEOUT_GET", worker_ids = worker_id)
-#> $schematic_hairstreakbutterfly_1
+#> $boiling_cockatoo_1
 #> timeout_idle    remaining
 #>            0            0
 ```

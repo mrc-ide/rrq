@@ -24,7 +24,7 @@ Create an `rrq_controller` object
 
 
 ```r
-obj <- rrq_controller2("rrq:readme")
+obj <- rrq_controller("rrq:readme")
 rrq_default_controller_set(obj)
 ```
 
@@ -34,7 +34,7 @@ Submit work to the queue:
 ```r
 t <- rrq_task_create_expr(runif(10))
 t
-#> [1] "0b6ae3ae76e1cfab43a8ad4d41b7c4cd"
+#> [1] "0e339d67495c33cde07d5c9784b24f31"
 ```
 
 Query task process:
@@ -49,12 +49,12 @@ Run tasks on workers in the background
 
 
 ```r
-rrq_worker_spawn2()
-#> ℹ Spawning 1 worker with prefix 'pepperish_zebralongwingbutterfly'
+rrq_worker_spawn()
+#> ℹ Spawning 1 worker with prefix 'bossy_americanredsquirrel'
 #> <rrq_worker_manager>
 #>   Public:
 #>     clone: function (deep = FALSE)
-#>     id: pepperish_zebralongwingbutterfly_1
+#>     id: bossy_americanredsquirrel_1
 #>     initialize: function (controller, n, logdir = NULL, name_config = "localhost",
 #>     is_alive: function (worker_id = NULL)
 #>     kill: function (worker_id = NULL)
@@ -63,10 +63,10 @@ rrq_worker_spawn2()
 #>     wait_alive: function (timeout, time_poll = 0.2, progress = NULL)
 #>   Private:
 #>     check_worker_id: function (worker_id)
-#>     controller: rrq_controller2
-#>     logfile: /tmp/Rtmp3k3m8o/file183821cbeb985/pepperish_zebralongwin ...
+#>     controller: rrq_controller
+#>     logfile: /tmp/RtmpReX932/file920c215c4c48c/bossy_americanredsquir ...
 #>     process: list
-#>     worker_id_base: pepperish_zebralongwingbutterfly
+#>     worker_id_base: bossy_americanredsquirrel
 ```
 
 Wait for tasks to complete
@@ -82,8 +82,8 @@ Retrieve results from a task
 
 ```r
 rrq_task_result(t)
-#>  [1] 0.88813000 0.69115977 0.58344801 0.49533313 0.23230984 0.94035381
-#>  [7] 0.06302391 0.75492762 0.69768060 0.31522964
+#>  [1] 0.5660174 0.7272429 0.3753210 0.4081318 0.5124689 0.3461631 0.3997216
+#>  [8] 0.7212593 0.9927757 0.3032974
 ```
 
 Query what workers have done
@@ -91,22 +91,18 @@ Query what workers have done
 
 ```r
 rrq_worker_log_tail(n = Inf)
-#>                            worker_id child       time       command
-#> 1 pepperish_zebralongwingbutterfly_1    NA 1713530454         ALIVE
-#> 2 pepperish_zebralongwingbutterfly_1    NA 1713530454         ENVIR
-#> 3 pepperish_zebralongwingbutterfly_1    NA 1713530454         QUEUE
-#> 4 pepperish_zebralongwingbutterfly_1    NA 1713530454    TASK_START
-#> 5 pepperish_zebralongwingbutterfly_1    NA 1713530454 TASK_COMPLETE
-#> 6 pepperish_zebralongwingbutterfly_1    NA 1713530454    TASK_START
-#> 7 pepperish_zebralongwingbutterfly_1    NA 1713530454 TASK_COMPLETE
+#>                     worker_id child       time       command
+#> 1 bossy_americanredsquirrel_1    NA 1713860205         ALIVE
+#> 2 bossy_americanredsquirrel_1    NA 1713860205         ENVIR
+#> 3 bossy_americanredsquirrel_1    NA 1713860205         QUEUE
+#> 4 bossy_americanredsquirrel_1    NA 1713860205    TASK_START
+#> 5 bossy_americanredsquirrel_1    NA 1713860205 TASK_COMPLETE
 #>                            message
 #> 1
 #> 2                              new
 #> 3                          default
-#> 4 a7f89f9e729d693de669bb3eca5f6710
-#> 5 a7f89f9e729d693de669bb3eca5f6710
-#> 6 0b6ae3ae76e1cfab43a8ad4d41b7c4cd
-#> 7 0b6ae3ae76e1cfab43a8ad4d41b7c4cd
+#> 4 0e339d67495c33cde07d5c9784b24f31
+#> 5 0e339d67495c33cde07d5c9784b24f31
 ```
 
 For more information, see `vignette("rrq")`

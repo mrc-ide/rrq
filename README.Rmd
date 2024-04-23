@@ -30,7 +30,7 @@ library(rrq)
 Create an `rrq_controller` object
 
 ```{r}
-obj <- rrq_controller2("rrq:readme")
+obj <- rrq_controller("rrq:readme")
 rrq_default_controller_set(obj)
 ```
 
@@ -50,7 +50,7 @@ rrq_task_status(t)
 Run tasks on workers in the background
 
 ```{r}
-rrq_worker_spawn2()
+rrq_worker_spawn()
 ```
 
 Wait for tasks to complete

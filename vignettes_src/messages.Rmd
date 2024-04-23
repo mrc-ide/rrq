@@ -43,10 +43,10 @@ In order to do this, we're going to need a queue and a worker:
 ```{r}
 library(rrq)
 id <- paste0("rrq:", ids::random_id(bytes = 4))
-obj <- rrq_controller2(id)
+obj <- rrq_controller(id)
 rrq_default_controller_set(obj)
 logdir <- tempfile()
-w <- rrq_worker_spawn2(logdir = logdir)
+w <- rrq_worker_spawn(logdir = logdir)
 worker_id <- w$id
 ```
 
