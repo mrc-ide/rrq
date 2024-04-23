@@ -1,6 +1,8 @@
+##' @title Compatibility functions
+##' @param ... Arguments passed to the preferred function
 ##' @export
 ##' @keywords internal
-##' @noRd
+##' @rdname compat
 rrq_controller2 <- function(...) {
   deprecated("rrq_controller2", "rrq_controller")
   rrq_controller(...)
@@ -9,7 +11,7 @@ rrq_controller2 <- function(...) {
 
 ##' @export
 ##' @keywords internal
-##' @noRd
+##' @rdname compat
 rrq_worker_config_save2 <- function(...) {
   deprecated("rrq_worker_config_save2", "rrq_worker_config_save")
   rrq_worker_config_save(...)
@@ -18,7 +20,7 @@ rrq_worker_config_save2 <- function(...) {
 
 ##' @export
 ##' @keywords internal
-##' @noRd
+##' @rdname compat
 rrq_worker_spawn2 <- function(...) {
   deprecated("rrq_worker_spawn2", "rrq_worker_spawn")
   rrq_worker_spawn(...)
