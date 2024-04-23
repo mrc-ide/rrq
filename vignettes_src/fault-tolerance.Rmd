@@ -41,10 +41,10 @@ lang_output(readLines("fault.R"), "r")
 
 ```{r}
 library(rrq)
-obj <- rrq_controller2(paste0("rrq:", ids::random_id(bytes = 4)))
+obj <- rrq_controller(paste0("rrq:", ids::random_id(bytes = 4)))
 rrq_default_controller_set(obj)
 rrq_worker_envir_set(rrq_envir(sources = "fault.R"))
-w <- rrq_worker_spawn2()
+w <- rrq_worker_spawn()
 ```
 
 In the happy case, everything works as expected:
@@ -181,7 +181,7 @@ rrq_worker_delete_exited()
 To enable the heartbeat, save a worker configuration before starting a worker:
 
 ```{r}
-rrq_worker_config_save2(
+rrq_worker_config_save(
   "localhost",
   rrq_worker_config(heartbeat_period = 3))
 ```
@@ -189,7 +189,7 @@ rrq_worker_config_save2(
 When you spawn a worker it will pick up this configuration, and we'll be able to detect if it has died.
 
 ```{r}
-w <- rrq_worker_spawn2()
+w <- rrq_worker_spawn()
 ```
 
 In order to simulate the loss of the worker, we will kill it after starting a long-running task:
@@ -275,7 +275,7 @@ We can create a new environment for our worker, to pick up this function:
 
 ```{r}
 rrq_worker_envir_set(rrq_envir(sources = "fault2.R"))
-w <- rrq::rrq_worker_spawn2()
+w <- rrq::rrq_worker_spawn()
 ```
 
 ```{r, include = FALSE}
@@ -378,7 +378,7 @@ It is possible to change the default behaviour of `follow` to not follow through
 To change this behaviour, pass the `follow` argument to the queue constructor, for example:
 
 ```{r}
-obj_nofollow <- rrq_controller2(obj$queue_id, follow = FALSE)
+obj_nofollow <- rrq_controller(obj$queue_id, follow = FALSE)
 rrq_task_result(t1, controller = obj_nofollow)
 ```
 

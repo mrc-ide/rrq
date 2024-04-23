@@ -51,10 +51,10 @@
 ##'   except `logs` which requires a single worker id (as a string or
 ##'   integer). For all methods except `logs`, the default of `NULL`
 ##'   means "all managed workers".
-rrq_worker_spawn2 <- function(n = 1, logdir = NULL, timeout = 600,
-                              name_config = "localhost", worker_id_base = NULL,
-                              time_poll = 0.2, progress = NULL,
-                              controller = NULL) {
+rrq_worker_spawn <- function(n = 1, logdir = NULL, timeout = 600,
+                             name_config = "localhost", worker_id_base = NULL,
+                             time_poll = 0.2, progress = NULL,
+                             controller = NULL) {
   controller <- get_controller(controller)
   manager <- rrq_worker_manager$new(controller, n, logdir, name_config,
                                     worker_id_base)
@@ -131,7 +131,7 @@ rrq_worker_manager <- R6::R6Class(
     initialize = function(controller, n, logdir = NULL,
                           name_config = "localhost",
                           worker_id_base = NULL) {
-      assert_is(controller, "rrq_controller2")
+      assert_is(controller, "rrq_controller")
 
       if (!(name_config %in% rrq_worker_config_list(controller))) {
         cli::cli_abort("Invalid rrq worker configuration key '{name_config}'")

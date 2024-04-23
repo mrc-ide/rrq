@@ -26,7 +26,7 @@ test_that("failed spawn", {
   unlink(file.path(root, "myfuns.R"))
 
   err <- expect_error(
-    suppressMessages(rrq_worker_spawn2(timeout = 5, controller = obj)),
+    suppressMessages(rrq_worker_spawn(timeout = 5, controller = obj)),
     "Worker died")
 
   expect_length(err$logs, 1)

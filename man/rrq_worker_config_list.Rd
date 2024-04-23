@@ -17,5 +17,5 @@ A character vector of names; these can be passed as the
 }
 \description{
 Return names of worker configurations saved by
-\code{\link[=rrq_worker_config_save2]{rrq_worker_config_save2()}}
+\code{\link[=rrq_worker_config_save]{rrq_worker_config_save()}}
 }

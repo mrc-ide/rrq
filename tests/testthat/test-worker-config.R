@@ -13,7 +13,7 @@ test_that("create short-lived worker", {
 
   key <- "stop_immediately"
   cfg <- rrq_worker_config(timeout_idle = 0, poll_queue = 1, verbose = TRUE)
-  rrq_worker_config_save2(key, cfg, controller = obj)
+  rrq_worker_config_save(key, cfg, controller = obj)
 
   ## Local:
   msg1 <- capture_messages(
@@ -65,7 +65,7 @@ test_that("worker timeout", {
 
   t <- as.integer(runif(1, min = 100, max = 10000))
   cfg <- rrq_worker_config(timeout_idle = t, verbose = FALSE)
-  res <- rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+  res <- rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
   expect_true(res)
   expect_equal(cfg$timeout_idle, t)
 
@@ -84,7 +84,7 @@ test_that("worker timeout", {
 test_that("infinite timeout", {
   obj <- test_rrq("myfuns.R")
   cfg <- rrq_worker_config(timeout_idle = Inf, verbose = FALSE)
-  rrq_worker_config_save2("infinite", cfg, controller = obj)
+  rrq_worker_config_save("infinite", cfg, controller = obj)
 
   w <- test_worker_blocking(obj, name_config = "infinite")
   expect_equal(r6_private(w)$timeout_idle, Inf)
@@ -104,10 +104,10 @@ test_that("rrq_default configuration", {
   obj <- test_rrq()
   cfg1 <- rrq_worker_config(timeout_idle = 1)
   cfg2 <- rrq_worker_config(timeout_idle = 2)
-  expect_true(rrq_worker_config_save2("new", cfg1, overwrite = FALSE,
+  expect_true(rrq_worker_config_save("new", cfg1, overwrite = FALSE,
                                       controller = obj))
   expect_equal(rrq_worker_config_read("new", controller = obj), cfg1)
-  expect_false(rrq_worker_config_save2("new", cfg2, overwrite = FALSE,
+  expect_false(rrq_worker_config_save("new", cfg2, overwrite = FALSE,
                                        controller = obj))
   expect_equal(rrq_worker_config_read("new", controller = obj), cfg1)
 })
@@ -139,8 +139,8 @@ test_that("timeout_process_die is validated", {
 test_that("can save worker configuration with top-level function", {
   obj <- test_rrq()
   cfg <- rrq_worker_config(timeout_idle = 10, verbose = FALSE)
-  rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
-  obj2 <- rrq_controller2(obj$queue_id)
+  rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+  obj2 <- rrq_controller(obj$queue_id)
   expect_equal(
     rrq_worker_config_read(WORKER_CONFIG_DEFAULT, controller = obj2),
     cfg)

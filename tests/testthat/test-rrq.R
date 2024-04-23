@@ -1,7 +1,7 @@
 test_that("empty", {
   obj <- test_rrq()
 
-  expect_s3_class(obj, "rrq_controller2")
+  expect_s3_class(obj, "rrq_controller")
 
   expect_equal(rrq_worker_list(controller = obj), character(0))
   expect_equal(rrq_task_list(controller = obj), character(0))
@@ -368,7 +368,7 @@ test_that("get task data errors appropriately if task is missing", {
 test_that("a worker will pick up tasks from the priority queue", {
   obj <- test_rrq("myfuns.R")
   cfg <- rrq_worker_config(queue = c("a", "b"), verbose = FALSE)
-  rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+  rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
   w <- test_worker_blocking(obj)
 
   t1 <- rrq_task_create_expr(sin(1), controller = obj)
@@ -977,7 +977,7 @@ test_that("Can set the task wait timeout on controller creation", {
   obj <- test_rrq()
 
   f <- function(timeout) {
-    r <- rrq_controller2(obj$queue_id, timeout_task_wait = timeout)
+    r <- rrq_controller(obj$queue_id, timeout_task_wait = timeout)
     r$timeout_task_wait
   }
 
@@ -1106,7 +1106,7 @@ test_that("Can get information about task retries", {
 test_that("Can retry tasks that span multiple queues at once", {
   obj <- test_rrq()
   cfg <- rrq_worker_config(queue = c("a", "b"), verbose = FALSE)
-  rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+  rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
   t1 <- c(rrq_task_create_expr(sin(1), queue = "a", controller = obj),
           rrq_task_create_expr(sin(2), queue = "a", controller = obj),
           rrq_task_create_expr(sin(3), queue = "b", controller = obj))
@@ -1162,7 +1162,7 @@ test_that("Can set the follow default on controller creation", {
   obj <- test_rrq()
 
   f <- function(follow) {
-    rrq_controller2(obj$queue_id, follow = follow)$follow
+    rrq_controller(obj$queue_id, follow = follow)$follow
   }
 
   withr::with_options(list(rrq.follow = FALSE), {
@@ -1181,7 +1181,7 @@ test_that("Can set the follow default on controller creation", {
 
 test_that("Can avoid following on controller creation", {
   obj1 <- test_rrq(follow = FALSE)
-  obj2 <- rrq_controller2(obj1$queue_id, follow = TRUE)
+  obj2 <- rrq_controller(obj1$queue_id, follow = TRUE)
   w <- test_worker_blocking(obj1)
 
   t1 <- rrq_task_create_expr(runif(1), controller = obj1)

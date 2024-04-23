@@ -57,7 +57,7 @@ test_that("can print worker info", {
 
   obj <- test_rrq()
   cfg <- rrq_worker_config(heartbeat_period = 3)
-  res <- rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+  res <- rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
   w1 <- test_worker_spawn(obj)
   w2 <- test_worker_spawn(obj)
 

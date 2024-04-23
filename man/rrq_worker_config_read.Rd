@@ -21,5 +21,5 @@ we'll use the controller registered with
 }
 \description{
 Return the value of a of worker configuration saved by
-\code{\link[=rrq_worker_config_save2]{rrq_worker_config_save2()}}
+\code{\link[=rrq_worker_config_save]{rrq_worker_config_save()}}
 }

@@ -1,6 +1,6 @@
 test_that("can construct new-style object", {
   res <- test_rrq()
-  expect_s3_class(res, "rrq_controller2")
+  expect_s3_class(res, "rrq_controller")
   expect_setequal(names(res),
                   c("queue_id", "con", "keys",
                     "timeout_task_wait", "follow", "scripts", "store"))

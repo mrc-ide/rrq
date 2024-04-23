@@ -23,7 +23,7 @@ rrq_worker <- R6::R6Class(
     ##'
     ##' @param name_config Optional name of the configuration. The
     ##'   default "localhost" configuration always exists. Create new
-    ##'   configurations using [rrq_worker_config_save2].
+    ##'   configurations using [rrq_worker_config_save].
     ##'
     ##' @param worker_id Optional worker id.  If omitted, a random
     ##'   id will be created.
@@ -50,7 +50,7 @@ rrq_worker <- R6::R6Class(
 
       self$id <- worker_id %||% ids::adjective_animal()
       self$config <- name_config
-      self$controller <- rrq_controller2(queue_id, con, check_version = TRUE)
+      self$controller <- rrq_controller(queue_id, con, check_version = TRUE)
 
       if (is_child != rrq_worker_exists(self$id, self$controller)) {
         if (is_child) {

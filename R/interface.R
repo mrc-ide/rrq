@@ -103,11 +103,11 @@
 ##'   where the schema version is incompatible, though any subsequent
 ##'   actions may lead to corruption.
 ##'
-##' @return An `rrq_controller2` object, which is opaque.
+##' @return An `rrq_controller` object, which is opaque.
 ##' @export
-rrq_controller2 <- function(queue_id, con = redux::hiredis(),
-                            timeout_task_wait = NULL, follow = NULL,
-                            check_version = TRUE) {
+rrq_controller <- function(queue_id, con = redux::hiredis(),
+                           timeout_task_wait = NULL, follow = NULL,
+                           check_version = TRUE) {
   assert_scalar_character(queue_id)
   assert_is(con, "redis_api")
 
@@ -136,10 +136,10 @@ rrq_controller2 <- function(queue_id, con = redux::hiredis(),
               follow = follow,
               scripts = rrq_scripts_load(con),
               store = rrq_object_store(con, keys))
-  class(ret) <- "rrq_controller2"
+  class(ret) <- "rrq_controller"
 
-  rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, rrq_worker_config(),
-                          overwrite = FALSE, controller = ret)
+  rrq_worker_config_save(WORKER_CONFIG_DEFAULT, rrq_worker_config(),
+                         overwrite = FALSE, controller = ret)
 
   info <- object_to_bin(controller_info())
   rpush_max_length(con, keys$controller, info, 10)
@@ -154,11 +154,11 @@ rrq_controller2 <- function(queue_id, con = redux::hiredis(),
 ##'
 ##' @title Register default controller
 ##'
-##' @param controller An rrq_controller2 object
+##' @param controller An rrq_controller object
 ##'
 ##' @export
 rrq_default_controller_set <- function(controller) {
-  assert_is(controller, "rrq_controller2")
+  assert_is(controller, "rrq_controller")
   pkg$default_controller <- controller
   invisible(controller)
 }
@@ -175,10 +175,7 @@ pkg <- new.env(parent = emptyenv())
 
 get_controller <- function(controller, call = NULL) {
   if (!is.null(controller)) {
-    if (inherits(controller, "rrq_controller")) {
-      return(controller$to_v2())
-    }
-    assert_is(controller, "rrq_controller2")
+    assert_is(controller, "rrq_controller")
     return(controller)
   }
   res <- pkg$default_controller
@@ -193,7 +190,7 @@ get_controller <- function(controller, call = NULL) {
 
 
 ##' @export
-print.rrq_controller2 <- function(x, ...) {
+print.rrq_controller <- function(x, ...) {
   cat(sprintf("<rrq_controller: %s>\n", x$queue_id))
   invisible(x)
 }
