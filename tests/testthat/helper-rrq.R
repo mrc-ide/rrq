@@ -136,7 +136,7 @@ test_worker_spawn <- function(obj, ..., timeout = 10) {
   skip_on_cran()
   skip_on_windows()
   skip_if_installed_version_differs()
-  suppressMessages(rrq_worker_spawn(obj, ..., timeout = timeout))
+  suppressMessages(rrq_worker_spawn2(..., timeout = timeout, controller = obj))
 }
 
 

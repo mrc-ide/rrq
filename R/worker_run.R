@@ -28,32 +28,6 @@ worker_run_task <- function(worker, private, task_id) {
 
 
 worker_run_task_local <- function(task, worker, private) {
-  if (is.null(task$type)) {
-    worker_run_task_local_old(task, worker, private)
-  } else {
-    worker_run_task_local_new(task, worker, private)
-  }
-}
-
-
-worker_run_task_local_old <- function(task, worker, private) {
-  keys <- worker$controller$keys
-  store <- worker$controller$store
-  e <- expression_restore_locals(task, private$envir, store)
-  result <- withCallingHandlers(
-    expression_eval_safely(task$expr, e),
-    progress = function(e) worker$progress(unclass(e), FALSE))
-  if (result$success) {
-    list(value = result$value,
-         status = TASK_COMPLETE)
-  } else {
-    list(value = rrq_task_error(result$value, TASK_ERROR,
-                                keys$queue_id, task$id),
-         status = TASK_ERROR)
-  }
-}
-
-worker_run_task_local_new <- function(task, worker, private) {
   envir <- private$envir
   keys <- worker$controller$keys
   store <- worker$controller$store

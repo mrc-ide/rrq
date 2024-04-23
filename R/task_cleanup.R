@@ -4,16 +4,12 @@ run_task_cleanup_success <- function(controller, task_id, status, value) {
   store <- controller$store
 
   task_result <- store$set(value, task_id)
-  key_complete <- con$HGET(keys$task_complete, task_id)
   key_depends_down <- rrq_key_task_depends_down(keys$queue_id, task_id)
   res <- con$pipeline(
     redis$HSET(keys$task_result,        task_id, task_result),
     redis$HSET(keys$task_status,        task_id, status),
     redis$HSET(keys$task_time_complete, task_id, timestamp()),
     redis$RPUSH(rrq_key_task_complete(keys$queue_id, task_id), task_id),
-    if (!is.null(key_complete)) {
-      redis$RPUSH(key_complete, task_id)
-    },
     redis$SMEMBERS(key_depends_down))
   depends_down <- last(res)
   if (length(depends_down)) {
@@ -34,15 +30,11 @@ run_task_cleanup_failure <- function(controller, task_ids, status, value) {
   cleanup_one <- function(task_id, status, value) {
     value <- value %||% worker_task_failed(status, keys$queue_id, task_id)
     task_result <- store$set(value, task_id)
-    key_complete <- con$HGET(keys$task_complete, task_id)
     list(
       redis$HSET(keys$task_result,        task_id, task_result),
       redis$HSET(keys$task_status,        task_id, status),
       redis$HSET(keys$task_time_complete, task_id, timestamp()),
-      redis$RPUSH(rrq_key_task_complete(keys$queue_id, task_id), task_id),
-      if (!is.null(key_complete)) {
-        redis$RPUSH(key_complete, task_id)
-      })
+      redis$RPUSH(rrq_key_task_complete(keys$queue_id, task_id), task_id))
   }
 
   task_ids_all <- union(

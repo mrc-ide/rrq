@@ -56,54 +56,6 @@ test_that("bin_to_object_safe", {
 })
 
 
-test_that("polling: simple case", {
-  set.seed(1)
-  n <- sample(10, 10, replace = TRUE)
-  counter <- make_counter()
-  fetch <- function() {
-    counter() >= n
-  }
-
-  expect_equal(
-    general_poll(fetch, 0, 10, "things", FALSE, FALSE),
-    rep(TRUE, 10))
-  expect_equal(environment(counter)$n, max(n))
-})
-
-
-test_that("polling: behaviour if incomplete", {
-  set.seed(1)
-  n <- sample(10, 10, replace = TRUE)
-  counter <- make_counter(4)
-  fetch <- function() {
-    counter() >= n
-  }
-
-  expect_error(
-    general_poll(fetch, 0, 0, "things", TRUE, FALSE),
-    sprintf("Exceeded maximum time (%s / 10 things pending)",
-            sum(n > 5)),
-    fixed = TRUE)
-
-  expect_equal(
-    general_poll(fetch, 0, 0, "things", FALSE, FALSE),
-    n <= 6)
-})
-
-
-test_that("polling: behaviour if timeout", {
-  set.seed(1)
-  n <- sample(10, 10, replace = FALSE)
-  counter <- make_counter(0)
-  fetch <- function() {
-    counter() >= n
-  }
-  poll <- 0.05
-  expect_error(
-    general_poll(fetch, poll, poll * 3, "things", TRUE, FALSE),
-    "Exceeded maximum time")
-})
-
 
 test_that("wait timeout errors informatively", {
   skip_if_not_installed("mockery")

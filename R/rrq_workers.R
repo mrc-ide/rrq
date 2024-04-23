@@ -361,7 +361,7 @@ rrq_worker_detect_exited <- function(controller = NULL) {
 ##' Return the contents of a worker's process log, if
 ##' it is located on the same physical storage (including network
 ##' storage) as the controller. This will generally behave for
-##' workers started with [rrq_worker_spawn] but may require significant
+##' workers started with [rrq_worker_spawn2] but may require significant
 ##' care otherwise.
 ##'
 ##' @title Read worker process log

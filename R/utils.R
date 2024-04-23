@@ -84,43 +84,6 @@ sys_sleep <- function(n) {
 }
 
 
-## To poll like this we want to know:
-##
-## how many things are currently done, so we need a function that
-## returns a logical vector
-general_poll <- function(fetch, time_poll, timeout, name, error, progress) {
-  done <- fetch()
-
-  n_total <- length(done)
-  if (timeout > 0) {
-    p <- progress_timeout(n_total, progress, name, timeout)
-    tot <- sum(done)
-    p$tick(tot)
-
-    while (!all(done)) {
-      sys_sleep(time_poll)
-
-      prev <- tot
-      done <- fetch()
-      tot <- sum(done)
-
-      if (p$tick(tot - prev)) {
-        break
-      }
-    }
-    p$terminate()
-  }
-
-  if (error && !all(done)) {
-    remaining <- sum(!done)
-    cli::cli_abort(
-      "Exceeded maximum time ({remaining} / {n_total} {name}{?s} pending)")
-  }
-
-  done
-}
-
-
 collector <- function(init = character(0)) {
   env <- new.env(parent = emptyenv())
   env$res <- init
@@ -134,20 +97,6 @@ collector <- function(init = character(0)) {
 
 is_call <- function(expr, what) {
   is.call(expr) && any(vlapply(what, identical, expr[[1L]]))
-}
-
-
-df_to_list <- function(x) {
-  at <- attributes(x)
-  attributes(x) <- at[intersect(names(at), c("names", "class", "row.names"))]
-
-  i <- vlapply(x, is.list)
-  prepare <- function(el) {
-    el <- as.list(el)
-    el[i] <- lapply(el[i], unlist, FALSE)
-    el
-  }
-  unname(lapply(split(x, seq_len(nrow(x))), prepare))
 }
 
 
