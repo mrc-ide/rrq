@@ -28,6 +28,9 @@
     <loc>/news/index.html</loc>
   </url>
   <url>
+    <loc>/reference/compat.html</loc>
+  </url>
+  <url>
     <loc>/reference/heartbeat.html</loc>
   </url>
   <url>
@@ -44,9 +47,6 @@
   </url>
   <url>
     <loc>/reference/rrq_controller.html</loc>
-  </url>
-  <url>
-    <loc>/reference/rrq_controller2.html</loc>
   </url>
   <url>
     <loc>/reference/rrq_default_controller_set.html</loc>
@@ -163,7 +163,7 @@
     <loc>/reference/rrq_worker_config_read.html</loc>
   </url>
   <url>
-    <loc>/reference/rrq_worker_config_save2.html</loc>
+    <loc>/reference/rrq_worker_config_save.html</loc>
   </url>
   <url>
     <loc>/reference/rrq_worker_delete_exited.html</loc>
@@ -202,7 +202,7 @@
     <loc>/reference/rrq_worker_script.html</loc>
   </url>
   <url>
-    <loc>/reference/rrq_worker_spawn2.html</loc>
+    <loc>/reference/rrq_worker_spawn.html</loc>
   </url>
   <url>
     <loc>/reference/rrq_worker_status.html</loc>
