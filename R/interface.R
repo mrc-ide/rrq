@@ -105,6 +105,20 @@
 ##'
 ##' @return An `rrq_controller` object, which is opaque.
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##'
+##' # Create a new controller; the id will be specific to your
+##' # application.  Here, we use 'rrq:example'
+##' obj <- rrq_controller("rrq:example")
+##'
+##' # Create a task for this controller to work on:
+##' t <- rrq_task_create_expr(runif(10), controller = obj)
+##'
+##' # Wait for the task to complete
+##' rrq_task_wait(t, controller = obj)
+##'
+##' # Fetch the task's result
+##' rrq_task_result(t, controller = obj)
 rrq_controller <- function(queue_id, con = redux::hiredis(),
                            timeout_task_wait = NULL, follow = NULL,
                            check_version = TRUE) {
@@ -154,19 +168,60 @@ rrq_controller <- function(queue_id, con = redux::hiredis(),
 ##'
 ##' @title Register default controller
 ##'
-##' @param controller An rrq_controller object
+##' @param controller An rrq_controller object, or `NULL` to clear the
+##'   default controller (equivalent to using
+##'   `rrq_default_controller_clear`)
+##'
+##' @return Invisibly, the previouslly set default controller (or
+##'   `NULL` if none was set)
 ##'
 ##' @export
 rrq_default_controller_set <- function(controller) {
-  assert_is(controller, "rrq_controller")
+  if (!is.null(controller)) {
+    assert_is(controller, "rrq_controller")
+  }
+  prev <- pkg$default_controller
   pkg$default_controller <- controller
-  invisible(controller)
+  invisible(prev)
 }
 
 ##' @rdname rrq_default_controller_set
 ##' @export
 rrq_default_controller_clear <- function() {
   pkg$default_controller <- NULL
+}
+
+
+##' Temporarily set a default controller while evaluating a code
+##' block.  This behaves in much the same way as functions from the
+##' `withr` package (e.g. withr::with_options) and is a convenience
+##' wrapper around using `rrq_default_controller_set` and
+##' `rrq_default_controller_clear`.  On exit from this function
+##' (including on failure) the default controller will be set back to
+##' the same value as it contained before entry.
+##'
+##' @title Evaluate code with default controler set
+##'
+##' @param controller An [rrq_controller] object
+##'
+##' @param code Code to evaluate while the controller is set
+##'
+##' @return The result of evaluating `code`
+##'
+##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' rrq_with_controller(obj, {
+##'   t <- rrq_task_create_expr(runif(1))
+##'   rrq_task_wait(t)
+##'   rrq_task_result(t)
+##' })
+rrq_with_controller <- function(controller, code) {
+  assert_is(controller, "rrq_controller")
+  prev <- rrq_default_controller_set(controller)
+  on.exit(rrq_default_controller_set(prev))
+  force(code)
 }
 
 
