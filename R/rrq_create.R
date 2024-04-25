@@ -70,8 +70,8 @@ rrq_task_create_expr <- function(expr, queue = NULL,
   dat <- list(type = "expr", expr = expr$value, variables = variables_hash)
   dat <- list(object_to_bin(dat))
 
-  task_submit2(controller, task_id, dat, queue, separate_process,
-               timeout_task_run, depends_on)
+  task_submit(controller, task_id, dat, queue, separate_process,
+              timeout_task_run, depends_on)
 }
 
 
@@ -159,8 +159,8 @@ rrq_task_create_call <- function(fn, args, queue = NULL,
   dat <- list(type = "call", fn = fn_hash, args = args_hash)
   dat <- list(object_to_bin(dat))
 
-  task_submit2(controller, task_id, dat, queue, separate_process,
-               timeout_task_run, depends_on)
+  task_submit(controller, task_id, dat, queue, separate_process,
+              timeout_task_run, depends_on)
 }
 
 
@@ -236,8 +236,8 @@ rrq_task_create_bulk_expr <- function(expr, data, queue = NULL,
     object_to_bin(dat)
   })
 
-  task_submit2(controller, task_ids, dat, queue, separate_process,
-               timeout_task_run, depends_on)
+  task_submit(controller, task_ids, dat, queue, separate_process,
+              timeout_task_run, depends_on)
 }
 
 
@@ -319,16 +319,8 @@ rrq_task_create_bulk_call <- function(fn, data, args = NULL,
     object_to_bin(dat)
   })
 
-  task_submit2(controller, task_ids, dat, queue, separate_process,
-               timeout_task_run, depends_on)
-}
-
-
-task_submit2 <- function(controller, task_ids, dat, queue, separate_process,
-                         timeout_task_run, depends_on) {
-  key_complete <- NULL
-  task_submit_n(controller, task_ids, dat, key_complete, queue,
-                separate_process, timeout_task_run, depends_on)
+  task_submit(controller, task_ids, dat, queue, separate_process,
+              timeout_task_run, depends_on)
 }
 
 

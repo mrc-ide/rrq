@@ -20,7 +20,7 @@ or many)}
 \item{timeout}{Optional timeout, in seconds, after which an error
 will be thrown if the task has not completed. If not given,
 falls back on the controller's \code{timeout_task_wait} (see
-\link{rrq_controller2})}
+\link{rrq_controller})}
 
 \item{time_poll}{Optional time with which to "poll" for
 completion.  By default this will be 1 second; this is the time

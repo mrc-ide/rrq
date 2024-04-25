@@ -1,5 +1,5 @@
 ##' Create a worker configuration, suitable to pass into
-##' [rrq::rrq_worker_config_save2]. The results of this function
+##' [rrq::rrq_worker_config_save]. The results of this function
 ##' should not be modified.
 ##'
 ##' @title Create worker configuration
@@ -29,7 +29,7 @@
 ##'
 ##' @param timeout_idle Optional timeout that sets the length of time
 ##'   after which the worker will exit if it has not processed a task.
-##'   This is (roughly) equivalent to issuing a \code{TIMEOUT_SET}
+##'   This is (roughly) equivalent to issuing a `TIMEOUT_SET`
 ##'   message after initialising the worker, except that it's
 ##'   guaranteed to be run by all workers.
 ##'

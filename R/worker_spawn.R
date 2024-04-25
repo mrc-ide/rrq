@@ -1,6 +1,6 @@
 ##' Spawn a worker in the background
 ##'
-##' Spawning multiple workers.  If \code{n} is greater than one,
+##' Spawning multiple workers.  If `n` is greater than one,
 ##' multiple workers will be spawned.  This happens in parallel so it
 ##' does not take n times longer than spawning a single worker.
 ##'
@@ -21,7 +21,7 @@
 ##'   method of the returned object to run this test manually)
 ##'
 ##' @param name_config Name of the configuration to use.  By default
-##'   the \code{"localhost"} configuration is used
+##'   the `"localhost"` configuration is used
 ##'
 ##' @param worker_id_base Optional base to construct the worker ids
 ##'   from.  If omitted a random base will be used. Actual ids will be
@@ -31,7 +31,7 @@
 ##'   workers to come up.
 ##'
 ##' @param progress Show a progress bar while waiting for workers
-##'   (when \code{timeout} is at least 0)
+##'   (when `timeout` is at least 0)
 ##'
 ##' @param controller The controller to use.  If not given (or `NULL`)
 ##'   we'll use the controller registered with
@@ -51,10 +51,10 @@
 ##'   except `logs` which requires a single worker id (as a string or
 ##'   integer). For all methods except `logs`, the default of `NULL`
 ##'   means "all managed workers".
-rrq_worker_spawn2 <- function(n = 1, logdir = NULL, timeout = 600,
-                              name_config = "localhost", worker_id_base = NULL,
-                              time_poll = 0.2, progress = NULL,
-                              controller = NULL) {
+rrq_worker_spawn <- function(n = 1, logdir = NULL, timeout = 600,
+                             name_config = "localhost", worker_id_base = NULL,
+                             time_poll = 0.2, progress = NULL,
+                             controller = NULL) {
   controller <- get_controller(controller)
   manager <- rrq_worker_manager$new(controller, n, logdir, name_config,
                                     worker_id_base)
@@ -131,7 +131,7 @@ rrq_worker_manager <- R6::R6Class(
     initialize = function(controller, n, logdir = NULL,
                           name_config = "localhost",
                           worker_id_base = NULL) {
-      assert_is(controller, "rrq_controller2")
+      assert_is(controller, "rrq_controller")
 
       if (!(name_config %in% rrq_worker_config_list(controller))) {
         cli::cli_abort("Invalid rrq worker configuration key '{name_config}'")

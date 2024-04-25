@@ -23,9 +23,9 @@ A controller to throw jobs at:
 ```{r}
 library(rrq)
 id <- paste0("rrq:", ids::random_id(bytes = 4))
-obj <- rrq_controller2(id)
+obj <- rrq_controller(id)
 rrq_default_controller_set(obj)
-w <- rrq_worker_spawn2(1)
+w <- rrq_worker_spawn(1)
 ```
 
 Running a thousand trivial jobs (look in particular at `elapsed` as we're interested in wall time)
@@ -48,7 +48,7 @@ bench_rrq <- function(n, nworkers, nrep) {
   }
   diff <- nworkers - rrq_worker_len()
   if (diff > 0L) {
-    suppressMessages(rrq_worker_spawn2(diff))
+    suppressMessages(rrq_worker_spawn(diff))
   } else if (diff < 0L) {
     rrq_worker_stop(rrq_worker_list()[seq_len(-diff)])
   }

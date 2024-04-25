@@ -142,7 +142,7 @@ test_that("kill worker with a signal", {
 
   obj <- test_rrq(timeout_worker_stop = 0)
   cfg <- rrq_worker_config(heartbeat_period = 3)
-  res <- rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+  res <- rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
   w <- test_worker_spawn(obj)
 
   rrq_worker_stop(w$id, "kill", controller = obj)
@@ -179,7 +179,7 @@ test_that("Can't kill non-local workers", {
 
   info <- rrq_worker_info(w$id, controller = obj)[[w$id]]
   info$hostname <- paste0(info$hostname, "_but_on_mars")
-  obj$con$HSET(obj$to_v2()$keys$worker_info, w$id, object_to_bin(info))
+  obj$con$HSET(obj$keys$worker_info, w$id, object_to_bin(info))
   expect_error(
     rrq_worker_stop(w$id, "kill_local", controller = obj),
     "Not all workers are local:")
@@ -269,7 +269,7 @@ test_that("can get worker info", {
 
   obj <- test_rrq(timeout_worker_stop = 10)
   cfg <- rrq_worker_config(heartbeat_period = 3)
-  res <- rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+  res <- rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
   w <- test_worker_spawn(obj)
 
   info <- rrq_worker_info(w$id, controller = obj)
@@ -288,7 +288,7 @@ test_that("can get worker info", {
 test_that("multiple queues format correctly when printing worker", {
   obj <- test_rrq()
   cfg <- rrq_worker_config(queue = c("a", "b"), verbose = FALSE)
-  rrq_worker_config_save2(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+  rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
   w <- test_worker_blocking(obj)
   format <- worker_format(w)
 
