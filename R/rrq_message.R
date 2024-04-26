@@ -1,6 +1,7 @@
-##' Send a message to workers. Sending a message returns
-##' a message id, which can be used to poll for a response with the
-##' other `rrq_message_*` functions.
+##' Send a message to workers. Sending a message returns a message id,
+##' which can be used to poll for a response with the other
+##' `rrq_message_*` functions.  See `vignette("messages")` for details
+##' for the messaging interface.
 ##'
 ##' @title Send message to workers
 ##'
@@ -17,6 +18,11 @@
 ##' @return Invisibly, a single identifier
 ##'
 ##' @export
+##' @examplesIf rrq::enable_examples(queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' id <- rrq_message_send("PING", controller = obj)
+##' rrq_message_get_response(id, timeout = 5, controller = obj)
 rrq_message_send <- function(command, args = NULL, worker_ids = NULL,
                              controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
@@ -54,6 +60,13 @@ rrq_message_send <- function(command, args = NULL, worker_ids = NULL,
 ##'   argument)
 ##'
 ##' @export
+##' @examplesIf rrq::enable_examples(queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' id <- rrq_message_send("PING", controller = obj)
+##' rrq_message_has_response(id, controller = obj)
+##' rrq_message_get_response(id, timeout = 5, controller = obj)
+##' rrq_message_has_response(id, controller = obj)
 rrq_message_has_response <- function(message_id, worker_ids = NULL,
                                      named = TRUE, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
@@ -82,7 +95,12 @@ rrq_message_has_response <- function(message_id, worker_ids = NULL,
 ##' @return A character vector of ids
 ##'
 ##' @export
+##' @examplesIf rrq::enable_examples(queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##' w <- rrq_worker_list(controller = obj)
+##' id <- rrq_message_send("PING", controller = obj)
 rrq_message_response_ids <- function(worker_id, controller = NULL) {
+  assert_scalar_character(worker_id)
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
   keys <- controller$keys
@@ -104,6 +122,9 @@ rrq_message_response_ids <- function(worker_id, controller = NULL) {
 ##' @return The message response
 ##'
 ##' @export
+##' @examplesIf rrq::enable_examples(queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##' rrq_message_send_and_wait("PING", controller = obj)
 rrq_message_send_and_wait <- function(command, args = NULL, worker_ids = NULL,
                                       named = TRUE, delete = TRUE,
                                       timeout = 600, time_poll = 0.05,
@@ -158,6 +179,9 @@ rrq_message_send_and_wait <- function(command, args = NULL, worker_ids = NULL,
 ##' @inheritParams rrq_task_list
 ##'
 ##' @export
+##' obj <- rrq_controller("rrq:example")
+##' id <- rrq_message_send("PING", controller = obj)
+##' rrq_message_get_response(id, controller = obj)
 rrq_message_get_response <- function(message_id, worker_ids = NULL,
                                      named = TRUE, delete = FALSE, timeout = 0,
                                      time_poll = 0.5, progress = NULL,
