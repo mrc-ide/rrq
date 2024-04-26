@@ -74,7 +74,10 @@ reference:
       - rrq_worker_task_id
       - rrq_worker_wait
 
-  - subtitle: Messages
+  - title: Messages
+    description: >-
+      The messaging interface, see `vignette("messages")` for more
+      details
     contents:
       - rrq_message_get_response
       - rrq_message_has_response

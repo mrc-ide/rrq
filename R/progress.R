@@ -46,6 +46,23 @@
 ##'   have made it to the server.
 ##'
 ##' @export
+##' @examplesIf rrq::enable_examples(queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' f <- function(n) {
+##'   for (i in seq_len(n)) {
+##'     rrq_task_progress_update(sprintf("Iteration %d / %d", i, n))
+##'   }
+##'   n
+##' }
+##'
+##' t <- rrq_task_create_call(f, list(5), controller = obj)
+##' # This might be empty at first
+##' rrq_task_progress(t, controller = obj)
+##' # Wait for the task to complete
+##' rrq_task_wait(t, controller = obj)
+##' # Contains the _last_ progress message
+##' rrq_task_progress(t, controller = obj)
 rrq_task_progress_update <- function(value, error = FALSE) {
   worker <- cache$active_worker
   if (is.null(worker)) {
