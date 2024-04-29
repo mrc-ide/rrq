@@ -58,7 +58,7 @@ WORKER_CONFIG_DEFAULT <- "localhost"
 ## the data layout. When either a worker or controller connects to the
 ## db they'll compare their version against this and report back if
 ## they disagree.
-rrq_schema_version <- "0.4.0"
+rrq_schema_version <- "0.4.1"
 
 version_info <- function(package = "rrq") {
   as.character(packageVersion(package))
