@@ -15,9 +15,9 @@ test_that("Error if schema version incompatible", {
   con$SET(keys$version, "0.1.0")
   expect_error(
     rrq_version_check(con, keys),
-    "rrq schema version is '0.1.0' but you are using '0.4.0'; please migrate")
+    "rrq schema version is '0.1.0' but you are using '0.8.0'; please migrate")
   con$SET(keys$version, "0.9.0")
   expect_error(
     rrq_version_check(con, keys),
-    "rrq schema version is '0.9.0' but you are using '0.4.0'; please upgrade")
+    "rrq schema version is '0.9.0' but you are using '0.8.0'; please upgrade")
 })
