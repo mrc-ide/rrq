@@ -165,8 +165,8 @@ two variables:</p>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   from:   model.frame.default(formula = y ~ x, drop.unused.levels = TRUE)</span></span>
 <span><span class="co">#&gt;   error:  invalid type (NULL) for variable 'y'</span></span>
-<span><span class="co">#&gt;   queue:  rrq:74beefbc</span></span>
-<span><span class="co">#&gt;   task:   62b9a9e8439dd7427f78147a92653377</span></span>
+<span><span class="co">#&gt;   queue:  rrq:d5f352de</span></span>
+<span><span class="co">#&gt;   task:   9d05ab382b69e2acf24b84a9ec4804bb</span></span>
 <span><span class="co">#&gt;   status: ERROR</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span>
 <span><span class="co">#&gt;   * This error has a stack trace, use '$trace' to see it</span></span></code></pre></div>
@@ -179,8 +179,8 @@ or via <code>task_result</code>:</p>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   from:   model.frame.default(formula = y ~ x, drop.unused.levels = TRUE)</span></span>
 <span><span class="co">#&gt;   error:  invalid type (NULL) for variable 'y'</span></span>
-<span><span class="co">#&gt;   queue:  rrq:74beefbc</span></span>
-<span><span class="co">#&gt;   task:   62b9a9e8439dd7427f78147a92653377</span></span>
+<span><span class="co">#&gt;   queue:  rrq:d5f352de</span></span>
+<span><span class="co">#&gt;   task:   9d05ab382b69e2acf24b84a9ec4804bb</span></span>
 <span><span class="co">#&gt;   status: ERROR</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span>
 <span><span class="co">#&gt;   * This error has a stack trace, use '$trace' to see it</span></span></code></pre></div>
@@ -260,13 +260,13 @@ the same worker process (look at the <code>elapsed</code> entry)</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/rrq_task_wait.html">rrq_task_wait</a></span><span class="op">(</span><span class="fu"><a href="../reference/rrq_task_create_expr.html">rrq_task_create_expr</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/identity.html" class="external-link">identity</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    user  system elapsed </span></span>
-<span><span class="co">#&gt;   0.001   0.000   0.002</span></span></code></pre></div>
+<span><span class="co">#&gt;   0.001   0.001   0.003</span></span></code></pre></div>
 <p>with the same task run in a separate process on the worker</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/rrq_task_wait.html">rrq_task_wait</a></span><span class="op">(</span><span class="fu"><a href="../reference/rrq_task_create_expr.html">rrq_task_create_expr</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/identity.html" class="external-link">identity</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>, separate_process <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    user  system elapsed </span></span>
-<span><span class="co">#&gt;   0.001   0.000   0.351</span></span></code></pre></div>
+<span><span class="co">#&gt;   0.001   0.000   0.363</span></span></code></pre></div>
 <p>We expect this difference to be ~100 fold in local workers. Almost
 all the cost is due to the overhead of starting and terminating a fresh
 R session. If your queue uses a lot of packages there will be additional
@@ -307,8 +307,8 @@ extra information in the error:</p>
 <span><span class="va">r</span></span>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   error:  Task not successful: DIED</span></span>
-<span><span class="co">#&gt;   queue:  rrq:74beefbc</span></span>
-<span><span class="co">#&gt;   task:   6c73f3bb6480cb9e740a3d4255bfaf0b</span></span>
+<span><span class="co">#&gt;   queue:  rrq:d5f352de</span></span>
+<span><span class="co">#&gt;   task:   9909b4bbb6c0ea58975e9be5266eec4b</span></span>
 <span><span class="co">#&gt;   status: DIED</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span></code></pre></div>
 <p>There’s also no trace available</p>
@@ -385,7 +385,7 @@ clean up</p>
 <span><span class="co">#&gt; Lost 1 worker:</span></span>
 <span><span class="co">#&gt;   - raging_llama_1</span></span>
 <span><span class="co">#&gt; Orphaning 1 task:</span></span>
-<span><span class="co">#&gt;   - d4fe288268ecf8ac8b93c48a691ea86e</span></span></code></pre></div>
+<span><span class="co">#&gt;   - dfd00628e2f88e632d5677d8a12cb156</span></span></code></pre></div>
 <p>At this point, the statuses of our task and worker are correct:</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_status.html">rrq_task_status</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
@@ -398,8 +398,8 @@ clean up</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   error:  Task not successful: DIED</span></span>
-<span><span class="co">#&gt;   queue:  rrq:74beefbc</span></span>
-<span><span class="co">#&gt;   task:   d4fe288268ecf8ac8b93c48a691ea86e</span></span>
+<span><span class="co">#&gt;   queue:  rrq:d5f352de</span></span>
+<span><span class="co">#&gt;   task:   dfd00628e2f88e632d5677d8a12cb156</span></span>
 <span><span class="co">#&gt;   status: DIED</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span></code></pre></div>
 <p>This is still not terribly useful, as we have not provided any
@@ -460,8 +460,8 @@ function:</p>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   from:   stochastic_failure(0.5)</span></span>
 <span><span class="co">#&gt;   error:  Convergence failure - x is only 0.27</span></span>
-<span><span class="co">#&gt;   queue:  rrq:74beefbc</span></span>
-<span><span class="co">#&gt;   task:   4e8cd0fe77870b9b12c692c5e37b5583</span></span>
+<span><span class="co">#&gt;   queue:  rrq:d5f352de</span></span>
+<span><span class="co">#&gt;   task:   a69c40752c6c7f93a5eab0e65e6c536f</span></span>
 <span><span class="co">#&gt;   status: ERROR</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span>
 <span><span class="co">#&gt;   * This error has a stack trace, use '$trace' to see it</span></span></code></pre></div>
@@ -478,8 +478,8 @@ perhaps it will work this time?</p>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   from:   stochastic_failure(0.5)</span></span>
 <span><span class="co">#&gt;   error:  Convergence failure - x is only 0.37</span></span>
-<span><span class="co">#&gt;   queue:  rrq:74beefbc</span></span>
-<span><span class="co">#&gt;   task:   3ed65e727b4bd6c7f42aee8df92c4e01</span></span>
+<span><span class="co">#&gt;   queue:  rrq:d5f352de</span></span>
+<span><span class="co">#&gt;   task:   326ebe5ae6d248d4a0af623106d944e0</span></span>
 <span><span class="co">#&gt;   status: ERROR</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span>
 <span><span class="co">#&gt;   * This error has a stack trace, use '$trace' to see it</span></span></code></pre></div>
@@ -518,8 +518,8 @@ original result</p>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   from:   stochastic_failure(0.5)</span></span>
 <span><span class="co">#&gt;   error:  Convergence failure - x is only 0.27</span></span>
-<span><span class="co">#&gt;   queue:  rrq:74beefbc</span></span>
-<span><span class="co">#&gt;   task:   4e8cd0fe77870b9b12c692c5e37b5583</span></span>
+<span><span class="co">#&gt;   queue:  rrq:d5f352de</span></span>
+<span><span class="co">#&gt;   task:   a69c40752c6c7f93a5eab0e65e6c536f</span></span>
 <span><span class="co">#&gt;   status: ERROR</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span>
 <span><span class="co">#&gt;   * This error has a stack trace, use '$trace' to see it</span></span>
@@ -528,8 +528,8 @@ original result</p>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   from:   stochastic_failure(0.5)</span></span>
 <span><span class="co">#&gt;   error:  Convergence failure - x is only 0.37</span></span>
-<span><span class="co">#&gt;   queue:  rrq:74beefbc</span></span>
-<span><span class="co">#&gt;   task:   3ed65e727b4bd6c7f42aee8df92c4e01</span></span>
+<span><span class="co">#&gt;   queue:  rrq:d5f352de</span></span>
+<span><span class="co">#&gt;   task:   326ebe5ae6d248d4a0af623106d944e0</span></span>
 <span><span class="co">#&gt;   status: ERROR</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span>
 <span><span class="co">#&gt;   * This error has a stack trace, use '$trace' to see it</span></span>
@@ -553,24 +553,24 @@ need it.</p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_times.html">rrq_task_times</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t1</span>, <span class="va">t2</span>, <span class="va">t3</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                                      submit      start   complete moved</span></span>
-<span><span class="co">#&gt; 4e8cd0fe77870b9b12c692c5e37b5583 1714040451 1714040451 1714040451    NA</span></span>
-<span><span class="co">#&gt; 3ed65e727b4bd6c7f42aee8df92c4e01 1714040451 1714040451 1714040451    NA</span></span>
-<span><span class="co">#&gt; 8b36f0aba9450200ca58e2bbbfeac857 1714040451 1714040451 1714040451    NA</span></span>
+<span><span class="co">#&gt; a69c40752c6c7f93a5eab0e65e6c536f 1714487518 1714487518 1714487518    NA</span></span>
+<span><span class="co">#&gt; 326ebe5ae6d248d4a0af623106d944e0 1714487518 1714487518 1714487518    NA</span></span>
+<span><span class="co">#&gt; 4c0080f7811d1b61c46ecd136811c5eb 1714487518 1714487518 1714487518    NA</span></span>
 <span><span class="fu"><a href="../reference/rrq_task_times.html">rrq_task_times</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t1</span>, <span class="va">t2</span>, <span class="va">t3</span><span class="op">)</span>, follow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                                      submit      start   complete      moved</span></span>
-<span><span class="co">#&gt; 4e8cd0fe77870b9b12c692c5e37b5583 1714040451 1714040451 1714040451 1714040451</span></span>
-<span><span class="co">#&gt; 3ed65e727b4bd6c7f42aee8df92c4e01 1714040451 1714040451 1714040451 1714040451</span></span>
-<span><span class="co">#&gt; 8b36f0aba9450200ca58e2bbbfeac857 1714040451 1714040451 1714040451         NA</span></span></code></pre></div>
+<span><span class="co">#&gt; a69c40752c6c7f93a5eab0e65e6c536f 1714487518 1714487518 1714487518 1714487518</span></span>
+<span><span class="co">#&gt; 326ebe5ae6d248d4a0af623106d944e0 1714487518 1714487518 1714487518 1714487518</span></span>
+<span><span class="co">#&gt; 4c0080f7811d1b61c46ecd136811c5eb 1714487518 1714487518 1714487518         NA</span></span></code></pre></div>
 <p>This means that most of the time you can ignore that a task has been
 retried and work with whatever task id you have handy.</p>
 <p>You can inspect the chain of tasks by looking at the return values
 <code><a href="../reference/rrq_task_info.html">rrq_task_info()</a></code>. In the above example we have a chain of
-three tasks 4e8cd0… -&gt; 3ed65e… -&gt; 8b36f0…, which we can discover
+three tasks a69c40… -&gt; 326ebe… -&gt; 4c0080…, which we can discover
 this way:</p>
 <div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_info.html">rrq_task_info</a></span><span class="op">(</span><span class="va">t1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $id</span></span>
-<span><span class="co">#&gt; [1] "4e8cd0fe77870b9b12c692c5e37b5583"</span></span>
+<span><span class="co">#&gt; [1] "a69c40752c6c7f93a5eab0e65e6c536f"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $status</span></span>
 <span><span class="co">#&gt; [1] "MOVED"</span></span>
@@ -603,7 +603,7 @@ this way:</p>
 <span><span class="co">#&gt; NULL</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $moved$down</span></span>
-<span><span class="co">#&gt; [1] "3ed65e727b4bd6c7f42aee8df92c4e01" "8b36f0aba9450200ca58e2bbbfeac857"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "326ebe5ae6d248d4a0af623106d944e0" "4c0080f7811d1b61c46ecd136811c5eb"</span></span></code></pre></div>
 <p>Here, the <code>moved</code> field shows the tasks that are upstream
 (<code>up</code>) and downstream (<code>down</code>) of this task. For
 tasks that have never been retried both elements are <code>NULL</code>.
@@ -614,15 +614,15 @@ tasks are always linear (i.e., there is no forking).</p>
 <div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_info.html">rrq_task_info</a></span><span class="op">(</span><span class="va">t2</span><span class="op">)</span><span class="op">$</span><span class="va">moved</span></span>
 <span><span class="co">#&gt; $up</span></span>
-<span><span class="co">#&gt; [1] "4e8cd0fe77870b9b12c692c5e37b5583"</span></span>
+<span><span class="co">#&gt; [1] "a69c40752c6c7f93a5eab0e65e6c536f"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $down</span></span>
-<span><span class="co">#&gt; [1] "8b36f0aba9450200ca58e2bbbfeac857"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "4c0080f7811d1b61c46ecd136811c5eb"</span></span></code></pre></div>
 <p>and for the leaf task:</p>
 <div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_info.html">rrq_task_info</a></span><span class="op">(</span><span class="va">t3</span><span class="op">)</span><span class="op">$</span><span class="va">moved</span></span>
 <span><span class="co">#&gt; $up</span></span>
-<span><span class="co">#&gt; [1] "4e8cd0fe77870b9b12c692c5e37b5583" "3ed65e727b4bd6c7f42aee8df92c4e01"</span></span>
+<span><span class="co">#&gt; [1] "a69c40752c6c7f93a5eab0e65e6c536f" "326ebe5ae6d248d4a0af623106d944e0"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $down</span></span>
 <span><span class="co">#&gt; NULL</span></span></code></pre></div>
@@ -644,8 +644,8 @@ the queue constructor, for example:</p>
 <span><span class="co">#&gt; &lt;rrq_task_error&gt;</span></span>
 <span><span class="co">#&gt;   from:   stochastic_failure(0.5)</span></span>
 <span><span class="co">#&gt;   error:  Convergence failure - x is only 0.27</span></span>
-<span><span class="co">#&gt;   queue:  rrq:74beefbc</span></span>
-<span><span class="co">#&gt;   task:   4e8cd0fe77870b9b12c692c5e37b5583</span></span>
+<span><span class="co">#&gt;   queue:  rrq:d5f352de</span></span>
+<span><span class="co">#&gt;   task:   a69c40752c6c7f93a5eab0e65e6c536f</span></span>
 <span><span class="co">#&gt;   status: ERROR</span></span>
 <span><span class="co">#&gt;   * To throw this error, use stop() with it</span></span>
 <span><span class="co">#&gt;   * This error has a stack trace, use '$trace' to see it</span></span></code></pre></div>
