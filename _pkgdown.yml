@@ -101,6 +101,6 @@ reference:
     description: Things yet to organise nicely
     contents:
       - object_store
-
+      - object_store_offload_disk
       - rrq_destroy
       - rrq_envir
