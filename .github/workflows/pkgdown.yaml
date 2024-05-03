@@ -44,6 +44,8 @@ jobs:
         # https://github.com/marketplace/actions/background-action
         with:
           run: ./scripts/example_queue
+          # just a dummy wait, this will come up immediately
+          wait-on: ./scripts/example_queue
           tail: true
 
       - name: Move real vignettes
