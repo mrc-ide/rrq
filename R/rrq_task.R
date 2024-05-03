@@ -76,7 +76,7 @@ rrq_task_overview <- function(task_ids = NULL, controller = NULL) {
 ##'   this vector is named with `task_ids`.
 ##'
 ##' @export
-##' @examplesIf rrq::enable_examples()
+##' @examplesIf rrq:::enable_examples()
 ##' obj <- rrq_controller("rrq:example")
 ##'
 ##' t1 <- rrq_task_create_expr(runif(1), controller = obj)
@@ -129,7 +129,7 @@ rrq_task_exists <- function(task_ids, named = FALSE, controller = NULL) {
 ##'
 ##' # If the task was queued onto a separate process, then this
 ##' # information is shown
-##' rrq_task_create_expr(1 + 1, separate_process = TRUE, timeout = 60,
+##' rrq_task_create_expr(1 + 1, separate_process = TRUE, timeout_task_run = 60,
 ##'                       controller = obj)
 ##' rrq_task_wait(t, controller = obj)
 ##' rrq_task_info(t, controller = obj)
@@ -565,8 +565,8 @@ rrq_task_preceeding <- function(task_id, queue = NULL, follow = NULL,
 ##' @inheritParams rrq_task_list
 ##' @export
 ##' @return Nothing, called for side effects only
-##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
-##' obj <- rrq_controller("rrq:example")
+##' @examplesIf rrq:::enable_examples()
+##' obj <- rrq_controller("rrq:example:delete")
 ##'
 ##' ts <- rrq_task_create_bulk_call(sqrt, 1:10, controller = obj)
 ##' rrq_task_exists(ts, controller = obj)
@@ -776,9 +776,8 @@ rrq_task_cancel <- function(task_id, wait = TRUE, timeout_wait = 10,
 ##' @export
 ##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
-##' t <- rrq_task_create_expr(Sys.sleep(1), controller = obj)
-##' rrq_task_wait(t, controller = obj)
-##' rrq_task_wait(t, controller = obj)
+##' t1 <- rrq_task_create_expr(Sys.sleep(1), controller = obj)
+##' rrq_task_wait(t1, controller = obj)
 ##'
 ##' # The return value of wait gives a summary of successfullness
 ##' # the task

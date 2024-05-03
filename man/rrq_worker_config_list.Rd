@@ -19,3 +19,12 @@ A character vector of names; these can be passed as the
 Return names of worker configurations saved by
 \code{\link[=rrq_worker_config_save]{rrq_worker_config_save()}}
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+
+cfg <- rrq_worker_config("fast")
+rrq_worker_config_save("use-fast", cfg, controller = obj)
+rrq_worker_config_list(controller = obj)
+\dontshow{\}) # examplesIf}
+}

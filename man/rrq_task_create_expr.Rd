@@ -67,3 +67,41 @@ to surround multiple lines, such as:
 in this case, we apply a simple heuristic to work out that \code{x} is
 locally assigned and should not be saved with the expression.
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+
+# Simple use of the function to create a task based on a function call
+t <- rrq_task_create_expr(sqrt(2), controller = obj)
+rrq_task_wait(t, controller = obj)
+rrq_task_result(t, controller = obj)
+
+# The expression can contain calls to other variables, and these
+# will be included in the call:
+a <- 3
+t <- rrq_task_create_expr(sqrt(a), controller = obj)
+rrq_task_wait(t, controller = obj)
+rrq_task_result(t, controller = obj)
+
+# You can pass in an expression _as_ a symbol too:
+expr <- quote(sqrt(4))
+t <- rrq_task_create_expr(expr, controller = obj)
+rrq_task_wait(t, controller = obj)
+rrq_task_result(t, controller = obj)
+
+# If you queue tasks into separate processes you can use a timeout
+# to kill the task if it takes too long:
+t <- rrq_task_create_expr(Sys.sleep(3),
+                          separate_process = TRUE,
+                          timeout_task_run = 1,
+                          controller = obj)
+rrq_task_wait(t, controller = obj)
+rrq_task_result(t, controller = obj)
+\dontshow{\}) # examplesIf}
+}
+\seealso{
+\link{rrq_task_create_call} for creating an task from a
+function and arguments to the function, and
+\link{rrq_task_create_bulk_expr} for creating many tasks from a call
+and a data.frame
+}

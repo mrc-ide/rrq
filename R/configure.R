@@ -57,17 +57,16 @@
 ##'
 ##' @return Invisibly, a list with processed configuration information
 ##' @export
-##' @examplesIf rrq::enable_examples()
+##' @examplesIf rrq:::enable_examples()
 ##' tmp <- tempfile()
 ##' dir.create(tmp)
-##' rrq_configure("rrq:offload", max_store_size = 100000, offload_path = tmp)
+##' rrq_configure("rrq:offload", store_max_size = 100000, offload_path = tmp)
 ##' obj <- rrq_controller("rrq:offload")
 ##' x <- runif(100000)
 ##' t <- rrq_task_create_expr(mean(x), controller = obj)
-##' rrq_task_info(t, controller = obj)
-##' rrq_task_data(t, controller = obj)
 ##' dir(tmp)
-##' rrq_destroy("rrq:offload")
+##' file.size(dir(tmp, full.names = TRUE))
+##' rrq_destroy(controller = obj)
 rrq_configure <- function(queue_id, con = redux::hiredis(), ...,
                           store_max_size = Inf, offload_path = NULL) {
   if (length(list(...)) > 0) {

@@ -192,39 +192,6 @@ rrq_default_controller_clear <- function() {
 }
 
 
-##' Temporarily set a default controller while evaluating a code
-##' block.  This behaves in much the same way as functions from the
-##' `withr` package (e.g. withr::with_options) and is a convenience
-##' wrapper around using `rrq_default_controller_set` and
-##' `rrq_default_controller_clear`.  On exit from this function
-##' (including on failure) the default controller will be set back to
-##' the same value as it contained before entry.
-##'
-##' @title Evaluate code with default controler set
-##'
-##' @param controller An [rrq_controller] object
-##'
-##' @param code Code to evaluate while the controller is set
-##'
-##' @return The result of evaluating `code`
-##'
-##' @export
-##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
-##' obj <- rrq_controller("rrq:example")
-##'
-##' rrq_with_controller(obj, {
-##'   t <- rrq_task_create_expr(runif(1))
-##'   rrq_task_wait(t)
-##'   rrq_task_result(t)
-##' })
-rrq_with_controller <- function(controller, code) {
-  assert_is(controller, "rrq_controller")
-  prev <- rrq_default_controller_set(controller)
-  on.exit(rrq_default_controller_set(prev))
-  force(code)
-}
-
-
 pkg <- new.env(parent = emptyenv())
 
 

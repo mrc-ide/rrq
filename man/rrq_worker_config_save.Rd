@@ -30,3 +30,12 @@ Save a worker configuration, which can be used to start workers
 with a set of options with the cli. These correspond to arguments
 to \link{rrq_worker}. \strong{This function will be renamed soon}
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+
+cfg <- rrq_worker_config("fast")
+rrq_worker_config_save("use-fast", cfg, controller = obj)
+rrq_worker_config_list(controller = obj)
+\dontshow{\}) # examplesIf}
+}

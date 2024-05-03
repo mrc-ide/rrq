@@ -18,7 +18,7 @@
 ##' @return Invisibly, a single identifier
 ##'
 ##' @export
-##' @examplesIf rrq::enable_examples(queue = "rrq:example")
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
 ##'
 ##' id <- rrq_message_send("PING", controller = obj)
@@ -60,7 +60,7 @@ rrq_message_send <- function(command, args = NULL, worker_ids = NULL,
 ##'   argument)
 ##'
 ##' @export
-##' @examplesIf rrq::enable_examples(queue = "rrq:example")
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
 ##'
 ##' id <- rrq_message_send("PING", controller = obj)
@@ -95,7 +95,7 @@ rrq_message_has_response <- function(message_id, worker_ids = NULL,
 ##' @return A character vector of ids
 ##'
 ##' @export
-##' @examplesIf rrq::enable_examples(queue = "rrq:example")
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
 ##' w <- rrq_worker_list(controller = obj)
 ##' id <- rrq_message_send("PING", controller = obj)
@@ -122,7 +122,7 @@ rrq_message_response_ids <- function(worker_id, controller = NULL) {
 ##' @return The message response
 ##'
 ##' @export
-##' @examplesIf rrq::enable_examples(queue = "rrq:example")
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
 ##' rrq_message_send_and_wait("PING", controller = obj)
 rrq_message_send_and_wait <- function(command, args = NULL, worker_ids = NULL,
@@ -179,9 +179,10 @@ rrq_message_send_and_wait <- function(command, args = NULL, worker_ids = NULL,
 ##' @inheritParams rrq_task_list
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
 ##' id <- rrq_message_send("PING", controller = obj)
-##' rrq_message_get_response(id, controller = obj)
+##' rrq_message_get_response(id, timeout = 5, controller = obj)
 rrq_message_get_response <- function(message_id, worker_ids = NULL,
                                      named = TRUE, delete = FALSE, timeout = 0,
                                      time_poll = 0.5, progress = NULL,

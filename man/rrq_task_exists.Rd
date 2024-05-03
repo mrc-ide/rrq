@@ -19,10 +19,22 @@ we'll use the controller registered with
 }
 \value{
 A logical vector the same length as task_ids; \code{TRUE} where
-the task exists, \code{FALSE} otherwise.
+the task exists, \code{FALSE} otherwise.  If \code{named} was \code{TRUE}, then
+this vector is named with \code{task_ids}.
 }
 \description{
 Test if task ids exist (i.e., are known to this controller).
 Nonexistant tasks may be deleted, known to a different controller
 or just never have existed.
+}
+\examples{
+\dontshow{if (rrq:::enable_examples()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+
+t1 <- rrq_task_create_expr(runif(1), controller = obj)
+rrq_task_exists(t1, controller = obj)
+
+t2 <- ids::random_id()
+rrq_task_exists(t2, controller = obj)
+\dontshow{\}) # examplesIf}
 }

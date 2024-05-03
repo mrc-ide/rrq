@@ -46,7 +46,7 @@
 ##'   have made it to the server.
 ##'
 ##' @export
-##' @examplesIf rrq::enable_examples(queue = "rrq:example")
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
 ##'
 ##' f <- function(n) {

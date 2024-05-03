@@ -158,6 +158,7 @@ rrq_worker_info <- function(worker_ids = NULL, controller = NULL) {
 ##' @inheritParams rrq_task_list
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
 ##' rrq_worker_log_tail(n = 10, controller = obj)
 rrq_worker_log_tail <- function(worker_ids = NULL, n = 1, controller = NULL) {
@@ -419,7 +420,10 @@ rrq_worker_detect_exited <- function(controller = NULL) {
 ##' @export
 ##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
-##' rrq_worker_process_log(controller = obj)
+##' worker_id <- rrq_worker_list(controller = obj)[[1]]
+##' tryCatch(
+##'   rrq_worker_process_log(worker_id, controller = obj),
+##'   error = identity)
 rrq_worker_process_log <- function(worker_id, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
@@ -455,11 +459,11 @@ rrq_worker_process_log <- function(worker_id, controller = NULL) {
 ##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
 ##'
-##' rrq_worker_envir_set(rrq_envir(packages = "ids"), controller = NULL)
+##' rrq_worker_envir_set(rrq_envir(packages = "ids"), controller = obj)
 ##' t <- rrq_task_create_expr(search(), controller = obj)
 ##' rrq_task_wait(t, controller = obj)
 ##' rrq_task_result(t, controller = obj)
-##' rrq_worker_log_tail(t, n = 5, controller = obj)
+##' rrq_worker_log_tail(n = 5, controller = obj)
 ##'
 ##' rrq_worker_envir_set(NULL, controller = obj)
 rrq_worker_envir_set <- function(create, notify = TRUE, controller = NULL) {
@@ -612,7 +616,7 @@ rrq_worker_config_read <- function(name, timeout = 0, controller = NULL) {
 ##' @export
 ##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
-##' rrq_worker_load(controller = obj)
+##' mean(rrq_worker_load(controller = obj))
 rrq_worker_load <- function(worker_ids = NULL, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
 
@@ -620,7 +624,7 @@ rrq_worker_load <- function(worker_ids = NULL, controller = NULL) {
   ## to do this for a given time interval as well as computing a
   ## rolling average (to plot, for example).  But the concept is here
   ## now and we can build off of it.
-  logs <- rrq_worker_log_tail(worker_ids, Inf, controller)
+  logs <- rrq_worker_log_tail(worker_ids, Inf, controller = controller)
   logs <- logs[order(logs$time), ]
 
   keep <- c("ALIVE", "STOP", "TASK_START", "TASK_COMPLETE")
@@ -661,6 +665,8 @@ worker_log_parse <- function(log, worker_id) {
   child <- as.integer(sub("/", "", sub(re, "\\2", log)))
   command <- sub(re, "\\3", log)
   message <- lstrip(sub(re, "\\4", log))
+  n <- length(log)
+  worker_id <- rep_len(worker_id, n)
   data_frame(worker_id, child, time, command, message)
 }
 

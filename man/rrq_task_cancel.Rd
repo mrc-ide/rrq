@@ -29,3 +29,13 @@ be stopped if it was set to run in a separate process (i.e.,
 queued with \code{separate_process = TRUE}).  Dependent tasks will be
 marked as impossible.
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+
+t <- rrq_task_create_expr(Sys.sleep(4), separate_process = TRUE,
+                          controller = obj)
+Sys.sleep(0.5)
+rrq_task_cancel(t, controller = obj)
+\dontshow{\}) # examplesIf}
+}

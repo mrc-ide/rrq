@@ -24,3 +24,24 @@ the output here is subject to change (and will probably get a nice
 print method) but the values present in the output will be
 included in any future update.
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+
+# Get information about a task
+t <- rrq_task_create_expr(runif(1), controller = obj)
+rrq_task_info(t, controller = obj)
+
+# If the task has been retried, the retry chain is shown
+rrq_task_wait(t, controller = obj)
+rrq_task_retry(t, controller = obj)
+rrq_task_info(t, controller = obj)
+
+# If the task was queued onto a separate process, then this
+# information is shown
+rrq_task_create_expr(1 + 1, separate_process = TRUE, timeout_task_run = 60,
+                      controller = obj)
+rrq_task_wait(t, controller = obj)
+rrq_task_info(t, controller = obj)
+\dontshow{\}) # examplesIf}
+}

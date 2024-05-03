@@ -24,3 +24,9 @@ time). Reruns an object of class \code{worker_load}, for which a
 \code{mean} method exists (this function is a work in progress and the
 interface may change).
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+mean(rrq_worker_load(controller = obj))
+\dontshow{\}) # examplesIf}
+}

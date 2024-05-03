@@ -31,3 +31,13 @@ argument)
 \description{
 Detect if a response is available for a message
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+
+id <- rrq_message_send("PING", controller = obj)
+rrq_message_has_response(id, controller = obj)
+rrq_message_get_response(id, timeout = 5, controller = obj)
+rrq_message_has_response(id, controller = obj)
+\dontshow{\}) # examplesIf}
+}

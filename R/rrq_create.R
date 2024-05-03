@@ -72,7 +72,7 @@
 ##' rrq_task_result(t, controller = obj)
 ##'
 ##' # You can pass in an expression _as_ a symbol too:
-##' expr <- sqrt(4)
+##' expr <- quote(sqrt(4))
 ##' t <- rrq_task_create_expr(expr, controller = obj)
 ##' rrq_task_wait(t, controller = obj)
 ##' rrq_task_result(t, controller = obj)
@@ -224,7 +224,7 @@ rrq_task_create_call <- function(fn, args, queue = NULL,
 ##'
 ##' @export
 ##'
-##' @examplesIf rrq:::enable_examples(queue = "rrq:example")
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
 ##'
 ##' # Create 10 tasks:
@@ -330,10 +330,10 @@ rrq_task_create_bulk_expr <- function(expr, data, queue = NULL,
 ##'   same length as `data`
 ##'
 ##' @export
-##' @examplesIf rrq:::enable_examples(queue = "rrq:example")
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
 ##'
-##' d <- data.frame(n = 1:10, lambda = rgamma(10))
+##' d <- data.frame(n = 1:10, lambda = rgamma(10, 5))
 ##' ts <- rrq_task_create_bulk_call(rpois, d, controller = obj)
 ##' rrq_task_wait(ts, controller = obj)
 ##' rrq_task_results(ts, controller = obj)

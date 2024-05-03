@@ -62,3 +62,26 @@ be careful not to inject something really large (e.g., any vector
 really) or you'll end up with a revolting expression and poor
 backtraces.
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+
+# Create 10 tasks:
+ts <- rrq_task_create_bulk_expr(sqrt(x), data.frame(x = 1:10),
+                                controller = obj)
+rrq_task_wait(ts, controller = obj)
+rrq_task_results(ts, controller = obj)
+
+# Note that there is no automatic simplification when fetching
+# results, you might use unlist or vapply to turn this into a
+# numeric vector rather than a list
+
+# The data.frame substituted in may have multiple columns
+# representing multiple variables to substitute into the
+# expression
+d <- expand.grid(a = 1:4, b = 1:4)
+ts <- rrq_task_create_bulk_expr(a * b, d, controller = obj)
+rrq_task_wait(ts, controller = obj)
+rrq_task_results(ts, controller = obj)
+\dontshow{\}) # examplesIf}
+}

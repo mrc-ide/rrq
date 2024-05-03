@@ -9,9 +9,11 @@ rrq_worker_envir_set(create, notify = TRUE, controller = NULL)
 \arguments{
 \item{create}{A function that will create an environment. It will
 be called with one parameter (an environment), in a fresh R
-session. The function \code{\link[=rrq_envir]{rrq_envir()}} can be used to
-create a suitable function for the most common case (loading
-packages and sourcing scripts).}
+session. The function \code{\link[=rrq_envir]{rrq_envir()}} can be used to create a
+suitable function for the most common case (loading packages and
+sourcing scripts). Set to \code{NULL} to remove environment creation
+function (i.e., to start workers with an essentially empty
+environment).}
 
 \item{notify}{Boolean, indicating if we should send a \code{REFRESH}
 message to all workers to update their environment.}
@@ -23,4 +25,17 @@ we'll use the controller registered with
 \description{
 Register a function to create an environment when creating a
 worker. When a worker starts, they will run this function.
+}
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+
+rrq_worker_envir_set(rrq_envir(packages = "ids"), controller = obj)
+t <- rrq_task_create_expr(search(), controller = obj)
+rrq_task_wait(t, controller = obj)
+rrq_task_result(t, controller = obj)
+rrq_worker_log_tail(n = 5, controller = obj)
+
+rrq_worker_envir_set(NULL, controller = obj)
+\dontshow{\}) # examplesIf}
 }
