@@ -39,6 +39,13 @@ jobs:
           extra-packages: any::pkgdown, local::.
           needs: website
 
+      - uses: JarvusInnovations/background-action@v1
+        # https://github.com/JarvusInnovations/background-action
+        # https://github.com/marketplace/actions/background-action
+        with:
+          run: ./scripts/example_queue
+          tail: true
+
       - name: Move real vignettes
         if: runner.os != 'windows'
         run: |
