@@ -39,14 +39,8 @@ jobs:
           extra-packages: any::pkgdown, local::.
           needs: website
 
-      - uses: JarvusInnovations/background-action@v1
-        # https://github.com/JarvusInnovations/background-action
-        # https://github.com/marketplace/actions/background-action
-        with:
-          run: ./scripts/example_queue
-          # just a dummy wait, this will come up immediately
-          wait-on: ./scripts/example_queue
-          tail: true
+      - name: Start service
+        run: ./scripts/example_queue &
 
       - name: Move real vignettes
         if: runner.os != 'windows'
@@ -56,6 +50,9 @@ jobs:
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
 
       - name: Deploy to GitHub pages 🚀
         if: github.event_name != 'pull_request'
