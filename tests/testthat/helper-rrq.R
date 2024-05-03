@@ -16,10 +16,7 @@ skip_if_no_internet <- function() {
 
 skip_if_no_redis <- function() {
   skip_on_cran()
-  tryCatch(
-    redux::hiredis()$PING(),
-    error = function(e) testthat::skip("redis not available"))
-  invisible(NULL)
+  testthat::skip_if_not(redis_available(), "redis not available")
 }
 
 wait_status <- function(t, obj, timeout = 2, time_poll = 0.05,
