@@ -58,7 +58,8 @@ obj <- rrq_controller("rrq:example")
 
 f <- function(n) {
   for (i in seq_len(n)) {
-    rrq_task_progress_update(sprintf("Iteration \%d / \%d", i, n))
+    rrq::rrq_task_progress_update(sprintf("Iteration \%d / \%d", i, n))
+    Sys.sleep(0.1)
   }
   n
 }
