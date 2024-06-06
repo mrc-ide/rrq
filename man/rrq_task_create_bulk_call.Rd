@@ -72,3 +72,13 @@ vector or \link{data.frame}.  This is the bulk equivalent of
 \link{rrq_task_create_bulk_expr} is a bulk version of
 \link{rrq_task_create_expr}.
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+
+d <- data.frame(n = 1:10, lambda = rgamma(10, 5))
+ts <- rrq_task_create_bulk_call(rpois, d, controller = obj)
+rrq_task_wait(ts, controller = obj)
+rrq_task_results(ts, controller = obj)
+\dontshow{\}) # examplesIf}
+}

@@ -19,3 +19,11 @@ A logical value
 \description{
 Test if a worker exists
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+w <- rrq_worker_list(controller = obj)
+rrq_worker_exists(w, controller = obj)
+rrq_worker_exists("bob-the-builder", controller = obj)
+\dontshow{\}) # examplesIf}
+}

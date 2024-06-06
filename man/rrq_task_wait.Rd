@@ -58,3 +58,20 @@ return the result, but we now return a logical value which
 indicates success or not.  You can fetch the task result with
 \link{rrq_task_result}.
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+t1 <- rrq_task_create_expr(Sys.sleep(1), controller = obj)
+rrq_task_wait(t1, controller = obj)
+
+# The return value of wait gives a summary of successfullness
+# the task
+t2 <- rrq_task_create_expr(stop("Some error"), controller = obj)
+rrq_task_wait(t2, controller = obj)
+
+# If you wait on many task, the return value is effectively
+# reduced with "all" (so the result is TRUE if all tasks were
+# successful)
+rrq_task_wait(c(t1, t2), controller = obj)
+\dontshow{\}) # examplesIf}
+}

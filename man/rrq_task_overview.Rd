@@ -25,3 +25,11 @@ Provide a high level overview of task statuses
 for a set of task ids, being the count in major categories of
 \code{PENDING}, \code{RUNNING}, \code{COMPLETE} and \code{ERROR}.
 }
+\examples{
+\dontshow{if (rrq:::enable_examples()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+
+obj <- rrq_controller("rrq:example")
+
+rrq_task_list(controller = obj)
+\dontshow{\}) # examplesIf}
+}

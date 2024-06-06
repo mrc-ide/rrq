@@ -20,3 +20,9 @@ A character vector of statuses, named by worker
 \description{
 Returns a character vector of current worker statuses
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+rrq_worker_status(controller = obj)
+\dontshow{\}) # examplesIf}
+}

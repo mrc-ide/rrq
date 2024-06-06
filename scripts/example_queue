@@ -1,0 +1,2 @@
+#!/usr/bin/env Rscript
+rrq::rrq_worker$new("rrq:example")$loop()

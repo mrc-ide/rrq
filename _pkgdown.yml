@@ -1,0 +1,106 @@
+url: https://mrc-ide.github.io/rrq
+
+template:
+  bootstrap: 5
+
+reference:
+  - title: Create queue
+    contents:
+      - rrq_controller
+      - rrq_default_controller_clear
+      - rrq_default_controller_set
+
+  - title: Tasks
+  - subtitle: Creation
+    contents:
+      - rrq_task_create_expr
+      - rrq_task_create_call
+      - rrq_task_create_bulk_expr
+      - rrq_task_create_bulk_call
+      - rrq_task_retry
+
+  - subtitle: Query
+    contents:
+      - rrq_task_data
+      - rrq_task_exists
+      - rrq_task_info
+      - rrq_task_position
+      - rrq_task_preceeding
+      - rrq_task_result
+      - rrq_task_results
+      - rrq_task_status
+      - rrq_task_times
+      - rrq_task_wait
+
+  - subtitle: Overall status
+    contents:
+      - rrq_task_list
+      - rrq_task_overview
+      - rrq_deferred_list
+      - rrq_queue_length
+      - rrq_queue_list
+
+  - subtitle: Destructive operations
+    contents:
+      - rrq_task_cancel
+      - rrq_task_delete
+      - rrq_queue_remove
+
+  - title: Workers
+    description: >-
+      Workers are the processes that execute tasks.  You can create,
+      query and control workers with these functions
+    contents:
+      - rrq_worker
+      - rrq_worker_config
+      - rrq_worker_config_list
+      - rrq_worker_config_read
+      - rrq_worker_config_save
+      - rrq_worker_delete_exited
+      - rrq_worker_detect_exited
+      - rrq_worker_envir_set
+      - rrq_worker_exists
+      - rrq_worker_info
+      - rrq_worker_len
+      - rrq_worker_list
+      - rrq_worker_list_exited
+      - rrq_worker_load
+      - rrq_worker_log_tail
+      - rrq_worker_process_log
+      - rrq_worker_script
+      - rrq_worker_spawn
+      - rrq_worker_status
+      - rrq_worker_stop
+      - rrq_worker_task_id
+      - rrq_worker_wait
+
+  - title: Messages
+    description: >-
+      The messaging interface, see `vignette("messages")` for more
+      details
+    contents:
+      - rrq_message_get_response
+      - rrq_message_has_response
+      - rrq_message_response_ids
+      - rrq_message_send
+      - rrq_message_send_and_wait
+
+  - title: Advanced
+    contents:
+      - rrq_configure
+      - rrq_task_progress
+      - rrq_task_progress_update
+
+  - subtitle: Heartbeat
+    description: Interact with the optional heartbeat support
+    contents:
+      - rrq_heartbeat
+      - rrq_heartbeat_kill
+
+  - title: Uncategorised
+    description: Things yet to organise nicely
+    contents:
+      - object_store
+      - object_store_offload_disk
+      - rrq_destroy
+      - rrq_envir

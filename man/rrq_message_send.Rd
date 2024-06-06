@@ -23,7 +23,16 @@ we'll use the controller registered with
 Invisibly, a single identifier
 }
 \description{
-Send a message to workers. Sending a message returns
-a message id, which can be used to poll for a response with the
-other \verb{rrq_message_*} functions.
+Send a message to workers. Sending a message returns a message id,
+which can be used to poll for a response with the other
+\verb{rrq_message_*} functions.  See \code{vignette("messages")} for details
+for the messaging interface.
+}
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+
+id <- rrq_message_send("PING", controller = obj)
+rrq_message_get_response(id, timeout = 5, controller = obj)
+\dontshow{\}) # examplesIf}
 }

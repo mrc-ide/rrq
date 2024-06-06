@@ -38,6 +38,8 @@ In addition to passing tasks (and results) between a controller and
 workers, the controller can also send "messages" to workers.  This
 vignette shows what the possible messages do.
 
+Generally, you will not need to read this vignette unless you are either programming against rrq in interesting ways, or you have unusual needs.  Some of the interfaces here may be useful for debugging (particularly directing particular workers to execute particular pieces of code).
+
 In order to do this, we're going to need a queue and a worker:
 
 ```{r}

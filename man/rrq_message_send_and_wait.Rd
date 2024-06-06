@@ -56,3 +56,9 @@ The message response
 Send a message and wait for responses.  This is a helper function
 around \code{\link[=rrq_message_send]{rrq_message_send()}} and \code{\link[=rrq_message_get_response]{rrq_message_get_response()}}.
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+rrq_message_send_and_wait("PING", controller = obj)
+\dontshow{\}) # examplesIf}
+}

@@ -106,3 +106,11 @@ over non-function objects.  We don't reconstruct environment
 chains in exactly the same way as you would have locally so this
 is not possible.
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+t <- rrq_task_create_call(sqrt, list(2), controller = obj)
+rrq_task_wait(t, controller = obj)
+rrq_task_result(t, controller = obj)
+\dontshow{\}) # examplesIf}
+}

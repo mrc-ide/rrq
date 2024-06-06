@@ -136,6 +136,27 @@ A suitable redis server can be started using docker with
 
 (and stopped with `./scripts/redis stop`)
 
+Alternatively, on Windows, a native (ie, not depending on CygWin, MSys, or WSL) port of Redis 5.0.14.1 can be installed from [here](https://github.com/tporadowski/redis/releases), and will run out of the box.
+
+
+## Testing the Pkgdown site with examples
+
+The documentation includes many executed code examples. To preview the documentation with the results of these, you'll need a Redis server running, and the rrq package installed. Then, in an R terminal:-
+
+```
+rrq::rrq_worker$new("rrq:example")$loop()
+```
+
+to run a worker. Then in another R terminal, 
+
+
+```
+pkgdown::build_site()
+```
+
+and the pkgdown site will be built in the `docs/` folder.
+
+
 ## License
 
 MIT © Imperial College of Science, Technology and Medicine

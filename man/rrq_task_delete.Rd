@@ -23,3 +23,17 @@ Nothing, called for side effects only
 \description{
 Delete one or more tasks
 }
+\examples{
+\dontshow{if (rrq:::enable_examples()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example:delete")
+
+ts <- rrq_task_create_bulk_call(sqrt, 1:10, controller = obj)
+rrq_task_exists(ts, controller = obj)
+
+rrq_task_delete(ts[1:5], controller = obj)
+rrq_task_exists(ts, controller = obj)
+
+rrq_task_delete(ts, controller = obj)
+rrq_task_exists(ts, controller = obj)
+\dontshow{\}) # examplesIf}
+}

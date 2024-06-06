@@ -17,3 +17,9 @@ A character vector of worker names
 \description{
 Returns the ids of workers known to have exited
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+rrq_worker_list_exited(controller = obj)
+\dontshow{\}) # examplesIf}
+}
