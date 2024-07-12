@@ -98,7 +98,7 @@ rrq_message_has_response <- function(message_id, worker_ids = NULL,
 ##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
 ##' w <- rrq_worker_list(controller = obj)
-##' id <- rrq_message_send("PING", controller = obj)
+##' rrq_message_send("PING", controller = obj)
 rrq_message_response_ids <- function(worker_id, controller = NULL) {
   assert_scalar_character(worker_id)
   controller <- get_controller(controller, call = rlang::current_env())

@@ -44,7 +44,8 @@ rrq_task_list <- function(controller = NULL) {
 ##'
 ##' obj <- rrq_controller("rrq:example")
 ##'
-##' rrq_task_list(controller = obj)
+##' ids <- rrq_task_list(controller = obj)
+##' t(as.data.frame(rrq_task_overview(ids, controller = obj)))
 rrq_task_overview <- function(task_ids = NULL, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   if (is.null(task_ids)) {
@@ -306,7 +307,7 @@ rrq_task_times <- function(task_ids, follow = NULL, controller = NULL) {
 ##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
 ##'
-##' # Create a task, wait for it to finish anf fetch its result
+##' # Create a task, wait for it to finish and fetch its result
 ##' t <- rrq_task_create_expr(runif(1), controller = obj)
 ##' rrq_task_wait(t, controller = obj)
 ##' rrq_task_result(t, controller = obj)
@@ -352,7 +353,7 @@ rrq_task_result <- function(task_id, error = FALSE, follow = NULL,
 ##' @inheritParams rrq_task_times
 ##' @inheritParams rrq_task_exists
 ##'
-##' @return An list, one entry per result.  This function errors if
+##' @return A list, one entry per result.  This function errors if
 ##'   any task is not available.  If `named = TRUE`, then this list is
 ##'   named with the `task_ids`.
 ##'
@@ -780,11 +781,11 @@ rrq_task_cancel <- function(task_id, wait = TRUE, timeout_wait = 10,
 ##' rrq_task_wait(t1, controller = obj)
 ##'
 ##' # The return value of wait gives a summary of successfullness
-##' # the task
+##' # of the task
 ##' t2 <- rrq_task_create_expr(stop("Some error"), controller = obj)
 ##' rrq_task_wait(t2, controller = obj)
 ##'
-##' # If you wait on many task, the return value is effectively
+##' # If you wait on many tasks, the return value is effectively
 ##' # reduced with "all" (so the result is TRUE if all tasks were
 ##' # successful)
 ##' rrq_task_wait(c(t1, t2), controller = obj)

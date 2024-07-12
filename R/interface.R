@@ -172,7 +172,7 @@ rrq_controller <- function(queue_id, con = redux::hiredis(),
 ##'   default controller (equivalent to using
 ##'   `rrq_default_controller_clear`)
 ##'
-##' @return Invisibly, the previouslly set default controller (or
+##' @return Invisibly, the previously set default controller (or
 ##'   `NULL` if none was set)
 ##'
 ##' @export
