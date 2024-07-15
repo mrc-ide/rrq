@@ -50,7 +50,7 @@
 ##'
 ##' @inheritParams rrq_task_list
 ##'
-##' @seealso [rrq_task_create_call] for creating an task from a
+##' @seealso [rrq_task_create_call] for creating a task from a
 ##'   function and arguments to the function, and
 ##'   [rrq_task_create_bulk_expr] for creating many tasks from a call
 ##'   and a data.frame
