@@ -100,7 +100,7 @@ rrq_task_result(t, controller = obj)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\link{rrq_task_create_call} for creating an task from a
+\link{rrq_task_create_call} for creating a task from a
 function and arguments to the function, and
 \link{rrq_task_create_bulk_expr} for creating many tasks from a call
 and a data.frame

@@ -41,7 +41,7 @@ otherwise.
 \dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 obj <- rrq_controller("rrq:example")
 
-# Create a task, wait for it to finish anf fetch its result
+# Create a task, wait for it to finish and fetch its result
 t <- rrq_task_create_expr(runif(1), controller = obj)
 rrq_task_wait(t, controller = obj)
 rrq_task_result(t, controller = obj)

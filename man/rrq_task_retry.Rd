@@ -27,7 +27,7 @@ retrieve information about a task (e.g., \code{\link[=rrq_task_status]{rrq_task_
 obj <- rrq_controller("rrq:example")
 
 # It's straightforward to see the effect of retrying a task with
-# one that proiduces a different value each time, so here, we use a
+# one that produces a different value each time, so here, we use a
 # simple task that draws one normally distributed random number
 t1 <- rrq_task_create_expr(rnorm(1), controller = obj)
 rrq_task_wait(t1, controller = obj)

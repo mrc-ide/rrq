@@ -65,11 +65,11 @@ t1 <- rrq_task_create_expr(Sys.sleep(1), controller = obj)
 rrq_task_wait(t1, controller = obj)
 
 # The return value of wait gives a summary of successfullness
-# the task
+# of the task
 t2 <- rrq_task_create_expr(stop("Some error"), controller = obj)
 rrq_task_wait(t2, controller = obj)
 
-# If you wait on many task, the return value is effectively
+# If you wait on many tasks, the return value is effectively
 # reduced with "all" (so the result is TRUE if all tasks were
 # successful)
 rrq_task_wait(c(t1, t2), controller = obj)

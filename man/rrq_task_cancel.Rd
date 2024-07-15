@@ -37,5 +37,6 @@ t <- rrq_task_create_expr(Sys.sleep(4), separate_process = TRUE,
                           controller = obj)
 Sys.sleep(0.5)
 rrq_task_cancel(t, controller = obj)
+rrq_task_status(t, controller = obj)
 \dontshow{\}) # examplesIf}
 }

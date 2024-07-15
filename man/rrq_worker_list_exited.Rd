@@ -20,6 +20,23 @@ Returns the ids of workers known to have exited
 \examples{
 \dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 obj <- rrq_controller("rrq:example")
+
+# At this point you might have an exited worker, depending on
+# which examples have been run so far!
+rrq_worker_list_exited(controller = obj)
+
+# Spawn a new worker so that we can stop it:
+w <- rrq_worker_spawn(1, controller = obj)$id
+w$id
+# Stop this worker and see that it appears in the list of exited
+# workers:
+rrq_worker_stop(w$id, controller = obj)
+rrq_worker_list_exited(controller = obj)
+
+# We can delete this exited worker:
+rrq_worker_delete_exited(w$id, controller = obj)
+
+# After this, it is no longer listed as exited:
 rrq_worker_list_exited(controller = obj)
 \dontshow{\}) # examplesIf}
 }

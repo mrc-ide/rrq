@@ -72,6 +72,8 @@ machine as the controller.
 \dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 obj <- rrq_controller("rrq:example")
 w <- rrq_worker_spawn(controller = obj)
+rrq_worker_list(controller = obj)
 rrq_worker_stop(w$id, timeout = 10, controller = obj)
+rrq_worker_list(controller = obj)
 \dontshow{\}) # examplesIf}
 }

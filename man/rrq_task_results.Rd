@@ -36,7 +36,7 @@ we'll use the controller registered with
 \code{\link[=rrq_default_controller_set]{rrq_default_controller_set()}}.}
 }
 \value{
-An list, one entry per result.  This function errors if
+A list, one entry per result.  This function errors if
 any task is not available.  If \code{named = TRUE}, then this list is
 named with the \code{task_ids}.
 }

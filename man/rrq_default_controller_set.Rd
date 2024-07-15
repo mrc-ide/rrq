@@ -15,7 +15,7 @@ default controller (equivalent to using
 \code{rrq_default_controller_clear})}
 }
 \value{
-Invisibly, the previouslly set default controller (or
+Invisibly, the previously set default controller (or
 \code{NULL} if none was set)
 }
 \description{
