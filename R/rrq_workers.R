@@ -74,6 +74,23 @@ rrq_worker_exists <- function(name, controller = NULL) {
 ##' @export
 ##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
+##'
+##' # At this point you might have an exited worker, depending on
+##' # which examples have been run so far!
+##' rrq_worker_list_exited(controller = obj)
+##'
+##' # Spawn a new worker so that we can stop it:
+##' w <- rrq_worker_spawn(1, controller = obj)$id
+##' w$id
+##' # Stop this worker and see that it appears in the list of exited
+##' # workers:
+##' rrq_worker_stop(w$id, controller = obj)
+##' rrq_worker_list_exited(controller = obj)
+##'
+##' # We can delete this exited worker:
+##' rrq_worker_delete_exited(w$id, controller = obj)
+##'
+##' # After this, it is no longer listed as exited:
 ##' rrq_worker_list_exited(controller = obj)
 rrq_worker_list_exited <- function(controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
@@ -208,7 +225,18 @@ rrq_worker_log_tail <- function(worker_ids = NULL, n = 1, controller = NULL) {
 ##' @export
 ##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
-##' rrq_worker_len(controller = obj)
+##' rrq_worker_list(controller = obj)
+##'
+##' # This example might be a bit racy: we need to run a task that
+##' # sleeps, and then sleep a little bit for the task to be picked up
+##' # by a worker.  Typically this happens very quickly but there are
+##' # no guarantees.
+##' t <- rrq_task_create_expr(Sys.sleep(1), controller = obj)
+##' Sys.sleep(.2)
+##' rrq_worker_task_id(controller = obj)
+##'
+##' # You can always find out which worker did work on a task though:
+##' rrq_task_info(t, controller = obj)$worker
 rrq_worker_task_id <- function(worker_ids = NULL, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
@@ -318,7 +346,9 @@ rrq_worker_delete_exited <- function(worker_ids = NULL, controller = NULL) {
 ##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
 ##' obj <- rrq_controller("rrq:example")
 ##' w <- rrq_worker_spawn(controller = obj)
+##' rrq_worker_list(controller = obj)
 ##' rrq_worker_stop(w$id, timeout = 10, controller = obj)
+##' rrq_worker_list(controller = obj)
 rrq_worker_stop <- function(worker_ids = NULL, type = "message",
                             timeout = 0, time_poll = 0.1, progress = NULL,
                             controller = NULL) {

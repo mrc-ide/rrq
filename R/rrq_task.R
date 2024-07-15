@@ -23,11 +23,12 @@ rrq_task_list <- function(controller = NULL) {
 }
 
 
-##' Provide a high level overview of task statuses
-##' for a set of task ids, being the count in major categories of
-##' `PENDING`, `RUNNING`, `COMPLETE` and `ERROR`.
+##' Provide a high level overview of task statuses for a set of task
+##' ids, being the count in major categories of `PENDING`, `RUNNING`,
+##' `COMPLETE`, `ERROR`, `CANCELLED`, `DIED`, `TIMEOUT`, `IMPOSSIBLE`,
+##' `DEFERRED` and `MOVED`.
 ##'
-##' @title High level task overciew
+##' @title High level task overview
 ##'
 ##' @param task_ids Optional character vector of task ids for which
 ##'   you would like the overview. If not given (or `NULL`) then the
@@ -679,6 +680,7 @@ rrq_task_delete <- function(task_ids, check = TRUE, controller = NULL) {
 ##'                           controller = obj)
 ##' Sys.sleep(0.5)
 ##' rrq_task_cancel(t, controller = obj)
+##' rrq_task_status(t, controller = obj)
 rrq_task_cancel <- function(task_id, wait = TRUE, timeout_wait = 10,
                             controller = NULL) {
   ## TODO: several legacy issues here:
