@@ -293,7 +293,7 @@ rrq_worker_delete_exited <- function(worker_ids = NULL, controller = NULL) {
 
 
 ##' Stop workers, causing them to exit.  Workers can be stopped in a
-##' few different ways (see Details), but after excecuting this
+##' few different ways (see Details), but after executing this
 ##' function, assume that any worker targeted will no longer be
 ##' available to work on tasks.
 ##'

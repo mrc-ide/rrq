@@ -325,7 +325,7 @@ rrq_task_create_bulk_expr <- function(expr, data, queue = NULL,
 ##'
 ##' @inheritParams rrq_task_create_call
 ##'
-##' @return A vector of task identfiers; this will have the length as
+##' @return A vector of task identifiers; this will have the length as
 ##'   `data` has rows if it is a `data.frame`, otherwise it has the
 ##'   same length as `data`
 ##'

@@ -47,7 +47,7 @@ The names of the stopped workers, invisibly.
 }
 \description{
 Stop workers, causing them to exit.  Workers can be stopped in a
-few different ways (see Details), but after excecuting this
+few different ways (see Details), but after executing this
 function, assume that any worker targeted will no longer be
 available to work on tasks.
 }

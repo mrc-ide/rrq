@@ -28,7 +28,7 @@ that each request for a completed task may block for (however,
 if the task is finished before this, the actual time waited for
 will be less).  Increasing this will reduce the responsiveness
 of your R session to interrupting, but will cause slightly less
-network load.  Values less than 1s are only suppored with Redis
+network load.  Values less than 1s are only supported with Redis
 server version 6.0.0 or greater (released September 2020).}
 
 \item{progress}{Optional logical indicating if a progress bar

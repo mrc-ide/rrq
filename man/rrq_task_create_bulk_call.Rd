@@ -61,7 +61,7 @@ we'll use the controller registered with
 \code{\link[=rrq_default_controller_set]{rrq_default_controller_set()}}.}
 }
 \value{
-A vector of task identfiers; this will have the length as
+A vector of task identifiers; this will have the length as
 \code{data} has rows if it is a \code{data.frame}, otherwise it has the
 same length as \code{data}
 }

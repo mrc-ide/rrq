@@ -34,7 +34,7 @@ Submit work to the queue:
 ```r
 t <- rrq_task_create_expr(runif(10))
 t
-#> [1] "0e339d67495c33cde07d5c9784b24f31"
+#> [1] "fd08ef462c509e174338ca5920b13adf"
 ```
 
 Query task process:
@@ -50,11 +50,11 @@ Run tasks on workers in the background
 
 ```r
 rrq_worker_spawn()
-#> ℹ Spawning 1 worker with prefix 'bossy_americanredsquirrel'
+#> ℹ Spawning 1 worker with prefix 'nonmetalliferous_jabiru'
 #> <rrq_worker_manager>
 #>   Public:
 #>     clone: function (deep = FALSE)
-#>     id: bossy_americanredsquirrel_1
+#>     id: nonmetalliferous_jabiru_1
 #>     initialize: function (controller, n, logdir = NULL, name_config = "localhost",
 #>     is_alive: function (worker_id = NULL)
 #>     kill: function (worker_id = NULL)
@@ -64,9 +64,9 @@ rrq_worker_spawn()
 #>   Private:
 #>     check_worker_id: function (worker_id)
 #>     controller: rrq_controller
-#>     logfile: /tmp/RtmpReX932/file920c215c4c48c/bossy_americanredsquir ...
+#>     logfile: /tmp/Rtmp4AMYNM/filee336a6e3e1369/nonmetalliferous_jabiru_1
 #>     process: list
-#>     worker_id_base: bossy_americanredsquirrel
+#>     worker_id_base: nonmetalliferous_jabiru
 ```
 
 Wait for tasks to complete
@@ -82,8 +82,8 @@ Retrieve results from a task
 
 ```r
 rrq_task_result(t)
-#>  [1] 0.5660174 0.7272429 0.3753210 0.4081318 0.5124689 0.3461631 0.3997216
-#>  [8] 0.7212593 0.9927757 0.3032974
+#>  [1] 0.044105073 0.151111529 0.047623996 0.936703515 0.719949653 0.519903127
+#>  [7] 0.030698510 0.057218178 0.503331142 0.002863957
 ```
 
 Query what workers have done
@@ -91,18 +91,18 @@ Query what workers have done
 
 ```r
 rrq_worker_log_tail(n = Inf)
-#>                     worker_id child       time       command
-#> 1 bossy_americanredsquirrel_1    NA 1713860205         ALIVE
-#> 2 bossy_americanredsquirrel_1    NA 1713860205         ENVIR
-#> 3 bossy_americanredsquirrel_1    NA 1713860205         QUEUE
-#> 4 bossy_americanredsquirrel_1    NA 1713860205    TASK_START
-#> 5 bossy_americanredsquirrel_1    NA 1713860205 TASK_COMPLETE
+#>                   worker_id child       time       command
+#> 1 nonmetalliferous_jabiru_1    NA 1721033895         ALIVE
+#> 2 nonmetalliferous_jabiru_1    NA 1721033895         ENVIR
+#> 3 nonmetalliferous_jabiru_1    NA 1721033895         QUEUE
+#> 4 nonmetalliferous_jabiru_1    NA 1721033895    TASK_START
+#> 5 nonmetalliferous_jabiru_1    NA 1721033895 TASK_COMPLETE
 #>                            message
 #> 1
 #> 2                              new
 #> 3                          default
-#> 4 0e339d67495c33cde07d5c9784b24f31
-#> 5 0e339d67495c33cde07d5c9784b24f31
+#> 4 fd08ef462c509e174338ca5920b13adf
+#> 5 fd08ef462c509e174338ca5920b13adf
 ```
 
 For more information, see `vignette("rrq")`
@@ -136,10 +136,9 @@ A suitable redis server can be started using docker with
 
 (and stopped with `./scripts/redis stop`)
 
-Alternatively, on Windows, a native (ie, not depending on CygWin, MSys, or WSL) port of Redis 5.0.14.1 can be installed from [here](https://github.com/tporadowski/redis/releases), and will run out of the box.
+Alternatively, on Windows, a native (i.e., not depending on CygWin, MSys, or WSL) port of Redis 5.0.14.1 can be installed from [here](https://github.com/tporadowski/redis/releases), and will run out of the box.
 
-
-## Testing the Pkgdown site with examples
+## Testing the pkgdown site with examples
 
 The documentation includes many executed code examples. To preview the documentation with the results of these, you'll need a Redis server running, and the rrq package installed. Then, in an R terminal:-
 
@@ -147,7 +146,7 @@ The documentation includes many executed code examples. To preview the documenta
 rrq::rrq_worker$new("rrq:example")$loop()
 ```
 
-to run a worker. Then in another R terminal, 
+to run a worker. Then in another R terminal,
 
 
 ```
@@ -155,7 +154,6 @@ pkgdown::build_site()
 ```
 
 and the pkgdown site will be built in the `docs/` folder.
-
 
 ## License
 

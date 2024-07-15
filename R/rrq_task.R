@@ -60,7 +60,7 @@ rrq_task_overview <- function(task_ids = NULL, controller = NULL) {
 
 
 ##' Test if task ids exist (i.e., are known to this controller).
-##' Nonexistant tasks may be deleted, known to a different controller
+##' Nonexistent tasks may be deleted, known to a different controller
 ##' or just never have existed.
 ##'
 ##' @title Test if tasks exist
@@ -764,7 +764,7 @@ rrq_task_cancel <- function(task_id, wait = TRUE, timeout_wait = 10,
 ##'   if the task is finished before this, the actual time waited for
 ##'   will be less).  Increasing this will reduce the responsiveness
 ##'   of your R session to interrupting, but will cause slightly less
-##'   network load.  Values less than 1s are only suppored with Redis
+##'   network load.  Values less than 1s are only supported with Redis
 ##'   server version 6.0.0 or greater (released September 2020).
 ##'
 ##' @param progress Optional logical indicating if a progress bar

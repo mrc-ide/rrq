@@ -24,7 +24,7 @@ this vector is named with \code{task_ids}.
 }
 \description{
 Test if task ids exist (i.e., are known to this controller).
-Nonexistant tasks may be deleted, known to a different controller
+Nonexistent tasks may be deleted, known to a different controller
 or just never have existed.
 }
 \examples{
