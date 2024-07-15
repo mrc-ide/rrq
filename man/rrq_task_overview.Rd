@@ -2,7 +2,7 @@
 % Please edit documentation in R/rrq_task.R
 \name{rrq_task_overview}
 \alias{rrq_task_overview}
-\title{High level task overciew}
+\title{High level task overview}
 \usage{
 rrq_task_overview(task_ids = NULL, controller = NULL)
 }
@@ -21,7 +21,17 @@ A list with names corresponding to possible task status
 levels and values being the number of tasks in that state.
 }
 \description{
-Provide a high level overview of task statuses
-for a set of task ids, being the count in major categories of
-\code{PENDING}, \code{RUNNING}, \code{COMPLETE} and \code{ERROR}.
+Provide a high level overview of task statuses for a set of task
+ids, being the count in major categories of \code{PENDING}, \code{RUNNING},
+\code{COMPLETE}, \code{ERROR}, \code{CANCELLED}, \code{DIED}, \code{TIMEOUT}, \code{IMPOSSIBLE},
+\code{DEFERRED} and \code{MOVED}.
+}
+\examples{
+\dontshow{if (rrq:::enable_examples()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+
+obj <- rrq_controller("rrq:example")
+
+ids <- rrq_task_list(controller = obj)
+t(as.data.frame(rrq_task_overview(ids, controller = obj)))
+\dontshow{\}) # examplesIf}
 }

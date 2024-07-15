@@ -17,3 +17,9 @@ An integer
 \description{
 Returns the number of active workers
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+rrq_worker_len(controller = obj)
+\dontshow{\}) # examplesIf}
+}

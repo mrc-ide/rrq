@@ -14,6 +14,33 @@
 ##'
 ##' @return New task ids
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' # It's straightforward to see the effect of retrying a task with
+##' # one that produces a different value each time, so here, we use a
+##' # simple task that draws one normally distributed random number
+##' t1 <- rrq_task_create_expr(rnorm(1), controller = obj)
+##' rrq_task_wait(t1, controller = obj)
+##' rrq_task_result(t1, controller = obj)
+##'
+##' # If we retry the task we'll get a different value:
+##' t2 <- rrq_task_retry(t1, controller = obj)
+##' rrq_task_wait(t2, controller = obj)
+##' rrq_task_result(t2, controller = obj)
+##'
+##' # Once a task is retried, most of the time (by default) you can use
+##' # the original id and the new one exchangeably:
+##' rrq_task_result(t1, controller = obj)
+##' rrq_task_result(t2, controller = obj)
+##'
+##' # Use the 'follow' argument to modify this behaviour
+##' rrq_task_result(t1, follow = FALSE, controller = obj)
+##' rrq_task_result(t2, follow = FALSE, controller = obj)
+##'
+##' # See the retry chain with rrq_task_info
+##' rrq_task_info(t1, controller = obj)
+##' rrq_task_info(t2, controller = obj)
 rrq_task_retry <- function(task_ids, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   assert_character(task_ids)

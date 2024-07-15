@@ -18,3 +18,9 @@ A character vector of worker names
 Returns the ids of active workers.  This does not include exited
 workers; use \code{\link[=rrq_worker_list_exited]{rrq_worker_list_exited()}} for that.
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+rrq_worker_list(controller = obj)
+\dontshow{\}) # examplesIf}
+}

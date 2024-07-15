@@ -34,3 +34,9 @@ process from a task queued with \code{separate_process = TRUE}
 Returns the last (few) elements in the worker log, in a
 programmatically useful format (see Value).
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+rrq_worker_log_tail(n = 10, controller = obj)
+\dontshow{\}) # examplesIf}
+}

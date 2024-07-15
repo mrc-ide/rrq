@@ -7,6 +7,9 @@
 ##' @return An integer
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##' rrq_worker_len(controller = obj)
 rrq_worker_len <- function(controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
@@ -25,6 +28,9 @@ rrq_worker_len <- function(controller = NULL) {
 ##' @return A character vector of worker names
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##' rrq_worker_list(controller = obj)
 rrq_worker_list <- function(controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
@@ -43,6 +49,11 @@ rrq_worker_list <- function(controller = NULL) {
 ##'
 ##' @return A logical value
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##' w <- rrq_worker_list(controller = obj)
+##' rrq_worker_exists(w, controller = obj)
+##' rrq_worker_exists("bob-the-builder", controller = obj)
 rrq_worker_exists <- function(name, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   assert_scalar_character(name, call = environment())
@@ -61,6 +72,26 @@ rrq_worker_exists <- function(name, controller = NULL) {
 ##' @return A character vector of worker names
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' # At this point you might have an exited worker, depending on
+##' # which examples have been run so far!
+##' rrq_worker_list_exited(controller = obj)
+##'
+##' # Spawn a new worker so that we can stop it:
+##' w <- rrq_worker_spawn(1, controller = obj)$id
+##' w$id
+##' # Stop this worker and see that it appears in the list of exited
+##' # workers:
+##' rrq_worker_stop(w$id, controller = obj)
+##' rrq_worker_list_exited(controller = obj)
+##'
+##' # We can delete this exited worker:
+##' rrq_worker_delete_exited(w$id, controller = obj)
+##'
+##' # After this, it is no longer listed as exited:
+##' rrq_worker_list_exited(controller = obj)
 rrq_worker_list_exited <- function(controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
@@ -82,6 +113,9 @@ rrq_worker_list_exited <- function(controller = NULL) {
 ##' @return A character vector of statuses, named by worker
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##' rrq_worker_status(controller = obj)
 rrq_worker_status <- function(worker_ids = NULL, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
@@ -103,6 +137,9 @@ rrq_worker_status <- function(worker_ids = NULL, controller = NULL) {
 ##' @return A list of `worker_info` objects
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##' rrq_worker_info(controller = obj)
 rrq_worker_info <- function(worker_ids = NULL, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
@@ -138,6 +175,9 @@ rrq_worker_info <- function(worker_ids = NULL, controller = NULL) {
 ##' @inheritParams rrq_task_list
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##' rrq_worker_log_tail(n = 10, controller = obj)
 rrq_worker_log_tail <- function(worker_ids = NULL, n = 1, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
@@ -183,6 +223,20 @@ rrq_worker_log_tail <- function(worker_ids = NULL, n = 1, controller = NULL) {
 ##'   otherwise corresponding to a task id.
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##' rrq_worker_list(controller = obj)
+##'
+##' # This example might be a bit racy: we need to run a task that
+##' # sleeps, and then sleep a little bit for the task to be picked up
+##' # by a worker.  Typically this happens very quickly but there are
+##' # no guarantees.
+##' t <- rrq_task_create_expr(Sys.sleep(1), controller = obj)
+##' Sys.sleep(.2)
+##' rrq_worker_task_id(controller = obj)
+##'
+##' # You can always find out which worker did work on a task though:
+##' rrq_task_info(t, controller = obj)$worker
 rrq_worker_task_id <- function(worker_ids = NULL, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
@@ -191,7 +245,8 @@ rrq_worker_task_id <- function(worker_ids = NULL, controller = NULL) {
 }
 
 
-##' Cleans up workers known to have exited
+##' Cleans up workers known to have exited.  See
+##' vignette("fault-tolerance") for more details.
 ##'
 ##' @title Clean up exited workers
 ##'
@@ -204,6 +259,9 @@ rrq_worker_task_id <- function(worker_ids = NULL, controller = NULL) {
 ##' @return A character vector of workers that were deleted
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##' rrq_worker_delete_exited(controller = obj)
 rrq_worker_delete_exited <- function(worker_ids = NULL, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
@@ -234,7 +292,10 @@ rrq_worker_delete_exited <- function(worker_ids = NULL, controller = NULL) {
 }
 
 
-##' Stop workers.
+##' Stop workers, causing them to exit.  Workers can be stopped in a
+##' few different ways (see Details), but after executing this
+##' function, assume that any worker targeted will no longer be
+##' available to work on tasks.
 ##'
 ##' The `type` parameter indicates the strategy used to stop workers,
 ##' and interacts with other parameters. The strategies used by the
@@ -282,6 +343,12 @@ rrq_worker_delete_exited <- function(worker_ids = NULL, controller = NULL) {
 ##' @return The names of the stopped workers, invisibly.
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##' w <- rrq_worker_spawn(controller = obj)
+##' rrq_worker_list(controller = obj)
+##' rrq_worker_stop(w$id, timeout = 10, controller = obj)
+##' rrq_worker_list(controller = obj)
 rrq_worker_stop <- function(worker_ids = NULL, type = "message",
                             timeout = 0, time_poll = 0.1, progress = NULL,
                             controller = NULL) {
@@ -349,7 +416,12 @@ rrq_worker_stop <- function(worker_ids = NULL, type = "message",
 ##'
 ##' @inheritParams rrq_task_list
 ##'
+##' @return Undefined.
+##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##' rrq_worker_detect_exited(controller = obj)
 rrq_worker_detect_exited <- function(controller = NULL) {
   ## TODO: should accept a worker_ids argument I think
   controller <- get_controller(controller, call = rlang::current_env())
@@ -369,7 +441,19 @@ rrq_worker_detect_exited <- function(controller = NULL) {
 ##' @param worker_id The worker id for which the log is required
 ##'
 ##' @inheritParams rrq_task_list
+##'
+##' @return A character vector, one line per line in the log.  If
+##'   logging is enabled but the worker has not produced any logs,
+##'   this will be an empty character vector. If logging is not
+##'   enabled, then this function will throw.
+##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##' worker_id <- rrq_worker_list(controller = obj)[[1]]
+##' tryCatch(
+##'   rrq_worker_process_log(worker_id, controller = obj),
+##'   error = identity)
 rrq_worker_process_log <- function(worker_id, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
@@ -390,9 +474,11 @@ rrq_worker_process_log <- function(worker_id, controller = NULL) {
 ##'
 ##' @param create A function that will create an environment. It will
 ##'   be called with one parameter (an environment), in a fresh R
-##'   session. The function [rrq::rrq_envir()] can be used to
-##'   create a suitable function for the most common case (loading
-##'   packages and sourcing scripts).
+##'   session. The function [rrq::rrq_envir()] can be used to create a
+##'   suitable function for the most common case (loading packages and
+##'   sourcing scripts). Set to `NULL` to remove environment creation
+##'   function (i.e., to start workers with an essentially empty
+##'   environment).
 ##'
 ##' @param notify Boolean, indicating if we should send a `REFRESH`
 ##'   message to all workers to update their environment.
@@ -400,6 +486,16 @@ rrq_worker_process_log <- function(worker_id, controller = NULL) {
 ##' @inheritParams rrq_task_list
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' rrq_worker_envir_set(rrq_envir(packages = "ids"), controller = obj)
+##' t <- rrq_task_create_expr(search(), controller = obj)
+##' rrq_task_wait(t, controller = obj)
+##' rrq_task_result(t, controller = obj)
+##' rrq_worker_log_tail(n = 5, controller = obj)
+##'
+##' rrq_worker_envir_set(NULL, controller = obj)
 rrq_worker_envir_set <- function(create, notify = TRUE, controller = NULL) {
   controller <- get_controller(controller)
   con <- controller$con
@@ -439,6 +535,12 @@ rrq_worker_envir_set <- function(create, notify = TRUE, controller = NULL) {
 ##'   updated.
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' cfg <- rrq_worker_config("fast")
+##' rrq_worker_config_save("use-fast", cfg, controller = obj)
+##' rrq_worker_config_list(controller = obj)
 rrq_worker_config_save <- function(name, config, overwrite = TRUE,
                                    controller = NULL) {
   ## TODO: odd name here while we transition to new interface, clashes
@@ -468,6 +570,12 @@ rrq_worker_config_save <- function(name, config, overwrite = TRUE,
 ##'   `name` argument to [rrq_worker_config_read()].
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' cfg <- rrq_worker_config("fast")
+##' rrq_worker_config_save("use-fast", cfg, controller = obj)
+##' rrq_worker_config_list(controller = obj)
 rrq_worker_config_list <- function(controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
@@ -492,6 +600,12 @@ rrq_worker_config_list <- function(controller = NULL) {
 ##' @inheritParams rrq_task_list
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' cfg <- rrq_worker_config("fast")
+##' rrq_worker_config_save("use-fast", cfg, controller = obj)
+##' rrq_worker_config_read("use-fast", controller = obj)
 rrq_worker_config_read <- function(name, timeout = 0, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
@@ -530,6 +644,9 @@ rrq_worker_config_read <- function(name, timeout = 0, controller = NULL) {
 ##'   method.
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##' mean(rrq_worker_load(controller = obj))
 rrq_worker_load <- function(worker_ids = NULL, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
 
@@ -537,7 +654,7 @@ rrq_worker_load <- function(worker_ids = NULL, controller = NULL) {
   ## to do this for a given time interval as well as computing a
   ## rolling average (to plot, for example).  But the concept is here
   ## now and we can build off of it.
-  logs <- rrq_worker_log_tail(worker_ids, Inf, controller)
+  logs <- rrq_worker_log_tail(worker_ids, Inf, controller = controller)
   logs <- logs[order(logs$time), ]
 
   keep <- c("ALIVE", "STOP", "TASK_START", "TASK_COMPLETE")
@@ -578,6 +695,8 @@ worker_log_parse <- function(log, worker_id) {
   child <- as.integer(sub("/", "", sub(re, "\\2", log)))
   command <- sub(re, "\\3", log)
   message <- lstrip(sub(re, "\\4", log))
+  n <- length(log)
+  worker_id <- rep_len(worker_id, n)
   data_frame(worker_id, child, time, command, message)
 }
 

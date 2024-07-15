@@ -39,6 +39,9 @@ jobs:
           extra-packages: any::pkgdown, local::.
           needs: website
 
+      - name: Start service
+        run: ./scripts/example_queue &
+
       - name: Move real vignettes
         if: runner.os != 'windows'
         run: |

@@ -36,10 +36,26 @@ we'll use the controller registered with
 \code{\link[=rrq_default_controller_set]{rrq_default_controller_set()}}.}
 }
 \value{
-An unnamed list, one entry per result.  This function
-errors if any task is not available.
+A list, one entry per result.  This function errors if
+any task is not available.  If \code{named = TRUE}, then this list is
+named with the \code{task_ids}.
 }
 \description{
 Get the results of a group of tasks, returning them as a list.
 See \link{rrq_task_result} for getting the result of a single task.
+}
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+
+ts <- rrq_task_create_bulk_call(sqrt, 1:10, controller = obj)
+rrq_task_wait(ts, controller = obj)
+rrq_task_results(ts, controller = obj)
+
+# For a single task, rrq_task_result and rrq_task_results differ
+# in the return type; rrq_task_results always returns a list:
+t <- ts[[1]]
+rrq_task_result(t, controller = obj)
+rrq_task_results(t, controller = obj)
+\dontshow{\}) # examplesIf}
 }

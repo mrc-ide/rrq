@@ -19,3 +19,10 @@ A character vector of ids
 \description{
 Return ids for messages with responses for a particular worker.
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+w <- rrq_worker_list(controller = obj)
+rrq_message_send("PING", controller = obj)
+\dontshow{\}) # examplesIf}
+}

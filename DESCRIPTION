@@ -1,6 +1,6 @@
 Package: rrq
 Title: Simple Redis Queue
-Version: 0.7.15
+Version: 0.7.16
 Authors@R: c(person("Rich", "FitzJohn", role = c("aut", "cre"),
                     email = "rich.fitzjohn@gmail.com"),
              person("Robert", "Ashton", role = "aut"),
@@ -9,7 +9,7 @@ Authors@R: c(person("Rich", "FitzJohn", role = c("aut", "cre"),
 Description: Simple Redis queue in R.
 License: MIT + file LICENSE
 LazyData: true
-URL: https://github.com/mrc-ide/rrq
+URL: https://github.com/mrc-ide/rrq, https://mrc-ide.github.io/rrq
 BugReports: https://github.com/mrc-ide/rrq/issues
 Imports:
     R6,

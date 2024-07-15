@@ -19,3 +19,17 @@ Internal data, structures subject to change
 \description{
 Fetch internal data about a task (expert use only)
 }
+\examples{
+\dontshow{if (rrq:::enable_examples()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+
+obj <- rrq_controller("rrq:example")
+
+t <- rrq_task_create_expr(runif(1), controller = obj)
+rrq_task_data(t, controller = obj)
+
+x <- 10
+y <- 20
+t <- rrq_task_create_expr(x + y, controller = obj)
+rrq_task_data(t, controller = obj)
+\dontshow{\}) # examplesIf}
+}

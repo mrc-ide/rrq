@@ -21,3 +21,20 @@ otherwise corresponding to a task id.
 \description{
 Returns the task id that each worker is working on, if any.
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+rrq_worker_list(controller = obj)
+
+# This example might be a bit racy: we need to run a task that
+# sleeps, and then sleep a little bit for the task to be picked up
+# by a worker.  Typically this happens very quickly but there are
+# no guarantees.
+t <- rrq_task_create_expr(Sys.sleep(1), controller = obj)
+Sys.sleep(.2)
+rrq_worker_task_id(controller = obj)
+
+# You can always find out which worker did work on a task though:
+rrq_task_info(t, controller = obj)$worker
+\dontshow{\}) # examplesIf}
+}

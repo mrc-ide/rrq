@@ -115,3 +115,20 @@ current timeout.
 }
 }
 
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+
+# Create a new controller; the id will be specific to your
+# application.  Here, we use 'rrq:example'
+obj <- rrq_controller("rrq:example")
+
+# Create a task for this controller to work on:
+t <- rrq_task_create_expr(runif(10), controller = obj)
+
+# Wait for the task to complete
+rrq_task_wait(t, controller = obj)
+
+# Fetch the task's result
+rrq_task_result(t, controller = obj)
+\dontshow{\}) # examplesIf}
+}

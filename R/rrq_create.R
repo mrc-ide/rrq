@@ -50,7 +50,41 @@
 ##'
 ##' @inheritParams rrq_task_list
 ##'
+##' @seealso [rrq_task_create_call] for creating a task from a
+##'   function and arguments to the function, and
+##'   [rrq_task_create_bulk_expr] for creating many tasks from a call
+##'   and a data.frame
+##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' # Simple use of the function to create a task based on a function call
+##' t <- rrq_task_create_expr(sqrt(2), controller = obj)
+##' rrq_task_wait(t, controller = obj)
+##' rrq_task_result(t, controller = obj)
+##'
+##' # The expression can contain calls to other variables, and these
+##' # will be included in the call:
+##' a <- 3
+##' t <- rrq_task_create_expr(sqrt(a), controller = obj)
+##' rrq_task_wait(t, controller = obj)
+##' rrq_task_result(t, controller = obj)
+##'
+##' # You can pass in an expression _as_ a symbol too:
+##' expr <- quote(sqrt(4))
+##' t <- rrq_task_create_expr(expr, controller = obj)
+##' rrq_task_wait(t, controller = obj)
+##' rrq_task_result(t, controller = obj)
+##'
+##' # If you queue tasks into separate processes you can use a timeout
+##' # to kill the task if it takes too long:
+##' t <- rrq_task_create_expr(Sys.sleep(3),
+##'                           separate_process = TRUE,
+##'                           timeout_task_run = 1,
+##'                           controller = obj)
+##' rrq_task_wait(t, controller = obj)
+##' rrq_task_result(t, controller = obj)
 rrq_task_create_expr <- function(expr, queue = NULL,
                                  separate_process = FALSE,
                                  timeout_task_run = NULL,
@@ -140,6 +174,11 @@ rrq_task_create_expr <- function(expr, queue = NULL,
 ##'   [rrq_task_result()]
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##' t <- rrq_task_create_call(sqrt, list(2), controller = obj)
+##' rrq_task_wait(t, controller = obj)
+##' rrq_task_result(t, controller = obj)
 rrq_task_create_call <- function(fn, args, queue = NULL,
                                  separate_process = FALSE,
                                  timeout_task_run = NULL,
@@ -184,6 +223,27 @@ rrq_task_create_call <- function(fn, args, queue = NULL,
 ##'   length equal to the number of row in `data`
 ##'
 ##' @export
+##'
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' # Create 10 tasks:
+##' ts <- rrq_task_create_bulk_expr(sqrt(x), data.frame(x = 1:10),
+##'                                 controller = obj)
+##' rrq_task_wait(ts, controller = obj)
+##' rrq_task_results(ts, controller = obj)
+##'
+##' # Note that there is no automatic simplification when fetching
+##' # results, you might use unlist or vapply to turn this into a
+##' # numeric vector rather than a list
+##'
+##' # The data.frame substituted in may have multiple columns
+##' # representing multiple variables to substitute into the
+##' # expression
+##' d <- expand.grid(a = 1:4, b = 1:4)
+##' ts <- rrq_task_create_bulk_expr(a * b, d, controller = obj)
+##' rrq_task_wait(ts, controller = obj)
+##' rrq_task_results(ts, controller = obj)
 rrq_task_create_bulk_expr <- function(expr, data, queue = NULL,
                                       separate_process = FALSE,
                                       timeout_task_run = NULL,
@@ -265,11 +325,18 @@ rrq_task_create_bulk_expr <- function(expr, data, queue = NULL,
 ##'
 ##' @inheritParams rrq_task_create_call
 ##'
-##' @return A vector of task identfiers; this will have the length as
+##' @return A vector of task identifiers; this will have the length as
 ##'   `data` has rows if it is a `data.frame`, otherwise it has the
 ##'   same length as `data`
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' d <- data.frame(n = 1:10, lambda = rgamma(10, 5))
+##' ts <- rrq_task_create_bulk_call(rpois, d, controller = obj)
+##' rrq_task_wait(ts, controller = obj)
+##' rrq_task_results(ts, controller = obj)
 rrq_task_create_bulk_call <- function(fn, data, args = NULL,
                                       queue = NULL,
                                       separate_process = FALSE,

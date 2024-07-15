@@ -46,7 +46,10 @@ we'll use the controller registered with
 The names of the stopped workers, invisibly.
 }
 \description{
-Stop workers.
+Stop workers, causing them to exit.  Workers can be stopped in a
+few different ways (see Details), but after executing this
+function, assume that any worker targeted will no longer be
+available to work on tasks.
 }
 \details{
 The \code{type} parameter indicates the strategy used to stop workers,
@@ -64,4 +67,13 @@ a status of \code{DIED}.
 system signals, which requires that the worker is on the same
 machine as the controller.
 }
+}
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+w <- rrq_worker_spawn(controller = obj)
+rrq_worker_list(controller = obj)
+rrq_worker_stop(w$id, timeout = 10, controller = obj)
+rrq_worker_list(controller = obj)
+\dontshow{\}) # examplesIf}
 }

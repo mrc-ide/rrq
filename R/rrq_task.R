@@ -10,6 +10,11 @@
 ##' @return A character vector
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples()
+##'
+##' obj <- rrq_controller("rrq:example")
+##'
+##' rrq_task_list(controller = obj)
 rrq_task_list <- function(controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
@@ -18,11 +23,12 @@ rrq_task_list <- function(controller = NULL) {
 }
 
 
-##' Provide a high level overview of task statuses
-##' for a set of task ids, being the count in major categories of
-##' `PENDING`, `RUNNING`, `COMPLETE` and `ERROR`.
+##' Provide a high level overview of task statuses for a set of task
+##' ids, being the count in major categories of `PENDING`, `RUNNING`,
+##' `COMPLETE`, `ERROR`, `CANCELLED`, `DIED`, `TIMEOUT`, `IMPOSSIBLE`,
+##' `DEFERRED` and `MOVED`.
 ##'
-##' @title High level task overciew
+##' @title High level task overview
 ##'
 ##' @param task_ids Optional character vector of task ids for which
 ##'   you would like the overview. If not given (or `NULL`) then the
@@ -35,6 +41,12 @@ rrq_task_list <- function(controller = NULL) {
 ##'   levels and values being the number of tasks in that state.
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples()
+##'
+##' obj <- rrq_controller("rrq:example")
+##'
+##' ids <- rrq_task_list(controller = obj)
+##' t(as.data.frame(rrq_task_overview(ids, controller = obj)))
 rrq_task_overview <- function(task_ids = NULL, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   if (is.null(task_ids)) {
@@ -48,7 +60,7 @@ rrq_task_overview <- function(task_ids = NULL, controller = NULL) {
 
 
 ##' Test if task ids exist (i.e., are known to this controller).
-##' Nonexistant tasks may be deleted, known to a different controller
+##' Nonexistent tasks may be deleted, known to a different controller
 ##' or just never have existed.
 ##'
 ##' @title Test if tasks exist
@@ -62,9 +74,18 @@ rrq_task_overview <- function(task_ids = NULL, controller = NULL) {
 ##' @inheritParams rrq_task_list
 ##'
 ##' @return A logical vector the same length as task_ids; `TRUE` where
-##'   the task exists, `FALSE` otherwise.
+##'   the task exists, `FALSE` otherwise.  If `named` was `TRUE`, then
+##'   this vector is named with `task_ids`.
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples()
+##' obj <- rrq_controller("rrq:example")
+##'
+##' t1 <- rrq_task_create_expr(runif(1), controller = obj)
+##' rrq_task_exists(t1, controller = obj)
+##'
+##' t2 <- ids::random_id()
+##' rrq_task_exists(t2, controller = obj)
 rrq_task_exists <- function(task_ids, named = FALSE, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   con <- controller$con
@@ -96,6 +117,24 @@ rrq_task_exists <- function(task_ids, named = FALSE, controller = NULL) {
 ##' @return A list, format currently subject to change
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' # Get information about a task
+##' t <- rrq_task_create_expr(runif(1), controller = obj)
+##' rrq_task_info(t, controller = obj)
+##'
+##' # If the task has been retried, the retry chain is shown
+##' rrq_task_wait(t, controller = obj)
+##' rrq_task_retry(t, controller = obj)
+##' rrq_task_info(t, controller = obj)
+##'
+##' # If the task was queued onto a separate process, then this
+##' # information is shown
+##' rrq_task_create_expr(1 + 1, separate_process = TRUE, timeout_task_run = 60,
+##'                       controller = obj)
+##' rrq_task_wait(t, controller = obj)
+##' rrq_task_info(t, controller = obj)
 rrq_task_info <- function(task_id, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   assert_scalar_character(task_id, call = rlang::current_env())
@@ -153,6 +192,17 @@ rrq_task_info <- function(task_id, controller = NULL) {
 ##' @return Internal data, structures subject to change
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples()
+##'
+##' obj <- rrq_controller("rrq:example")
+##'
+##' t <- rrq_task_create_expr(runif(1), controller = obj)
+##' rrq_task_data(t, controller = obj)
+##'
+##' x <- 10
+##' y <- 20
+##' t <- rrq_task_create_expr(x + y, controller = obj)
+##' rrq_task_data(t, controller = obj)
 rrq_task_data <- function(task_id, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   assert_scalar_character(task_id, call = rlang::current_env())
@@ -193,10 +243,18 @@ rrq_task_data <- function(task_id, controller = NULL) {
 ##'
 ##' @inheritParams rrq_task_list
 ##'
-##' @return A matrix of times, but we might change this to a
-##'   data.frame at some point in the future.
+##' @return A matrix of times, with row names corresponding to task
+##'   ids.  We may change this to a data.frame at some point in the
+##'   future.
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' t <- rrq_task_create_expr(Sys.sleep(3), controller = obj)
+##' rrq_task_times(t, controller = obj)
+##' rrq_task_wait(t, controller = obj)
+##' rrq_task_times(t, controller = obj)
 rrq_task_times <- function(task_ids, follow = NULL, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   assert_character(task_ids, call = rlang::current_env())
@@ -225,7 +283,6 @@ rrq_task_times <- function(task_ids, follow = NULL, controller = NULL) {
 }
 
 
-
 ##' Get the result for a single task (see [rrq_task_results] for a
 ##' method for efficiently getting multiple results at once).  Returns
 ##' the value of running the task if it is complete, and an error
@@ -244,8 +301,23 @@ rrq_task_times <- function(task_ids, follow = NULL, controller = NULL) {
 ##'
 ##' @inheritParams rrq_task_times
 ##'
-##' @return The result of your task
+##' @return The result of your task.  This may be an error (an object
+##'   with class `rrq_task_error`) if your task has failed.
+##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' # Create a task, wait for it to finish and fetch its result
+##' t <- rrq_task_create_expr(runif(1), controller = obj)
+##' rrq_task_wait(t, controller = obj)
+##' rrq_task_result(t, controller = obj)
+##'
+##' # Tasks that fail do not fail on result, but instead return an
+##' # object with the class "rrq_task_error"
+##' t <- rrq_task_create_expr(readRDS("somefile.rds"), controller = obj)
+##' rrq_task_wait(t, controller = obj)
+##' rrq_task_result(t, controller = obj)
 rrq_task_result <- function(task_id, error = FALSE, follow = NULL,
                             controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
@@ -282,10 +354,23 @@ rrq_task_result <- function(task_id, error = FALSE, follow = NULL,
 ##' @inheritParams rrq_task_times
 ##' @inheritParams rrq_task_exists
 ##'
-##' @return An unnamed list, one entry per result.  This function
-##'   errors if any task is not available.
+##' @return A list, one entry per result.  This function errors if
+##'   any task is not available.  If `named = TRUE`, then this list is
+##'   named with the `task_ids`.
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' ts <- rrq_task_create_bulk_call(sqrt, 1:10, controller = obj)
+##' rrq_task_wait(ts, controller = obj)
+##' rrq_task_results(ts, controller = obj)
+##'
+##' # For a single task, rrq_task_result and rrq_task_results differ
+##' # in the return type; rrq_task_results always returns a list:
+##' t <- ts[[1]]
+##' rrq_task_result(t, controller = obj)
+##' rrq_task_results(t, controller = obj)
 rrq_task_results <- function(task_ids, error = FALSE, named = FALSE,
                              follow = NULL, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
@@ -329,6 +414,13 @@ rrq_task_results <- function(task_ids, error = FALSE, named = FALSE,
 ##'
 ##' @return A character vector the same length as `task_ids`
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' ts <- rrq_task_create_bulk_call(sqrt, 1:10, controller = obj)
+##' rrq_task_status(ts, controller = obj)
+##' rrq_task_wait(ts, controller = obj)
+##' rrq_task_status(ts, controller = obj)
 rrq_task_status <- function(task_ids, named = FALSE, follow = NULL,
                             controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
@@ -475,6 +567,17 @@ rrq_task_preceeding <- function(task_id, queue = NULL, follow = NULL,
 ##' @inheritParams rrq_task_list
 ##' @export
 ##' @return Nothing, called for side effects only
+##' @examplesIf rrq:::enable_examples()
+##' obj <- rrq_controller("rrq:example:delete")
+##'
+##' ts <- rrq_task_create_bulk_call(sqrt, 1:10, controller = obj)
+##' rrq_task_exists(ts, controller = obj)
+##'
+##' rrq_task_delete(ts[1:5], controller = obj)
+##' rrq_task_exists(ts, controller = obj)
+##'
+##' rrq_task_delete(ts, controller = obj)
+##' rrq_task_exists(ts, controller = obj)
 rrq_task_delete <- function(task_ids, check = TRUE, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   assert_character(task_ids, call = rlang::current_env())
@@ -570,6 +673,14 @@ rrq_task_delete <- function(task_ids, check = TRUE, controller = NULL) {
 ##' error with task_id and status e.g. Task 123 is not running (MISSING)
 ##'
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##'
+##' t <- rrq_task_create_expr(Sys.sleep(4), separate_process = TRUE,
+##'                           controller = obj)
+##' Sys.sleep(0.5)
+##' rrq_task_cancel(t, controller = obj)
+##' rrq_task_status(t, controller = obj)
 rrq_task_cancel <- function(task_id, wait = TRUE, timeout_wait = 10,
                             controller = NULL) {
   ## TODO: several legacy issues here:
@@ -653,7 +764,7 @@ rrq_task_cancel <- function(task_id, wait = TRUE, timeout_wait = 10,
 ##'   if the task is finished before this, the actual time waited for
 ##'   will be less).  Increasing this will reduce the responsiveness
 ##'   of your R session to interrupting, but will cause slightly less
-##'   network load.  Values less than 1s are only suppored with Redis
+##'   network load.  Values less than 1s are only supported with Redis
 ##'   server version 6.0.0 or greater (released September 2020).
 ##'
 ##' @param progress Optional logical indicating if a progress bar
@@ -666,6 +777,20 @@ rrq_task_cancel <- function(task_id, wait = TRUE, timeout_wait = 10,
 ##' @return A scalar logical value; `TRUE` if _all_ tasks complete
 ##'   successfully and `FALSE` otherwise
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##' obj <- rrq_controller("rrq:example")
+##' t1 <- rrq_task_create_expr(Sys.sleep(1), controller = obj)
+##' rrq_task_wait(t1, controller = obj)
+##'
+##' # The return value of wait gives a summary of successfullness
+##' # of the task
+##' t2 <- rrq_task_create_expr(stop("Some error"), controller = obj)
+##' rrq_task_wait(t2, controller = obj)
+##'
+##' # If you wait on many tasks, the return value is effectively
+##' # reduced with "all" (so the result is TRUE if all tasks were
+##' # successful)
+##' rrq_task_wait(c(t1, t2), controller = obj)
 rrq_task_wait <- function(task_id, timeout = NULL, time_poll = 1,
                           progress = NULL, follow = NULL,
                           controller = NULL) {

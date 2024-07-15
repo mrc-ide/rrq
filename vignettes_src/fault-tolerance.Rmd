@@ -17,6 +17,10 @@ knitr::opts_chunk$set(
 lang_output <- function(x, lang) {
   cat(c(sprintf("```%s", lang), x, "```"), sep = "\n")
 }
+
+backquote <- function(x) {
+  sprintf("`%s`", x)
+}
 ```
 
 In a perfect world, nothing would fail, and this vignette would not be needed. But here we are.
@@ -101,9 +105,9 @@ rrq_task_result(t, error = TRUE)
 
 This process is unchanged if the task is run in a separate process (with `separate_process = TRUE` passed to `enqueue`), with the same status and return type, and with the trace information available after failure.
 
-## Increasing resiliance via separate processes
+## Increasing resilience via separate processes
 
-Running tasks in separate processes (e.g., `rrq_task_create_expr(mytask(), separate_process = TRUE)`) is the simplest way of making things more resiliant because this creates a layer of isolation between the worker and the task. If your task crashes R (e.g., a segmentation fault due to a bug in your C/C++ code) or is killed by the operating system then the worker process survives and can update the keys in Redis directly to advertise this fact. This is generally much nicer than when the worker dies and the task status cannot be updated.
+Running tasks in separate processes (e.g., `rrq_task_create_expr(mytask(), separate_process = TRUE)`) is the simplest way of making things more resilient because this creates a layer of isolation between the worker and the task. If your task crashes R (e.g., a segmentation fault due to a bug in your C/C++ code) or is killed by the operating system then the worker process survives and can update the keys in Redis directly to advertise this fact. This is generally much nicer than when the worker dies and the task status cannot be updated.
 
 The downside of using separate processes is that it is much slower; compare the time taken to queue, run an retrieve a trivial task run in the same worker process (look at the `elapsed` entry)
 
@@ -171,7 +175,7 @@ r$trace
 
 In this section we outline what you can do about unexplained and unreported failures in your task, or loss of workers. This will typically be that your worker has crashed (due to your task crashing it perhaps), killed (e.g., by the operating system or an administrator) or the loss of the machine that it is working on.
 
-In order to enable fault tolerance for this sort of issue, you first need to enable a "heatbeat" on the worker processes. This is a second process on each worker that periodically writes to the Redis database on a key that will expire in a time slightly longer than that period, in effect making a [dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch) - see `rrq::rrq_heartbeat` for details. So if the worker process dies for any reason, then after a while we'll detect that as its key has expired. We can then take some action.
+In order to enable fault tolerance for this sort of issue, you first need to enable a "heartbeat" on the worker processes. This is a second process on each worker that periodically writes to the Redis database on a key that will expire in a time slightly longer than that period, in effect making a [dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch) - see `rrq::rrq_heartbeat` for details. So if the worker process dies for any reason, then after a while we'll detect that as its key has expired. We can then take some action.
 
 ```{r stop-workers, include = FALSE}
 rrq_worker_stop(timeout = 10)
@@ -204,7 +208,7 @@ t <- rrq_task_create_expr(Sys.sleep(3600))
 rrq:::wait_status_change(obj, t, rrq:::TASK_PENDING)
 ```
 
-The worker wil pick the task up fairly quickly, and the status will change to `RUNNING`:
+The worker will pick the task up fairly quickly, and the status will change to `RUNNING`:
 
 ```{r}
 rrq_task_status(t)
@@ -351,7 +355,8 @@ rrq_task_times(c(t1, t2, t3), follow = FALSE)
 
 This means that most of the time you can ignore that a task has been retried and work with whatever task id you have handy.
 
-You can inspect the chain of tasks by looking at the return values `rrq_task_info()`. In the above example we have a chain of three tasks `r paste0(substr(c(t1, t2, t3), 1, 6), "...", collapse = " -> ")`, which we can discover this way:
+You can inspect the chain of tasks by looking at the return values `rrq_task_info()`. In the above example we have a chain of three tasks `r
+backquote(paste0(substr(c(t1, t2, t3), 1, 6), "...", collapse = " -> "))`, which we can discover this way:
 
 ```{r}
 rrq_task_info(t1)

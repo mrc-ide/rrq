@@ -33,3 +33,13 @@ Return a character vector of task statuses. The name of each
 element corresponds to a task id, and the value will be one of the
 possible statuses ("PENDING", "COMPLETE", etc).
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+
+ts <- rrq_task_create_bulk_call(sqrt, 1:10, controller = obj)
+rrq_task_status(ts, controller = obj)
+rrq_task_wait(ts, controller = obj)
+rrq_task_status(ts, controller = obj)
+\dontshow{\}) # examplesIf}
+}

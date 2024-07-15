@@ -52,3 +52,24 @@ then you can use this in the same way as
 \code{rrq::rrq_task_progress_update} above in your code.  When run
 without using rrq, this function will appear to do nothing.
 }
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+
+f <- function(n) {
+  for (i in seq_len(n)) {
+    rrq::rrq_task_progress_update(sprintf("Iteration \%d / \%d", i, n))
+    Sys.sleep(0.1)
+  }
+  n
+}
+
+t <- rrq_task_create_call(f, list(5), controller = obj)
+# This might be empty at first
+rrq_task_progress(t, controller = obj)
+# Wait for the task to complete
+rrq_task_wait(t, controller = obj)
+# Contains the _last_ progress message
+rrq_task_progress(t, controller = obj)
+\dontshow{\}) # examplesIf}
+}

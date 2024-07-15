@@ -10,7 +10,13 @@ rrq_default_controller_set(controller)
 rrq_default_controller_clear()
 }
 \arguments{
-\item{controller}{An rrq_controller object}
+\item{controller}{An rrq_controller object, or \code{NULL} to clear the
+default controller (equivalent to using
+\code{rrq_default_controller_clear})}
+}
+\value{
+Invisibly, the previously set default controller (or
+\code{NULL} if none was set)
 }
 \description{
 Set or clear a default controller for use with rrq functions.  You

@@ -105,6 +105,20 @@
 ##'
 ##' @return An `rrq_controller` object, which is opaque.
 ##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##'
+##' # Create a new controller; the id will be specific to your
+##' # application.  Here, we use 'rrq:example'
+##' obj <- rrq_controller("rrq:example")
+##'
+##' # Create a task for this controller to work on:
+##' t <- rrq_task_create_expr(runif(10), controller = obj)
+##'
+##' # Wait for the task to complete
+##' rrq_task_wait(t, controller = obj)
+##'
+##' # Fetch the task's result
+##' rrq_task_result(t, controller = obj)
 rrq_controller <- function(queue_id, con = redux::hiredis(),
                            timeout_task_wait = NULL, follow = NULL,
                            check_version = TRUE) {
@@ -154,13 +168,21 @@ rrq_controller <- function(queue_id, con = redux::hiredis(),
 ##'
 ##' @title Register default controller
 ##'
-##' @param controller An rrq_controller object
+##' @param controller An rrq_controller object, or `NULL` to clear the
+##'   default controller (equivalent to using
+##'   `rrq_default_controller_clear`)
+##'
+##' @return Invisibly, the previously set default controller (or
+##'   `NULL` if none was set)
 ##'
 ##' @export
 rrq_default_controller_set <- function(controller) {
-  assert_is(controller, "rrq_controller")
+  if (!is.null(controller)) {
+    assert_is(controller, "rrq_controller")
+  }
+  prev <- pkg$default_controller
   pkg$default_controller <- controller
-  invisible(controller)
+  invisible(prev)
 }
 
 ##' @rdname rrq_default_controller_set

@@ -19,5 +19,12 @@ we'll use the controller registered with
 A character vector of workers that were deleted
 }
 \description{
-Cleans up workers known to have exited
+Cleans up workers known to have exited.  See
+vignette("fault-tolerance") for more details.
+}
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+rrq_worker_delete_exited(controller = obj)
+\dontshow{\}) # examplesIf}
 }

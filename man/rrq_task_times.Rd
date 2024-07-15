@@ -21,8 +21,9 @@ we'll use the controller registered with
 \code{\link[=rrq_default_controller_set]{rrq_default_controller_set()}}.}
 }
 \value{
-A matrix of times, but we might change this to a
-data.frame at some point in the future.
+A matrix of times, with row names corresponding to task
+ids.  We may change this to a data.frame at some point in the
+future.
 }
 \description{
 Fetch times for tasks at points in their life cycle.  For each
@@ -32,4 +33,14 @@ If a task has not reached a point yet (e.g., submitted but not
 run, or running but not finished) the time will be \code{NA}).  Times
 are returned in unix timestamp format in UTC; you can use
 \link[redux:redis_time]{redux::redis_time_to_r} to convert them to a POSIXt object.
+}
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+
+t <- rrq_task_create_expr(Sys.sleep(3), controller = obj)
+rrq_task_times(t, controller = obj)
+rrq_task_wait(t, controller = obj)
+rrq_task_times(t, controller = obj)
+\dontshow{\}) # examplesIf}
 }

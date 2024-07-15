@@ -28,11 +28,28 @@ we'll use the controller registered with
 \code{\link[=rrq_default_controller_set]{rrq_default_controller_set()}}.}
 }
 \value{
-The result of your task
+The result of your task.  This may be an error (an object
+with class \code{rrq_task_error}) if your task has failed.
 }
 \description{
 Get the result for a single task (see \link{rrq_task_results} for a
 method for efficiently getting multiple results at once).  Returns
 the value of running the task if it is complete, and an error
 otherwise.
+}
+\examples{
+\dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+obj <- rrq_controller("rrq:example")
+
+# Create a task, wait for it to finish and fetch its result
+t <- rrq_task_create_expr(runif(1), controller = obj)
+rrq_task_wait(t, controller = obj)
+rrq_task_result(t, controller = obj)
+
+# Tasks that fail do not fail on result, but instead return an
+# object with the class "rrq_task_error"
+t <- rrq_task_create_expr(readRDS("somefile.rds"), controller = obj)
+rrq_task_wait(t, controller = obj)
+rrq_task_result(t, controller = obj)
+\dontshow{\}) # examplesIf}
 }

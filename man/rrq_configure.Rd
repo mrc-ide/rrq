@@ -74,3 +74,16 @@ million random numbers was \verb{8,000,031} bytes. It's unlikely that
 a \code{store_max_size} of less than 1MB will be sensible.
 }
 
+\examples{
+\dontshow{if (rrq:::enable_examples()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+tmp <- tempfile()
+dir.create(tmp)
+rrq_configure("rrq:offload", store_max_size = 100000, offload_path = tmp)
+obj <- rrq_controller("rrq:offload")
+x <- runif(100000)
+t <- rrq_task_create_expr(mean(x), controller = obj)
+dir(tmp)
+file.size(dir(tmp, full.names = TRUE))
+rrq_destroy(controller = obj)
+\dontshow{\}) # examplesIf}
+}
