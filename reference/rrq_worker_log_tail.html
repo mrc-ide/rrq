@@ -87,27 +87,27 @@ process from a task queued with <code>separate_process = TRUE</code></p></li>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="rrq_controller.html">rrq_controller</a></span><span class="op">(</span><span class="st">"rrq:example"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">rrq_worker_log_tail</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">10</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                 worker_id child       time       command</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1       cuneiform_seaslug    NA 1721042852    TASK_ERROR</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2       cuneiform_seaslug    NA 1721042853       MESSAGE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3       cuneiform_seaslug    NA 1721042853         ENVIR</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4       cuneiform_seaslug    NA 1721042853         ENVIR</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5       cuneiform_seaslug    NA 1721042853      RESPONSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6       cuneiform_seaslug    NA 1721042853    TASK_START</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7       cuneiform_seaslug    NA 1721042853 TASK_COMPLETE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8       cuneiform_seaslug    NA 1721042853       MESSAGE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9       cuneiform_seaslug    NA 1721042853         ENVIR</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10      cuneiform_seaslug    NA 1721042853      RESPONSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11 unlegislative_borzoi_1    NA 1721042854         ALIVE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12 unlegislative_borzoi_1    NA 1721042854         ENVIR</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13 unlegislative_borzoi_1    NA 1721042854         QUEUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1               hazy_kudu    NA 1721989604    TASK_ERROR</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2               hazy_kudu    NA 1721989606       MESSAGE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3               hazy_kudu    NA 1721989606         ENVIR</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4               hazy_kudu    NA 1721989606         ENVIR</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5               hazy_kudu    NA 1721989606      RESPONSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6               hazy_kudu    NA 1721989606    TASK_START</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7               hazy_kudu    NA 1721989606 TASK_COMPLETE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8               hazy_kudu    NA 1721989606       MESSAGE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9               hazy_kudu    NA 1721989606         ENVIR</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10              hazy_kudu    NA 1721989606      RESPONSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11 unlegislative_borzoi_1    NA 1721989607         ALIVE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12 unlegislative_borzoi_1    NA 1721989607         ENVIR</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 13 unlegislative_borzoi_1    NA 1721989607         QUEUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                             message</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  85bb80b595176a367f8d2b6f7e6c8415</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  2ad7f9f137fa1e6e642c996136a2184b</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2                           REFRESH</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3                               new</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4                            create</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5                           REFRESH</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6  431bacacbb2063a569148d1d848047ff</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7  431bacacbb2063a569148d1d848047ff</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  46e9f5fd1e00e3c31e9b81fb468908d2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7  46e9f5fd1e00e3c31e9b81fb468908d2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 8                           REFRESH</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 9                               new</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 10                          REFRESH</span>

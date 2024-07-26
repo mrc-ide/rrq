@@ -77,7 +77,7 @@ needs. Some of the interfaces here may be useful for debugging
 of code).</p>
 <p>In order to do this, we’re going to need a queue and a worker:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/mrc-ide/rrq" class="external-link">rrq</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mrc-ide.github.io/rrq">rrq</a></span><span class="op">)</span></span>
 <span><span class="va">id</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"rrq:"</span>, <span class="fu">ids</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ids/man/random_id.html" class="external-link">random_id</a></span><span class="op">(</span>bytes <span class="op">=</span> <span class="fl">4</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rrq_controller.html">rrq_controller</a></span><span class="op">(</span><span class="va">id</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/rrq_default_controller_set.html">rrq_default_controller_set</a></span><span class="op">(</span><span class="va">obj</span><span class="op">)</span></span>
@@ -86,9 +86,9 @@ of code).</p>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Spawning 1 worker with prefix 'nonspheric_siberiantiger'</span></span>
 <span><span class="va">worker_id</span> <span class="op">&lt;-</span> <span class="va">w</span><span class="op">$</span><span class="va">id</span></span></code></pre></div>
 <p>On startup the worker log contains:</p>
-<pre class="plain"><code>[2024-07-15 11:27:56.388333] ALIVE
-[2024-07-15 11:27:56.389121] ENVIR new
-[2024-07-15 11:27:56.389448] QUEUE default
+<pre class="plain"><code>[2024-07-26 10:27:08.940052] ALIVE
+[2024-07-26 10:27:08.940882] ENVIR new
+[2024-07-26 10:27:08.941256] QUEUE default
                                  __
                 ______________ _/ /
       ______   / ___/ ___/ __ `/ /_____
@@ -100,11 +100,11 @@ of code).</p>
     rrq_version:   0.7.16
     platform:      x86_64-pc-linux-gnu
     running:       Ubuntu 22.04.4 LTS
-    hostname:      fv-az1538-568
+    hostname:      fv-az841-799
     username:      runner
-    queue:         rrq:8b8deab4:queue:default
+    queue:         rrq:8ef448b8:queue:default
     wd:            /home/runner/work/rrq/rrq/vignettes
-    pid:           7683
+    pid:           7595
     redis_host:    127.0.0.1
     redis_port:    6379
     heartbeat_key: &lt;not set&gt;</code></pre>
@@ -155,12 +155,12 @@ because it does so little</p>
 <p>The message id is going to be useful for getting responses:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">message_id</span></span>
-<span><span class="co">#&gt; [1] "1721042876.629324"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "1721989629.190679"</span></span></code></pre></div>
 <p>(this is derived from the current time, according to Redis which is
 the central reference point of time for the whole system).</p>
-<pre class="plain"><code>[2024-07-15 11:27:56.629652] MESSAGE PING
+<pre class="plain"><code>[2024-07-26 10:27:09.191068] MESSAGE PING
 PONG
-[2024-07-15 11:27:56.630161] RESPONSE PING</code></pre>
+[2024-07-26 10:27:09.191621] RESPONSE PING</code></pre>
 <p>The logfile prints:</p>
 <ol style="list-style-type: decimal">
 <li>the request for the <code>PING</code>
@@ -173,11 +173,11 @@ something is written to the response stream.</li>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_worker_log_tail.html">rrq_worker_log_tail</a></span><span class="op">(</span>n <span class="op">=</span> <span class="cn">Inf</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                    worker_id child       time  command message</span></span>
-<span><span class="co">#&gt; 1 nonspheric_siberiantiger_1    NA 1721042876    ALIVE        </span></span>
-<span><span class="co">#&gt; 2 nonspheric_siberiantiger_1    NA 1721042876    ENVIR     new</span></span>
-<span><span class="co">#&gt; 3 nonspheric_siberiantiger_1    NA 1721042876    QUEUE default</span></span>
-<span><span class="co">#&gt; 4 nonspheric_siberiantiger_1    NA 1721042877  MESSAGE    PING</span></span>
-<span><span class="co">#&gt; 5 nonspheric_siberiantiger_1    NA 1721042877 RESPONSE    PING</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 nonspheric_siberiantiger_1    NA 1721989629    ALIVE        </span></span>
+<span><span class="co">#&gt; 2 nonspheric_siberiantiger_1    NA 1721989629    ENVIR     new</span></span>
+<span><span class="co">#&gt; 3 nonspheric_siberiantiger_1    NA 1721989629    QUEUE default</span></span>
+<span><span class="co">#&gt; 4 nonspheric_siberiantiger_1    NA 1721989629  MESSAGE    PING</span></span>
+<span><span class="co">#&gt; 5 nonspheric_siberiantiger_1    NA 1721989629 RESPONSE    PING</span></span></code></pre></div>
 <p>This includes the <code>ALIVE</code> message as the worker comes
 up.</p>
 <p>Inspecting the logs is fine for interactive use, but it’s going to be
@@ -192,7 +192,7 @@ anyway:</p>
 for:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_message_response_ids.html">rrq_message_response_ids</a></span><span class="op">(</span><span class="va">worker_id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "1721042876.629324"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "1721989629.190679"</span></span></code></pre></div>
 <p>To fetch the responses from all workers it was sent to (always
 returning a named list):</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
@@ -219,7 +219,7 @@ this method:</p>
 until a response is ready (as in <code><a href="../reference/rrq_task_wait.html">rrq_task_wait()</a></code>).</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_task_create_expr.html">rrq_task_create_expr</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "d3144baaf8e9ad53a967d313d842b650"</span></span>
+<span><span class="co">#&gt; [1] "53d283f8c9a64125adf6b573deef1666"</span></span>
 <span><span class="va">message_id</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rrq_message_send.html">rrq_message_send</a></span><span class="op">(</span><span class="st">"PING"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/rrq_message_get_response.html">rrq_message_get_response</a></span><span class="op">(</span></span>
 <span>  <span class="va">message_id</span>, <span class="va">worker_id</span>, delete <span class="op">=</span> <span class="cn">TRUE</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
@@ -229,13 +229,13 @@ until a response is ready (as in <code><a href="../reference/rrq_task_wait.html"
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_worker_log_tail.html">rrq_worker_log_tail</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                    worker_id child       time       command</span></span>
-<span><span class="co">#&gt; 1 nonspheric_siberiantiger_1    NA 1721042877    TASK_START</span></span>
-<span><span class="co">#&gt; 2 nonspheric_siberiantiger_1    NA 1721042879 TASK_COMPLETE</span></span>
-<span><span class="co">#&gt; 3 nonspheric_siberiantiger_1    NA 1721042879       MESSAGE</span></span>
-<span><span class="co">#&gt; 4 nonspheric_siberiantiger_1    NA 1721042879      RESPONSE</span></span>
+<span><span class="co">#&gt; 1 nonspheric_siberiantiger_1    NA 1721989630    TASK_START</span></span>
+<span><span class="co">#&gt; 2 nonspheric_siberiantiger_1    NA 1721989632 TASK_COMPLETE</span></span>
+<span><span class="co">#&gt; 3 nonspheric_siberiantiger_1    NA 1721989632       MESSAGE</span></span>
+<span><span class="co">#&gt; 4 nonspheric_siberiantiger_1    NA 1721989632      RESPONSE</span></span>
 <span><span class="co">#&gt;                            message</span></span>
-<span><span class="co">#&gt; 1 d3144baaf8e9ad53a967d313d842b650</span></span>
-<span><span class="co">#&gt; 2 d3144baaf8e9ad53a967d313d842b650</span></span>
+<span><span class="co">#&gt; 1 53d283f8c9a64125adf6b573deef1666</span></span>
+<span><span class="co">#&gt; 2 53d283f8c9a64125adf6b573deef1666</span></span>
 <span><span class="co">#&gt; 3                             PING</span></span>
 <span><span class="co">#&gt; 4                             PING</span></span></code></pre></div>
 <ol style="list-style-type: decimal">
@@ -247,11 +247,11 @@ until a response is ready (as in <code><a href="../reference/rrq_task_wait.html"
 <p>However, because the message is only processed after the task is
 completed, the response takes a while to come back. Equivalently, from
 the worker log:</p>
-<pre class="plain"><code>[2024-07-15 11:27:57.430284] TASK_START d3144baaf8e9ad53a967d313d842b650
-[2024-07-15 11:27:59.434716] TASK_COMPLETE d3144baaf8e9ad53a967d313d842b650
-[2024-07-15 11:27:59.435227] MESSAGE PING
+<pre class="plain"><code>[2024-07-26 10:27:09.997391] TASK_START 53d283f8c9a64125adf6b573deef1666
+[2024-07-26 10:27:12.001796] TASK_COMPLETE 53d283f8c9a64125adf6b573deef1666
+[2024-07-26 10:27:12.002331] MESSAGE PING
 PONG
-[2024-07-15 11:27:59.435641] RESPONSE PING</code></pre>
+[2024-07-26 10:27:12.002692] RESPONSE PING</code></pre>
 </div>
 <div class="section level2">
 <h2 id="echo">
@@ -265,9 +265,9 @@ prints an arbitrary string to the log. It always returns
 <span><span class="fu"><a href="../reference/rrq_message_get_response.html">rrq_message_get_response</a></span><span class="op">(</span><span class="va">message_id</span>, <span class="va">worker_id</span>, timeout <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $nonspheric_siberiantiger_1</span></span>
 <span><span class="co">#&gt; [1] "OK"</span></span></code></pre></div>
-<pre class="plain"><code>[2024-07-15 11:28:00.127565] MESSAGE ECHO
+<pre class="plain"><code>[2024-07-26 10:27:12.694931] MESSAGE ECHO
 hello world!
-[2024-07-15 11:28:00.128155] RESPONSE ECHO</code></pre>
+[2024-07-26 10:27:12.695555] RESPONSE ECHO</code></pre>
 </div>
 <div class="section level2">
 <h2 id="info">
@@ -285,11 +285,11 @@ worker started up:</p>
 <span><span class="co">#&gt;     rrq_version: 0.7.16</span></span>
 <span><span class="co">#&gt;     platform:    x86_64-pc-linux-gnu</span></span>
 <span><span class="co">#&gt;     running:     Ubuntu 22.04.4 LTS</span></span>
-<span><span class="co">#&gt;     hostname:    fv-az1538-568</span></span>
+<span><span class="co">#&gt;     hostname:    fv-az841-799</span></span>
 <span><span class="co">#&gt;     username:    runner</span></span>
-<span><span class="co">#&gt;     queue:       rrq:8b8deab4:queue:default</span></span>
+<span><span class="co">#&gt;     queue:       rrq:8ef448b8:queue:default</span></span>
 <span><span class="co">#&gt;     wd:          /home/runner/work/rrq/rrq/vignettes</span></span>
-<span><span class="co">#&gt;     pid:         7683</span></span>
+<span><span class="co">#&gt;     pid:         7595</span></span>
 <span><span class="co">#&gt;     redis_host:  127.0.0.1</span></span>
 <span><span class="co">#&gt;     redis_port:  6379</span></span></code></pre></div>
 <p>We can force the worker to refresh:</p>
@@ -316,19 +316,19 @@ worker started up:</p>
 <span><span class="co">#&gt; [1] "Ubuntu 22.04.4 LTS"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $nonspheric_siberiantiger_1$hostname</span></span>
-<span><span class="co">#&gt; [1] "fv-az1538-568"</span></span>
+<span><span class="co">#&gt; [1] "fv-az841-799"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $nonspheric_siberiantiger_1$username</span></span>
 <span><span class="co">#&gt; [1] "runner"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $nonspheric_siberiantiger_1$queue</span></span>
-<span><span class="co">#&gt; [1] "rrq:8b8deab4:queue:default"</span></span>
+<span><span class="co">#&gt; [1] "rrq:8ef448b8:queue:default"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $nonspheric_siberiantiger_1$wd</span></span>
 <span><span class="co">#&gt; [1] "/home/runner/work/rrq/rrq/vignettes"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $nonspheric_siberiantiger_1$pid</span></span>
-<span><span class="co">#&gt; [1] 7683</span></span>
+<span><span class="co">#&gt; [1] 7595</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $nonspheric_siberiantiger_1$redis_host</span></span>
 <span><span class="co">#&gt; [1] "127.0.0.1"</span></span>
@@ -412,12 +412,12 @@ remaining before the worker exits</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/rrq_message_send_and_wait.html">rrq_message_send_and_wait</a></span><span class="op">(</span><span class="st">"TIMEOUT_GET"</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $nonspheric_siberiantiger_1</span></span>
 <span><span class="co">#&gt; timeout_idle    remaining </span></span>
-<span><span class="co">#&gt;     600.0000     599.8854</span></span>
+<span><span class="co">#&gt;     600.0000     599.8858</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/rrq_message_send_and_wait.html">rrq_message_send_and_wait</a></span><span class="op">(</span><span class="st">"TIMEOUT_GET"</span>, worker_ids <span class="op">=</span> <span class="va">worker_id</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $nonspheric_siberiantiger_1</span></span>
 <span><span class="co">#&gt; timeout_idle    remaining </span></span>
-<span><span class="co">#&gt;     600.0000     594.8271</span></span></code></pre></div>
+<span><span class="co">#&gt;     600.0000     594.8274</span></span></code></pre></div>
 <p>One useful pattern is to send work to workers, then set the timeout
 to zero. This means that when work is complete they will exit (almost)
 immediately:</p>
@@ -431,19 +431,19 @@ immediately:</p>
 <span><span class="co">#&gt; [1] TRUE</span></span>
 <span><span class="fu"><a href="../reference/rrq_task_results.html">rrq_task_results</a></span><span class="op">(</span><span class="va">ids</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [[1]]</span></span>
-<span><span class="co">#&gt; [1] 0.02532673</span></span>
+<span><span class="co">#&gt; [1] 0.1209149</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; [[2]]</span></span>
-<span><span class="co">#&gt; [1] 0.15152700 0.08310385</span></span>
+<span><span class="co">#&gt; [1] 0.9807223 0.3789845</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; [[3]]</span></span>
-<span><span class="co">#&gt; [1] 0.4720282 0.5351129 0.8275641</span></span>
+<span><span class="co">#&gt; [1] 0.3695866 0.3950122 0.5531655</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; [[4]]</span></span>
-<span><span class="co">#&gt; [1] 0.0599120 0.2154643 0.5118185 0.3041615</span></span>
+<span><span class="co">#&gt; [1] 0.5661270 0.6878814 0.6735567 0.7935626</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; [[5]]</span></span>
-<span><span class="co">#&gt; [1] 0.44773502 0.03316301 0.99481206 0.34612485 0.99418138</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.46560408 0.84455406 0.08347518 0.23756773 0.89383466</span></span></code></pre></div>
 <p>The worker will remain idle for 60s (by default) which is the length
 of time that one poll for work lasts, then it will exit.</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">

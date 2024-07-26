@@ -91,18 +91,12 @@ we'll use the controller registered with
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "package:datasets"  "package:methods"   "Autoloads"        </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [10] "package:base"     </span>
 <span class="r-in"><span><span class="fu"><a href="rrq_worker_log_tail.html">rrq_worker_log_tail</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">5</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           worker_id child       time       command</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 cuneiform_seaslug    NA 1721042853         ENVIR</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 cuneiform_seaslug    NA 1721042853         ENVIR</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 cuneiform_seaslug    NA 1721042853      RESPONSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 cuneiform_seaslug    NA 1721042853    TASK_START</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 cuneiform_seaslug    NA 1721042853 TASK_COMPLETE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                            message</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1                              new</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                           create</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3                          REFRESH</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 431bacacbb2063a569148d1d848047ff</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 431bacacbb2063a569148d1d848047ff</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   worker_id child       time       command                          message</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 hazy_kudu    NA 1721989606         ENVIR                              new</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 hazy_kudu    NA 1721989606         ENVIR                           create</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 hazy_kudu    NA 1721989606      RESPONSE                          REFRESH</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 hazy_kudu    NA 1721989606    TASK_START 46e9f5fd1e00e3c31e9b81fb468908d2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 hazy_kudu    NA 1721989606 TASK_COMPLETE 46e9f5fd1e00e3c31e9b81fb468908d2</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu">rrq_worker_envir_set</span><span class="op">(</span><span class="cn">NULL</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
 </code></pre></div>
