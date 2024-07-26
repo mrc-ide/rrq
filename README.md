@@ -115,7 +115,7 @@ Install from the mrc-ide R universe package repository:
 
 ```r
 install.packages(
-  "hipercow",
+  "rrq",
   repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
 ```
 
