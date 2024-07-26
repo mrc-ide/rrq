@@ -9,7 +9,7 @@ Authors@R: c(person("Rich", "FitzJohn", role = c("aut", "cre"),
 Description: Simple Redis queue in R.
 License: MIT + file LICENSE
 LazyData: true
-URL: https://github.com/mrc-ide/rrq, https://mrc-ide.github.io/rrq
+URL: https://mrc-ide.github.io/rrq, https://github.com/mrc-ide/rrq
 BugReports: https://github.com/mrc-ide/rrq/issues
 Imports:
     R6,
