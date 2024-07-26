@@ -111,11 +111,12 @@ For more information, see `vignette("rrq")`
 
 ## Installation
 
-Install from the mrc-ide package repository:
+Install from the mrc-ide R universe package repository:
 
 ```r
-drat:::add("mrc-ide")
-install.packages("rrq")
+install.packages(
+  "hipercow",
+  repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
 ```
 
 Alternatively, install with `remotes`:
