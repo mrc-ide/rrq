@@ -11,7 +11,7 @@ should not be modified."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">rrq</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.16</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.17</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,6 +54,7 @@ should not be modified.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rrq_worker_config</span><span class="op">(</span></span>
 <span>  queue <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  logdir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  poll_queue <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  timeout_idle <span class="op">=</span> <span class="cn">Inf</span>,</span>
 <span>  poll_process <span class="op">=</span> <span class="fl">1</span>,</span>
@@ -83,6 +84,13 @@ logging output to the screen.  Logging to screen has a small but
 measurable performance cost, and if you will not collect system
 logs from the worker then it is wasted time.  Logging to the
 redis server is always enabled.</p></dd>
+
+
+<dt id="arg-logdir">logdir<a class="anchor" aria-label="anchor" href="#arg-logdir"></a></dt>
+<dd><p>Optional log directory to use for writing logs when
+queuing tasks in a separate process.  If given, then logs will
+be saved to <code>&lt;logdir&gt;/&lt;task_id&gt;</code>.  This directory should be
+writable by all workers and readable by the controller.</p></dd>
 
 
 <dt id="arg-poll-queue">poll_queue<a class="anchor" aria-label="anchor" href="#arg-poll-queue"></a></dt>
@@ -142,6 +150,9 @@ input parameters.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $verbose</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $logdir</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $poll_queue</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 60</span>
