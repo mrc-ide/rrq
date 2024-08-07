@@ -1260,3 +1260,63 @@ test_that("Can extract dependency information", {
   expect_equal(deps5$up[[t2]], deps2$up[[t2]])
   expect_null(deps5$depends$down)
 })
+
+
+test_that("can log tasks when running in a separate process", {
+  obj <- test_rrq("myfuns.R")
+  logdir <- withr::local_tempdir()
+  cfg <- rrq_worker_config(logdir = logdir, verbose = FALSE)
+  rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+
+  w <- test_worker_blocking(obj)
+
+  t <- rrq_task_create_expr(noisydouble(1), separate_process = TRUE,
+                            controller = obj)
+  expect_null(rrq_task_log(t, controller = obj))
+
+  w$step(TRUE)
+  logfile <- file.path(logdir, t)
+  expect_true(file.exists(logfile))
+  expect_equal(readLines(logfile), "doubling 1")
+
+  expect_equal(rrq_task_log(t, controller = obj), "doubling 1")
+})
+
+
+test_that("can read empty logs", {
+  obj <- test_rrq("myfuns.R")
+  logdir <- withr::local_tempdir()
+  cfg <- rrq_worker_config(logdir = logdir, verbose = FALSE)
+  rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
+
+  w <- test_worker_blocking(obj)
+  t <- rrq_task_create_expr(sin(1), separate_process = TRUE,
+                            controller = obj)
+  expect_null(rrq_task_log(t, controller = obj))
+  w$step(TRUE)
+  expect_equal(rrq_task_log(t, controller = obj), character())
+})
+
+
+test_that("can't read logs of unknown tasks", {
+  obj <- test_rrq("myfuns.R")
+  t <- ids::random_id()
+  expect_error(
+    rrq_task_log(t, controller = obj),
+    "Task '[[:xdigit:]]+' does not exist")
+})
+
+
+test_that("can't read logs of tasks run in the same process", {
+  obj <- test_rrq("myfuns.R")
+  w <- test_worker_blocking(obj)
+  t <- rrq_task_create_expr(sin(1), controller = obj)
+  msg <- "Task log not enabled for '[[:xdigit:]]+', as it was not configured"
+  expect_error(
+    rrq_task_log(t, controller = obj),
+    msg)
+  w$step(TRUE)
+  expect_error(
+    rrq_task_log(t, controller = obj),
+    msg)
+})

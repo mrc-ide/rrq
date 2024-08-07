@@ -69,6 +69,7 @@ rrq_worker <- R6::R6Class(
                                        controller = self$controller)
 
       private$verbose <- config$verbose
+      private$logdir <- config$logdir
       private$is_child <- is_child
       private$poll_queue <- config$poll_queue
       private$poll_process <- config$poll_process
@@ -254,6 +255,7 @@ rrq_worker <- R6::R6Class(
     key_heartbeat = NULL,
     poll_queue = NULL,
     verbose = NULL,
+    logdir = NULL,
     is_child = NULL,
     poll_process = NULL,
     timeout_process_die = NULL

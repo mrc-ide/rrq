@@ -854,6 +854,64 @@ rrq_task_wait <- function(task_id, timeout = NULL, time_poll = 1,
 }
 
 
+##' Fetch logs from tasks that were queued into separate processes
+##' (e.g., with [rrq_task_create_expr] using `separate_process =
+##' TRUE`).  It is not knowable if a task definitely produces logs - if
+##' you have a mixture of workers that do enable task logs and some
+##' that don't, then it will depend on the worker that picks it up if
+##' logging will be enabled.  Don't do this though and you should be
+##' fine.
+##'
+##' @title Fetch task logs
+##'
+##' @inheritParams rrq_task_info
+##'
+##' @return A character vector of logs, or `NULL` if no log is present
+##'   yet.  If logging is not enabled for this task, we throw an
+##'   error.  Empty logs can be distinguished from "no logs yet", as
+##'   they will return an empty character vector (`character(0)`).
+##'
+##' @export
+##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
+##'
+##' obj <- rrq_controller("rrq:example")
+##'
+##' t <- rrq_task_create_expr(message("hello!"), separate_process = TRUE,
+##'                           controller = obj)
+##' rrq_task_wait(t, controller = obj)
+##' rrq_task_log(t, controller = obj)
+rrq_task_log <- function(task_id, controller = NULL) {
+  controller <- get_controller(controller, call = rlang::current_env())
+  assert_scalar_character(task_id, call = rlang::current_env())
+  con <- controller$con
+  keys <- controller$keys
+
+  dat <- con$pipeline(
+    filename = redis$HGET(keys$task_logfile, task_id),
+    local = redis$HGET(keys$task_local, task_id))
+  filename <- dat$filename
+
+  logs <- NULL
+  if (is.null(filename)) {
+    if (is.null(dat$local)) {
+      cli::cli_abort("Task '{task_id}' does not exist")
+    }
+    separate_process <- dat$local == "FALSE"
+    if (!separate_process) {
+      cli::cli_abort(
+        c(paste("Task log not enabled for '{task_id}', as it was not",
+                "configured to run in a separate process"),
+          i = paste("Queue your tasks with 'separate_process = TRUE' to",
+                    "enable task logs")))
+    }
+  } else if (file.exists(filename)) {
+    logs <- readLines(filename)
+  }
+
+  logs
+}
+
+
 task_load_from_store <- function(task, store) {
   if (task$type == "expr") {
     if (!is.null(task$variables)) {

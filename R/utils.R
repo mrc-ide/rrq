@@ -188,3 +188,8 @@ df_rows <- function(d) {
   }
   ret
 }
+
+
+dir_create <- function(path) {
+  dir.create(path, showWarnings = FALSE, recursive = TRUE)
+}

@@ -100,6 +100,15 @@ worker_run_task_separate_process <- function(task, worker, private) {
   key_cancel <- keys$task_cancel
   poll_process <- private$poll_process
   timeout_process_die <- private$timeout_process_die
+  logdir <- private$logdir
+
+  if (is.null(logdir)) {
+    logfile <- "|"
+  } else {
+    dir_create(logdir)
+    logfile <- file.path(logdir, task_id)
+    con$HSET(keys$task_logfile, task_id, logfile)
+  }
 
   worker$log("REMOTE", task_id)
   px <- callr::r_bg(
@@ -109,6 +118,8 @@ worker_run_task_separate_process <- function(task, worker, private) {
     list(redis_config, queue_id, worker_id, task_id),
     package = "rrq",
     supervise = TRUE,
+    stdout = logfile,
+    stderr = logfile,
     env = c(callr::rcmd_safe_env(),
             RRQ_WORKER_ID = worker_id,
             RRQ_TASK_ID = task_id))
