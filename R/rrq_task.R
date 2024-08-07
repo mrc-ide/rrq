@@ -856,7 +856,7 @@ rrq_task_wait <- function(task_id, timeout = NULL, time_poll = 1,
 
 ##' Fetch logs from tasks that were queued into separate processes
 ##' (e.g., with [rrq_task_create_expr] using `separate_process =
-##' TRUE`).  It is not knowable if a task definitely produce logs - if
+##' TRUE`).  It is not knowable if a task definitely produces logs - if
 ##' you have a mixture of workers that do enable task logs and some
 ##' that don't, then it will depend on the worker that picks it up if
 ##' logging will be enabled.  Don't do this though and you should be
