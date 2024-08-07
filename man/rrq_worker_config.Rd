@@ -7,6 +7,7 @@
 rrq_worker_config(
   queue = NULL,
   verbose = TRUE,
+  logdir = NULL,
   poll_queue = NULL,
   timeout_idle = Inf,
   poll_process = 1,
@@ -29,6 +30,11 @@ logging output to the screen.  Logging to screen has a small but
 measurable performance cost, and if you will not collect system
 logs from the worker then it is wasted time.  Logging to the
 redis server is always enabled.}
+
+\item{logdir}{Optional log directory to use for writing logs when
+queuing tasks in a separate process.  If given, then logs will
+be saved to \verb{<logdir>/<task_id>}.  This directory should be
+writable by all workers and readable by the controller.}
 
 \item{poll_queue}{Polling time for new tasks on the queue or
 messages. Longer values here will reduce the impact on the

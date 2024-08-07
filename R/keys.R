@@ -25,6 +25,7 @@ rrq_keys <- function(queue_id) {
        task_progress  = sprintf("%s:task:progress",  queue_id),
        task_result    = sprintf("%s:task:result",    queue_id),
        task_pid       = sprintf("%s:task:pid",       queue_id),
+       task_logfile   = sprintf("%s:task:logfile",   queue_id),
 
        ## Fault tolerance support
        task_moved_to   = sprintf("%s:task:moved_to",   queue_id),

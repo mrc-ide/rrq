@@ -19,6 +19,11 @@
 ##'   logs from the worker then it is wasted time.  Logging to the
 ##'   redis server is always enabled.
 ##'
+##' @param logdir Optional log directory to use for writing logs when
+##'   queuing tasks in a separate process.  If given, then logs will
+##'   be saved to `<logdir>/<task_id>`.  This directory should be
+##'   writable by all workers and readable by the controller.
+##'
 ##' @param poll_queue Polling time for new tasks on the queue or
 ##'   messages. Longer values here will reduce the impact on the
 ##'   database but make workers less responsive to being killed with
@@ -58,7 +63,7 @@
 ##' @export
 ##' @examples
 ##' rrq::rrq_worker_config()
-rrq_worker_config <- function(queue = NULL, verbose = TRUE,
+rrq_worker_config <- function(queue = NULL, verbose = TRUE, logdir = NULL,
                               poll_queue = NULL, timeout_idle = Inf,
                               poll_process = 1, timeout_process_die = 2,
                               heartbeat_period = NULL) {
@@ -71,6 +76,9 @@ rrq_worker_config <- function(queue = NULL, verbose = TRUE,
     }
   }
   assert_scalar_logical(verbose)
+  if (!is.null(logdir)) {
+    assert_scalar_character(logdir)
+  }
   if (is.null(poll_queue)) {
     poll_queue <- if (rlang::is_interactive()) 5 else 60
   }
@@ -83,6 +91,7 @@ rrq_worker_config <- function(queue = NULL, verbose = TRUE,
   }
   ret <- list(queue = queue,
               verbose = verbose,
+              logdir = logdir,
               poll_queue = poll_queue,
               timeout_idle = timeout_idle,
               poll_process = poll_process,
