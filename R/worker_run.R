@@ -119,7 +119,7 @@ worker_run_task_separate_process <- function(task, worker, private) {
     package = "rrq",
     supervise = TRUE,
     stdout = logfile,
-    stderr = logfile,
+    stderr = "2>&1",
     env = c(callr::rcmd_safe_env(),
             RRQ_WORKER_ID = worker_id,
             RRQ_TASK_ID = task_id))
