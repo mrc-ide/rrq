@@ -9,7 +9,7 @@ programmatically useful format (see Value)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">rrq</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.17</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.18</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -87,27 +87,27 @@ process from a task queued with <code>separate_process = TRUE</code></p></li>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="rrq_controller.html">rrq_controller</a></span><span class="op">(</span><span class="st">"rrq:example"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">rrq_worker_log_tail</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">10</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                 worker_id child       time       command</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1    cattlehide_acaciarat    NA 1723038509    TASK_ERROR</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2    cattlehide_acaciarat    NA 1723038511       MESSAGE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3    cattlehide_acaciarat    NA 1723038511         ENVIR</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4    cattlehide_acaciarat    NA 1723038511         ENVIR</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5    cattlehide_acaciarat    NA 1723038511      RESPONSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6    cattlehide_acaciarat    NA 1723038511    TASK_START</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7    cattlehide_acaciarat    NA 1723038511 TASK_COMPLETE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8    cattlehide_acaciarat    NA 1723038511       MESSAGE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9    cattlehide_acaciarat    NA 1723038511         ENVIR</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10   cattlehide_acaciarat    NA 1723038511      RESPONSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11 unlegislative_borzoi_1    NA 1723038512         ALIVE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12 unlegislative_borzoi_1    NA 1723038512         ENVIR</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13 unlegislative_borzoi_1    NA 1723038512         QUEUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  apostolic_carpenterant    NA 1726671484    TASK_ERROR</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  apostolic_carpenterant    NA 1726671485       MESSAGE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  apostolic_carpenterant    NA 1726671485         ENVIR</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  apostolic_carpenterant    NA 1726671485         ENVIR</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  apostolic_carpenterant    NA 1726671485      RESPONSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  apostolic_carpenterant    NA 1726671485    TASK_START</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7  apostolic_carpenterant    NA 1726671485 TASK_COMPLETE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8  apostolic_carpenterant    NA 1726671485       MESSAGE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9  apostolic_carpenterant    NA 1726671485         ENVIR</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10 apostolic_carpenterant    NA 1726671485      RESPONSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11 unlegislative_borzoi_1    NA 1726671486         ALIVE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12 unlegislative_borzoi_1    NA 1726671486         ENVIR</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 13 unlegislative_borzoi_1    NA 1726671486         QUEUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                             message</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  0b64bc0a14a4d9ef6266340ad4947727</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  12c30efb5a00292b1c484c99d0881236</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2                           REFRESH</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3                               new</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4                            create</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5                           REFRESH</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6  8bea61d5311b15d64055ef96a97c8ec8</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7  8bea61d5311b15d64055ef96a97c8ec8</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  477098161e3ded9d5e3e17302ee8a10a</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7  477098161e3ded9d5e3e17302ee8a10a</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 8                           REFRESH</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 9                               new</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 10                          REFRESH</span>
@@ -125,7 +125,7 @@ process from a task queued with <code>separate_process = TRUE</code></p></li>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
     </footer></div>
