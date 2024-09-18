@@ -13,7 +13,7 @@ retrieve information about a task (e.g., rrq_task_status(), [rrq_task_result()])
 
     <a class="navbar-brand me-2" href="../index.html">rrq</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.18</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.19</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -87,32 +87,32 @@ we'll use the controller registered with
 <span class="r-in"><span><span class="fu"><a href="rrq_task_wait.html">rrq_task_wait</a></span><span class="op">(</span><span class="va">t1</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="fu"><a href="rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t1</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -0.5128006</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -0.6648678</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># If we retry the task we'll get a different value:</span></span></span>
 <span class="r-in"><span><span class="va">t2</span> <span class="op">&lt;-</span> <span class="fu">rrq_task_retry</span><span class="op">(</span><span class="va">t1</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="rrq_task_wait.html">rrq_task_wait</a></span><span class="op">(</span><span class="va">t2</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="fu"><a href="rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t2</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.4067148</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.7877277</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Once a task is retried, most of the time (by default) you can use</span></span></span>
 <span class="r-in"><span><span class="co"># the original id and the new one exchangeably:</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t1</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.4067148</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.7877277</span>
 <span class="r-in"><span><span class="fu"><a href="rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t2</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.4067148</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.7877277</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Use the 'follow' argument to modify this behaviour</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t1</span>, follow <span class="op">=</span> <span class="cn">FALSE</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -0.5128006</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -0.6648678</span>
 <span class="r-in"><span><span class="fu"><a href="rrq_task_result.html">rrq_task_result</a></span><span class="op">(</span><span class="va">t2</span>, follow <span class="op">=</span> <span class="cn">FALSE</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.4067148</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.7877277</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># See the retry chain with rrq_task_info</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="rrq_task_info.html">rrq_task_info</a></span><span class="op">(</span><span class="va">t1</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $id</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "3b806ac880df91c7dc272a1866b4edbc"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "d0b91033a5eac68ddf20c4b549f55eec"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $status</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "MOVED"</span>
@@ -127,7 +127,7 @@ we'll use the controller registered with
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $worker</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "apostolic_carpenterant"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "exhaustible_umbrette"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $pid</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
@@ -145,12 +145,12 @@ we'll use the controller registered with
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $moved$down</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "f71fadd42d73e88892e63063a7e70ce3"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "a48b72e80b66c2ce40fbb24c83a6536b"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="fu"><a href="rrq_task_info.html">rrq_task_info</a></span><span class="op">(</span><span class="va">t2</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $id</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "f71fadd42d73e88892e63063a7e70ce3"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "a48b72e80b66c2ce40fbb24c83a6536b"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $status</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "COMPLETE"</span>
@@ -165,7 +165,7 @@ we'll use the controller registered with
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $worker</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "apostolic_carpenterant"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "exhaustible_umbrette"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $pid</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
@@ -180,7 +180,7 @@ we'll use the controller registered with
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $moved</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $moved$up</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "3b806ac880df91c7dc272a1866b4edbc"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "d0b91033a5eac68ddf20c4b549f55eec"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $moved$down</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>

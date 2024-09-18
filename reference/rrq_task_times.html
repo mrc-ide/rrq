@@ -19,7 +19,7 @@ redux::redis_time_to_r to convert them to a POSIXt object."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">rrq</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.18</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.19</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -103,12 +103,12 @@ future.</p>
 <span class="r-in"><span><span class="va">t</span> <span class="op">&lt;-</span> <span class="fu"><a href="rrq_task_create_expr.html">rrq_task_create_expr</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">rrq_task_times</span><span class="op">(</span><span class="va">t</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                      submit      start complete moved</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 691afc6709d072e3ea3cd9cd5d0b430a 1726671480 1726671480       NA    NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 836d72016a08daaf4030653f921f40ff 1726673811 1726673811       NA    NA</span>
 <span class="r-in"><span><span class="fu"><a href="rrq_task_wait.html">rrq_task_wait</a></span><span class="op">(</span><span class="va">t</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="fu">rrq_task_times</span><span class="op">(</span><span class="va">t</span>, controller <span class="op">=</span> <span class="va">obj</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                      submit      start   complete moved</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 691afc6709d072e3ea3cd9cd5d0b430a 1726671480 1726671480 1726671483    NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 836d72016a08daaf4030653f921f40ff 1726673811 1726673811 1726673814    NA</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
