@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -e
+# Usage:
+#   check_version [<version>]
+#
+# If version is not given as a positional argument, then we'll read it
+# from the DESCRIPTION file.
+#
+# We assume that a version already exists as a tag.
+VERSION=${1:-$(grep '^Version' DESCRIPTION  | sed 's/.*: *//')}
+TAG="v${VERSION}"
+
+echo "Proposed version number '$VERSION'"
+
+if echo "$VERSION" | grep -Eq "[0-9]+[.][0-9]+[.][0-9]+"; then
+    echo "[OK] Version number in correct format"
+else
+    echo "[ERROR] Invalid format version number '$VERSION' must be in format 'x.y.z'"
+    exit 1
+fi
+
+EXIT_CODE=0
+
+LAST_VERSION=$(git show origin/master:DESCRIPTION | grep '^Version' | sed 's/.*: *//')
+
+echo "Last version was '$LAST_VERSION'"
+
+MAJOR=$(echo $VERSION | cut -d. -f1)
+MINOR=$(echo $VERSION | cut -d. -f2)
+PATCH=$(echo $VERSION | cut -d. -f3)
+
+LAST_VERSION=$(echo "$LAST_VERSION" | sed 's/^v//')
+LAST_MAJOR=$(echo $LAST_VERSION | cut -d. -f1)
+LAST_MINOR=$(echo $LAST_VERSION | cut -d. -f2)
+LAST_PATCH=$(echo $LAST_VERSION | cut -d. -f3)
+
+if (( $MAJOR > $LAST_MAJOR )); then
+    echo "[OK] ${VERSION} increases MAJOR version over old version ${LAST_VERSION}"
+elif (( $MINOR > $LAST_MINOR )); then
+    echo "[OK] ${VERSION} increases MINOR version over old version ${LAST_VERSION}"
+elif (( $PATCH > $LAST_PATCH )); then
+    echo "[OK] ${VERSION} increases PATCH version over old version ${LAST_VERSION}"
+else
+    echo "[ERROR] Version number has not increased relative to $LAST_VERSION"
+    EXIT_CODE=1
+fi
+
+exit $EXIT_CODE

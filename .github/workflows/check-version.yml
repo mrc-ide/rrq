@@ -1,0 +1,24 @@
+on:
+  pull_request:
+    branches:
+      - master
+      - main
+
+name: Check Version
+
+jobs:
+  all:
+    runs-on: ubuntu-latest
+
+    name: Check Version
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Check version format and availability
+        run: ./scripts/check_version

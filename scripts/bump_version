@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -eu
+
+ACTION="${1:-patch}"
+CURRENT_VERSION=$(grep '^Version' DESCRIPTION  | sed 's/.*: *//')
+MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+echo "Current version: ${CURRENT_VERSION}"
+
+if [ $# -gt 1 ]; then
+  echo "Invalid args"
+  exit 1
+fi
+
+case $ACTION in
+    reset)
+        echo "Resetting version"
+        LAST_VERSION=$(git show origin/master:DESCRIPTION | grep '^Version' | sed 's/.*: *//')
+        MAJOR=$(echo $LAST_VERSION | cut -d. -f1)
+        MINOR=$(echo $LAST_VERSION | cut -d. -f2)
+        PATCH=$(echo $LAST_VERSION | cut -d. -f3)
+    ;;
+    major)
+        echo "Updating major version"
+        MAJOR=$(($MAJOR + 1))
+        MINOR=0
+        PATCH=0
+        ;;
+    minor)
+        echo "Updating minor version"
+        MINOR=$(($MINOR + 1))
+        PATCH=0
+        ;;
+    patch)
+        echo "Updating patch version"
+        PATCH=$(($PATCH + 1))
+        ;;
+    *)
+        if echo "$ACTION" | grep -Eq "[0-9]+[.][0-9]+[.][0-9]+"; then
+            echo "Updating version directly"
+            MAJOR=$(echo $VERSION | cut -d. -f1)
+            MINOR=$(echo $VERSION | cut -d. -f2)
+            PATCH=$(echo $VERSION | cut -d. -f3)
+        else
+            echo "[ERROR] Invalid format version number '$VERSION' must be in format 'x.y.z'"
+            exit 1
+        fi
+        ;;
+esac
+
+NEXT_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+echo "Updating to version: ${NEXT_VERSION}"
+
+sed -i "s/^Version: .*$/Version: ${NEXT_VERSION}/" DESCRIPTION
