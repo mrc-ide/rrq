@@ -67,14 +67,14 @@ test_store <- function(..., prefix = NULL) {
 }
 
 
-test_name <- function(name) {
+test_name <- function(name = NULL) {
   sprintf("%s:%s", name %||% "rrq", ids::random_id())
 }
 
 
 test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
                      name = NULL, timeout_worker_stop = NULL,
-                     store_max_size = Inf, offload_path = NULL,
+                     offload_path = NULL, configure = list(),
                      follow = NULL) {
   skip_if_no_redis()
   skip_if_not_installed("withr")
@@ -97,12 +97,9 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
   }
   environment(create) <- create_env
 
-  if (store_max_size < Inf) {
-    rrq_configure(name, store_max_size = store_max_size,
-                  offload_path = offload_path)
-  }
+  rlang::inject(rrq_configure(name, !!!configure))
 
-  obj <- rrq_controller(name, follow = follow)
+  obj <- rrq_controller(name, follow = follow, offload_path = offload_path)
 
   cfg <- rrq_worker_config(poll_queue = 1, verbose = verbose)
   rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)

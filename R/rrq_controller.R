@@ -92,12 +92,14 @@ worker_naturalsort <- function(x) {
 }
 
 
-rrq_object_store <- function(con, keys) {
+rrq_object_store <- function(con, keys, offload_path) {
   config <- rrq_configure_read(con, keys)
-  if (is.null(config$offload_path)) {
+
+  offload_path <- offload_path %||% config$offload_path
+  if (is.null(offload_path)) {
     offload <- object_store_offload_null$new()
   } else {
-    offload <- object_store_offload_disk$new(config$offload_path)
+    offload <- object_store_offload_disk$new(offload_path)
   }
   object_store$new(con, keys$object_store,
                    config$store_max_size, offload)

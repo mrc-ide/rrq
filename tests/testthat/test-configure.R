@@ -31,7 +31,7 @@ test_that("Can't set a conflicting configuration", {
     rrq_configure(name, store_max_size = 101),
     "Can't set configuration for queue '.+' as it already exists")
   expect_error(
-    rrq_configure(name, store_max_size = Inf, offload_path = tempfile()),
+    rrq_configure(name, store_max_size = Inf),
     "Can't set configuration for queue '.+' as it already exists")
   expect_equal(rrq_configure_read(test_hiredis(), rrq_keys(name)),
                config)
@@ -45,6 +45,24 @@ test_that("Can set an identical configuration", {
   config1 <- rrq_configure(name, store_max_size = 100)
   config2 <- rrq_configure(name, store_max_size = 100)
   expect_identical(config1, config2)
+})
+
+
+test_that("Configuring an offload path is deprecated", {
+  skip_if_no_redis()
+  name <- sprintf("rrq:%s", ids::random_id())
+  on.exit(test_hiredis()$DEL(rrq_keys(name)$configuration))
+
+  offload_path <- tempfile()
+
+  testthat::expect_warning({
+    config <- rrq_configure(name, store_max_size = 100,
+                            offload_path = offload_path)
+  }, "The `offload_path` argument is deprecated.")
+
+  expect_equal(config, list(store_max_size = 100, offload_path = offload_path))
+  expect_equal(rrq_configure_read(test_hiredis(), rrq_keys(name)),
+               config)
 })
 
 

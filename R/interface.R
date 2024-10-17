@@ -103,6 +103,12 @@
 ##'   where the schema version is incompatible, though any subsequent
 ##'   actions may lead to corruption.
 ##'
+##' @param offload_path The path to create an offload store at (passed
+##'   to [`rrq::object_store_offload_disk`]). The directory will be
+##'   created if it does not exist. If not given (or `NULL`) but
+##'   the queue was configured with a finite `store_max_size`, trying
+##'   to save large objects will throw an error.
+##'
 ##' @return An `rrq_controller` object, which is opaque.
 ##' @export
 ##' @examplesIf rrq:::enable_examples(require_queue = "rrq:example")
@@ -121,9 +127,12 @@
 ##' rrq_task_result(t, controller = obj)
 rrq_controller <- function(queue_id, con = redux::hiredis(),
                            timeout_task_wait = NULL, follow = NULL,
-                           check_version = TRUE) {
+                           check_version = TRUE, offload_path = NULL) {
   assert_scalar_character(queue_id)
   assert_is(con, "redis_api")
+  if (!is.null(offload_path)) {
+    assert_scalar_character(offload_path)
+  }
 
   keys <- rrq_keys(queue_id)
 
@@ -149,7 +158,7 @@ rrq_controller <- function(queue_id, con = redux::hiredis(),
               timeout_task_wait = timeout_task_wait,
               follow = follow,
               scripts = rrq_scripts_load(con),
-              store = rrq_object_store(con, keys))
+              store = rrq_object_store(con, keys, offload_path))
   class(ret) <- "rrq_controller"
 
   rrq_worker_config_save(WORKER_CONFIG_DEFAULT, rrq_worker_config(),
