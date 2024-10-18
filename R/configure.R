@@ -24,6 +24,15 @@
 ##'   that to disk rather than failing to save that into
 ##'   Redis.
 ##'
+##' The storage directory for offloading must be shared amoung all
+##'   users of the queue. Depending on the usecase, this could be
+##'   a directory on the local filesystems or, if using a queue across
+##'   machines, it can be a network file system mounted on all machines.
+##'   Since the offload directory mount point may be different for each
+##'   client, it is a property of the controller instance rather than of
+##'   the queue. See the [`rrq_controller`] function for how to configure
+##'   the offload.
+##'
 ##' How big is an object? We serialise the object
 ##'   (`redux::object_to_bin` just wraps [`serialize`]) which creates
 ##'   a vector of bytes and that is saved into the database. To get an
@@ -49,19 +58,17 @@
 ##'   will be saved in `offload_path` (using
 ##'   [`rrq::object_store_offload_disk`])
 ##'
-##' @param offload_path The path to create an offload store at (passed
-##'   to [`rrq::object_store_offload_disk`]). The directory will be
-##'   created if it does not exist. If not given (or `NULL`) but
-##'   `store_max_size` is finite, then trying to save large objects
-##'   will throw an error.
+##' @param offload_path The path to create an offload store at. This
+##'   configuration option is deprecated, and the offload path should be
+##'   configured at the controller level.
 ##'
 ##' @return Invisibly, a list with processed configuration information
 ##' @export
 ##' @examplesIf rrq:::enable_examples()
 ##' tmp <- tempfile()
 ##' dir.create(tmp)
-##' rrq_configure("rrq:offload", store_max_size = 100000, offload_path = tmp)
-##' obj <- rrq_controller("rrq:offload")
+##' rrq_configure("rrq:offload", store_max_size = 100000)
+##' obj <- rrq_controller("rrq:offload", offload_path = tmp)
 ##' x <- runif(100000)
 ##' t <- rrq_task_create_expr(mean(x), controller = obj)
 ##' dir(tmp)
@@ -79,6 +86,11 @@ rrq_configure <- function(queue_id, con = redux::hiredis(), ...,
   assert_scalar_numeric(store_max_size)
   if (!is.null(offload_path)) {
     assert_scalar_character(offload_path)
+    cli::cli_warn(c(
+      paste("The {.code offload_path} argument is deprecated. You should pass",
+            "it as an argument to {.code rrq_controller} instead."),
+      i = paste("If you are seeing this message while using hipercow, you",
+                "should update your version of hipercow.")))
   }
 
   config <- list(store_max_size = store_max_size,

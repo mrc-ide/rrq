@@ -42,20 +42,29 @@ rrq_worker <- R6::R6Class(
     ##'   Not for general use.
     ##'
     ##' @param con A redis connection
+    ##'
+    ##' @param offload_path The path to create an offload store at (passed
+    ##'   to [`rrq::object_store_offload_disk`]). The directory will be
+    ##'   created if it does not exist. If not given (or `NULL`) but
+    ##'   the queue was configured with a finite `store_max_size`, trying
+    ##'   to save large objects will throw an error.
     initialize = function(queue_id, name_config = "localhost",
                           worker_id = NULL, timeout_config = 0,
-                          is_child = FALSE, con = redux::hiredis()) {
+                          is_child = FALSE, con = redux::hiredis(),
+                          offload_path = NULL) {
       assert_scalar_character(queue_id)
       assert_is(con, "redis_api")
 
       self$id <- worker_id %||% ids::adjective_animal()
       self$config <- name_config
-      self$controller <- rrq_controller(queue_id, con, check_version = TRUE)
+      self$controller <- rrq_controller(queue_id, con,
+                                        offload_path = offload_path,
+                                        check_version = TRUE)
 
       if (is_child != rrq_worker_exists(self$id, self$controller)) {
         if (is_child) {
           cli::cli_abort(
-            c("Can't be a child of nonexistant worker",
+            c("Can't be a child of nonexistent worker",
               i = "Worker '{worker_id} does not exist for queue '{queue_id}'"))
         } else {
           cli::cli_abort(

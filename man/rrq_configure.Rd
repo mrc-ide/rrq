@@ -27,11 +27,9 @@ being moved to the offload store. If given, then larger data
 will be saved in \code{offload_path} (using
 \code{\link{object_store_offload_disk}})}
 
-\item{offload_path}{The path to create an offload store at (passed
-to \code{\link{object_store_offload_disk}}). The directory will be
-created if it does not exist. If not given (or \code{NULL}) but
-\code{store_max_size} is finite, then trying to save large objects
-will throw an error.}
+\item{offload_path}{The path to create an offload store at. This
+configuration option is deprecated, and the offload path should be
+configured at the controller level.}
 }
 \value{
 Invisibly, a list with processed configuration information
@@ -64,6 +62,15 @@ later.  So if your task returns a 3GB object then we will spill
 that to disk rather than failing to save that into
 Redis.
 
+The storage directory for offloading must be shared amoung all
+users of the queue. Depending on the usecase, this could be
+a directory on the local filesystems or, if using a queue across
+machines, it can be a network file system mounted on all machines.
+Since the offload directory mount point may be different for each
+client, it is a property of the controller instance rather than of
+the queue. See the \code{\link{rrq_controller}} function for how to configure
+the offload.
+
 How big is an object? We serialise the object
 (\code{redux::object_to_bin} just wraps \code{\link{serialize}}) which creates
 a vector of bytes and that is saved into the database. To get an
@@ -78,8 +85,8 @@ a \code{store_max_size} of less than 1MB will be sensible.
 \dontshow{if (rrq:::enable_examples()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 tmp <- tempfile()
 dir.create(tmp)
-rrq_configure("rrq:offload", store_max_size = 100000, offload_path = tmp)
-obj <- rrq_controller("rrq:offload")
+rrq_configure("rrq:offload", store_max_size = 100000)
+obj <- rrq_controller("rrq:offload", offload_path = tmp)
 x <- runif(100000)
 t <- rrq_task_create_expr(mean(x), controller = obj)
 dir(tmp)

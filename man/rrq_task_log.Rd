@@ -21,7 +21,7 @@ they will return an empty character vector (\code{character(0)}).
 }
 \description{
 Fetch logs from tasks that were queued into separate processes
-(e.g., with \link{rrq_task_create_expr} using \code{separate_process = TRUE}).  It is not knowable if a task definitely produce logs - if
+(e.g., with \link{rrq_task_create_expr} using \code{separate_process = TRUE}).  It is not knowable if a task definitely produces logs - if
 you have a mixture of workers that do enable task logs and some
 that don't, then it will depend on the worker that picks it up if
 logging will be enabled.  Don't do this though and you should be

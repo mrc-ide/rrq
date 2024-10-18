@@ -9,7 +9,8 @@ rrq_controller(
   con = redux::hiredis(),
   timeout_task_wait = NULL,
   follow = NULL,
-  check_version = TRUE
+  check_version = TRUE,
+  offload_path = NULL
 )
 }
 \arguments{
@@ -40,6 +41,12 @@ information.}
 schema version.  You can pass \code{FALSE} here to continue even
 where the schema version is incompatible, though any subsequent
 actions may lead to corruption.}
+
+\item{offload_path}{The path to create an offload store at (passed
+to \code{\link{object_store_offload_disk}}). The directory will be
+created if it does not exist. If not given (or \code{NULL}) but
+the queue was configured with a finite \code{store_max_size}, trying
+to save large objects will throw an error.}
 }
 \value{
 An \code{rrq_controller} object, which is opaque.
