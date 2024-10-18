@@ -74,7 +74,7 @@ test_name <- function(name = NULL) {
 
 test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
                      name = NULL, timeout_worker_stop = NULL,
-                     offload_path = NULL, configure = list(),
+                     offload_threshold_size = Inf, offload_path = NULL,
                      follow = NULL) {
   skip_if_no_redis()
   skip_if_not_installed("withr")
@@ -97,9 +97,9 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
   }
   environment(create) <- create_env
 
-  rlang::inject(rrq_configure(name, !!!configure))
-
-  obj <- rrq_controller(name, follow = follow, offload_path = offload_path)
+  obj <- rrq_controller(name, follow = follow,
+                        offload_threshold_size = offload_threshold_size,
+                        offload_path = offload_path)
 
   cfg <- rrq_worker_config(poll_queue = 1, verbose = verbose)
   rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)

@@ -864,12 +864,13 @@ test_that("submit a task with a timeout", {
 test_that("can offload storage", {
   path <- tempfile()
 
-  obj <- test_rrq(offload_path = path, configure = list(store_max_size = 100))
+  obj <- test_rrq(offload_threshold_size = 100, offload_path = path)
   a <- 10
   b <- runif(20)
   t <- rrq_task_create_expr(sum(b) / a, controller = obj)
 
-  w <- test_worker_blocking(obj, offload_path = path)
+  w <- test_worker_blocking(obj, offload_threshold_size = 100,
+                            offload_path = path)
   w$step(TRUE)
 
   expect_equal(rrq_task_result(t, controller = obj), sum(b) / a)
@@ -892,10 +893,11 @@ test_that("can offload storage", {
 
 test_that("offload storage in result", {
   path <- tempfile()
-  obj <- test_rrq(offload_path = path, configure = list(store_max_size = 100))
+  obj <- test_rrq(offload_threshold_size = 100, offload_path = path)
   t <- rrq_task_create_expr(rep(1, 100), controller = obj)
 
-  w <- test_worker_blocking(obj, offload_path = path)
+  w <- test_worker_blocking(obj, offload_threshold_size = 100,
+                            offload_path = path)
   w$step(TRUE)
 
   expect_equal(rrq_task_result(t, controller = obj), rep(1, 100))
@@ -969,36 +971,6 @@ test_that("can inspect a queue without access to the offload", {
                "offload is not supported")
   expect_equal(rrq_task_result(t2, controller = inspector),
                c(1, 2, 3))
-})
-
-
-test_that("can use the legacy offload configuration interface", {
-  path <- tempfile()
-
-  name <- test_name()
-  testthat::expect_warning({
-    obj <- test_rrq(configure = list(store_max_size = 100, offload_path = path))
-  }, "The `offload_path` argument is deprecated.")
-
-  t <- rrq_task_create_expr(rep(1, 100), controller = obj)
-
-  w <- test_worker_blocking(obj)
-  w$step(TRUE)
-
-  expect_equal(rrq_task_result(t, controller = obj), rep(1, 100))
-
-  ## Did successfully offload data:
-  store <- obj$store
-  h <- store$list()
-  expect_length(h, 1)
-  expect_setequal(store$location(h), "offload")
-  expect_equal(store$tags(), t)
-  expect_equal(dir(path), h)
-
-  rrq_task_delete(t, controller = obj)
-
-  expect_equal(store$list(), character(0))
-  expect_equal(dir(path), character(0))
 })
 
 

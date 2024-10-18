@@ -72,6 +72,40 @@
 ##' * `TIMEOUT_GET` (no args): Tells the worker to respond with its
 ##'   current timeout.
 ##'
+##' # Storage
+##'
+##' Every time that a task is saved, or a task is completed, results
+##'   are saved into the Redis database. Because Redis is an in-memory
+##'   database, it's not a great idea to save very large objects into
+##'   it (if you ran 100 jobs in parallel and each saved a 2GB object
+##'   you'd likely take down your redis server). In addition, `redux`
+##'   does not support directly saving objects larger than `2^31 - 1`
+##'   bytes into Redis. So, for some use cases we need to consider
+##'   where to store larger objects.
+##'
+##' The strategy here is to "offload" the larger objects - bigger than
+##'   some user-given size - onto some other storage system. Currently
+##'   the only alternative supported is a disk store
+##'   ([`rrq::object_store_offload_disk`]) but we hope to expand this
+##'   later.  So if your task returns a 3GB object then we will spill
+##'   that to disk rather than failing to save that into
+##'   Redis.
+##'
+##' The storage directory for offloading must be shared amoung all
+##'   users of the queue. Depending on the usecase, this could be
+##'   a directory on the local filesystems or, if using a queue across
+##'   machines, it can be a network file system mounted on all machines.
+##'
+##' How big is an object? We serialise the object
+##'   (`redux::object_to_bin` just wraps [`serialize`]) which creates
+##'   a vector of bytes and that is saved into the database. To get an
+##'   idea of how large things are you can do:
+##'   `length(redux::object_to_bin(your_object))`.  At the time this
+##'   documentation was written, `mtcars` was `3807` bytes, and a
+##'   million random numbers was `8,000,031` bytes. It's unlikely that
+##'   a `offload_threshold_size` of less than 1MB will be sensible.
+##'
+##'
 ##' @title Create rrq controller
 ##'
 ##' @param queue_id An identifier for the queue.  This will prefix all
@@ -103,11 +137,16 @@
 ##'   where the schema version is incompatible, though any subsequent
 ##'   actions may lead to corruption.
 ##'
+##' @param offload_threshold_size The maximum object size, in bytes,
+##'   before being moved to the offload store. If given, then larger
+##'   data will be saved in `offload_path` (using
+##'   [`rrq::object_store_offload_disk`])
+##'
 ##' @param offload_path The path to create an offload store at (passed
 ##'   to [`rrq::object_store_offload_disk`]). The directory will be
 ##'   created if it does not exist. If not given (or `NULL`) but
-##'   the queue was configured with a finite `store_max_size`, trying
-##'   to save large objects will throw an error.
+##'   the queue was configured with a finite `offload_threshold_size`,
+##'   trying to save large objects will throw an error.
 ##'
 ##' @return An `rrq_controller` object, which is opaque.
 ##' @export
@@ -127,9 +166,11 @@
 ##' rrq_task_result(t, controller = obj)
 rrq_controller <- function(queue_id, con = redux::hiredis(),
                            timeout_task_wait = NULL, follow = NULL,
-                           check_version = TRUE, offload_path = NULL) {
+                           check_version = TRUE, offload_path = NULL,
+                           offload_threshold_size = Inf) {
   assert_scalar_character(queue_id)
   assert_is(con, "redis_api")
+  assert_scalar_numeric(offload_threshold_size)
   if (!is.null(offload_path)) {
     assert_scalar_character(offload_path)
   }
@@ -152,13 +193,16 @@ rrq_controller <- function(queue_id, con = redux::hiredis(),
     rrq_version_check(con, keys)
   }
 
+  store <- rrq_object_store(con, keys, offload_threshold_size,
+                            offload_path)
+
   ret <- list(queue_id = keys$queue_id,
               con = con,
               keys = keys,
               timeout_task_wait = timeout_task_wait,
               follow = follow,
               scripts = rrq_scripts_load(con),
-              store = rrq_object_store(con, keys, offload_path))
+              store = store)
   class(ret) <- "rrq_controller"
 
   rrq_worker_config_save(WORKER_CONFIG_DEFAULT, rrq_worker_config(),
