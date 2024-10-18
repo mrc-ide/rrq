@@ -117,7 +117,7 @@ test_that("Child workers require a parent", {
   queue_id <- test_name(NULL)
   expect_error(
     rrq_worker$new(queue_id, worker_id = id, is_child = TRUE, con = con),
-    "Can't be a child of nonexistant worker")
+    "Can't be a child of nonexistent worker")
 })
 
 

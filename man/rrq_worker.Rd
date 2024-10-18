@@ -52,7 +52,8 @@ Constructor
   worker_id = NULL,
   timeout_config = 0,
   is_child = FALSE,
-  con = redux::hiredis()
+  con = redux::hiredis(),
+  offload_path = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -82,6 +83,12 @@ idle / polling arguments) as they come from the parent.
 Not for general use.}
 
 \item{\code{con}}{A redis connection}
+
+\item{\code{offload_path}}{The path to create an offload store at (passed
+to \code{\link{object_store_offload_disk}}). The directory will be
+created if it does not exist. If not given (or \code{NULL}) but
+the queue was configured with a finite \code{store_max_size}, trying
+to save large objects will throw an error.}
 }
 \if{html}{\out{</div>}}
 }
