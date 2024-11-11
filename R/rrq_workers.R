@@ -609,7 +609,8 @@ rrq_worker_config_list <- function(controller = NULL) {
 
 rrq_worker_config_read <- function(name, timeout = 0, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
-  rrq_worker_config_read_internal(controller$con, controller$queue_id, name, timeout)
+  rrq_worker_config_read_internal(controller$con, controller$queue_id, name,
+                                  timeout)
 }
 
 rrq_worker_config_read_internal <- function(con, queue_id, name, timeout = 0) {
