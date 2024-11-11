@@ -38,7 +38,7 @@ obj <- rrq_controller(paste0("rrq:", ids::random_id(bytes = 4)))
 rrq_default_controller_set(obj)
 rrq_worker_envir_set(rrq_envir(sources = "fault.R"))
 w <- rrq_worker_spawn()
-#> ℹ Spawning 1 worker with prefix 'loverless_cattle'
+#> ℹ Spawning 1 worker with prefix 'acidimetric_bighornsheep'
 ```
 
 In the happy case, everything works as expected:
@@ -59,7 +59,7 @@ rrq_task_result(t)
 #>
 #> Coefficients:
 #> (Intercept)            x
-#>    -0.05859      2.24645
+#>     -0.3157       2.5411
 ```
 
 But if we provide invalid input, the task will error:
@@ -73,8 +73,8 @@ rrq_task_result(t)
 #> <rrq_task_error>
 #>   from:   model.frame.default(formula = y ~ x, drop.unused.levels = TRUE)
 #>   error:  invalid type (NULL) for variable 'y'
-#>   queue:  rrq:8777a78c
-#>   task:   8706f6c5f86f961e2b292e4b86a0594d
+#>   queue:  rrq:094359c0
+#>   task:   67548d38499ac35e931094170c6b8970
 #>   status: ERROR
 #>   * To throw this error, use stop() with it
 #>   * This error has a stack trace, use '$trace' to see it
@@ -89,8 +89,8 @@ r
 #> <rrq_task_error>
 #>   from:   model.frame.default(formula = y ~ x, drop.unused.levels = TRUE)
 #>   error:  invalid type (NULL) for variable 'y'
-#>   queue:  rrq:8777a78c
-#>   task:   8706f6c5f86f961e2b292e4b86a0594d
+#>   queue:  rrq:094359c0
+#>   task:   67548d38499ac35e931094170c6b8970
 #>   status: ERROR
 #>   * To throw this error, use stop() with it
 #>   * This error has a stack trace, use '$trace' to see it
@@ -160,7 +160,7 @@ The downside of using separate processes is that it is much slower; compare the 
 system.time(
   rrq_task_wait(rrq_task_create_expr(identity(1)), 10))
 #>    user  system elapsed
-#>   0.001   0.001   0.002
+#>   0.001   0.000   0.002
 ```
 
 with the same task run in a separate process on the worker
@@ -170,7 +170,7 @@ with the same task run in a separate process on the worker
 system.time(
   rrq_task_wait(rrq_task_create_expr(identity(1), separate_process = TRUE), 10))
 #>    user  system elapsed
-#>    0.00    0.00    0.27
+#>   0.001   0.000   0.319
 ```
 
 We expect this difference to be ~100 fold in local workers. Almost all the cost is due to the overhead of starting and terminating a fresh R session. If your queue uses a lot of packages there will be additional overhead here too as these are loaded. However, this cost is fixed and will decrease as a fraction of the total running time as the running time of your task increases. So for long-running tasks the additional safety of separate processes is probably worthwhile. For smaller tasks you may want to make sure you run a heartbeat process so that you can handle failures via that route.
@@ -212,8 +212,8 @@ r <- rrq_task_result(t)
 r
 #> <rrq_task_error>
 #>   error:  Task not successful: DIED
-#>   queue:  rrq:8777a78c
-#>   task:   c845b831c3df187ba772cbe51b5ec8aa
+#>   queue:  rrq:094359c0
+#>   task:   1668e0899d18f02fa78e27428565d48d
 #>   status: DIED
 #>   * To throw this error, use stop() with it
 ```
@@ -248,7 +248,7 @@ When you spawn a worker it will pick up this configuration, and we'll be able to
 
 ```r
 w <- rrq_worker_spawn()
-#> ℹ Spawning 1 worker with prefix 'lovesick_bobolink'
+#> ℹ Spawning 1 worker with prefix 'drippy_megaraptor'
 ```
 
 In order to simulate the loss of the worker, we will kill it after starting a long-running task:
@@ -269,7 +269,7 @@ The worker will pick the task up fairly quickly, and the status will change to `
 rrq_task_status(t)
 #> [1] "RUNNING"
 rrq_worker_status(w$id)
-#> lovesick_bobolink_1
+#> drippy_megaraptor_1
 #>              "BUSY"
 ```
 
@@ -287,7 +287,7 @@ Because the worker has been killed, it can't write to redis to tell us that the 
 rrq_task_status(t)
 #> [1] "RUNNING"
 rrq_worker_status(w$id)
-#> lovesick_bobolink_1
+#> drippy_megaraptor_1
 #>              "BUSY"
 ```
 
@@ -304,9 +304,9 @@ We can then use the `worker_detect_exited()` method to clean up
 ```r
 rrq_worker_detect_exited()
 #> Lost 1 worker:
-#>   - lovesick_bobolink_1
+#>   - drippy_megaraptor_1
 #> Orphaning 1 task:
-#>   - cc995285ca5d639e3bed3ab958a7b241
+#>   - c9b972af505c49639e5fdbd427e2b969
 ```
 
 At this point, the statuses of our task and worker are correct:
@@ -316,7 +316,7 @@ At this point, the statuses of our task and worker are correct:
 rrq_task_status(t)
 #> [1] "DIED"
 rrq_worker_status(w$id)
-#> lovesick_bobolink_1
+#> drippy_megaraptor_1
 #>              "LOST"
 ```
 
@@ -327,8 +327,8 @@ Fetching the task result provides the same DIED error as above:
 rrq_task_result(t)
 #> <rrq_task_error>
 #>   error:  Task not successful: DIED
-#>   queue:  rrq:8777a78c
-#>   task:   cc995285ca5d639e3bed3ab958a7b241
+#>   queue:  rrq:094359c0
+#>   task:   c9b972af505c49639e5fdbd427e2b969
 #>   status: DIED
 #>   * To throw this error, use stop() with it
 ```
@@ -367,7 +367,7 @@ We can create a new environment for our worker, to pick up this function:
 ```r
 rrq_worker_envir_set(rrq_envir(sources = "fault2.R"))
 w <- rrq::rrq_worker_spawn()
-#> ℹ Spawning 1 worker with prefix 'polonium_uromastyxspinipes'
+#> ℹ Spawning 1 worker with prefix 'undisheartened_swordfish'
 ```
 
 
@@ -383,8 +383,8 @@ rrq_task_result(t1)
 #> <rrq_task_error>
 #>   from:   stochastic_failure(0.5)
 #>   error:  Convergence failure - x is only 0.27
-#>   queue:  rrq:8777a78c
-#>   task:   64ddd6f44b196d8f3daa08900b73c86c
+#>   queue:  rrq:094359c0
+#>   task:   dbc44d09cf9b84db4009ae0de014ab96
 #>   status: ERROR
 #>   * To throw this error, use stop() with it
 #>   * This error has a stack trace, use '$trace' to see it
@@ -403,8 +403,8 @@ rrq_task_result(t2)
 #> <rrq_task_error>
 #>   from:   stochastic_failure(0.5)
 #>   error:  Convergence failure - x is only 0.37
-#>   queue:  rrq:8777a78c
-#>   task:   486f5531b0e093a00c4d94f81e74a7a0
+#>   queue:  rrq:094359c0
+#>   task:   10e6ce0493d2f73f234b2b9983f35c3b
 #>   status: ERROR
 #>   * To throw this error, use stop() with it
 #>   * This error has a stack trace, use '$trace' to see it
@@ -449,8 +449,8 @@ rrq_task_results(c(t1, t2, t3), follow = FALSE)
 #> <rrq_task_error>
 #>   from:   stochastic_failure(0.5)
 #>   error:  Convergence failure - x is only 0.27
-#>   queue:  rrq:8777a78c
-#>   task:   64ddd6f44b196d8f3daa08900b73c86c
+#>   queue:  rrq:094359c0
+#>   task:   dbc44d09cf9b84db4009ae0de014ab96
 #>   status: ERROR
 #>   * To throw this error, use stop() with it
 #>   * This error has a stack trace, use '$trace' to see it
@@ -459,8 +459,8 @@ rrq_task_results(c(t1, t2, t3), follow = FALSE)
 #> <rrq_task_error>
 #>   from:   stochastic_failure(0.5)
 #>   error:  Convergence failure - x is only 0.37
-#>   queue:  rrq:8777a78c
-#>   task:   486f5531b0e093a00c4d94f81e74a7a0
+#>   queue:  rrq:094359c0
+#>   task:   10e6ce0493d2f73f234b2b9983f35c3b
 #>   status: ERROR
 #>   * To throw this error, use stop() with it
 #>   * This error has a stack trace, use '$trace' to see it
@@ -487,14 +487,14 @@ You can also extract times that events happened with `rrq_task_times()`
 ```r
 rrq_task_times(c(t1, t2, t3))
 #>                                      submit      start   complete moved
-#> 64ddd6f44b196d8f3daa08900b73c86c 1721033848 1721033848 1721033848    NA
-#> 486f5531b0e093a00c4d94f81e74a7a0 1721033848 1721033848 1721033848    NA
-#> 1df424045659911ead3673895160f480 1721033848 1721033848 1721033848    NA
+#> dbc44d09cf9b84db4009ae0de014ab96 1731321186 1731321186 1731321186    NA
+#> 10e6ce0493d2f73f234b2b9983f35c3b 1731321186 1731321186 1731321186    NA
+#> 684b39c8fecdd8f24cc29f1d524164e9 1731321186 1731321186 1731321186    NA
 rrq_task_times(c(t1, t2, t3), follow = FALSE)
 #>                                      submit      start   complete      moved
-#> 64ddd6f44b196d8f3daa08900b73c86c 1721033848 1721033848 1721033848 1721033848
-#> 486f5531b0e093a00c4d94f81e74a7a0 1721033848 1721033848 1721033848 1721033848
-#> 1df424045659911ead3673895160f480 1721033848 1721033848 1721033848         NA
+#> dbc44d09cf9b84db4009ae0de014ab96 1731321186 1731321186 1731321186 1731321186
+#> 10e6ce0493d2f73f234b2b9983f35c3b 1731321186 1731321186 1731321186 1731321186
+#> 684b39c8fecdd8f24cc29f1d524164e9 1731321186 1731321186 1731321186         NA
 ```
 
 
@@ -507,7 +507,7 @@ backquote(paste0(substr(c(t1, t2, t3), 1, 6), "...", collapse = " -> "))`, which
 ```r
 rrq_task_info(t1)
 #> $id
-#> [1] "64ddd6f44b196d8f3daa08900b73c86c"
+#> [1] "dbc44d09cf9b84db4009ae0de014ab96"
 #>
 #> $status
 #> [1] "MOVED"
@@ -522,7 +522,7 @@ rrq_task_info(t1)
 #> NULL
 #>
 #> $worker
-#> [1] "polonium_uromastyxspinipes_1"
+#> [1] "undisheartened_swordfish_1"
 #>
 #> $pid
 #> NULL
@@ -540,7 +540,7 @@ rrq_task_info(t1)
 #> NULL
 #>
 #> $moved$down
-#> [1] "486f5531b0e093a00c4d94f81e74a7a0" "1df424045659911ead3673895160f480"
+#> [1] "10e6ce0493d2f73f234b2b9983f35c3b" "684b39c8fecdd8f24cc29f1d524164e9"
 ```
 
 Here, the `moved` field shows the tasks that are upstream (`up`) and downstream (`down`) of this task. For tasks that have never been retried both elements are `NULL`. The elements are always ordered from oldest to newest, and chains of tasks are always linear (i.e., there is no forking).
@@ -551,10 +551,10 @@ For the middle task in the chain, both `up` and `down` point at different tasks:
 ```r
 rrq_task_info(t2)$moved
 #> $up
-#> [1] "64ddd6f44b196d8f3daa08900b73c86c"
+#> [1] "dbc44d09cf9b84db4009ae0de014ab96"
 #>
 #> $down
-#> [1] "1df424045659911ead3673895160f480"
+#> [1] "684b39c8fecdd8f24cc29f1d524164e9"
 ```
 
 and for the leaf task:
@@ -563,7 +563,7 @@ and for the leaf task:
 ```r
 rrq_task_info(t3)$moved
 #> $up
-#> [1] "64ddd6f44b196d8f3daa08900b73c86c" "486f5531b0e093a00c4d94f81e74a7a0"
+#> [1] "dbc44d09cf9b84db4009ae0de014ab96" "10e6ce0493d2f73f234b2b9983f35c3b"
 #>
 #> $down
 #> NULL
@@ -582,8 +582,8 @@ rrq_task_result(t1, controller = obj_nofollow)
 #> <rrq_task_error>
 #>   from:   stochastic_failure(0.5)
 #>   error:  Convergence failure - x is only 0.27
-#>   queue:  rrq:8777a78c
-#>   task:   64ddd6f44b196d8f3daa08900b73c86c
+#>   queue:  rrq:094359c0
+#>   task:   dbc44d09cf9b84db4009ae0de014ab96
 #>   status: ERROR
 #>   * To throw this error, use stop() with it
 #>   * This error has a stack trace, use '$trace' to see it

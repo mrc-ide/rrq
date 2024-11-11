@@ -869,8 +869,7 @@ test_that("can offload storage", {
   b <- runif(20)
   t <- rrq_task_create_expr(sum(b) / a, controller = obj)
 
-  w <- test_worker_blocking(obj, offload_threshold_size = 100,
-                            offload_path = path)
+  w <- test_worker_blocking(obj, offload_path = path)
   w$step(TRUE)
 
   expect_equal(rrq_task_result(t, controller = obj), sum(b) / a)
@@ -896,8 +895,7 @@ test_that("offload storage in result", {
   obj <- test_rrq(offload_threshold_size = 100, offload_path = path)
   t <- rrq_task_create_expr(rep(1, 100), controller = obj)
 
-  w <- test_worker_blocking(obj, offload_threshold_size = 100,
-                            offload_path = path)
+  w <- test_worker_blocking(obj, offload_path = path)
   w$step(TRUE)
 
   expect_equal(rrq_task_result(t, controller = obj), rep(1, 100))
@@ -921,11 +919,13 @@ test_that("can use separate offload mount points", {
   client_offload <- tempfile()
   worker_offload <- tempfile()
 
-  obj <- test_rrq(offload_path = client_offload,
-                  configure = list(store_max_size = 100))
+  obj <- test_rrq(offload_threshold_size = 100,
+                  offload_path = client_offload)
+
   t <- rrq_task_create_expr(rep(1, 100), controller = obj)
 
   w <- test_worker_blocking(obj, offload_path = worker_offload)
+
   w$step(TRUE)
 
   # Pretend that these are actually the same filesystem mounted at different
@@ -957,7 +957,7 @@ test_that("can use separate offload mount points", {
 test_that("can inspect a queue without access to the offload", {
   path <- tempfile()
 
-  obj <- test_rrq(offload_path = path, configure = list(store_max_size = 100))
+  obj <- test_rrq(offload_threshold_size = 100, offload_path = path)
   t1 <- rrq_task_create_expr(rep(1, 100), controller = obj)
   t2 <- rrq_task_create_expr(c(1, 2, 3), controller = obj)
 

@@ -54,10 +54,10 @@
 rrq_worker_spawn <- function(n = 1, logdir = NULL, timeout = 600,
                              name_config = "localhost", worker_id_base = NULL,
                              time_poll = 0.2, progress = NULL,
-                             controller = NULL) {
+                             controller = NULL, offload_path = NULL) {
   controller <- get_controller(controller)
   manager <- rrq_worker_manager$new(controller, n, logdir, name_config,
-                                    worker_id_base)
+                                    worker_id_base, offload_path)
   if (timeout > 0) {
     manager$wait_alive(timeout, time_poll, progress)
   }
@@ -130,7 +130,8 @@ rrq_worker_manager <- R6::R6Class(
 
     initialize = function(controller, n, logdir = NULL,
                           name_config = "localhost",
-                          worker_id_base = NULL) {
+                          worker_id_base = NULL,
+                          offload_path = NULL) {
       assert_is(controller, "rrq_controller")
 
       if (!(name_config %in% rrq_worker_config_list(controller))) {
@@ -150,7 +151,7 @@ rrq_worker_manager <- R6::R6Class(
       cli::cli_alert_info(
         "Spawning {n} worker{?s} with prefix '{worker_id_base}'")
 
-      args <- list(keys$queue_id, name_config, con$config())
+      args <- list(keys$queue_id, name_config, con$config(), offload_path)
       process <- set_names(vector("list", n), worker_ids)
       for (i in seq_len(n)) {
         args_i <- c(list(worker_ids[[i]]), args)
@@ -160,11 +161,11 @@ rrq_worker_manager <- R6::R6Class(
         ## will rarely want the default callr/processx cleanup as we
         ## want to tidy away the worker first.
         process[[i]] <- callr::r_bg(
-          function(worker_id, queue_id, name_config, config) {
+          function(worker_id, queue_id, name_config, config, offload_path) {
             con <- redux::hiredis(config)
             w <- rrq_worker$new(
               queue_id, name_config = name_config, worker_id = worker_id,
-              con = con)
+              offload_path = offload_path, con = con)
             w$loop()
           },
           args = args_i, package = TRUE, supervise = FALSE, cleanup = FALSE,

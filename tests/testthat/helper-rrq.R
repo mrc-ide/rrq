@@ -101,7 +101,10 @@ test_rrq <- function(sources = NULL, root = tempfile(), verbose = FALSE,
                         offload_threshold_size = offload_threshold_size,
                         offload_path = offload_path)
 
-  cfg <- rrq_worker_config(poll_queue = 1, verbose = verbose)
+  cfg <- rrq_worker_config(
+    poll_queue = 1, verbose = verbose,
+    offload_threshold_size = offload_threshold_size)
+
   rrq_worker_config_save(WORKER_CONFIG_DEFAULT, cfg, controller = obj)
   rrq_worker_envir_set(create, controller = obj)
 

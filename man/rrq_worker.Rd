@@ -47,20 +47,18 @@ but will sit and poll a queue for jobs.
 Constructor
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{rrq_worker$new(
-  queue_id,
+  ...,
   name_config = "localhost",
   worker_id = NULL,
   timeout_config = 0,
-  is_child = FALSE,
-  con = redux::hiredis(),
-  offload_path = NULL
+  is_child = FALSE
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{queue_id}}{The queue id}
+\item{\code{...}}{Arguments passed to the \code{rrq_controller} function.}
 
 \item{\code{name_config}}{Optional name of the configuration. The
 default "localhost" configuration always exists. Create new
@@ -81,14 +79,6 @@ the real worker.  If \code{is_child} is \code{TRUE}, then most other
 arguments here have no effect (e.g., \code{queue} all the timeout /
 idle / polling arguments) as they come from the parent.
 Not for general use.}
-
-\item{\code{con}}{A redis connection}
-
-\item{\code{offload_path}}{The path to create an offload store at (passed
-to \code{\link{object_store_offload_disk}}). The directory will be
-created if it does not exist. If not given (or \code{NULL}) but
-the queue was configured with a finite \code{store_max_size}, trying
-to save large objects will throw an error.}
 }
 \if{html}{\out{</div>}}
 }

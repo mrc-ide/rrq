@@ -34,7 +34,7 @@ id <- paste0("rrq:", ids::random_id(bytes = 4))
 obj <- rrq_controller(id)
 ```
 
-This controller uses an "identifier" (here, `id` is `rrq:babc4f67`) which can be anything you want but acts like a folder within the Redis server, distinguishing your queue from any others hosted on the same server.
+This controller uses an "identifier" (here, `id` is `rrq:b09033b1`) which can be anything you want but acts like a folder within the Redis server, distinguishing your queue from any others hosted on the same server.
 
 We will set this a default controller to use, which means we can avoid passing in `controller = obj` to all the calls below:
 
@@ -49,7 +49,7 @@ Submit a task to the queue with `rrq_task_create_expr()`, returning a key for ha
 ```r
 t <- rrq_task_create_expr(1 + 1)
 t
-#> [1] "5937a54f2c87e51b4e69e4a6024b2653"
+#> [1] "eb9fe0d8ba5765795cb1b3b07991960d"
 ```
 
 We'll also need some worker processes to carry out our tasks. Here, we'll spawn two for now (see the section below on alternatives to this)
@@ -57,7 +57,7 @@ We'll also need some worker processes to carry out our tasks. Here, we'll spawn 
 
 ```r
 w <- rrq_worker_spawn(2)
-#> ℹ Spawning 2 workers with prefix 'pokeable_auklet'
+#> ℹ Spawning 2 workers with prefix 'wooded_grouse'
 ```
 
 +Wait for the task to complete:
@@ -150,7 +150,7 @@ Then after a couple of seconds it will complete (we pad this out here so that it
 ```r
 Sys.sleep(3)
 rrq_task_result(t)
-#> [1] 0.2921383
+#> [1] 0.7463973
 ```
 
 The basic task lifecycle is this:
@@ -174,7 +174,7 @@ t <- rrq_task_create_expr({
 rrq_task_wait(t)
 #> [1] TRUE
 rrq_task_result(t)
-#> [1] 0.6660437
+#> [1] 0.1510442
 ```
 
 The polling interval here is 1 second by default, but if the task completes within that period it will still be returned as soon as it is complete (the interval is just the time between progress bar updates and the period where an interrupt would be caught to cancel the wait).
@@ -215,15 +215,15 @@ By default, this will notify all running workers to update their environment. No
 
 ```r
 rrq_worker_log_tail(n = 4)
-#>           worker_id child       time  command message
-#> 1 pokeable_auklet_1    NA 1723025925  MESSAGE REFRESH
-#> 2 pokeable_auklet_2    NA 1723025925  MESSAGE REFRESH
-#> 3 pokeable_auklet_1    NA 1723025925    ENVIR     new
-#> 4 pokeable_auklet_2    NA 1723025925    ENVIR     new
-#> 5 pokeable_auklet_1    NA 1723025925    ENVIR  create
-#> 6 pokeable_auklet_2    NA 1723025925    ENVIR  create
-#> 7 pokeable_auklet_1    NA 1723025925 RESPONSE REFRESH
-#> 8 pokeable_auklet_2    NA 1723025925 RESPONSE REFRESH
+#>         worker_id child       time  command message
+#> 1 wooded_grouse_1    NA 1731321146  MESSAGE REFRESH
+#> 2 wooded_grouse_2    NA 1731321146  MESSAGE REFRESH
+#> 3 wooded_grouse_1    NA 1731321146    ENVIR     new
+#> 4 wooded_grouse_2    NA 1731321146    ENVIR     new
+#> 5 wooded_grouse_2    NA 1731321146    ENVIR  create
+#> 6 wooded_grouse_1    NA 1731321146    ENVIR  create
+#> 7 wooded_grouse_2    NA 1731321146 RESPONSE REFRESH
+#> 8 wooded_grouse_1    NA 1731321146 RESPONSE REFRESH
 ```
 
 Now our workers have picked up our functions we can start using them:
@@ -324,7 +324,7 @@ however, the second task will be `DEFERRED` because it is not yet in the queue:
 rrq_task_status(id_use)
 #> [1] "DEFERRED"
 rrq_queue_list()
-#> [1] "e8f2f868119f74eb2fced249e886aed4"
+#> [1] "881ff4c71aa89111f1d293939ef815fc"
 ```
 
 Once the first task is processed by a worker, the status changes:
@@ -338,7 +338,7 @@ rrq_task_status(id)
 rrq_task_status(id_use)
 #> [1] "PENDING"
 rrq_queue_list()
-#> [1] "4c44b980e6dd43b9cb0a3130ff781fd6"
+#> [1] "5a34c6970257dbcb86299b6517f70222"
 ```
 
 At this point the second task will proceed through the queue as usual.
@@ -371,7 +371,7 @@ rrq_worker_config_save(
   "all",
   rrq_worker_config(queue = c("short", "long")))
 rrq_worker_config_list()
-#> [1] "short"     "all"       "localhost"
+#> [1] "all"       "short"     "localhost"
 ```
 
 Above, we create two configurations: "short" which just listens on the queue `short`, and `all` which listens both on the short and long task queues (note that both these workers will also listen on the default queue).
@@ -379,9 +379,9 @@ Above, we create two configurations: "short" which just listens on the queue `sh
 
 ```r
 w_short <- rrq_worker_spawn(name_config = "short")
-#> ℹ Spawning 1 worker with prefix 'astronomical_izuthrush'
+#> ℹ Spawning 1 worker with prefix 'neurotic_pharaohhound'
 w_all <- rrq_worker_spawn(name_config = "all")
-#> ℹ Spawning 1 worker with prefix 'damaging_platypus'
+#> ℹ Spawning 1 worker with prefix 'hypodermal_bedlingtonterrier'
 ```
 
 We can then submit a long task to the worker:
@@ -398,8 +398,8 @@ After the workers have had the ability to pick up work, our "short" worker is st
 
 ```r
 rrq_worker_status()
-#> astronomical_izuthrush_1      damaging_platypus_1
-#>                   "IDLE"                   "BUSY"
+#>        neurotic_pharaohhound_1 hypodermal_bedlingtonterrier_1
+#>                         "IDLE"                         "BUSY"
 ```
 
 So we can submit tasks to this short queue and have them processed
@@ -438,25 +438,21 @@ The data for each task, and the task result itself, is saved in Redis. This is a
 
 To allow for this workflow, `rrq` supports configuring its object store (`rrq::object_store`) so that objects above a certain size are written out elsewhere. Currently, the only "elsewhere" supported is to disk with the assumption that the controller and all workers share a filesystem. The approach used is safe for multiple concurrent processes, including over network mounted filesystems.
 
-To configure this you must use `rrq_configure()` *before attaching either a controller or a worker to the queue*. The configuration interface here will change in future, but we will maintain backward compatibility with the current options.
-
-To configure storage so that every object that is greater than 1KB is saved to disk, you could write:
+This feature can be enabled by passing an `offload_path` to both the controller and the worker. Additionally, the `offload_threshold_size` should be set in the worker configuration. In the setup below, both the controller and the worker use the same offload path, but if they were running on different machines we may need to use different paths pointing at the same underlying network filesystem.
 
 
 ```r
 id <- paste0("rrq:", ids::random_id(bytes = 4))
 path <- tempfile()
-rrq_configure(id, store_max_size = 1000, offload_path = path)
-```
+obj <- rrq_controller(id, offload_path = path)
 
-then we create the queue object as normal (and spawn a worker so that we can use it)
-
-
-```r
-obj <- rrq_controller(id)
 rrq_default_controller_set(obj)
-w <- rrq_worker_spawn(1)
-#> ℹ Spawning 1 worker with prefix 'antipacifistic_germanshorthairedpointer'
+rrq_worker_config_save(
+    "localhost",
+    rrq_worker_config(offload_threshold_size = 1000))
+
+w <- rrq_worker_spawn(1, offload_path = path)
+#> ℹ Spawning 1 worker with prefix 'resurrective_xuanhuasaurus'
 ```
 
 It's not hard at all to get to 1KB of data, we can do that by simulating a big pile of random numbers:
@@ -473,7 +469,7 @@ Once the task has finished, data will be stored on disk below the path given abo
 
 ```r
 dir(path)
-#> [1] "45d4ac0f45efd78b5333a07e5aef0fa1"
+#> [1] "ce165f8c71a0a26e7a79cd423677a9e9"
 ```
 
 
@@ -541,8 +537,8 @@ worker_ids <- c("cluster_1", "cluster_2")
 How you then start the workers is up to you; you might start them at the command line with
 
 ```
-rrq_worker --worker-id cluster_1 rrq:46f706a3
-rrq_worker --worker-id cluster_2 rrq:46f706a3
+rrq_worker --worker-id cluster_1 rrq:ebbd6b4e
+rrq_worker --worker-id cluster_2 rrq:ebbd6b4e
 ```
 
 (into separate terminals). Or you might queue these jobs with a cluster scheduler such as Slurm or PBS (with appropriate care over the working directory).  But you can then immediately, in your R console write:
@@ -575,7 +571,7 @@ To enable the heartbeat, save a worker configuration with the `heartbeat_period`
 id <- paste0("rrq:", ids::random_id(bytes = 4))
 obj <- rrq_controller(id)
 rrq_default_controller_set(obj)
-res <- rrq_worker_config_save(
+rrq_worker_config_save(
   "localhost",
   rrq_worker_config(heartbeat_period = 2))
 ```
@@ -585,37 +581,38 @@ Then, launch a worker
 
 ```r
 w <- rrq_worker_spawn(1)
-#> ℹ Spawning 1 worker with prefix 'taxidermic_americangoldfinch'
+#> ℹ Spawning 1 worker with prefix 'metallographic_queenslandheeler'
 ```
 
 Our worker will print information indicating that the heartbeat is enabled (use `rrq_worker_process_log()`)
 
 
 ```
-#> [2024-08-07 11:18:50.341996] HEARTBEAT rrq:b5c90261:worker:taxidermic_americangoldfinch_1:heartbeat
-#> [2024-08-07 11:18:50.581563] HEARTBEAT OK
-#> [2024-08-07 11:18:50.596252] ALIVE
-#> [2024-08-07 11:18:50.596533] ENVIR new
-#> [2024-08-07 11:18:50.59684] QUEUE default
+#> [2024-11-11 10:32:31.32047] HEARTBEAT rrq:3e0e4382:worker:metallographic_queenslandheeler_1:heartbeat
+#> [2024-11-11 10:32:31.573283] HEARTBEAT OK
+#> [2024-11-11 10:32:31.591422] ALIVE
+#> [2024-11-11 10:32:31.591815] ENVIR new
+#> [2024-11-11 10:32:31.592267] QUEUE default
 #>                                  __
 #>                 ______________ _/ /
 #>       ______   / ___/ ___/ __ `/ /_____
 #>      /_____/  / /  / /  / /_/ /_/_____/
 #>  ______      /_/  /_/   \__, (_)   ______
 #> /_____/                   /_/     /_____/
-#>     worker:        taxidermic_americangoldfinch_1
+#>     worker:        metallographic_queenslandheeler_1
 #>     config:        localhost
-#>     rrq_version:   0.7.17
-#>     platform:      x86_64-pc-linux-gnu
-#>     running:       Ubuntu 20.04.6 LTS
-#>     hostname:      wpia-dide300
-#>     username:      rfitzjoh
-#>     queue:         rrq:b5c90261:queue:default
-#>     wd:            /home/rfitzjoh/Documents/src/rrq/vignettes_src
-#>     pid:           2720190
+#>     rrq_version:   0.7.20
+#>     platform:      x86_64-pc-linux-gnu (64-bit)
+#>     running:       Ubuntu 24.04 LTS
+#>     hostname:      wpia-dide242
+#>     username:      pl2113
+#>     queue:         rrq:3e0e4382:queue:default
+#>     wd:            /home/pl2113/Work/rrq/vignettes_src
+#>     pid:           3166948
 #>     redis_host:    127.0.0.1
 #>     redis_port:    6379
-#>     heartbeat_key: rrq:b5c90261:worker:taxidermic_americangoldfinch_1:heartbeat
+#>     heartbeat_key: rrq:3e0e4382:worker:metallographic_queenslandheeler_1:heartbeat
+#>     offload_path:  <not set>
 ```
 
 We also have a heartbeat key here that we can inspect:
@@ -626,7 +623,7 @@ info <- rrq_worker_info()[[1]]
 obj$con$EXISTS(info$heartbeat_key)
 #> [1] 1
 obj$con$PTTL(info$heartbeat_key) # in milliseconds
-#> [1] 5829
+#> [1] 5882
 ```
 
 We queue some slow job onto the worker:
@@ -679,9 +676,9 @@ Handling this situation is still completely manual.  You can detect lost workers
 ```r
 rrq_worker_detect_exited()
 #> Lost 1 worker:
-#>   - taxidermic_americangoldfinch_1
+#>   - metallographic_queenslandheeler_1
 #> Orphaning 1 task:
-#>   - f88a6a235f8dbd9627e3e6862daae49b
+#>   - 8702ce8905ea72422bdc28024b1816cd
 ```
 
 this will also "orphan" the task

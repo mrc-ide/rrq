@@ -26,6 +26,14 @@ rrq_worker_spawn2 <- function(...) {
   rrq_worker_spawn(...)
 }
 
+rrq_configure <- function(...) {
+  cli::cli_warn(
+    paste("'rrq_configure()' is deprecated and does nothing. Disk offload",
+          "should be configured on the controller and worker instead."),
+    .frequency = "regularly",
+    .frequency_id = "deprecated_rrq_configure")
+}
+
 
 deprecated <- function(old, new) {
   cli::cli_warn(

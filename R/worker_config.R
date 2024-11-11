@@ -56,6 +56,11 @@
 ##'   details. If `NULL` (the default), then no heartbeat is
 ##'   configured.
 ##'
+##' @param offload_threshold_size The object size beyond which task results are
+##'   offloaded to disk instead of being stored in Redis. See
+##'   [`rrq::rrq_controller`] for details. If `Inf` (the default), results are
+##'   never offloaded.
+##'
 ##' @return A list of values with class `rrq_worker_config`; these
 ##'   should be considered read-only, and contain only the validated
 ##'   input parameters.
@@ -66,7 +71,8 @@
 rrq_worker_config <- function(queue = NULL, verbose = TRUE, logdir = NULL,
                               poll_queue = NULL, timeout_idle = Inf,
                               poll_process = 1, timeout_process_die = 2,
-                              heartbeat_period = NULL) {
+                              heartbeat_period = NULL,
+                              offload_threshold_size = Inf) {
   if (is.null(queue)) {
     queue <- QUEUE_DEFAULT
   } else {
@@ -89,6 +95,9 @@ rrq_worker_config <- function(queue = NULL, verbose = TRUE, logdir = NULL,
   if (!is.null(heartbeat_period)) {
     assert_scalar_numeric(heartbeat_period)
   }
+  if (!is.null(offload_threshold_size)) {
+    assert_scalar_numeric(offload_threshold_size)
+  }
   ret <- list(queue = queue,
               verbose = verbose,
               logdir = logdir,
@@ -96,7 +105,8 @@ rrq_worker_config <- function(queue = NULL, verbose = TRUE, logdir = NULL,
               timeout_idle = timeout_idle,
               poll_process = poll_process,
               timeout_process_die = timeout_process_die,
-              heartbeat_period = heartbeat_period)
+              heartbeat_period = heartbeat_period,
+              offload_threshold_size = offload_threshold_size)
   class(ret) <- "rrq_worker_config"
   ret
 }

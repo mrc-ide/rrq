@@ -32,24 +32,9 @@ clean:
 	rm -rf ${PACKAGE}.Rcheck
 
 
-vignettes/rrq.Rmd: vignettes_src/rrq.Rmd
+vignettes/%.Rmd: vignettes_src/%.Rmd
 	mkdir -p vignettes
-	cd vignettes_src && ${RSCRIPT} -e 'knitr::knit("rrq.Rmd")'
-	mv vignettes_src/rrq.md $@
-	sed -i.bak 's/[[:space:]]*$$//' $@
-	rm -f $@.bak
-
-vignettes/messages.Rmd: vignettes_src/messages.Rmd
-	mkdir -p vignettes
-	cd vignettes_src && ${RSCRIPT} -e 'knitr::knit("messages.Rmd")'
-	mv vignettes_src/messages.md $@
-	sed -i.bak 's/[[:space:]]*$$//' $@
-	rm -f $@.bak
-
-vignettes/fault-tolerance.Rmd: vignettes_src/fault-tolerance.Rmd
-	mkdir -p vignettes
-	cd vignettes_src && ${RSCRIPT} -e 'knitr::knit("fault-tolerance.Rmd")'
-	mv vignettes_src/fault-tolerance.md $@
+	cd vignettes_src && ${RSCRIPT} -e 'knitr::knit("$*.Rmd", "../vignettes/$*.Rmd")'
 	sed -i.bak 's/[[:space:]]*$$//' $@
 	rm -f $@.bak
 

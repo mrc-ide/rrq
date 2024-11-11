@@ -112,11 +112,14 @@ test_that("worker ids can't be duplicated", {
 
 
 test_that("Child workers require a parent", {
-  con <- test_hiredis()
+  obj <- test_rrq()
   id <- ids::random_id()
-  queue_id <- test_name(NULL)
   expect_error(
-    rrq_worker$new(queue_id, worker_id = id, is_child = TRUE, con = con),
+    rrq_worker$new(
+      obj$queue_id,
+      worker_id = id,
+      is_child = TRUE,
+      con = obj$con),
     "Can't be a child of nonexistent worker")
 })
 

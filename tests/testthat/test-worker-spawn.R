@@ -172,3 +172,21 @@ test_that("report back correctly", {
   expect_equal(err$logs, set_names(list(c("a", "b"), c("c", "d")), worker_ids))
   expect_equal(err$footer, worker_format_failed_logs)
 })
+
+
+test_that("can configure offload path on workers", {
+  path <- withr::local_tempdir()
+  obj <- test_rrq(offload_threshold_size = 100, offload_path = path)
+  res <- test_worker_spawn(obj, 1, offload_path = path)
+
+  workers <- rrq_worker_info(controller = obj)
+  expect_equal(workers[[1]]$offload_path, path)
+
+  expect_length(dir(path), 0)
+
+  t <- rrq_task_create_expr(rep(1, 100), controller = obj)
+  rrq_task_wait(t, controller = obj)
+
+  # Check that a file has been produced in our offload directory.
+  expect_length(dir(path), 1)
+})
