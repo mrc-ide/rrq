@@ -606,7 +606,6 @@ rrq_worker_config_list <- function(controller = NULL) {
 ##' cfg <- rrq_worker_config("fast")
 ##' rrq_worker_config_save("use-fast", cfg, controller = obj)
 ##' rrq_worker_config_read("use-fast", controller = obj)
-
 rrq_worker_config_read <- function(name, timeout = 0, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
   rrq_worker_config_read_internal(controller$con, controller$queue_id, name,

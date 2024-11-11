@@ -861,7 +861,7 @@ test_that("submit a task with a timeout", {
 })
 
 
-test_that("can offload storage", {
+test_that("can offload storage of expressions", {
   path <- tempfile()
 
   obj <- test_rrq(offload_threshold_size = 100, offload_path = path)
@@ -890,7 +890,7 @@ test_that("can offload storage", {
 })
 
 
-test_that("offload storage in result", {
+test_that("can offload storage of results", {
   path <- tempfile()
   obj <- test_rrq(offload_threshold_size = 100, offload_path = path)
   t <- rrq_task_create_expr(rep(1, 100), controller = obj)
