@@ -170,7 +170,12 @@ test_that("report back correctly", {
 
   mockery::expect_called(mock_logwatch, 1)
   expect_equal(err$logs, set_names(list(c("a", "b"), c("c", "d")), worker_ids))
-  expect_equal(err$footer, worker_format_failed_logs)
+
+  expect_equal(
+    err$footer(err),
+    c(i = "Log files recovered for 2 workers",
+      ">" = worker_ids[[1]], "a", "b", "",
+      ">" = worker_ids[[2]], "c", "d"))
 })
 
 

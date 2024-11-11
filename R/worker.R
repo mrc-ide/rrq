@@ -43,11 +43,8 @@ rrq_worker <- R6::R6Class(
     ##'
     ##' @param con A redis connection
     ##'
-    ##' @param offload_path The path to create an offload store at (passed
-    ##'   to [`rrq::object_store_offload_disk`]). The directory will be
-    ##'   created if it does not exist. If not given (or `NULL`) but
-    ##'   the queue was configured with a finite `store_max_size`, trying
-    ##'   to save large objects will throw an error.
+    ##' @param offload_path The path to create an offload store at. See
+    ##'   [rrq_controller] for details.
     initialize = function(queue_id, name_config = "localhost",
                           worker_id = NULL, timeout_config = 0,
                           is_child = FALSE, con = redux::hiredis(),

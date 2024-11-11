@@ -74,8 +74,8 @@
 ##'
 ##' # Storage
 ##'
-##' Every time that a task is saved, or a task is completed, results
-##'   are saved into the Redis database. Because Redis is an in-memory
+##' Every time a task is saved, or a task is completed, results are
+##'   saved into the Redis database. Because Redis is an in-memory
 ##'   database, it's not a great idea to save very large objects into
 ##'   it (if you ran 100 jobs in parallel and each saved a 2GB object
 ##'   you'd likely take down your redis server). In addition, `redux`

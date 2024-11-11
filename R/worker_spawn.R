@@ -37,6 +37,9 @@
 ##'   we'll use the controller registered with
 ##'   [rrq_default_controller_set()].
 ##'
+##' @param offload_path The path to create an offload store at. See
+##'   [rrq_controller] for details.
+##'
 ##' @export
 ##' @return An `rrq_worker_manager` object with fields:
 ##'
@@ -284,7 +287,6 @@ abort_workers_not_ready <- function(status, logs, call = NULL) {
   cli::cli_abort(msg, footer = worker_format_failed_logs, logs = logs,
                  call = call)
 }
-
 
 worker_format_failed_logs <- function(err) {
   logs <- err$logs

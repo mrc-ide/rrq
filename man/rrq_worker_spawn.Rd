@@ -12,7 +12,8 @@ rrq_worker_spawn(
   worker_id_base = NULL,
   time_poll = 0.2,
   progress = NULL,
-  controller = NULL
+  controller = NULL,
+  offload_path = NULL
 )
 }
 \arguments{
@@ -41,6 +42,9 @@ workers to come up.}
 \item{controller}{The controller to use.  If not given (or \code{NULL})
 we'll use the controller registered with
 \code{\link[=rrq_default_controller_set]{rrq_default_controller_set()}}.}
+
+\item{offload_path}{The path to create an offload store at. See
+\link{rrq_controller} for details.}
 }
 \value{
 An \code{rrq_worker_manager} object with fields:

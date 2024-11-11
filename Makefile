@@ -41,4 +41,4 @@ vignettes/%.Rmd: vignettes_src/%.Rmd
 vignettes: vignettes/rrq.Rmd vignettes/messages.Rmd vignettes/fault-tolerance.Rmd
 	Rscript -e 'library(methods); devtools::build_vignettes()'
 
-.PHONY: all test document install vignettes
+.PHONY: all test roxygen install vignettes
