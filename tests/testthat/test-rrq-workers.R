@@ -283,7 +283,7 @@ test_that("can get worker info", {
                   c("worker", "config", "rrq_version", "platform", "running",
                     "hostname",
                     "username", "queue", "wd", "pid", "redis_host",
-                    "redis_port", "heartbeat_key"))
+                    "redis_port", "heartbeat_key", "offload_path"))
   expect_equal(info[[w$id]]$rrq_version, version_info())
 })
 
