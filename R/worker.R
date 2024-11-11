@@ -42,20 +42,32 @@ rrq_worker <- R6::R6Class(
     ##'   Not for general use.
     ##'
     ##' @param con A redis connection
+    ##'
+    ##' @param offload_path The path to create an offload store at. See
+    ##'   [rrq_controller] for details.
     initialize = function(queue_id, name_config = "localhost",
                           worker_id = NULL, timeout_config = 0,
-                          is_child = FALSE, con = redux::hiredis()) {
+                          is_child = FALSE, con = redux::hiredis(),
+                          offload_path = NULL) {
       assert_scalar_character(queue_id)
       assert_is(con, "redis_api")
 
       self$id <- worker_id %||% ids::adjective_animal()
       self$config <- name_config
-      self$controller <- rrq_controller(queue_id, con, check_version = TRUE)
+
+      config <- rrq_worker_config_read_internal(con, queue_id, name_config,
+                                                timeout = timeout_config)
+
+      self$controller <- rrq_controller(
+        queue_id, con,
+        offload_path = offload_path,
+        offload_threshold_size = config$offload_threshold_size %||% Inf,
+        check_version = TRUE)
 
       if (is_child != rrq_worker_exists(self$id, self$controller)) {
         if (is_child) {
           cli::cli_abort(
-            c("Can't be a child of nonexistant worker",
+            c("Can't be a child of nonexistent worker",
               i = "Worker '{worker_id} does not exist for queue '{queue_id}'"))
         } else {
           cli::cli_abort(
@@ -63,10 +75,6 @@ rrq_worker <- R6::R6Class(
               i = "Worker '{worker_id} already exists for queue '{queue_id}'"))
         }
       }
-
-      config <- rrq_worker_config_read(name_config,
-                                       timeout = timeout_config,
-                                       controller = self$controller)
 
       private$verbose <- config$verbose
       private$logdir <- config$logdir
@@ -78,6 +86,7 @@ rrq_worker <- R6::R6Class(
       private$key_log <- rrq_key_worker_log(queue_id, self$id)
       private$key_message <- rrq_key_worker_message(queue_id, self$id)
       private$key_response <- rrq_key_worker_response(queue_id, self$id)
+      private$offload_path <- offload_path
 
       if (private$is_child) {
         self$log("CHILD")
@@ -258,29 +267,28 @@ rrq_worker <- R6::R6Class(
     logdir = NULL,
     is_child = NULL,
     poll_process = NULL,
-    timeout_process_die = NULL
+    timeout_process_die = NULL,
+    offload_path = NULL
   ))
 
 
 worker_info_collect <- function(worker, private) {
   sys <- sessionInfo()
   redis_config <- worker$controller$con$config()
-  dat <- list(worker = worker$id,
-              config = worker$config,
-              rrq_version = version_info(),
-              platform = sys$platform,
-              running = sys$running,
-              hostname = hostname(),
-              username = username(),
-              queue = private$key_queue,
-              wd = getwd(),
-              pid = process_id(),
-              redis_host = redis_config$host,
-              redis_port = redis_config$port)
-  if (!is.null(private$heartbeat)) {
-    dat$heartbeat_key <- private$key_heartbeat
-  }
-  dat
+  list(worker = worker$id,
+       config = worker$config,
+       rrq_version = version_info(),
+       platform = sys$platform,
+       running = sys$running,
+       hostname = hostname(),
+       username = username(),
+       queue = private$key_queue,
+       wd = getwd(),
+       pid = process_id(),
+       redis_host = redis_config$host,
+       redis_port = redis_config$port,
+       heartbeat_key = private$key_heartbeat,
+       offload_path = private$offload_path)
 }
 
 
@@ -400,6 +408,7 @@ worker_catch_error <- function(worker, private) {
 worker_format <- function(worker) {
   x <- worker$info()
   x$heartbeat_key <- x$heartbeat_key %||% "<not set>"
+  x$offload_path <- x$offload_path %||% "<not set>"
   n <- nchar(names(x))
   pad <- vcapply(max(n) - n, function(n) strrep(" ", n))
   queue_indent <- paste("\n", strrep(" ", max(n)), "    ")

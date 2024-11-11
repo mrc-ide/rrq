@@ -391,22 +391,19 @@ The data for each task, and the task result itself, is saved in Redis. This is a
 
 To allow for this workflow, `rrq` supports configuring its object store (`rrq::object_store`) so that objects above a certain size are written out elsewhere. Currently, the only "elsewhere" supported is to disk with the assumption that the controller and all workers share a filesystem. The approach used is safe for multiple concurrent processes, including over network mounted filesystems.
 
-To configure this you must use `rrq_configure()` *before attaching either a controller or a worker to the queue*. The configuration interface here will change in future, but we will maintain backward compatibility with the current options.
-
-To configure storage so that every object that is greater than 1KB is saved to disk, you could write:
+This feature can be enabled by passing an `offload_path` to both the controller and the worker. Additionally, the `offload_threshold_size` should be set in the worker configuration. In the setup below, both the controller and the worker use the same offload path, but if they were running on different machines we may need to use different paths pointing at the same underlying network filesystem.
 
 ```{r}
 id <- paste0("rrq:", ids::random_id(bytes = 4))
 path <- tempfile()
-rrq_configure(id, store_max_size = 1000, offload_path = path)
-```
+obj <- rrq_controller(id, offload_path = path)
 
-then we create the queue object as normal (and spawn a worker so that we can use it)
-
-```{r}
-obj <- rrq_controller(id)
 rrq_default_controller_set(obj)
-w <- rrq_worker_spawn(1)
+rrq_worker_config_save(
+    "localhost",
+    rrq_worker_config(offload_threshold_size = 1000))
+
+w <- rrq_worker_spawn(1, offload_path = path)
 ```
 
 It's not hard at all to get to 1KB of data, we can do that by simulating a big pile of random numbers:
@@ -528,7 +525,7 @@ To enable the heartbeat, save a worker configuration with the `heartbeat_period`
 id <- paste0("rrq:", ids::random_id(bytes = 4))
 obj <- rrq_controller(id)
 rrq_default_controller_set(obj)
-res <- rrq_worker_config_save(
+rrq_worker_config_save(
   "localhost",
   rrq_worker_config(heartbeat_period = 2))
 ```

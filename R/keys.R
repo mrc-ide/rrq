@@ -2,7 +2,6 @@ rrq_keys <- function(queue_id) {
   list(queue_id       = queue_id,
 
        controller     = sprintf("%s:controller",     queue_id),
-       configuration  = sprintf("%s:configuration",  queue_id),
        version        = sprintf("%s:version",        queue_id),
 
        object_store   = sprintf("%s:object_store",   queue_id),

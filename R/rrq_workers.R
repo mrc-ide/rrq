@@ -608,8 +608,12 @@ rrq_worker_config_list <- function(controller = NULL) {
 ##' rrq_worker_config_read("use-fast", controller = obj)
 rrq_worker_config_read <- function(name, timeout = 0, controller = NULL) {
   controller <- get_controller(controller, call = rlang::current_env())
-  con <- controller$con
-  keys <- controller$keys
+  rrq_worker_config_read_internal(controller$con, controller$queue_id, name,
+                                  timeout)
+}
+
+rrq_worker_config_read_internal <- function(con, queue_id, name, timeout = 0) {
+  keys <- rrq_keys(queue_id)
 
   read <- function() {
     config <- con$HGET(keys$worker_config, name)

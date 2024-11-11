@@ -12,7 +12,8 @@ rrq_worker_config(
   timeout_idle = Inf,
   poll_process = 1,
   timeout_process_die = 2,
-  heartbeat_period = NULL
+  heartbeat_period = NULL,
+  offload_threshold_size = Inf
 )
 }
 \arguments{
@@ -67,6 +68,11 @@ non-NULL then a heartbeat process will be started (using
 tolerant queues. See \code{vignette("fault-tolerance")} for
 details. If \code{NULL} (the default), then no heartbeat is
 configured.}
+
+\item{offload_threshold_size}{The object size beyond which task results are
+offloaded to disk instead of being stored in Redis. See
+\code{\link{rrq_controller}} for details. If \code{Inf} (the default), results are
+never offloaded.}
 }
 \value{
 A list of values with class \code{rrq_worker_config}; these

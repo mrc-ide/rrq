@@ -9,7 +9,9 @@ rrq_controller(
   con = redux::hiredis(),
   timeout_task_wait = NULL,
   follow = NULL,
-  check_version = TRUE
+  check_version = TRUE,
+  offload_path = NULL,
+  offload_threshold_size = Inf
 )
 }
 \arguments{
@@ -40,6 +42,17 @@ information.}
 schema version.  You can pass \code{FALSE} here to continue even
 where the schema version is incompatible, though any subsequent
 actions may lead to corruption.}
+
+\item{offload_path}{The path to create an offload store at (passed
+to \code{\link{object_store_offload_disk}}). The directory will be
+created if it does not exist. If not given (or \code{NULL}) but
+the queue was configured with a finite \code{offload_threshold_size},
+trying to save large objects will throw an error.}
+
+\item{offload_threshold_size}{The maximum object size, in bytes,
+before being moved to the offload store. If given, then larger
+data will be saved in \code{offload_path} (using
+\code{\link{object_store_offload_disk}})}
 }
 \value{
 An \code{rrq_controller} object, which is opaque.
@@ -113,6 +126,39 @@ if it has not processed a task.
 \item \code{TIMEOUT_GET} (no args): Tells the worker to respond with its
 current timeout.
 }
+}
+
+\section{Storage}{
+Every time a task is saved, or a task is completed, results are
+saved into the Redis database. Because Redis is an in-memory
+database, it's not a great idea to save very large objects into
+it (if you ran 100 jobs in parallel and each saved a 2GB object
+you'd likely take down your redis server). In addition, \code{redux}
+does not support directly saving objects larger than \code{2^31 - 1}
+bytes into Redis. So, for some use cases we need to consider
+where to store larger objects.
+
+The strategy here is to "offload" the larger objects - bigger than
+some user-given size - onto some other storage system. Currently
+the only alternative supported is a disk store
+(\code{\link{object_store_offload_disk}}) but we hope to expand this
+later.  So if your task returns a 3GB object then we will spill
+that to disk rather than failing to save that into
+Redis.
+
+The storage directory for offloading must be shared amoung all
+users of the queue. Depending on the usecase, this could be
+a directory on the local filesystems or, if using a queue across
+machines, it can be a network file system mounted on all machines.
+
+How big is an object? We serialise the object
+(\code{redux::object_to_bin} just wraps \code{\link{serialize}}) which creates
+a vector of bytes and that is saved into the database. To get an
+idea of how large things are you can do:
+\code{length(redux::object_to_bin(your_object))}.  At the time this
+documentation was written, \code{mtcars} was \code{3807} bytes, and a
+million random numbers was \verb{8,000,031} bytes. It's unlikely that
+a \code{offload_threshold_size} of less than 1MB will be sensible.
 }
 
 \examples{

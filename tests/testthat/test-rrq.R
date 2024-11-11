@@ -861,18 +861,15 @@ test_that("submit a task with a timeout", {
 })
 
 
-test_that("can offload storage", {
-  skip_if_no_redis()
-  name <- sprintf("rrq:%s", ids::random_id())
-
+test_that("can offload storage of expressions", {
   path <- tempfile()
 
-  obj <- test_rrq(store_max_size = 100, offload_path = path)
+  obj <- test_rrq(offload_threshold_size = 100, offload_path = path)
   a <- 10
   b <- runif(20)
   t <- rrq_task_create_expr(sum(b) / a, controller = obj)
 
-  w <- test_worker_blocking(obj)
+  w <- test_worker_blocking(obj, offload_path = path)
   w$step(TRUE)
 
   expect_equal(rrq_task_result(t, controller = obj), sum(b) / a)
@@ -893,12 +890,12 @@ test_that("can offload storage", {
 })
 
 
-test_that("offload storage in result", {
+test_that("can offload storage of results", {
   path <- tempfile()
-  obj <- test_rrq(store_max_size = 100, offload_path = path)
+  obj <- test_rrq(offload_threshold_size = 100, offload_path = path)
   t <- rrq_task_create_expr(rep(1, 100), controller = obj)
 
-  w <- test_worker_blocking(obj)
+  w <- test_worker_blocking(obj, offload_path = path)
   w$step(TRUE)
 
   expect_equal(rrq_task_result(t, controller = obj), rep(1, 100))
@@ -915,6 +912,65 @@ test_that("offload storage in result", {
 
   expect_equal(store$list(), character(0))
   expect_equal(dir(path), character(0))
+})
+
+
+test_that("can use separate offload mount points", {
+  client_offload <- tempfile()
+  worker_offload <- tempfile()
+
+  obj <- test_rrq(offload_threshold_size = 100,
+                  offload_path = client_offload)
+
+  t <- rrq_task_create_expr(rep(1, 100), controller = obj)
+
+  w <- test_worker_blocking(obj, offload_path = worker_offload)
+
+  w$step(TRUE)
+
+  # Pretend that these are actually the same filesystem mounted at different
+  # paths by synchronizing their contents. Delete the worker's "mount point" to
+  # make sure the client isn't accidentally reading from it.
+  files <- dir(worker_offload)
+  expect_length(files, 1)
+  expect_length(dir(client_offload), 0)
+  file.copy(file.path(worker_offload, files), client_offload)
+  stopifnot(unlink(worker_offload, recursive = TRUE) == 0)
+
+  expect_equal(rrq_task_result(t, controller = obj), rep(1, 100))
+
+  ## Did successfully offload data:
+  store <- obj$store
+  h <- store$list()
+  expect_length(h, 1)
+  expect_setequal(store$location(h), "offload")
+  expect_equal(store$tags(), t)
+  expect_equal(dir(client_offload), h)
+
+  rrq_task_delete(t, controller = obj)
+
+  expect_equal(store$list(), character(0))
+  expect_equal(dir(client_offload), character(0))
+})
+
+
+test_that("can inspect a queue without access to the offload", {
+  path <- tempfile()
+
+  obj <- test_rrq(offload_threshold_size = 100, offload_path = path)
+  t1 <- rrq_task_create_expr(rep(1, 100), controller = obj)
+  t2 <- rrq_task_create_expr(c(1, 2, 3), controller = obj)
+
+  w <- test_worker_blocking(obj, offload_path = path)
+  w$step(TRUE)
+  w$step(TRUE)
+
+  inspector <- rrq_controller(obj$queue_id)
+  expect_setequal(rrq_task_list(inspector), c(t1, t2))
+  expect_error(rrq_task_result(t1, controller = inspector),
+               "offload is not supported")
+  expect_equal(rrq_task_result(t2, controller = inspector),
+               c(1, 2, 3))
 })
 
 

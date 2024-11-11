@@ -39,7 +39,7 @@ format.rrq_worker_info <- function(x, ...) {
   c("  <rrq_worker_info>",
     sprintf("    %s %s",
             format(paste0(names(x), ":")),
-            vcapply(x, as.character)))
+            vcapply(x, format)))
 }
 
 #' @export

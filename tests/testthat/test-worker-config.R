@@ -170,8 +170,9 @@ test_that("can timeout while reading a configuration", {
   obj <- test_rrq()
   cfg <- rrq_worker_config_read(WORKER_CONFIG_DEFAULT, controller = obj)
   mock_wait <- mockery::mock(cfg)
-  mockery::stub(rrq_worker_config_read, "wait_success", mock_wait)
-  res <- rrq_worker_config_read(WORKER_CONFIG_DEFAULT, 30, obj)
+  mockery::stub(rrq_worker_config_read, "wait_success", mock_wait, depth = 2)
+
+  res <- rrq_worker_config_read(WORKER_CONFIG_DEFAULT, 30, controller = obj)
   expect_equal(res, cfg)
   mockery::expect_called(mock_wait, 1)
   args <- mockery::mock_args(mock_wait)[[1]]
