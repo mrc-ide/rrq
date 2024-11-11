@@ -26,6 +26,10 @@ rrq_worker_spawn2 <- function(...) {
   rrq_worker_spawn(...)
 }
 
+
+##' @export
+##' @keywords internal
+##' @rdname compat
 rrq_configure <- function(...) {
   cli::cli_warn(
     paste("'rrq_configure()' is deprecated and does nothing. Disk offload",

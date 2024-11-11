@@ -4,6 +4,7 @@
 \alias{rrq_controller2}
 \alias{rrq_worker_config_save2}
 \alias{rrq_worker_spawn2}
+\alias{rrq_configure}
 \title{Compatibility functions}
 \usage{
 rrq_controller2(...)
@@ -11,6 +12,8 @@ rrq_controller2(...)
 rrq_worker_config_save2(...)
 
 rrq_worker_spawn2(...)
+
+rrq_configure(...)
 }
 \arguments{
 \item{...}{Arguments passed to the preferred function}
