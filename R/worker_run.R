@@ -101,6 +101,7 @@ worker_run_task_separate_process <- function(task, worker, private) {
   poll_process <- private$poll_process
   timeout_process_die <- private$timeout_process_die
   logdir <- private$logdir
+  offload_path <- private$offload_path
 
   if (is.null(logdir)) {
     logfile <- "|"
@@ -112,10 +113,8 @@ worker_run_task_separate_process <- function(task, worker, private) {
 
   worker$log("REMOTE", task_id)
   px <- callr::r_bg(
-    function(redis_config, queue_id, worker_id, task_id) {
-      remote_run_task(redis_config, queue_id, worker_id, task_id)
-    },
-    list(redis_config, queue_id, worker_id, task_id),
+    remote_run_task,
+    list(redis_config, queue_id, worker_id, task_id, offload_path),
     package = "rrq",
     supervise = TRUE,
     stdout = logfile,
@@ -167,8 +166,10 @@ worker_run_task_separate_process <- function(task, worker, private) {
 }
 
 
-remote_run_task <- function(redis_config, queue_id, worker_id, task_id) {
+remote_run_task <- function(redis_config, queue_id, worker_id, task_id,
+                            offload_path) {
   worker <- rrq_worker$new(queue_id, worker_id = worker_id, is_child = TRUE,
+                           offload_path = offload_path,
                            con = redux::hiredis(config = redis_config))
   on.exit(worker$log("STOP", "OK"))
   worker$task_eval(task_id)
