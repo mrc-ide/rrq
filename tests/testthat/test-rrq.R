@@ -974,6 +974,23 @@ test_that("can inspect a queue without access to the offload", {
 })
 
 
+test_that("can use offload from a separate process", {
+  path <- tempfile()
+  obj <- test_rrq(offload_threshold_size = 100, offload_path = path)
+  w <- test_worker_blocking(obj, offload_path = path)
+
+  data <- runif(20)
+  t <- rrq_task_create_expr(data * 2, separate_process = TRUE,
+                            controller = obj)
+
+  expect_length(dir(path), 1)
+  w$step(TRUE)
+  expect_length(dir(path), 2)
+
+  expect_equal(rrq_task_result(t, controller = obj), data * 2)
+})
+
+
 test_that("collect times", {
   obj <- test_rrq("myfuns.R")
   w <- test_worker_blocking(obj)
