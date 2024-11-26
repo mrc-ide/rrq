@@ -29,7 +29,7 @@ Suggests:
     rmarkdown,
     testthat,
     withr
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE, r6 = TRUE)
 Language: en-GB

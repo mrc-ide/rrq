@@ -468,7 +468,10 @@ rrq_worker_process_log <- function(worker_id, controller = NULL) {
 
 
 ##' Register a function to create an environment when creating a
-##'   worker. When a worker starts, they will run this function.
+##'   worker. When a worker starts, they will run this function.  The
+##'   function `rrq_worker_envir_refresh` asks the worker to reload
+##'   the copy of the already specified environment (e.g., to pick up
+##'   changes to source files).
 ##'
 ##' @title Set worker environment
 ##'
@@ -481,7 +484,8 @@ rrq_worker_process_log <- function(worker_id, controller = NULL) {
 ##'   environment).
 ##'
 ##' @param notify Boolean, indicating if we should send a `REFRESH`
-##'   message to all workers to update their environment.
+##'   message to all workers to update their environment, via
+##'   `rrq_worker_envir_refresh`
 ##'
 ##' @inheritParams rrq_task_list
 ##'
@@ -508,8 +512,16 @@ rrq_worker_envir_set <- function(create, notify = TRUE, controller = NULL) {
     con$SET(keys$envir, object_to_bin(create))
   }
   if (notify) {
-    rrq_message_send("REFRESH", controller = controller)
+    rrq_worker_envir_refresh(controller = controller)
   }
+}
+
+
+##' @rdname rrq_worker_envir_set
+##' @export
+rrq_worker_envir_refresh <- function(controller = NULL) {
+  controller <- get_controller(controller)
+  rrq_message_send("REFRESH", controller = controller)
 }
 
 

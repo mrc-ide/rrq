@@ -60,6 +60,7 @@ reference:
       - rrq_worker_delete_exited
       - rrq_worker_detect_exited
       - rrq_worker_envir_set
+      - rrq_worker_envir_refresh
       - rrq_worker_exists
       - rrq_worker_info
       - rrq_worker_len
