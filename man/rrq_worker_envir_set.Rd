@@ -2,9 +2,12 @@
 % Please edit documentation in R/rrq_workers.R
 \name{rrq_worker_envir_set}
 \alias{rrq_worker_envir_set}
+\alias{rrq_worker_envir_refresh}
 \title{Set worker environment}
 \usage{
 rrq_worker_envir_set(create, notify = TRUE, controller = NULL)
+
+rrq_worker_envir_refresh(controller = NULL)
 }
 \arguments{
 \item{create}{A function that will create an environment. It will
@@ -16,7 +19,8 @@ function (i.e., to start workers with an essentially empty
 environment).}
 
 \item{notify}{Boolean, indicating if we should send a \code{REFRESH}
-message to all workers to update their environment.}
+message to all workers to update their environment, via
+\code{rrq_worker_envir_refresh}}
 
 \item{controller}{The controller to use.  If not given (or \code{NULL})
 we'll use the controller registered with
@@ -24,7 +28,10 @@ we'll use the controller registered with
 }
 \description{
 Register a function to create an environment when creating a
-worker. When a worker starts, they will run this function.
+worker. When a worker starts, they will run this function.  The
+function \code{rrq_worker_envir_refresh} asks the worker to reload
+the copy of the already specified environment (e.g., to pick up
+changes to source files).
 }
 \examples{
 \dontshow{if (rrq:::enable_examples(require_queue = "rrq:example")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
