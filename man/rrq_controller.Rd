@@ -150,6 +150,9 @@ The storage directory for offloading must be shared amoung all
 users of the queue. Depending on the usecase, this could be
 a directory on the local filesystems or, if using a queue across
 machines, it can be a network file system mounted on all machines.
+It may however be mounted at different locations on each machine.
+In this case, on each machine the controller would be created with
+a different path.
 
 How big is an object? We serialise the object
 (\code{redux::object_to_bin} just wraps \code{\link{serialize}}) which creates

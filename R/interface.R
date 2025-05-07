@@ -248,6 +248,41 @@ rrq_default_controller_clear <- function() {
 }
 
 
+##' Read known controllers from the redis database.
+##'
+##' @title Read known controllers
+##'
+##' @inheritParams rrq_controller
+##'
+##' @return A `data.frame` with columns:
+##'
+##' * `id`: the controller identifier
+##' * `time`: the time of last access
+##' * `hostname`: the hostname that last accessed
+##' * `username`: the username that last accessed
+##'
+##' The `data.frame` will be ordered by time of last access, with the
+##' most recenty accesses first.
+##'
+##' @export
+rrq_known_controllers <- function(con = redux::hiredis()) {
+  nms <- redux::scan_find(con, "*:controller", count = 1000)
+  id <- sub(":controller$", "", nms)
+  data <- lapply(nms, function(x) {
+    tryCatch(bin_to_object(con$LINDEX(x, -1)), error = function(e) NULL)
+  })
+  ok <- !vlapply(data, is.null)
+  ret <- data.frame(
+    id = id[ok],
+    time = as.POSIXlt(vnapply(data[ok], "[[", "time")),
+    hostname = vcapply(data[ok], "[[", "hostname"),
+    username = vcapply(data[ok], "[[", "username"))
+  ret <- ret[order(ret$time, decreasing = TRUE), ]
+  rownames(ret) <- NULL
+  ret
+}
+
+
 pkg <- new.env(parent = emptyenv())
 
 
