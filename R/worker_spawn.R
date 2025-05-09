@@ -78,6 +78,15 @@ rrq_worker_spawn <- function(n = 1, logdir = NULL, timeout = 600,
 ##'
 ##' @param time_poll Poll interval, in seconds. Must be an integer
 ##'
+##' @param is_dead Optionally, a function which should accept zero
+##'   arguments and return a logical vector along `worker_ids` which
+##'   is `TRUE` if the worker has failed irrecoverably.  This would be
+##'   the case for example if the process has died.
+##'
+##' @param fetch_logs Optionally, a function which should accept a
+##'   single worker identifier and return a character vector of logs
+##'   (or `NULL` if no logs are available)
+##'
 ##' @param progress Optional logical indicating if a progress bar
 ##'   should be displayed. If `NULL` we fall back on the value of the
 ##'   global option `rrq.progress`, and if that is unset display a
@@ -89,12 +98,11 @@ rrq_worker_spawn <- function(n = 1, logdir = NULL, timeout = 600,
 ##'
 ##' @export
 rrq_worker_wait <- function(worker_ids, timeout = Inf, time_poll = 0.2,
+                            is_dead = NULL, fetch_logs = NULL,
                             progress = NULL, controller = NULL) {
   assert_scalar_numeric(timeout)
   assert_scalar_numeric(time_poll)
   controller <- get_controller(controller)
-  is_dead <- NULL
-  fetch_logs <- NULL
   worker_wait_alive(controller, worker_ids, is_dead, fetch_logs,
                     timeout, time_poll, progress,
                     call = rlang::current_env())
