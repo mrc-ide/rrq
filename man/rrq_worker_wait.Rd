@@ -8,6 +8,8 @@ rrq_worker_wait(
   worker_ids,
   timeout = Inf,
   time_poll = 0.2,
+  is_dead = NULL,
+  fetch_logs = NULL,
   progress = NULL,
   controller = NULL
 )
@@ -18,6 +20,15 @@ rrq_worker_wait(
 \item{timeout}{Timeout in seconds; default is to wait forever}
 
 \item{time_poll}{Poll interval, in seconds. Must be an integer}
+
+\item{is_dead}{Optionally, a function which should accept zero
+arguments and return a logical vector along \code{worker_ids} which
+is \code{TRUE} if the worker has failed irrecoverably.  This would be
+the case for example if the process has died.}
+
+\item{fetch_logs}{Optionally, a function which should accept a
+single worker identifier and return a character vector of logs
+(or \code{NULL} if no logs are available)}
 
 \item{progress}{Optional logical indicating if a progress bar
 should be displayed. If \code{NULL} we fall back on the value of the
