@@ -132,7 +132,7 @@ worker_run_task_separate_process <- function(task, worker, private) {
 
   task_terminate <- function(log, status) {
     worker$log(log)
-    px$signal(tools::SIGTERM)
+    px$signal(tools::SIGINT)
     wait_timeout("Waiting for task to stop", timeout_process_die, px$is_alive)
     list(value = worker_task_failed(status, queue_id, task_id),
          status = status)
