@@ -454,7 +454,7 @@ test_that("Cancel job sent to new process", {
   expect_equal(log$command,
                c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
                  "TASK_START", "REMOTE",
-                 "CHILD", "ENVIR", "ENVIR", "CANCEL", "TASK_CANCELLED"))
+                 "CHILD", "ENVIR", "ENVIR", "CANCEL", "STOP", "TASK_CANCELLED"))
 })
 
 
@@ -857,7 +857,7 @@ test_that("submit a task with a timeout", {
   expect_equal(rrq_worker_log_tail(w$id, Inf, controller = obj)$command,
                c("ALIVE", "ENVIR", "ENVIR", "QUEUE",
                  "TASK_START", "REMOTE",
-                 "CHILD", "ENVIR", "ENVIR", "TIMEOUT", "TASK_TIMEOUT"))
+                 "CHILD", "ENVIR", "ENVIR", "TIMEOUT", "STOP", "TASK_TIMEOUT"))
 })
 
 
