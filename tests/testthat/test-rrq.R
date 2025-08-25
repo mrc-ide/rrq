@@ -1393,3 +1393,39 @@ test_that("can't read logs of tasks run in the same process", {
     rrq_task_log(t, controller = obj),
     msg)
 })
+
+
+test_that("can list known controllers in empty db", {
+  skip_if_no_redis()
+  res <- rrq_known_controllers()
+  expect_equal(
+    rrq_known_controllers(),
+    data.frame(id = character(),
+               time = as.POSIXlt(0)[0],
+               hostname = character(),
+               username = character()))
+})
+
+
+test_that("can get controllers", {
+  ## Can't easily test ordering because timings may not be accurate
+  ## enough, but it's not very important really.
+  r1 <- test_rrq()
+  r2 <- test_rrq()
+  res <- rrq_known_controllers()
+  cmp <- controller_info()
+
+  expect_setequal(res$id, c(r1$queue_id, r2$queue_id))
+  expect_equal(res$username, rep(cmp$username, 2))
+  expect_equal(res$hostname, rep(cmp$hostname, 2))
+  expect_s3_class(res$time, "POSIXlt")
+})
+
+
+test_that("can skip nonsense keys when getting controllers", {
+  r <- test_rrq()
+  con <- r$con
+  con$SET("foo:controller", 1)
+  expect_equal(rrq_known_controllers()$id, r$queue_id)
+  con$DEL("foo:controller")
+})
