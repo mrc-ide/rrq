@@ -53,8 +53,12 @@ test_that("bin_to_object_safe", {
   expect_equal(bin_to_object_safe(x), d)
 
   expect_null(bin_to_object_safe(NULL))
+  expect_null(bin_to_object_safe(NA_character_))
+  expect_error(
+    bin_to_object_safe("hello 123"),
+    "character vectors are no longer accepted by unserialize()"
+  )
 })
-
 
 
 test_that("wait timeout errors informatively", {

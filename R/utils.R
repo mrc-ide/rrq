@@ -73,7 +73,7 @@ data_frame <- function(...) {
 
 
 bin_to_object_safe <- function(x) {
-  if (is.null(x)) NULL else bin_to_object(x)
+  if (is.null(x) || identical(x, NA_character_)) NULL else bin_to_object(x)
 }
 
 
