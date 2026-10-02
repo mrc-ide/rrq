@@ -1,0 +1,131 @@
+# Create a task from a call
+
+Create a task based on a function call. This is fairly similar to
+[callr::r](https://callr.r-lib.org/reference/r.html), and forms the
+basis of [`lapply()`](https://rdrr.io/r/base/lapply.html)-like task
+submission. Sending a call may have slightly different semantics than
+you expect if you send a closure (a function that binds data), and we
+may change behaviour here until we find a happy set of compromises. See
+Details for more on this. The expression
+`rrq_task_create_call(f, list(a, b, c))` is similar to
+`rrq_task_create_expr(f(a, b, c))`, use whichever you prefer.
+
+## Usage
+
+``` r
+rrq_task_create_call(
+  fn,
+  args,
+  queue = NULL,
+  separate_process = FALSE,
+  timeout_task_run = NULL,
+  depends_on = NULL,
+  controller = NULL
+)
+```
+
+## Arguments
+
+- fn:
+
+  The function to call
+
+- args:
+
+  A list of arguments to pass to the function
+
+- queue:
+
+  The queue to add the task to; if not specified the "default" queue
+  (which all workers listen to) will be used. If you have configured
+  workers to listen to more than one queue you can specify that here. Be
+  warned that if you push jobs onto a queue with no worker, it will
+  queue forever.
+
+- separate_process:
+
+  Logical, indicating if the task should be run in a separate process on
+  the worker. If `TRUE`, then the worker runs the task in a separate
+  process using the `callr` package. This means that the worker
+  environment is completely clean, subsequent runs are not affected by
+  preceding ones. The downside of this approach is a considerable
+  overhead in starting the external process and transferring data back.
+
+- timeout_task_run:
+
+  Optionally, a maximum allowed running time, in seconds. This parameter
+  only has an effect if `separate_process` is `TRUE`. If given, then if
+  the task takes longer than this time it will be stopped and the task
+  status set to `TIMEOUT`.
+
+- depends_on:
+
+  Vector or list of IDs of tasks which must have completed before this
+  job can be run. Once all dependent tasks have been successfully run,
+  this task will get added to the queue. If the dependent task fails
+  then this task will be removed from the queue.
+
+- controller:
+
+  The controller to use. If not given (or `NULL`) we'll use the
+  controller registered with
+  [`rrq_default_controller_set()`](https://mrc-ide.github.io/rrq/reference/rrq_default_controller_set.md).
+
+## Value
+
+A task identifier (a 32 character hex string) that you can pass in to
+other rrq functions, notably
+[`rrq_task_status()`](https://mrc-ide.github.io/rrq/reference/rrq_task_status.md)
+and
+[`rrq_task_result()`](https://mrc-ide.github.io/rrq/reference/rrq_task_result.md)
+
+## Details
+
+Things are pretty unambiguous when you pass in a function from a
+package, especially when you refer to that package with its namespace
+(e.g. `pkg::fn`).
+
+If you pass in the name *without a namespace* from a package that you
+have loaded with [`library()`](https://rdrr.io/r/base/library.html)
+locally but you have not loaded with `library` within your worker
+environment, we may not do the right thing and you may see your task
+fail, or find a different function with the same name.
+
+If you pass in an anonymous function (e.g., `function(x) x + 1`) we may
+or may not do the right thing with respect to environment capture. We
+never capture the global environment so if your function is a closure
+that tries to bind a symbol from the global environment it will not
+work. Like with [`callr::r`](https://callr.r-lib.org/reference/r.html),
+anonymous functions will be easiest to think about where they are fully
+self contained (i.e., all inputs to the functions come through `args`).
+If you have bound a *local* environment, we may do slightly better, but
+semantics here are undefined and subject to change.
+
+R does some fancy things with function calls that we don't try to
+replicate. In particular you may have noticed that this works:
+
+    c <- "x"
+    c(c, c) # a vector of two "x"'s
+
+You can end up in this situation locally with:
+
+    f <- function(x) x + 1
+    local({
+      f <- 1
+      f(f) # 2
+    })
+
+this is because when R looks for the symbol for the call it skips over
+non-function objects. We don't reconstruct environment chains in exactly
+the same way as you would have locally so this is not possible.
+
+## Examples
+
+``` r
+if (FALSE) { # rrq:::enable_examples(require_queue = "rrq:example")
+obj <- rrq_controller("rrq:example")
+t <- rrq_task_create_call(sqrt, list(2), controller = obj)
+rrq_task_wait(t, controller = obj)
+rrq_task_result(t, controller = obj)
+}
+```
