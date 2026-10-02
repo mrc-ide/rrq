@@ -147,7 +147,7 @@ rrq_worker_info <- function(worker_ids = NULL, controller = NULL) {
   ret <- from_redis_hash(con, keys$worker_info, worker_ids,
                          f = Vectorize(bin_to_object_safe, SIMPLIFY = FALSE))
   lapply(ret, function(x) {
-    class(x) <- "rrq_worker_info"
+    if (!is.null(x)) class(x) <- "rrq_worker_info"
     x
   })
 }

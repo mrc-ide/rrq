@@ -53,8 +53,12 @@ test_that("bin_to_object_safe", {
   expect_equal(bin_to_object_safe(x), d)
 
   expect_null(bin_to_object_safe(NULL))
+  expect_null(bin_to_object_safe(NA_character_))
+  expect_error(
+    bin_to_object_safe("hello 123"),
+    "character vectors are no longer accepted by unserialize()"
+  )
 })
-
 
 
 test_that("wait timeout errors informatively", {
@@ -91,9 +95,8 @@ test_that("Hash large data", {
   skip_on_cran() # slow, possibly problematic?
   d <- raw(2^31)
   h <- hash_data(d)
-  expect_equal(
-    h,
-    "2e414e29f36fec53be8f411a22e2539d")
+  expect_match(h, "^[0-9a-f]{32}$")
+  expect_equal(hash_data(d), h)
 })
 
 

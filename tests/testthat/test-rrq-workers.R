@@ -288,6 +288,18 @@ test_that("can get worker info", {
 })
 
 
+test_that("worker info is null if key is missing", {
+  skip_on_os("windows")
+
+  obj <- test_rrq(timeout_worker_stop = 10)
+
+  info <- rrq_worker_info("id123", controller = obj)
+  expect_length(info, 1)
+  expect_null(info[[1]])
+  expect_equal(names(info), "id123")
+})
+
+
 test_that("multiple queues format correctly when printing worker", {
   obj <- test_rrq()
   cfg <- rrq_worker_config(queue = c("a", "b"), verbose = FALSE)
